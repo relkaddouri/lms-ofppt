@@ -1,0 +1,2393 @@
+{
+ "source": "programme-ux-designer.docx",
+ "valide_par_humain": true,
+ "specialite": {
+  "nom": "Digital Design - Option UX Design",
+  "code": "DIA_DES_TS",
+  "duree_totale_heures": 1435
+ },
+ "programme": {
+  "annee_approbation": 2021
+ },
+ "competences": [
+  {
+   "numero": 1,
+   "code_officiel": "DIA_DES_TS-01",
+   "nom": "Se situer au regard du métier et de la démarche de formation",
+   "duree_nationale_heures": 15,
+   "code_operationnel": "M101",
+   "cycle": "tronc_commun",
+   "fiche_prescrite": {
+    "contexte_realisation": [
+     "Individuellement et/ou en groupe",
+     "À partir :",
+     "De mises en situations écrites et orales",
+     "De consignes",
+     "De spécifications fonctionnelles",
+     "De base documentaire",
+     "À l’aide :",
+     "D’internet",
+     "Du réseau professionnel"
+    ],
+    "criteres_generaux_performance": [
+     "Identification précise des différents métiers",
+     "Utilisation judicieuse des outils de recherche d’emploi",
+     "Suivi d’une démarche adéquate pour la connaissance du marché du travail",
+     "Connaissance approfondie du cadre de formation proposé"
+    ],
+    "elements": [
+     {
+      "lettre": "A",
+      "lettre_derivee": true,
+      "intitule": "Découvrir les spécificités des métiers du Design",
+      "ordre": 1,
+      "criteres": [
+       "Compréhension générale des métiers liés au Design",
+       "Identification globale des différents métiers du Design",
+       "Recueil ciblé des compétences mobilisées"
+      ]
+     },
+     {
+      "lettre": "B",
+      "lettre_derivee": true,
+      "intitule": "Identifier les modalités de formation",
+      "ordre": 2,
+      "criteres": [
+       "Cartographie des compétences de l’année 1",
+       "Cartographie des compétences de l’année de spécialisation",
+       "Usage des ressources de formation"
+      ]
+     }
+    ]
+   },
+   "suggestions": [
+    {
+     "lettre": "A",
+     "code": "A.1",
+     "code_incoherent": false,
+     "apprentissage_base": "S’informer sur le marché du travail",
+     "elements_contenu": "Identification des secteurs d’activité liés au Design\nReprésentation du contexte de travail selon les secteurs des entreprises",
+     "activites_apprentissage": "Seul ou en groupe\nSelon les instructions verbales ou écrites du formateur\nÀ l’aide des ressources fournis par le formateur (polycop, documents, cours)\nQuizz sur le secteur d’activité du digital au Maroc\nVidéos témoignages et interviews de professionnels qui décrivent leur entreprise et leur métier",
+     "duree_suggeree_pourcent": 70.0,
+     "ordre": 1
+    },
+    {
+     "lettre": "A",
+     "code": "A.2",
+     "code_incoherent": false,
+     "apprentissage_base": "Se renseigner sur les compétences métier",
+     "elements_contenu": "Listing des comportements et postures professionnelles à adopter\nReconnaissances des missions et tâches à effectuer dans les métiers de l’Design",
+     "activites_apprentissage": "",
+     "duree_suggeree_pourcent": null,
+     "ordre": 2
+    },
+    {
+     "lettre": "B",
+     "code": "B.2",
+     "code_incoherent": false,
+     "apprentissage_base": "Comprendre les objectifs de la formation",
+     "elements_contenu": "Connaissance des objectifs à atteindre au terme de la formation\nUtilisation des ressources pédagogiques\nRecueil sur les différents modes d’évaluation durant le parcours de formation",
+     "activites_apprentissage": "Seul ou en groupe\nSelon les instructions verbales ou écrites du formateur\nÀ l’aide des supports pédagogiques mis à disposition durant la formation sur la plateforme d’apprentissage\nInvestigations sur les secteurs d’activités auprès de professionnels et entreprises\nCréation d’un compte sur un réseau professionnel",
+     "duree_suggeree_pourcent": 30.0,
+     "ordre": 1
+    },
+    {
+     "lettre": "B",
+     "code": "B.2",
+     "code_incoherent": false,
+     "apprentissage_base": "Situer les compétences de la formation",
+     "elements_contenu": "Visualisation sous forme de cartographie des compétences de l’année 1\nVisualisation sous forme de cartographie des compétences de l’année de spécialisation",
+     "activites_apprentissage": "",
+     "duree_suggeree_pourcent": null,
+     "ordre": 2
+    },
+    {
+     "lettre": "B",
+     "code": "B.3",
+     "code_incoherent": false,
+     "apprentissage_base": "Projeter sa formation dans le milieu de travail",
+     "elements_contenu": "Utilisation des réseaux professionnels\nCompréhension des marchés de l’emploi (ouvert, cache)\nObservation du milieu de travail",
+     "activites_apprentissage": "",
+     "duree_suggeree_pourcent": null,
+     "ordre": 3
+    }
+   ]
+  },
+  {
+   "numero": 2,
+   "code_officiel": "DIA_DES_TS-02",
+   "nom": "Identifier les enjeux digitaux chez l’utilisateur",
+   "duree_nationale_heures": 60,
+   "code_operationnel": "M102",
+   "cycle": "tronc_commun",
+   "fiche_prescrite": {
+    "contexte_realisation": [
+     "Individuellement",
+     "À partir :",
+     "De mises en situations orales",
+     "À l’aide :",
+     "De documentations numériques sur l’histoire du digital et du web",
+     "De documentations numériques sur le graphisme et son évolution",
+     "D’ouvrages spécialisés sur le numérique, ses enjeux et le monde du design en général"
+    ],
+    "criteres_generaux_performance": [
+     "Utilisation appropriée du vocabulaire lié au numérique",
+     "Délimitation claire des différents métiers",
+     "Écoresponsabilité des services digitaux prise en compte",
+     "Utilisation appropriée des termes techniques",
+     "Analyse pertinente de solutions digitales en lien avec les utilisateurs"
+    ],
+    "elements": [
+     {
+      "lettre": "A",
+      "lettre_derivee": false,
+      "intitule": "Connaitre l’histoire du web",
+      "ordre": 1,
+      "criteres": [
+       "Identification générique des origines du Web et de ses évolutions",
+       "Application pertinente des définitions principales du Web",
+       "Différenciation pertinente entre intranet et extranet comprise"
+      ]
+     },
+     {
+      "lettre": "B",
+      "lettre_derivee": false,
+      "intitule": "Définir les éléments du web",
+      "ordre": 2,
+      "criteres": [
+       "Considération générale du fonctionnement du modèle du Web (routeurs, client-serveur)",
+       "Utilisation pertinente du système de protocoles",
+       "Identification concise des FTP, DNS, SSH, SSL correcte",
+       "Connaissances globales de l’écosystème des métiers digitaux",
+       "Connaissance succincte des différents types de services web",
+       "Lien cohérent entre service et technologie"
+      ]
+     },
+     {
+      "lettre": "C",
+      "lettre_derivee": false,
+      "intitule": "Analyser la composition d’une solution digitale",
+      "ordre": 3,
+      "criteres": [
+       "Représentation constitutive des composants d’une solution digitale",
+       "Connaissances de base des langages principaux liés au Web",
+       "Connaissance succincte de l’utilisation des bibliothèques et des frameworks",
+       "Repérage des outils de conceptions graphiques et d’animation",
+       "Représentation des concepts de navigation d’un site",
+       "Utilisation judicieuse des règles de composition des éléments",
+       "Identification des codes graphiques de la composition d’un site",
+       "Simplification de l’accessibilité visuelle des éléments"
+      ]
+     },
+     {
+      "lettre": "D",
+      "lettre_derivee": false,
+      "intitule": "Maitriser les règles du web",
+      "ordre": 4,
+      "criteres": [
+       "Principe de l’Interface Homme-Machine (IHM)",
+       "Connaissances acquises sur la base du SEO",
+       "Application des lois de l’UX selon la solution digitale",
+       "Identification des règles à mettre en place au sein de la solution digitale",
+       "Maitrise de la liste des composants obligatoires d’un site web",
+       "Aptitude à connaitre et anticiper les évolutions passées et futures du web"
+      ]
+     },
+     {
+      "lettre": "E",
+      "lettre_derivee": false,
+      "intitule": "Lier la solution digitale aux utilisateurs",
+      "ordre": 5,
+      "criteres": [
+       "Connaissances précises des règlementations d’accessibilité",
+       "Étude sur l’impact du digital dans le comportement des utilisateurs",
+       "Principe user centrics compris",
+       "Analyse cohérente de la pertinence d’une solution pour ses utilisateurs"
+      ]
+     }
+    ]
+   },
+   "suggestions": [
+    {
+     "lettre": "A",
+     "code": "A.1",
+     "code_incoherent": false,
+     "apprentissage_base": "Identifier les utilisations du web",
+     "elements_contenu": "Contexte historique, lexique\net vocabulaire utilisés",
+     "activites_apprentissage": "Seul\nÀ partir de mises en situations orales\nÀ l’aide de documentations numériques sur l’histoire du digital et du web\nÀ l’aide d’ouvrages spécialisés sur le numérique, ses enjeux et le monde du design en général\nContextualiser et définir les éléments principaux\nAnalyser des sites sur différents supports en groupe\nÉchanger sur les types de supports utilisés (quizz / utilisation des élèves, etc.)",
+     "duree_suggeree_pourcent": 10.0,
+     "ordre": 1
+    },
+    {
+     "lettre": "A",
+     "code": "A.2",
+     "code_incoherent": false,
+     "apprentissage_base": "Connaitre les évolutions de solutions digitales utilisant les technologies du Web",
+     "elements_contenu": "Notions autour de l’Adaptative et responsive dans la conception des solutions digitales\nUsages du Mobile First et applications mobiles",
+     "activites_apprentissage": "",
+     "duree_suggeree_pourcent": null,
+     "ordre": 2
+    },
+    {
+     "lettre": "B",
+     "code": "B.1",
+     "code_incoherent": false,
+     "apprentissage_base": "Identifier les types de sites",
+     "elements_contenu": "Liste des principaux types de sites\nDifférenciation des types de sites\nUtilisation des types de site selon le projet digital à concevoir",
+     "activites_apprentissage": "A partir d’études de cas visuelles\nÀ l’aide de documentations numériques sur le design web et son évolution\nAnalyser des sites et noter leurs principales différences\nDiscuter sur les éléments différenciant les solutions digitales\nConstruire les définitions",
+     "duree_suggeree_pourcent": 20.0,
+     "ordre": 1
+    },
+    {
+     "lettre": "B",
+     "code": "B.2",
+     "code_incoherent": false,
+     "apprentissage_base": "Connaitre l’écosystème du web",
+     "elements_contenu": "Liste des différents métiers travaillant sur la création de contenu digital\nImpact du Digital dans la société\nNotions de règlementation du Web",
+     "activites_apprentissage": "",
+     "duree_suggeree_pourcent": null,
+     "ordre": 2
+    },
+    {
+     "lettre": "B",
+     "code": "B.3",
+     "code_incoherent": false,
+     "apprentissage_base": ". Connaitre les termes techniques liés aux sites web",
+     "elements_contenu": "Noms de domaine\nListe des différents protocoles\nNormes W3C\nNotions de base de données et de compte utilisateur\nMéthodes d’hébergement des solutions digitales",
+     "activites_apprentissage": "",
+     "duree_suggeree_pourcent": null,
+     "ordre": 3
+    },
+    {
+     "lettre": "C",
+     "code": "C.1",
+     "code_incoherent": false,
+     "apprentissage_base": "Distinguer les anciens codes de construction d’un site des nouveaux",
+     "elements_contenu": "Définition des principaux langages\nRègles de composition d’un site classique\nDéfinition des principes d’accessibilité\nContenu textuel, visuel et interactif (callToAction par exemple)\nArchitecture organisationnelle des pages (accueil, contenu, navigation…)",
+     "activites_apprentissage": "Seul\nÀ partir de sites proposés par le formateur et de documentations numérique\nDéfinir les principes de composition\nAnalyser différentes structures avec les élèves\nExercices de distinction de sites\nIdentifier les langages",
+     "duree_suggeree_pourcent": 30.0,
+     "ordre": 1
+    },
+    {
+     "lettre": "C",
+     "code": "C.2",
+     "code_incoherent": false,
+     "apprentissage_base": "Reconnaître les différentes parties d’un site",
+     "elements_contenu": "Composition de la structuration des pages par zone\nDifférents types de menus de navigation",
+     "activites_apprentissage": "",
+     "duree_suggeree_pourcent": null,
+     "ordre": 2
+    },
+    {
+     "lettre": "D",
+     "code": "D.1",
+     "code_incoherent": false,
+     "apprentissage_base": "Connaitre les termes techniques liés au web",
+     "elements_contenu": "Définitions du Responsive\nUsages du modèle Responsive\nNotions de base sur le SEO",
+     "activites_apprentissage": "Seul\nA l’aide de documentation technique\nExpliquer les bases de construction d’un site\nQuestionner sur les aspects techniques du Web via un quizz\nExercices d’entrainement : analyser la construction d’un site",
+     "duree_suggeree_pourcent": 30.0,
+     "ordre": 1
+    },
+    {
+     "lettre": "D",
+     "code": "D.2",
+     "code_incoherent": false,
+     "apprentissage_base": "Comprendre la construction d’un site",
+     "elements_contenu": "Bases des langages utilisés dans le web\nNotions sur les bibliothèques\nConnaissance des frameworks",
+     "activites_apprentissage": "",
+     "duree_suggeree_pourcent": null,
+     "ordre": 2
+    },
+    {
+     "lettre": "D",
+     "code": "D.3",
+     "code_incoherent": false,
+     "apprentissage_base": "Connaitre les différentes évolutions de conception des interfaces",
+     "elements_contenu": "Historique des évolutions des styles graphiques et du design des interfaces digitales\nAnalyse des tendances de conception design des interfaces\nAperçu des fonctionnalités nouvelles orientées utilisateurs (webApps, réseaux sociaux, médias…)",
+     "activites_apprentissage": "",
+     "duree_suggeree_pourcent": null,
+     "ordre": 3
+    },
+    {
+     "lettre": "D",
+     "code": "D.4",
+     "code_incoherent": false,
+     "apprentissage_base": "Différencier la conception des interfaces utilisateurs de celle du développement",
+     "elements_contenu": "Connaissances des techniques et méthodologies utilisées\nNotions sur les particularités des métiers\nAperçu sur les fonctions et la finalité des métiers\nNotions sur le front-end et le back-end",
+     "activites_apprentissage": "",
+     "duree_suggeree_pourcent": null,
+     "ordre": 4
+    },
+    {
+     "lettre": "E",
+     "code": "E.1",
+     "code_incoherent": false,
+     "apprentissage_base": "Développer une attitude tournée vers l’utilisateur",
+     "elements_contenu": "Appréhensions des méthodes d’UX Design\nTechniques de compréhension des utilisateurs",
+     "activites_apprentissage": "Seul ou en équipe selon instructions du formateur\nA partir d’ateliers et de jeux de rôle dans lesquels les stagiaires simulent des situations d’utilisateurs\nA l’aide d’études de cas\nÉchange et prise de notes entre les étudiants avec écoute active afin de développer leur empathie\nCours théorique sur les caractéristiques des utilisateurs\nQuizz interactif sur les types d’utilisateurs et leurs caractéristiques",
+     "duree_suggeree_pourcent": 10.0,
+     "ordre": 1
+    },
+    {
+     "lettre": "E",
+     "code": "E.2",
+     "code_incoherent": false,
+     "apprentissage_base": "Comprendre la notion d’utilisateur",
+     "elements_contenu": "Notions sur les types d’utilisateurs\nFonctionnement d’un projet digital basé sur les utilisateurs",
+     "activites_apprentissage": "",
+     "duree_suggeree_pourcent": null,
+     "ordre": 2
+    },
+    {
+     "lettre": "E",
+     "code": "E.3",
+     "code_incoherent": false,
+     "apprentissage_base": "Appréhender la mise en œuvre d’une solution digitale",
+     "elements_contenu": "Quelques grands principes de fonctionnement de solutions digitales basées sur les utilisateurs\nPrésentation sommaire des étapes à mettre en œuvre",
+     "activites_apprentissage": "",
+     "duree_suggeree_pourcent": null,
+     "ordre": 3
+    }
+   ]
+  },
+  {
+   "numero": 3,
+   "code_officiel": "DIA_DES_TS-03",
+   "nom": "Exploiter les règles du graphisme dans les solutions digitales",
+   "duree_nationale_heures": 105,
+   "code_operationnel": "M103",
+   "cycle": "tronc_commun",
+   "fiche_prescrite": {
+    "contexte_realisation": [
+     "Individuellement puis en équipe",
+     "À partir :",
+     "De consignes",
+     "De recherches internet",
+     "De mises en situation écrites",
+     "À l’aide :",
+     "De documentations sur le projet",
+     "De documents sur le secteur et les clients",
+     "De logiciels de PAO",
+     "D’un navigateur"
+    ],
+    "criteres_generaux_performance": [
+     "Connaissance complète du vocabulaire technique lié à l’univers du graphisme",
+     "Respect des codes graphiques",
+     "Utilisation appropriée des termes techniques",
+     "Analyse pertinente d’identités visuelles",
+     "Adaptabilité correcte aux solutions digitales",
+     "Adaptabilité de la hiérarchie aux différents supports"
+    ],
+    "elements": [
+     {
+      "lettre": "A",
+      "lettre_derivee": false,
+      "intitule": "Connaitre les significations des éléments graphiques",
+      "ordre": 1,
+      "criteres": [
+       "Identification des types d’éléments graphiques composants une interface digitale (icones, images, médias visuels ou sonores…)",
+       "Règles des espaces colorimétriques (RVB, codes hexadécimaux, CMJN)",
+       "Utilisation du cercle chromatique pour un choix pertinent des couleurs",
+       "Choix judicieux des styles de typographies"
+      ]
+     },
+     {
+      "lettre": "B",
+      "lettre_derivee": false,
+      "intitule": "S’appuyer sur les règles élémentaires du graphisme",
+      "ordre": 2,
+      "criteres": [
+       "Différenciation entre graphisme et design comprise",
+       "Maitrise du langage propre au graphisme",
+       "Utilisation pertinente de l’iconographie",
+       "Méthodes de hiérarchisation des typographies",
+       "Utilisation correcte des profils colorimétriques",
+       "Prise en compte des codes de résolution des écrans",
+       "Utilisation adéquate des différents formats d’images (JPEG, PNG, GIF, SVG)",
+       "Règles de tiers, de proximité, d’alignement dans le respect des normes établis pour les interfaces de solutions digitales",
+       "Règles d’accessibilité et d’inclusive design"
+      ]
+     },
+     {
+      "lettre": "C",
+      "lettre_derivee": false,
+      "intitule": "Utiliser des codes graphiques appropriées selon le secteur identifié",
+      "ordre": 3,
+      "criteres": [
+       "Différenciation des grandes typologies de secteurs d’activités (services en ligne, commerces, administrations publiques…)",
+       "Pertinence graphique",
+       "Respect des contraintes graphiques et ergonomiques des secteurs",
+       "Utilisations graphiques en adéquation avec le secteur"
+      ]
+     },
+     {
+      "lettre": "D",
+      "lettre_derivee": false,
+      "intitule": "Appréhender la hiérarchisation de contenus selon le support",
+      "ordre": 4,
+      "criteres": [
+       "Hiérarchie des typographies logique",
+       "Maitrise du système de blocs en design",
+       "Utilisation cohérente de la pondération",
+       "Priorisation graphique adéquate",
+       "Respect des règles de mise en forme d’une hiérarchie",
+       "Cohérence entre les pages de même typologie ?",
+       "Hiérarchie bien pensée pour tous les types d’écran ?"
+      ]
+     },
+     {
+      "lettre": "E",
+      "lettre_derivee": false,
+      "intitule": "Construire les bases d’une identité visuelle",
+      "ordre": 5,
+      "criteres": [
+       "Stratégie d’identité visuelle fonctionnelle",
+       "Réflexion créative aboutie",
+       "Pertinence graphique",
+       "Cohérence entre les éléments",
+       "Formalisation de la base de l’identité visuelle dans le cahier de charte graphique"
+      ]
+     }
+    ]
+   },
+   "suggestions": [
+    {
+     "lettre": "A",
+     "code": "A.1",
+     "code_incoherent": false,
+     "apprentissage_base": "Identifier différents éléments graphiques",
+     "elements_contenu": "Vocabulaire technique lié à la conception d’interface utilisateurs (zoning, wireframe, templates)\nVocabulaire des éléments graphiques\nLogiciels de PAO utilisés pour chaque type d’élément graphique (vectoriel, bitmap, médias)\nCas d’usage des éléments graphiques\nLes styles d’éléments visuels\nLes normes de placement entre les éléments graphiques (espacement, répartition texte et éléments graphiques…)\nLes règles d’utilisation des icônes (dimensions, usages)",
+     "activites_apprentissage": "Seul\nÀ l’aide de documents techniques fourni par le formateur\nCours théorique et définitions du vocabulaire technique pour renforcer la mémorisation des connaissances mobilisés\nRemue-méninges avec les apprenants sous forme de débat/discussions encadrés par le formateur sur les thèmes du graphisme et de leur compréhension\nExercices pratiques : donner un sujet aux apprenant (un brief)\nProposer des couleurs\nProposer des typographies\nDéduire les logiciels qui seront utilisés pour le projet\nJustifier ses choix graphiques pour le sujet",
+     "duree_suggeree_pourcent": 10.0,
+     "ordre": 1
+    },
+    {
+     "lettre": "A",
+     "code": "A.2",
+     "code_incoherent": false,
+     "apprentissage_base": "Distinguer les cas d’utilisation des couleurs",
+     "elements_contenu": "Introduction des règles colorimétriques (significations, règles, usages selon le contexte…)\nUtilisation du cercle chromatique",
+     "activites_apprentissage": "",
+     "duree_suggeree_pourcent": null,
+     "ordre": 2
+    },
+    {
+     "lettre": "A",
+     "code": "A.3",
+     "code_incoherent": false,
+     "apprentissage_base": "Différencier les styles de typographie",
+     "elements_contenu": "Identification des différents types de typographies\nListe des styles de typographies\nRègles de base typographique à utiliser selon le niveau hiérarchique du contenu (titre 1, titre 2, paragraphe, chapeau…)\nCas d’usage des typographies",
+     "activites_apprentissage": "",
+     "duree_suggeree_pourcent": null,
+     "ordre": 3
+    },
+    {
+     "lettre": "A",
+     "code": "A.4",
+     "code_incoherent": false,
+     "apprentissage_base": "Comprendre l’approche psychologique des éléments graphiques",
+     "elements_contenu": "Le sens des formes selon les cultures et les secteurs d'activités\nSignification des éléments graphiques selon les cultures et les secteurs d'activités\nCodes et fonctions des visuels utilisés",
+     "activites_apprentissage": "",
+     "duree_suggeree_pourcent": null,
+     "ordre": 4
+    },
+    {
+     "lettre": "B",
+     "code": "B.1",
+     "code_incoherent": false,
+     "apprentissage_base": "Distinguer des identités visuelles différentes",
+     "elements_contenu": "Découverte de l’Histoire de l’art\nDéfinition du graphisme et du Design\nAperçu des modèles de Design (PopArt, Flat Design, Material Design…)\nApplication graphique selon les valeurs associées à la marque\nUtilisation du graphisme comme vecteur d’un message",
+     "activites_apprentissage": "Seul\nÀ partir de documents fournis par le formateur\nA l’aide d’études de productions graphiques proposées par le formateur\nDéfinitions des termes associés au graphisme et Design\nAnalyse en groupe de marques : style graphique, choix de couleurs, de formes et de typographies et expliquer la raison\nCours théorique sur les usages des styles graphiques et formats d’exportation",
+     "duree_suggeree_pourcent": 20.0,
+     "ordre": 1
+    },
+    {
+     "lettre": "B",
+     "code": "B.2",
+     "code_incoherent": false,
+     "apprentissage_base": "Utiliser des styles graphiques",
+     "elements_contenu": "Documents d’identités visuelles de marques\nUtilisation des tendances graphiques\nCompréhension de langage propre au graphisme\nUtilisation de différents formats de fichiers d’exportation (images, polices, vidéos…)",
+     "activites_apprentissage": "",
+     "duree_suggeree_pourcent": null,
+     "ordre": 2
+    },
+    {
+     "lettre": "B",
+     "code": "B.3",
+     "code_incoherent": false,
+     "apprentissage_base": ". Comprendre la mise en place de production",
+     "elements_contenu": "Fonctionnement créatif\nRépartition texte / image /icones/vidéo\nRègles de compositions graphiques sur les solutions digitales",
+     "activites_apprentissage": "",
+     "duree_suggeree_pourcent": null,
+     "ordre": 3
+    },
+    {
+     "lettre": "C",
+     "code": "C.1",
+     "code_incoherent": false,
+     "apprentissage_base": "Repérer divers secteurs d’activité",
+     "elements_contenu": "Typologies de secteurs\nCodes visuels et graphiques des secteurs",
+     "activites_apprentissage": "En équipe selon instructions du formateur\nÀ partir de consignes, de mises en situation écrite ou orales, de recherches internet\nA l’aide de documents sur un projet\nA l’aide d’un logiciel de PAO ou d’un outil de mise en forme\nCours théorique sur les typologies des secteurs et de leurs spécificités graphiques\nTravail en groupe court sur des recherches graphiques liées à un secteur d’activité\nPour une marque donnée, proposer une courte identité visuelle qui serait adaptée au secteur",
+     "duree_suggeree_pourcent": 15.0,
+     "ordre": 1
+    },
+    {
+     "lettre": "C",
+     "code": "C.2",
+     "code_incoherent": false,
+     "apprentissage_base": "Distinguer les spécifications graphiques",
+     "elements_contenu": "Mise en place de bonnes pratiques\nConnaissance en adéquation avec les valeurs de marque\nIdentification des contraintes liées au secteur\nCompréhension des objectifs de communication du secteur\nUtilisations graphiques des secteurs",
+     "activites_apprentissage": "",
+     "duree_suggeree_pourcent": null,
+     "ordre": 2
+    },
+    {
+     "lettre": "D",
+     "code": "D.1",
+     "code_incoherent": false,
+     "apprentissage_base": "Comprendre les principes de hiérarchie visuelle",
+     "elements_contenu": "Utilisation des systèmes de blocs\nMéthode de priorisation des contenus textuels au sein des zones de blocs (article, section, header…)\nRègles de hiérarchisation des contenus par bloc",
+     "activites_apprentissage": "Seul\nA partir d’exemples proposés par le formateur\nA l’aide de documents sur des projets web :\nCours théorique sur la hiérarchisation visuelle\nÉtude de cas autour de l’identification des contenus par blocs et hiérarchisation",
+     "duree_suggeree_pourcent": 20.0,
+     "ordre": 1
+    },
+    {
+     "lettre": "D",
+     "code": "D.2",
+     "code_incoherent": false,
+     "apprentissage_base": "Distinguer les éléments principaux des éléments secondaires",
+     "elements_contenu": "Usage de pondération visuelle\nNotions sur la mise en valeur d’éléments graphiques",
+     "activites_apprentissage": "",
+     "duree_suggeree_pourcent": null,
+     "ordre": 2
+    },
+    {
+     "lettre": "E",
+     "code": "E.1",
+     "code_incoherent": false,
+     "apprentissage_base": "Construire une réflexion créative",
+     "elements_contenu": "Pratique d’une méthodologie créative\nClarification d’objectifs selon l’identité visuelle à définir\nIdentification du concept créatif\nInclusion des composants visuels dans la démarche créative\nAssociation du concept créatif et de la cible utilisateur",
+     "activites_apprentissage": "En équipe selon instructions du formateur\nA partir de consignes, de documents de référence sur un sujet, de mise en situation écrite\nA l’aide de recherches internet, d’un outil de PAO ou de mise en forme\nCours théorique sur la cohérence de l’identité visuelle\nSommaire d’une charte graphique classique et son contenu\nEn groupe sur un sujet donné, élaborer une identité visuelle complète et la mettre en forme dans une charte graphique",
+     "duree_suggeree_pourcent": 35.0,
+     "ordre": 1
+    },
+    {
+     "lettre": "E",
+     "code": "E.2",
+     "code_incoherent": false,
+     "apprentissage_base": "Repérer la cohérence visuelle dans une identité",
+     "elements_contenu": "Usages graphiques en pratique\nAdaptation selon le type de support des règles de composition visuelle et graphique\nAnalyse de la pertinence graphique\nVisualisation d’une stratégie d’identité visuelle",
+     "activites_apprentissage": "",
+     "duree_suggeree_pourcent": null,
+     "ordre": 2
+    },
+    {
+     "lettre": "E",
+     "code": "E.3",
+     "code_incoherent": false,
+     "apprentissage_base": "Rédiger la charte graphique",
+     "elements_contenu": "Recueil des éléments constitutifs de la charte graphique\nDéclinaison des éléments de la charte graphique à tous les supports de diffusion (desktop, smartphone, tablette)\nArgumentation des choix graphiques",
+     "activites_apprentissage": "",
+     "duree_suggeree_pourcent": null,
+     "ordre": 3
+    }
+   ]
+  },
+  {
+   "numero": 4,
+   "code_officiel": "DIA_DES_TS-04",
+   "nom": "Analyser le contexte professionnel d’un projet d’UX / UI Design",
+   "duree_nationale_heures": 90,
+   "code_operationnel": "M104",
+   "cycle": "tronc_commun",
+   "fiche_prescrite": {
+    "contexte_realisation": [
+     "En équipe",
+     "À partir :",
+     "D’un brief avec l’équipe projet interne et externe",
+     "Du cahier des charges du client",
+     "À l’aide :",
+     "Du cahier des charges du client",
+     "De documentation sur l’existant",
+     "De supports de communication de l’entreprise",
+     "De documentation annexe sur le projet",
+     "D’un document de données chiffrées",
+     "De productions marketing de l’entreprise",
+     "D’un outil de traitement de texte",
+     "D’un planning"
+    ],
+    "criteres_generaux_performance": [
+     "Communication performante avec l’équipe",
+     "Analyse pertinente de la situation de l’entreprise",
+     "Compréhension précise des besoins",
+     "Synthèse concise et claire",
+     "Respect des délais et des process",
+     "Reformulation correcte et compréhensible"
+    ],
+    "elements": [
+     {
+      "lettre": "A",
+      "lettre_derivee": false,
+      "intitule": "Se situer dans le projet UX / UI",
+      "ordre": 1,
+      "criteres": [
+       "Vue d’ensemble des acteurs du projet",
+       "Utilisation pertinente des méthodes de communication d’équipe",
+       "Utilisation cohérente d’un planning",
+       "Maitrise de la circulation de l’information",
+       "Respect des livrables demandés"
+      ]
+     },
+     {
+      "lettre": "B",
+      "lettre_derivee": false,
+      "intitule": "Analyser le contexte de l’entreprise",
+      "ordre": 2,
+      "criteres": [
+       "Précision de l’analyse des produits et/ou services",
+       "Description claire du fonctionnement de l’entreprise",
+       "Compréhension pertinente des méthodes de communication de l’entreprise",
+       "Liste correcte des concurrents",
+       "Cohérence des référents",
+       "Choix judicieux des éléments de positionnement",
+       "Maitrise de la réalisation d’une matrice SWOT"
+      ]
+     },
+     {
+      "lettre": "C",
+      "lettre_derivee": false,
+      "intitule": "Comprendre le besoin du projet",
+      "ordre": 3,
+      "criteres": [
+       "Pertinence des cibles établies",
+       "Reformulation correcte des objectifs",
+       "Lien logique entre besoin et solution",
+       "Anticipation de l’évolution des besoins",
+       "Recherches et analyse marketing pertinentes",
+       "Objectifs marketing clairs et ciblés"
+      ]
+     }
+    ]
+   },
+   "suggestions": [
+    {
+     "lettre": "A",
+     "code": "A.1",
+     "code_incoherent": false,
+     "apprentissage_base": "Appréhender la gestion de projet UX/UI",
+     "elements_contenu": "Définition du concept de projet\nCompréhension de l’usage d’un cahier des charges au sein du projet\nIdentification des spécificités du projet UX/UI :\nPhase de découverte de l’utilisateur\nAnalyse de sa propre expérience utilisateur\nÉtude de Benchmarking sur l’expérience utilisateur de la concurrence\nInitiation au Design Thinking",
+     "activites_apprentissage": "Seul\nA partir d’un cahier des charges\nA l’aide d’un planning et de documentation proposée par le formateur\nQuizz sur la notion de planning\nExercice d’application sur le processus d’un projet : hiérarchie, métier, étapes, etc.\nExercice d’application sur les phases de productions du projet\nExercice d’application sur la réalisation d’un planning de production\nQuizz sur les pratiques de la méthode Agile\nExercice d’application sur la mise en place d’un projet selon la méthode Agile",
+     "duree_suggeree_pourcent": 35.0,
+     "ordre": 1
+    },
+    {
+     "lettre": "A",
+     "code": "A.2",
+     "code_incoherent": false,
+     "apprentissage_base": "Connaitre la chaine de production",
+     "elements_contenu": "Connaissance de la fonction des différents acteurs dans un projet UX/UI\nConnaissances des étapes de production\nIdentification du champ d’intervention au sein du projet (celui qui est en charge de l’expérience et de l’interface utilisateur dans le projet)",
+     "activites_apprentissage": "",
+     "duree_suggeree_pourcent": null,
+     "ordre": 2
+    },
+    {
+     "lettre": "A",
+     "code": "A.3",
+     "code_incoherent": false,
+     "apprentissage_base": "Découvrir les méthodes Agiles dans le projet UX/UI",
+     "elements_contenu": "Description de la culture Agile\nMise en œuvre les principales approches Agile (Scrum, Kanban, Lean...)\nIdentification du processus de mise en œuvre d’un projet Agile",
+     "activites_apprentissage": "",
+     "duree_suggeree_pourcent": null,
+     "ordre": 3
+    },
+    {
+     "lettre": "A",
+     "code": "A.4",
+     "code_incoherent": false,
+     "apprentissage_base": "Organiser un planning de production",
+     "elements_contenu": "Synthèse des informations concernant l’apprenant dans le cahier des charges\nPlanifier les actions à entreprendre",
+     "activites_apprentissage": "",
+     "duree_suggeree_pourcent": null,
+     "ordre": 4
+    },
+    {
+     "lettre": "B",
+     "code": "B.1",
+     "code_incoherent": false,
+     "apprentissage_base": "Comprendre ce que vend l’entreprise",
+     "elements_contenu": "Différenciation entre produits et services\nLes typologies des entreprises (de services, de biens, plateforme en ligne, E-commerce…)\nRecherches et analyse des données marketing relatives à l’entreprise",
+     "activites_apprentissage": "Seul\nÀ partir d’ateliers et de jeux de rôles dans lesquels les stagiaires peuvent analyser le contexte de l’entreprise\nÀ l’aide de références de documents utilisés en environnement de travail par les entreprises\nExercice d’application à réaliser seul ou en équipe sur les points suivants :\nMise en œuvre d’un relevé d’informations pertinentes ;\nOrganisation des informations recueillies à l’aide des outils fournis par le formateur.\nMéthodologie de listing des concurrents et référents\nRéalisation d’une matrice de positionnement",
+     "duree_suggeree_pourcent": 35.0,
+     "ordre": 1
+    },
+    {
+     "lettre": "B",
+     "code": "B.2",
+     "code_incoherent": false,
+     "apprentissage_base": "Situer une entreprise dans un secteur d’activité donné",
+     "elements_contenu": "Analyse des concurrents et référents (Benchmark)\nMéthodes de positionnement de l’entreprise par rapport aux concurrents (matrice)\nLien entre le positionnement de l’activité et le positionnement marketing",
+     "activites_apprentissage": "",
+     "duree_suggeree_pourcent": null,
+     "ordre": 2
+    },
+    {
+     "lettre": "C",
+     "code": "C.1",
+     "code_incoherent": false,
+     "apprentissage_base": "Repérer les clients",
+     "elements_contenu": "Définition des personnes ciblées par le projet\nAnalyse des habitudes clients\nClarification des besoins clients identifiés\nClarifications des objectifs marketing en lien avec les clients",
+     "activites_apprentissage": "Seul\nMise en pratique selon une approche par projet (sujet du projet proposé au formateur ou que le formateur peut également mettre en place)\nExercice d’application à réaliser seul ou en équipe sur les points suivants :\nLes méthodes de ciblage des clients\nIdentification des besoins projet\nRédaction les objectifs SMART du projet",
+     "duree_suggeree_pourcent": 30.0,
+     "ordre": 1
+    },
+    {
+     "lettre": "C",
+     "code": "C.2",
+     "code_incoherent": false,
+     "apprentissage_base": "Comprendre les objectifs du projet",
+     "elements_contenu": "Détermination des objectifs globaux du projet\nDétermination d’objectifs SMART en lien avec les cibles\nDétermination d’objectifs marketing",
+     "activites_apprentissage": "",
+     "duree_suggeree_pourcent": null,
+     "ordre": 2
+    }
+   ]
+  },
+  {
+   "numero": 5,
+   "code_officiel": "DIA_DES_TS-05",
+   "nom": "Réaliser une veille graphique",
+   "duree_nationale_heures": 90,
+   "code_operationnel": "M105",
+   "cycle": "tronc_commun",
+   "fiche_prescrite": {
+    "contexte_realisation": [
+     "Individuellement",
+     "À partir :",
+     "D’un brief",
+     "De données sur le projet",
+     "À l’aide :",
+     "D’outils de PAO",
+     "De recherches internet",
+     "De documentation sur le graphisme",
+     "D’études graphiques sur les secteurs"
+    ],
+    "criteres_generaux_performance": [
+     "Recherche pertinente par rapport au projet",
+     "Pertinence de l’analyse de l’entreprise",
+     "Connaissances adaptées des codes graphiques",
+     "Cohérence entre l’univers graphique et le secteur"
+    ],
+    "elements": [
+     {
+      "lettre": "A",
+      "lettre_derivee": true,
+      "intitule": "Comprendre le positionnement de l’entreprise",
+      "ordre": 1,
+      "criteres": [
+       "Interprétation correcte des données",
+       "Positionnement cohérent",
+       "Utilisation pertinente du cahier des charges",
+       "Identification détaillée des codes du secteur d’activité",
+       "Analyse pertinente de l’existant graphique de l’entreprise"
+      ]
+     },
+     {
+      "lettre": "B",
+      "lettre_derivee": true,
+      "intitule": "Analyser le secteur d’activité de l’entreprise",
+      "ordre": 2,
+      "criteres": [
+       "Recherches appropriées et pertinentes",
+       "Choix des termes appropriés pour effectuer les recherches",
+       "Réalisation de moodboard cohérents avec le secteur et les cibles",
+       "Analyse juste des codes graphiques du secteur d’activité"
+      ]
+     },
+     {
+      "lettre": "C",
+      "lettre_derivee": true,
+      "intitule": "Établir un concept visuel",
+      "ordre": 3,
+      "criteres": [
+       "Choix graphiques adaptés au ciblage",
+       "Bonne cohérence graphique",
+       "Application maitrisée d’un style graphique",
+       "Organisation visuelle pertinente",
+       "Guidelines complètes et claires"
+      ]
+     }
+    ]
+   },
+   "suggestions": [
+    {
+     "lettre": "A",
+     "code": "A.1",
+     "code_incoherent": false,
+     "apprentissage_base": "Effectuer des recherches pertinentes",
+     "elements_contenu": "Définition des secteurs d’activité de l’entreprise\nCodes graphiques du secteur d’activité ciblé",
+     "activites_apprentissage": "Seul ou en groupe\nÀ partir d’un exemple de brief client\nApproche pédagogique d’investigation (recherches internet, documentation sur le graphisme, documentation sur les secteurs d’activité des entreprises)\nExercices d’application sur les points suivants :\nDéfinir les secteurs et leurs codes graphiques\nProposer une recherche en équipe sur un secteur\nEffectuer des recherches sur des outils pertinents\nProduire différents moodboards sur différents secteurs",
+     "duree_suggeree_pourcent": 25.0,
+     "ordre": 1
+    },
+    {
+     "lettre": "A",
+     "code": "A.2",
+     "code_incoherent": false,
+     "apprentissage_base": "Réaliser des moodboards cohérents",
+     "elements_contenu": "Choix des éléments graphiques à définir dans la conception du Moodboard\nSynthèse visuelle cohérente en adéquation avec la cible d’activité de l’entreprise et la cible utilisateur",
+     "activites_apprentissage": "",
+     "duree_suggeree_pourcent": null,
+     "ordre": 2
+    },
+    {
+     "lettre": "B",
+     "code": "B.1",
+     "code_incoherent": false,
+     "apprentissage_base": "Positionner l’entreprise dans son secteur",
+     "elements_contenu": "Identification détaillée des concurrents et référents graphiques du projet\nSpécificités graphiques relevées dans le secteur d’activité",
+     "activites_apprentissage": "Seul ou en groupe\nÀ partir d’un projet et de consignes issues du projet\nLe projet met en application les éléments suivants :\nRecherche de concurrents / référents graphiques\nAnalyser l’identité visuelle et la communication d’une entreprise en groupe\nProposition d’axes d’amélioration",
+     "duree_suggeree_pourcent": 25.0,
+     "ordre": 1
+    },
+    {
+     "lettre": "B",
+     "code": "B.2",
+     "code_incoherent": false,
+     "apprentissage_base": "Analyser la situation d’une entreprise",
+     "elements_contenu": "Analyse de l’identité visuelle déjà en place\nAnalyse de la communication de l’entreprise avant le projet",
+     "activites_apprentissage": "",
+     "duree_suggeree_pourcent": null,
+     "ordre": 2
+    },
+    {
+     "lettre": "C",
+     "code": "C.1",
+     "code_incoherent": false,
+     "apprentissage_base": "Reconnaitre les clients ciblés",
+     "elements_contenu": "Analyse de cibles utilisateurs qui détermineront les axes de la conception des visuels\nMise en œuvre de codes et styles graphiques cohérents avec les cibles utilisateurs (colorimétrie, typographie, univers visuels…)",
+     "activites_apprentissage": "Seul ou en groupe\nÀ partir d’un projet et de consignes issues du projet\nLe projet met en application les éléments suivants :\nAnalyser l’identité visuelle et la communication d’une entreprise en groupe\nRecherches internet, documentation sur le graphisme et les codes, choix des outils de PAO ou de mise en page\nDéfinir le brief et les consignes relatifs au projet\nRecherches graphiques cohérentes avec le secteur et les cibles d’un client fictif ou réel\nRédaction d’un document de guidelines graphiques pour ce client, comportant des typographies, des couleurs, des éléments graphiques et iconographiques",
+     "duree_suggeree_pourcent": 50.0,
+     "ordre": 1
+    },
+    {
+     "lettre": "C",
+     "code": "C.2",
+     "code_incoherent": false,
+     "apprentissage_base": "Créer une planche de style",
+     "elements_contenu": "Recherches graphiques qui définiront les axes de travail de la planche d’inspirations graphiques à produire\nMise en place de guidelines graphiques de la planche de style",
+     "activites_apprentissage": "",
+     "duree_suggeree_pourcent": null,
+     "ordre": 2
+    }
+   ]
+  },
+  {
+   "numero": 6,
+   "code_officiel": "DIA_DES_TS-06",
+   "nom": "Déterminer les concepts de l’UX/UI Design",
+   "duree_nationale_heures": 120,
+   "code_operationnel": "M106",
+   "cycle": "tronc_commun",
+   "fiche_prescrite": {
+    "contexte_realisation": [
+     "En équipe",
+     "À partir :",
+     "D’ateliers",
+     "De méthodologies",
+     "À l’aide :",
+     "D’outils de maquettage",
+     "D’outil de mise en forme de tableaux",
+     "De lois d’UX Design",
+     "Du cahier des charges"
+    ],
+    "criteres_generaux_performance": [
+     "Maîtrise des outils de mise en forme",
+     "Attitude empathique envers les utilisateurs",
+     "Précision claire des données collectées",
+     "Organisation visuelle pertinente",
+     "Respect des codes graphiques"
+    ],
+    "elements": [
+     {
+      "lettre": "A",
+      "lettre_derivee": true,
+      "intitule": "Maitriser la méthodologie UX",
+      "ordre": 1,
+      "criteres": [
+       "Connaissances abouties des principes d’ergonomie",
+       "Compréhension adaptée des objectifs de l’UX",
+       "Respect des règles de l’UX",
+       "Application pertinente des lois",
+       "Méthodologie centrée sur les utilisateurs",
+       "Réalisation correcte des ateliers",
+       "Respect de la séquence des exercices",
+       "Mise en pratiques efficace des méthodes d’évaluation"
+      ]
+     },
+     {
+      "lettre": "B",
+      "lettre_derivee": true,
+      "intitule": "Mener une recherche utilisateurs",
+      "ordre": 2,
+      "criteres": [
+       "Attitude empathique",
+       "Appréhension juste des utilisateurs",
+       "Respect des délais",
+       "Respect des techniques de travail",
+       "Clarté des documents",
+       "Maîtrise du processus de conception",
+       "Création adaptée de zonings et de wireframes cohérents"
+      ]
+     },
+     {
+      "lettre": "C",
+      "lettre_derivee": true,
+      "intitule": "Définir les parcours utilisateur",
+      "ordre": 3,
+      "criteres": [
+       "Identification complète des typologies d’utilisation de la solution",
+       "Création de scénarios d’usage complets",
+       "Parcours utilisateurs cohérents avec le story mapping",
+       "Arborescence du parcours complète",
+       "Proposition d’axes d’amélioration pertinents",
+       "Création de zonings dans le respect du parcours utilisateurs",
+       "Création de wireframes cohérents avec l’utilisation des utilisateurs"
+      ]
+     },
+     {
+      "lettre": "D",
+      "lettre_derivee": true,
+      "intitule": "Créer les éléments graphiques de l’interface utilisateur",
+      "ordre": 4,
+      "criteres": [
+       "Utilisation correcte des logiciels",
+       "Clarté du guide de style",
+       "Délimitation précise des éléments graphiques"
+      ]
+     }
+    ]
+   },
+   "suggestions": [
+    {
+     "lettre": "A",
+     "code": "A.1",
+     "code_incoherent": false,
+     "apprentissage_base": "Définir l’UX Design",
+     "elements_contenu": "Usages de l’UX Design dans les solutions digitales\nLien entre marketing digital et solutions d’UX Design\nDéfinition des lois d’UX Design comme la loi de Fitts, loi de Hick et la loi de proximité",
+     "activites_apprentissage": "Seul ou en groupe\nA partir de consignes et de méthodologies définie selon une approche par projet/problème, exercices d’application selon les éléments suivants :\nDétailler les méthodologies\nEffectuer un projet en groupe : analyses quantitatives et qualitatives, tri par cartes (6 to 1)",
+     "duree_suggeree_pourcent": 15.0,
+     "ordre": 1
+    },
+    {
+     "lettre": "A",
+     "code": "A.2",
+     "code_incoherent": false,
+     "apprentissage_base": "Présenter les méthodes et ateliers d’UX Design utilisés lors d’un projet",
+     "elements_contenu": "Méthodologie au Design thinking\nPrésentation de la méthode itérative\nMéthode de tri par cartes et de 6 to 1\nDifférentiation entre évaluations quantitatives (sondages et A/B testing) et qualitatives (interview et tests d’utilisation)",
+     "activites_apprentissage": "",
+     "duree_suggeree_pourcent": null,
+     "ordre": 2
+    },
+    {
+     "lettre": "B",
+     "code": "B.1",
+     "code_incoherent": false,
+     "apprentissage_base": "Analyser l’existant sur les utilisateurs",
+     "elements_contenu": "Déterminer les clients ciblés\nAnalyser les données marketing relatives à l’utilisation des services / produits\nAnalyser les données chiffrées sur l’utilisation de la solution digitale si elle existe déjà",
+     "activites_apprentissage": "Présentation des différentes méthodes quantitatives et qualitatives d’analyse utilisateurs\nFournir différents documents collectant diverses données des utilisateurs d’un client\nCréer un document organisé présentant un récapitulatifs des données pertinentes\nAnalyser les données en établissant un lien avec le projet et la solution digitale\nCréer des personas à partir des données recueillies\nProduire des user stories et des empathy maps sur la base des personas",
+     "duree_suggeree_pourcent": 30.0,
+     "ordre": 1
+    },
+    {
+     "lettre": "B",
+     "code": "B.2",
+     "code_incoherent": false,
+     "apprentissage_base": "Déterminer les utilisateurs de la solution digitale",
+     "elements_contenu": "Création de fiches personas pour créer les segments d’utilisateurs selon des caractéristiques (psychologiques, sociétales ainsi que d’autres caractéristiques des utilisateurs)\nProduction de user stories et d’empathy maps afin de personnaliser de manière pertinente les parcours des utilisateurs",
+     "activites_apprentissage": "",
+     "duree_suggeree_pourcent": null,
+     "ordre": 2
+    },
+    {
+     "lettre": "C",
+     "code": "C.1",
+     "code_incoherent": false,
+     "apprentissage_base": "Identifier des parcours utilisateurs",
+     "elements_contenu": "Présentation des typologies de parcours utilisateurs (acheteur, expérience magasin)\nRéalisation de scénarios d’usage",
+     "activites_apprentissage": "Seul ou en groupe selon des consignes fournis dans le cadre des exercices de mise en application\nSelon une approche par projet/problème issu d’un projet réel ou fictif, réalisation d’exercices d’application :\nscénario d’usage, story mapping\nRéaliser une arborescence et un parcours utilisateur\nTester le parcours en notifiant les points de vigilance en termes d’accessibilité et de trouvabilité\nRéaliser en groupe des zoning papier puis des wireframes",
+     "duree_suggeree_pourcent": 15.0,
+     "ordre": 1
+    },
+    {
+     "lettre": "C",
+     "code": "C.2",
+     "code_incoherent": false,
+     "apprentissage_base": "Créer des parcours utilisateurs",
+     "elements_contenu": "Création de story mapping permettant de définir précisément le besoin utilisateur au regard de la solution digitale.\nCréation de différents parcours utilisateurs issu du story mapping\nCréation de l’arborescence du parcours utilisateurs qui détermine le chemin de l’utilisateur",
+     "activites_apprentissage": "",
+     "duree_suggeree_pourcent": null,
+     "ordre": 2
+    },
+    {
+     "lettre": "C",
+     "code": "B.3",
+     "code_incoherent": true,
+     "apprentissage_base": "Relever des points d’amélioration",
+     "elements_contenu": "Analyse du parcours utilisateurs qui permette d’identifier les points d’amélioration\nRègles d’accessibilité et de trouvabilité",
+     "activites_apprentissage": "",
+     "duree_suggeree_pourcent": null,
+     "ordre": 3
+    },
+    {
+     "lettre": "C",
+     "code": "B.4",
+     "code_incoherent": true,
+     "apprentissage_base": "Maquetter le parcours",
+     "elements_contenu": "Création de zoning pour concevoir une vue schématique du parcours utilisateur\nCréation de wireframes qui révèle une vue plus détaillée du parcours utilisateur",
+     "activites_apprentissage": "\nSeul ou en équipe selon instructions du formateur\nA partir d’un brief\nA l’aide de recherches internet, d’outil de PAO, de veille graphique\nDébuter par de la théorie sur les règles et codes du design graphique\nA partir du brief :\nEffectuer des recherches graphiques\nRéaliser un moodboard d’inspiration afin d’orienter la création de l’identité visuelle\nChoisir une piste graphique et effectuer des choix de couleurs, de typographies et d’éléments graphiques\nJustifier ses choix graphiques",
+     "duree_suggeree_pourcent": null,
+     "ordre": 4
+    },
+    {
+     "lettre": "D",
+     "code": "D.1",
+     "code_incoherent": false,
+     "apprentissage_base": "Identifier les éléments à designer dans la solution digitale",
+     "elements_contenu": "Formalisation des choix graphiques dans la charte graphique\nApplication de l’identité visuelle définie dans la charte graphique et validée par le client",
+     "activites_apprentissage": "Seul\nA partir de documentation proposée par le formateur et de consignes\nA l’aide d’outil de maquettage, de recherches graphiques\nQuizz d’activités sur l’identification des éléments graphiques d’une interface\nExercice d’application :\nCréer une page d’accueil selon le wireframe\nPlacer le contenu de manière pertinente vis-à-vis des exercices et ateliers sur les utilisateurs et la solution digitale du projet\nRéaliser une planche d’éléments UI",
+     "duree_suggeree_pourcent": 40.0,
+     "ordre": 1
+    },
+    {
+     "lettre": "D",
+     "code": "D.2",
+     "code_incoherent": false,
+     "apprentissage_base": "Concevoir la maquette graphique de l’interface utilisateur",
+     "elements_contenu": "Utilisation de logiciels de maquettage (Figma, Adobe XD)\nApplication des codes graphiques définie sur les interfaces de solutions digitales (positionnement des blocs de navigation, contenu, footer…)\nOrganisation des contenus visuels et textuels qui définissent l’architecture de l’interface utilisateur",
+     "activites_apprentissage": "",
+     "duree_suggeree_pourcent": null,
+     "ordre": 2
+    }
+   ]
+  },
+  {
+   "numero": 7,
+   "code_officiel": "DIA_DES_TS-07",
+   "nom": "Utiliser les logiciels de modélisation graphique",
+   "duree_nationale_heures": 120,
+   "code_operationnel": "M107",
+   "cycle": "tronc_commun",
+   "fiche_prescrite": {
+    "contexte_realisation": [
+     "Individuellement",
+     "À partir :",
+     "De consignes d’utilisation",
+     "À l’aide :",
+     "De logiciel de PAO",
+     "De logiciel vectoriel",
+     "De logiciel bitmap",
+     "De logiciel de maquettage",
+     "De logiciel de prototypage"
+    ],
+    "criteres_generaux_performance": [
+     "Utilisation judicieuse des fonctionnalités des logiciels",
+     "Panorama complet des logiciels",
+     "Utilisation pertinente des outils",
+     "Adaptabilité claire aux différents logiciels",
+     "Respect adéquat des règles d’utilisation",
+     "Utilisation appropriée du bon logiciel en fonction de la tâche à réaliser"
+    ],
+    "elements": [
+     {
+      "lettre": "A",
+      "lettre_derivee": true,
+      "intitule": "Identifier les logiciels de modélisation graphique",
+      "ordre": 1,
+      "criteres": [
+       "Gestion adaptée de l’espace de travail",
+       "Création cohérente de bibliothèques organisées",
+       "Utilisation pertinente des règles de maquettage",
+       "Connaissances approfondies des différents outils à disposition",
+       "Identification claire des différents logiciels et leurs spécificités",
+       "Capacité à choisir le logiciel le plus adapté au besoin graphique"
+      ]
+     },
+     {
+      "lettre": "B",
+      "lettre_derivee": true,
+      "intitule": "Utiliser les logiciels de création vectorielle",
+      "ordre": 2,
+      "criteres": [
+       "Définition juste d’une création vectorielle",
+       "Justification adéquate du choix de l’utilisation du vectoriel plutôt que le bitmap",
+       "Création de visuels pertinents et bien construits grâce à des formes vectoriel",
+       "Choix des bons outils afin de parvenir au résultat graphique attendu",
+       "Utilisation pertinente et utile de bibliothèques",
+       "Choix d’export approprié au contexte et à la demande"
+      ]
+     },
+     {
+      "lettre": "C",
+      "lettre_derivee": true,
+      "intitule": "Composer des créations graphiques bitmap",
+      "ordre": 3,
+      "criteres": [
+       "Retouches photographiques adaptée aux besoins et à l’univers du projet",
+       "Capacité de retouche réaliste d’éléments précis d’une composition photographique",
+       "Bonne organisation des éléments du photomontage",
+       "Assemblage pertinent d’éléments pour créer une composition",
+       "Création de compositions graphiques réalistes",
+       "Export de fichiers en qualité adaptée au besoin",
+       "Choix pertinent du format d’export des fichiers"
+      ]
+     },
+     {
+      "lettre": "D",
+      "lettre_derivee": true,
+      "intitule": "Concevoir des maquettes prototypées",
+      "ordre": 4,
+      "criteres": [
+       "Hiérarchie identifiable des éléments",
+       "Passage cohérent des wireframes au maquettes",
+       "Design complet des états",
+       "Conception organisée d’éléments principaux modifiables",
+       "Gestion structurée des espaces",
+       "Création organisée de composants",
+       "Utilisation efficace des modes de création de guides de styles",
+       "Mise en place aisée de guides d’utilisation",
+       "Déclinaison cohérente des maquettes sur différents types de supports",
+       "Créations de liens fonctionnels et logique dans les prototypes",
+       "Automatisation complète des éléments interactifs des prototypes",
+       "Création d’animations adaptées au projet"
+      ]
+     }
+    ]
+   },
+   "suggestions": [
+    {
+     "lettre": "A",
+     "code": "A.1",
+     "code_incoherent": false,
+     "apprentissage_base": "Comprendre l’utilité des logiciels de modélisation graphique",
+     "elements_contenu": "Panorama des logiciels existants en modélisation et conception graphique\nDéfinition des termes techniques utilisés dans les logiciels\nCas d’usage et exemples de production conçues à partir des logiciels\nDéfinition de la création vectorielle et bitmap dans la conception graphique",
+     "activites_apprentissage": "Seul\nA partir de documentation\nA l’aide de logiciel de maquettage\nQuizz sur les logiciels de PAO, de création vectorielle et de maquettage\nExercice d’application sous forme d’approche projet/problème sur la création d’un fichier et paramétrage du plan de travail et le positionnement de colonnes",
+     "duree_suggeree_pourcent": 15.0,
+     "ordre": 1
+    },
+    {
+     "lettre": "A",
+     "code": "A.2",
+     "code_incoherent": false,
+     "apprentissage_base": "Connaître les fonctionnalités de base des logiciels de modélisation graphique",
+     "elements_contenu": "Préparation de l’environnement de travail\nCréation de bibliothèques de partage entre les logiciels\nGestion des espaces de travail personnalisés\nPositionnement de règles, colonnes et grilles pour définir la future base de travail des maquettes",
+     "activites_apprentissage": "",
+     "duree_suggeree_pourcent": null,
+     "ordre": 2
+    },
+    {
+     "lettre": "B",
+     "code": "B.1",
+     "code_incoherent": false,
+     "apprentissage_base": "Créer des formes vectorielles",
+     "elements_contenu": "Identification des outils de formes vectorielles\nUtilisation des éléments graphiques à appliquer aux formes vectorielles (couleurs, contours, effets de la forme)\nGestion avancée de l’assemblage de forme (découpe de tracés, PathFinder)",
+     "activites_apprentissage": "Seul\nA partir de consignes d’utilisation\nA l’aide de logiciel de création vectorielle\nMontrer le logiciel et ses outils\nExercices d’application guidée des outils principaux\nDonner un brief aux apprenants afin de réaliser une composition vectorielle adaptée à un besoin (logo, icônes, illustration)",
+     "duree_suggeree_pourcent": 25.0,
+     "ordre": 1
+    },
+    {
+     "lettre": "B",
+     "code": "B.2",
+     "code_incoherent": false,
+     "apprentissage_base": "Créer des bibliothèques de formes",
+     "elements_contenu": "Gestion des bibliothèques prédéfinies\nCréation de bibliothèques personnalisées",
+     "activites_apprentissage": "",
+     "duree_suggeree_pourcent": null,
+     "ordre": 2
+    },
+    {
+     "lettre": "B",
+     "code": "B.3",
+     "code_incoherent": false,
+     "apprentissage_base": "Exporter les compositions vectorielles",
+     "elements_contenu": "Types de fichiers pris en charge par le logiciel vectoriel\nChoix du format d’exportation selon le support et le besoin",
+     "activites_apprentissage": "",
+     "duree_suggeree_pourcent": null,
+     "ordre": 3
+    },
+    {
+     "lettre": "C",
+     "code": "C.1",
+     "code_incoherent": false,
+     "apprentissage_base": "Retoucher des photos",
+     "elements_contenu": "Réalisation du traitement photographique en matière de colorimétrie\nRetouche des éléments de la photo (duplication ou suppression d’un élément de la photo)",
+     "activites_apprentissage": "Seul ou en équipe selon les indications du formateur\nA partir de consignes\nA l’aide d’un logiciel de création bitmap et de documentation sur la composition d’une interface\nFournir une image en précisant une demande paticulière\nDemander aux apprenant d’effectuer une retouche colorimétrique de l’image\nCréer un photomontage à partir de l’image et d’autres images trouvées par les apprenants\nCréer une composition comprenant le photomontage et d’autres éléments graphiques tels que de la typographie, des formes, etc\nRéaliser un export suivant les caractéristiques demandées par le formateur (taille, format…)",
+     "duree_suggeree_pourcent": 20.0,
+     "ordre": 1
+    },
+    {
+     "lettre": "C",
+     "code": "C.2",
+     "code_incoherent": false,
+     "apprentissage_base": "Réaliser des photomontages",
+     "elements_contenu": "Préparation des éléments nécessaire au photomontage (calques, outils)\nAssemblage des différents éléments nécessaires au photomontage (visuels-, textes, formes)",
+     "activites_apprentissage": "",
+     "duree_suggeree_pourcent": null,
+     "ordre": 2
+    },
+    {
+     "lettre": "C",
+     "code": "C.3",
+     "code_incoherent": false,
+     "apprentissage_base": "Exporter les compositions bitmap",
+     "elements_contenu": "Types de fichiers pris en charge par le logiciel bitmap\nChoix du format d’exportation selon le support et le besoin",
+     "activites_apprentissage": "",
+     "duree_suggeree_pourcent": null,
+     "ordre": 3
+    },
+    {
+     "lettre": "D",
+     "code": "D.1",
+     "code_incoherent": false,
+     "apprentissage_base": "Créer des maquettes",
+     "elements_contenu": "Préparation de l’environnement de travail nécessaire à la création de la maquette\nStructuration des éléments à intégrer dans la maquette\nImport des fichiers externes (icônes, polices, images)\nCréation des bibliothèques de composants\nVariantes de maquettes selon les supports desktop ou mobile",
+     "activites_apprentissage": "Seul ou en équipe selon les indications du formateur\nA partir de consignes et de wireframes\nA l’aide d’outil de maquettage et de documentation sur la composition d’une interface\nDéfinir les règles d’utilisation et la composition\nFournir des wireframes et créer des exercices à réaliser seul ou en équipe à partir de ces derniers :\nCréer un menu de navigation\nCréer des composants\nFaire la maquette d’une page à partir d’un wireframe\nRéaliser un kit UI à l’aide des éléments UI de la maquette\nPrototyper les maquettes en créant des liens cohérents entre chacune d’entre elles\nCréer des éléments d’interaction et d’animation au sein des maquettes",
+     "duree_suggeree_pourcent": 40.0,
+     "ordre": 1
+    },
+    {
+     "lettre": "D",
+     "code": "D.2",
+     "code_incoherent": false,
+     "apprentissage_base": "Prototyper les maquettes",
+     "elements_contenu": "Création des liens entre les maquettes permettant l’élaboration de la maquette\nAutomatisation des éléments cliquables sur le prototype de la maquette\nGestion des éléments d’animation du prototype",
+     "activites_apprentissage": "",
+     "duree_suggeree_pourcent": null,
+     "ordre": 2
+    }
+   ]
+  },
+  {
+   "numero": 8,
+   "code_officiel": "DIA_DESOUX_TS-08",
+   "nom": "S’initier à la création et l’utilisation d’interactions digitales",
+   "duree_nationale_heures": 105,
+   "code_operationnel": "M108",
+   "cycle": "tronc_commun",
+   "fiche_prescrite": {
+    "contexte_realisation": [
+     "Individuellement ou en équipe",
+     "À partir :",
+     "De spécificités techniques",
+     "À l’aide :",
+     "De wireframes",
+     "Du cahier des charges",
+     "De documentation sur les utilisateurs",
+     "D’outils de prototypage"
+    ],
+    "criteres_generaux_performance": [
+     "Choix judicieux du logiciel a utiliser en fonction de l’interaction",
+     "Connaissance des différents types d’interactions",
+     "Capacité à choisir des interactions en fonction des utilisateurs",
+     "Respect des règles de navigation",
+     "Hiérarchie précise des types d’interactions",
+     "Cohérence avec les attentes utilisateurs",
+     "Gestion cohérente des informations",
+     "Cohérence avec les besoins du projet",
+     "Respect des règles d’accessibilité"
+    ],
+    "elements": [
+     {
+      "lettre": "A",
+      "lettre_derivee": false,
+      "intitule": "Comprendre les interactions entre l’interface et l’utilisateur",
+      "ordre": 1,
+      "criteres": [
+       "Différenciation juste animation et interaction",
+       "Connaissance adéquate des différents types d’interactions",
+       "Connaissances spécifiques des différents navigateurs",
+       "Appréhension correcte des types d’interactions d’un utilisateur"
+      ]
+     },
+     {
+      "lettre": "B",
+      "lettre_derivee": false,
+      "intitule": "Définir les états et niveaux d’interactions dans des interfaces digitales",
+      "ordre": 2,
+      "criteres": [
+       "Définition claire des actions prioritaires",
+       "Indication juste de tous les types d’interaction",
+       "Hiérarchie logique des interactions",
+       "Cohérence appropriée avec l’utilisation de l’interface"
+      ]
+     },
+     {
+      "lettre": "C",
+      "lettre_derivee": false,
+      "intitule": "Transmettre des assets cohérents",
+      "ordre": 3,
+      "criteres": [
+       "Placement pertinent des interactions",
+       "Identification claire du lien entre storytelling et interactions",
+       "Cohérence entre les interactions et les parcours utilisateurs",
+       "Mesures correctives adaptées en fonction de tests réalisés",
+       "Création facile d’assets pour le développeur",
+       "Indications claires et précises sur la mise en forme",
+       "Communication appropriée aux langages des développeurs",
+       "Transmission complète des informations"
+      ]
+     }
+    ]
+   },
+   "suggestions": [
+    {
+     "lettre": "A",
+     "code": "A.1",
+     "code_incoherent": false,
+     "apprentissage_base": "Définir une interaction d’interface utilisateur",
+     "elements_contenu": "Définition de la notion d’interaction entre l’interface et l’utilisateur\nDifférence entre animation et interaction digitale\nUtilisation des interactions selon le contexte de l’interface digitale\nTypologies d’interactions (interactions directes comme des boutons, interactions indirectes, micro intéractions)",
+     "activites_apprentissage": "Seul\nÀ partir de spécificités techniques\nA l’aide d’un logiciel de prototypage (Figma, Adobe XD), de documents techniques",
+     "duree_suggeree_pourcent": 25.0,
+     "ordre": 1
+    },
+    {
+     "lettre": "A",
+     "code": "A.2",
+     "code_incoherent": false,
+     "apprentissage_base": "Connaitre les spécificités des types d’interactions",
+     "elements_contenu": "Propriétés des formats (format des fichiers sources, formats d’export en contenu statique et dynamique)\nDifférence entre interactions principales et secondaires (prioriser certaines interactions)\nÉcosystèmes digitaux dans lesquels se retrouve les interactions",
+     "activites_apprentissage": "",
+     "duree_suggeree_pourcent": null,
+     "ordre": 2
+    },
+    {
+     "lettre": "A",
+     "code": "A.3",
+     "code_incoherent": false,
+     "apprentissage_base": "Spécifier le comportement de l’interaction selon le support digital",
+     "elements_contenu": "Identification de l’ergonomie des interfaces digitales (desktop, smartphone)\nNiveau d’interaction entre l’utilisateur et l’interface adapté au support digital\nModélisation des interactions",
+     "activites_apprentissage": "",
+     "duree_suggeree_pourcent": null,
+     "ordre": 3
+    },
+    {
+     "lettre": "B",
+     "code": "B.1",
+     "code_incoherent": false,
+     "apprentissage_base": "Connaitre les outils d’interaction du logiciel",
+     "elements_contenu": "Identification des différents outils permettant de créer des interactions\nChoix pertinent des outils de création d’interactions\nCas d’usage de solutions web et digitales qui présentent des interactions entre l’interface et l’utilisateur",
+     "activites_apprentissage": "Seul ou en équipe\nÀ partir de spécificités techniques\nA l’aide d’un logiciel d’animation, de documents techniques\nRechercher des solutions digitales avec des interactions\nRédiger une analyse de ces dernières\nAvec un brief, créer des assets d’interactions pertinents",
+     "duree_suggeree_pourcent": 30.0,
+     "ordre": 1
+    },
+    {
+     "lettre": "B",
+     "code": "B.2",
+     "code_incoherent": false,
+     "apprentissage_base": "Lier la technique à la production d’éléments pour un projet",
+     "elements_contenu": "Définition des caractéristiques des interactions : déclencheurs, durée, règles, feedback, boucles et modes\nIntégration des concepts UX/UI dans la réalisation d’interactions",
+     "activites_apprentissage": "",
+     "duree_suggeree_pourcent": null,
+     "ordre": 2
+    },
+    {
+     "lettre": "C",
+     "code": "C.1",
+     "code_incoherent": false,
+     "apprentissage_base": "Créer des assets pertinents en fonction de l’utilisation de l’interaction sur l’interface",
+     "elements_contenu": "Compréhension des contraintes de développement des interactions\nPlacement des interactions sur l’interface\nExport des assets pour l’intégration des interactions\nUtilisation du motion design pour transmettre les indications d’interactions\nCohérence entre les interactions, leur placement et le parcours utilisateur",
+     "activites_apprentissage": "Seul ou en équipe\nÀ partir du cahier des charges et du cahier des spécifications techniques\nA l’aide d’un logiciel d’animation, de spécifications techniques\nÀ partir de spécificités techniques\nA l’aide du cahier des spécifications techniques\nCréer un document à destination de développeur\nÉchanger avec des développeurs sur leurs attentes et besoins\nCréer un petit projet en collaboration avec les apprenants de la formation de développement front-end",
+     "duree_suggeree_pourcent": 45.0,
+     "ordre": 1
+    },
+    {
+     "lettre": "C",
+     "code": "C.2",
+     "code_incoherent": false,
+     "apprentissage_base": "Transmettre les assets et informations aux développeurs",
+     "elements_contenu": "Document d’indication et de spécifications techniques sur le comportement des interactions sur l’interface\nExport d’assets pour l’intégration web des interactions sur l’interface",
+     "activites_apprentissage": "",
+     "duree_suggeree_pourcent": null,
+     "ordre": 2
+    }
+   ]
+  },
+  {
+   "numero": 9,
+   "code_officiel": "DIA_DESOUX_TS-09",
+   "nom": "S’initier à la gestion de projet",
+   "duree_nationale_heures": 30,
+   "code_operationnel": "M109",
+   "cycle": "specialisation",
+   "fiche_prescrite": {
+    "contexte_realisation": [
+     "Individuellement et / ou en groupe",
+     "À partir :",
+     "De mises en situations écrites et orales",
+     "De consignes",
+     "De base documentaire",
+     "De spécifications fonctionnelles",
+     "De spécifications techniques",
+     "À l’aide :",
+     "De logiciels de gestion de projet"
+    ],
+    "criteres_generaux_performance": [
+     "Bonne connaissance des fondamentaux de la gestion de projet",
+     "Rédaction facile de diagramme des cas d'utilisation",
+     "Bonne compréhension de l'approche itérative et incrémentale",
+     "Application facile des méthodes Agile"
+    ],
+    "elements": [
+     {
+      "lettre": "A",
+      "lettre_derivee": false,
+      "intitule": "S’initier à la gestion de projet",
+      "ordre": 1,
+      "criteres": [
+       "Formalisation facile des exigences",
+       "Priorisation correcte des \"User Stories\"",
+       "Rédaction facile de diagramme de cas d’utilisation"
+      ]
+     },
+     {
+      "lettre": "B",
+      "lettre_derivee": false,
+      "intitule": "Appliquer les méthodes Agile",
+      "ordre": 2,
+      "criteres": [
+       "Maitrise des clés du management de l'équipe Agile",
+       "Mise en œuvre facile de la Méthode SCRUM",
+       "Mise en œuvre facile de la Méthode SAFE"
+      ]
+     }
+    ]
+   },
+   "suggestions": [
+    {
+     "lettre": "A",
+     "code": "A.1",
+     "code_incoherent": false,
+     "apprentissage_base": "Formaliser des exigences",
+     "elements_contenu": "User story\nDiagramme de cas d’utilisation\nCahier des charges\nChiffrage",
+     "activites_apprentissage": "Seul ou en groupe\nSelon les instructions verbales ou écrites du formateur\nÀ l’aide des supports fournis par le formateur (polycop, documents, cours)\nQCM sur les différentes méthodes de définitions des besoins\nTravaux pratiques :\nCréation de diagramme de PERT\nCréation de diagramme de GANT",
+     "duree_suggeree_pourcent": 30.0,
+     "ordre": 1
+    },
+    {
+     "lettre": "A",
+     "code": "A.2",
+     "code_incoherent": false,
+     "apprentissage_base": "Prioriser des \"User Stories\"",
+     "elements_contenu": "Itérations du projet\nDiagramme de Pert\nDiagramme de Gantt",
+     "activites_apprentissage": "",
+     "duree_suggeree_pourcent": null,
+     "ordre": 2
+    },
+    {
+     "lettre": "B",
+     "code": "B.1",
+     "code_incoherent": false,
+     "apprentissage_base": "Appliquer la méthode SCRUM",
+     "elements_contenu": "Rôles en agile : le Product Owner, le Scrum Master, l'équipe de développement, le testeur, le tracker, le coach\nSprints ou les itérations du projet\nPlanification journalière : daily scrum ou standing meeting : l'objectif, l'organisation.\nPlanning Poker",
+     "activites_apprentissage": "Seul ou en groupe\nSelon les instructions verbales ou écrites du formateur\nÀ l’aide des supports fournis par le formateur (polycop, documents, cours)\nQCM sur Scrum et SAFE\nTravaux pratiques :\nJeu de rôle sur les différentes responsabilités intervenant au sein des projets agiles\nElaborer un backlog de sprint\nDécoupage des stories en tâches Planification d'un sprint\nMise en situation Daily Scrum\nElaboration de trains de release agile",
+     "duree_suggeree_pourcent": 70.0,
+     "ordre": 1
+    },
+    {
+     "lettre": "B",
+     "code": "B.2",
+     "code_incoherent": false,
+     "apprentissage_base": "Appliquer la méthode SAFE",
+     "elements_contenu": "Portefeuille SAFE\nTrains de release agile (ART)\nPlanification des itérations\nOrganisation de travail avec les autres équipes dans le train",
+     "activites_apprentissage": "",
+     "duree_suggeree_pourcent": null,
+     "ordre": 2
+    }
+   ]
+  },
+  {
+   "numero": 10,
+   "code_officiel": "DIA_DESOUX_TS-10",
+   "nom": "Analyser les besoins des utilisateurs",
+   "duree_nationale_heures": 90,
+   "code_operationnel": "M110",
+   "cycle": "specialisation",
+   "fiche_prescrite": {
+    "contexte_realisation": [
+     "En équipe",
+     "À partir :",
+     "De consignes",
+     "De mise en situations écrites et orales",
+     "De condition techniques",
+     "À l’aide :",
+     "De données chiffrées",
+     "De documentation sur les utilisateurs",
+     "D’outils d’enregistrements comportementaux",
+     "D’outils de collectes de données"
+    ],
+    "criteres_generaux_performance": [
+     "Recueil complet des données à disposition",
+     "Analyse pertinente des données en fonction du projet",
+     "Manifestation d’empathie",
+     "Priorisation fonctionnelle et cohérente",
+     "Anticipation des besoins"
+    ],
+    "elements": [
+     {
+      "lettre": "A",
+      "lettre_derivee": false,
+      "intitule": "Collecter des données",
+      "ordre": 1,
+      "criteres": [
+       "Utilisation pertinente d’outils de collecte de données",
+       "Respect de la séquence d’opérations",
+       "Reformulation compréhensible de données chiffrées",
+       "Audit complet des ressources à disposition"
+      ]
+     },
+     {
+      "lettre": "B",
+      "lettre_derivee": false,
+      "intitule": "Analyser les données utilisateurs",
+      "ordre": 2,
+      "criteres": [
+       "Description détaillée des comportements d’utilisations",
+       "Catégorisation des utilisateurs",
+       "Convergence entre les données",
+       "Manifestation d’empathie",
+       "Définition d’un lien entre les utilisateurs et l’entreprise"
+      ]
+     },
+     {
+      "lettre": "C",
+      "lettre_derivee": false,
+      "intitule": "Identifier les points d’amélioration des données",
+      "ordre": 3,
+      "criteres": [
+       "Attitude empathique",
+       "Appréhension juste des utilisateurs",
+       "Identification complète des points bloquants",
+       "Anticipation logique des frustrations",
+       "Spécification précise des motivations",
+       "Priorisation des actions à entreprendre"
+      ]
+     },
+     {
+      "lettre": "D",
+      "lettre_derivee": false,
+      "intitule": "Documenter les utilisations",
+      "ordre": 4,
+      "criteres": [
+       "Fiche persona complète",
+       "Délimitation précise des attentes et besoins",
+       "Associations correctes entre utilisateurs et besoins",
+       "Interprétation cohérente des utilisations",
+       "Respect de la séquence des opérations",
+       "Application correcte des méthodes d’identification",
+       "Manifestation d’empathie"
+      ]
+     }
+    ]
+   },
+   "suggestions": [
+    {
+     "lettre": "A",
+     "code": "A.1",
+     "code_incoherent": false,
+     "apprentissage_base": "Réaliser un travail de recherche",
+     "elements_contenu": "Analyse de la cibe et de la solution\nAudit des first party data\nRecherches sur les utilisateurs\nOutils d’organisation à la collecte de données",
+     "activites_apprentissage": "Seul\nÀ partir de mises en situations écrites et orales\nTravaux pratiques : À l’aide de documents sur la marque et la solution, d’outils de collecte de données et d’outils d’édition de texte\nChoix d’un sujet documenté par l’intervenant\nAnalyse des comportements grâce à des outils\nAnalyse en groupe de données\nMise en place de focus group",
+     "duree_suggeree_pourcent": 15.0,
+     "ordre": 1
+    },
+    {
+     "lettre": "A",
+     "code": "A.2",
+     "code_incoherent": false,
+     "apprentissage_base": "Mettre en forme les données recueillies",
+     "elements_contenu": "Tri et synthèse des données recueillies\nHiérarchisation des données reccueillies",
+     "activites_apprentissage": "",
+     "duree_suggeree_pourcent": null,
+     "ordre": 2
+    },
+    {
+     "lettre": "B",
+     "code": "B.1",
+     "code_incoherent": false,
+     "apprentissage_base": "Organiser les données utilisateurs",
+     "elements_contenu": "Catégorisation des utilisateurs\nClassification des types d’utilisateurs potentiels de la solution digitale",
+     "activites_apprentissage": "Seul ou en équipe selon instructions du formateur\nA partir de consignes et de données\nTravaux pratiques : A l’aide d’outils d’analyse comportementale et de documents de cours fournis par le formateur\nPréciser des séquences d’opération\nAnalyse de données en groupe\nFaire tirer des conclusions\nConclure avec la classe",
+     "duree_suggeree_pourcent": 25.0,
+     "ordre": 1
+    },
+    {
+     "lettre": "B",
+     "code": "B.2",
+     "code_incoherent": false,
+     "apprentissage_base": "Interpréter les données",
+     "elements_contenu": "Analyse des habitudes et patterns utilisateurs\nCartographie des comportements utilisateurs\nExercices pratiques empathiques",
+     "activites_apprentissage": "",
+     "duree_suggeree_pourcent": null,
+     "ordre": 2
+    },
+    {
+     "lettre": "C",
+     "code": "C.1",
+     "code_incoherent": false,
+     "apprentissage_base": "Relever les points bloquants",
+     "elements_contenu": "Méthodes de tests / d’interview / de sondage\nAnalyse d’une solution existante\nAnalyse de parcours utilisateurs possibles",
+     "activites_apprentissage": "Seul ou en équipe selon instructions du formateur\nÀ partir d’études de cas, de méthodologies, de documents professionnels, de synthèse de données\nA l’aide de documentation projet, d’outils de mise en forme\nAteliers d’idéation et de convergence\nCartographie des comportements\nPriorisation et roadmap",
+     "duree_suggeree_pourcent": 20.0,
+     "ordre": 1
+    },
+    {
+     "lettre": "C",
+     "code": "C.2",
+     "code_incoherent": false,
+     "apprentissage_base": "Trouver des solutions techniques",
+     "elements_contenu": "Méthodes de design émotionnel\nIdentification des motivations et points bloquants\nRoadmap d’optimisations",
+     "activites_apprentissage": "",
+     "duree_suggeree_pourcent": null,
+     "ordre": 2
+    },
+    {
+     "lettre": "D",
+     "code": "D.1",
+     "code_incoherent": false,
+     "apprentissage_base": "Créer des personas",
+     "elements_contenu": "Identification et création de fiches persona complètes\nIdentification des parcours principaux\nCréations d’empathy maps pour chaque persona",
+     "activites_apprentissage": "Seul ou en équipe selon instructions du formateur\nA partir d’un cahier des charges ou de données sur le projet\nA l’aide de recherches internet, d’outil de mise en forme et de méthodologies\nCréation de fiches personas, empathy maps et user journey maps",
+     "duree_suggeree_pourcent": 40.0,
+     "ordre": 1
+    },
+    {
+     "lettre": "D",
+     "code": "D.2",
+     "code_incoherent": false,
+     "apprentissage_base": "Réaliser des user journeys",
+     "elements_contenu": "Identification des grandes étapes de navigation\nRelève des ressentis des personas\nAxes d’améliorations pour anticipation des points à risque",
+     "activites_apprentissage": "",
+     "duree_suggeree_pourcent": null,
+     "ordre": 2
+    }
+   ]
+  },
+  {
+   "numero": 11,
+   "code_officiel": "DIA_DESOUX_TS-11",
+   "nom": "Déterminer les parcours utilisateurs",
+   "duree_nationale_heures": 105,
+   "code_operationnel": "M111",
+   "cycle": "specialisation",
+   "fiche_prescrite": {
+    "contexte_realisation": [
+     "Individuellement puis en équipe",
+     "À partir :",
+     "De données sur les utilisateurs",
+     "À l’aide :",
+     "De fiches personas",
+     "D’études de cas"
+    ],
+    "criteres_generaux_performance": [
+     "Production utile de users story et de scénario d’usage",
+     "Conception d’empathy maps cohérentes avec les personnas",
+     "Empathie constante",
+     "Utilisation pertinente des outils de mapping"
+    ],
+    "elements": [
+     {
+      "lettre": "A",
+      "lettre_derivee": false,
+      "intitule": "Traduire les besoins des utilisateurs",
+      "ordre": 1,
+      "criteres": [
+       "Solution technique à des besoins utilisateurs",
+       "Mise en place d’un objectif cohérent",
+       "Enquête contextuelle efficace",
+       "Réponse aux attentes claire"
+      ]
+     },
+     {
+      "lettre": "B",
+      "lettre_derivee": false,
+      "intitule": "Cartographier l’expérience utilisateur",
+      "ordre": 2,
+      "criteres": [
+       "Scénario d’usage réaliste",
+       "Logique de la suite d’étape de l’expérience utilisateur",
+       "Décomposition adéquate des phases mises en place",
+       "Cohérence entre les phases et l’objectif du parcours"
+      ]
+     },
+     {
+      "lettre": "C",
+      "lettre_derivee": false,
+      "intitule": "Définir les parcours principaux des utilisateurs",
+      "ordre": 3,
+      "criteres": [
+       "Définition du périmètre du projet",
+       "Identification de toutes les interactions possibles",
+       "User flow cohérent avec le contexte",
+       "Respect des habitudes d’utilisation"
+      ]
+     },
+     {
+      "lettre": "D",
+      "lettre_derivee": false,
+      "intitule": "Spécifier les opportunités du parcours utilisateur",
+      "ordre": 4,
+      "criteres": [
+       "Liste complète des points de contact",
+       "Identification des zones de risques du parcours",
+       "Simplicité des actions réalisées"
+      ]
+     }
+    ]
+   },
+   "suggestions": [
+    {
+     "lettre": "A",
+     "code": "A.1",
+     "code_incoherent": false,
+     "apprentissage_base": "Identifier les besoins des utilisateurs",
+     "elements_contenu": "Enquête contextuelle des besoins actuels\nIdentification des points d’amélioration\nListe de attentes principales des utilisateurs",
+     "activites_apprentissage": "Seul\nÀ partir de mises en situations écrites et orales, de données utilisateurs\nÀ l’aide de documents sur la marque et la solution, de fiches personas, d’habitudes d’utilisation\nAnalyser l’existant de la solution digitale\nIdentifier les besoins et/ou axes d’amélioration\nLister les attentes et objectifs UX du projet\nCréer des objectifs SMART\nProposer des solutions techniques",
+     "duree_suggeree_pourcent": 15.0,
+     "ordre": 1
+    },
+    {
+     "lettre": "A",
+     "code": "A.2",
+     "code_incoherent": false,
+     "apprentissage_base": "Définir des objectifs attendus face aux besoins",
+     "elements_contenu": "Objectifs identifiés conformément aux besoins\nSolutions techniques répondant aux besoins",
+     "activites_apprentissage": "",
+     "duree_suggeree_pourcent": null,
+     "ordre": 2
+    },
+    {
+     "lettre": "B",
+     "code": "B.1",
+     "code_incoherent": false,
+     "apprentissage_base": "Réaliser des scénarios d’usage",
+     "elements_contenu": "Liste d’utilisations principales de la solution digitale\nMise en valeur de scénarios de navigations principales",
+     "activites_apprentissage": "Seul\nÀ partir de mises en situations écrites et orales, de données utilisateurs\nÀ l’aide de documents sur la marque et la solution, de fiches personas, d’habitudes d’utilisation\nExemples de cas professionnels\nAteliers en groupe : scénarios d’usage, expérience maps",
+     "duree_suggeree_pourcent": 30.0,
+     "ordre": 1
+    },
+    {
+     "lettre": "B",
+     "code": "B.2",
+     "code_incoherent": false,
+     "apprentissage_base": "Réaliser des expérience maps",
+     "elements_contenu": "Utilisation des maps d’expérience\nMise en valeur des étapes de navigation majeures\nRelève des points bloquants de l’expérience utilisateur",
+     "activites_apprentissage": "",
+     "duree_suggeree_pourcent": null,
+     "ordre": 2
+    },
+    {
+     "lettre": "C",
+     "code": "C.1",
+     "code_incoherent": false,
+     "apprentissage_base": "Identifier les parcours principaux",
+     "elements_contenu": "Scénario de visite dans le parcours\nUtilisation des user flows\nListe d’objectifs de navigation\nEtapes répondant aux besoins identifiés",
+     "activites_apprentissage": "Seul\nÀ partir de mises en situations écrites et orales, de données utilisateurs\nÀ l’aide de documents sur la marque et la solution, de fiches personas, d’habitudes d’utilisation\nUtiliser les exercices des ateliers précédents\nAteliers en groupe : parcours utilisateurs, user flows, arborescence",
+     "duree_suggeree_pourcent": 40.0,
+     "ordre": 1
+    },
+    {
+     "lettre": "C",
+     "code": "C.2",
+     "code_incoherent": false,
+     "apprentissage_base": "Cartographier l’expérience utilisateurs",
+     "elements_contenu": "Modélisation des parcours par besoin et par utilisateiur\nCartographie des parcours utilisateurs centraux et secondaires",
+     "activites_apprentissage": "",
+     "duree_suggeree_pourcent": null,
+     "ordre": 2
+    },
+    {
+     "lettre": "D",
+     "code": "D.1",
+     "code_incoherent": false,
+     "apprentissage_base": "Tester les parcours utilisateurs",
+     "elements_contenu": "Réalisation de user flows\nTest des parcours utilisateurs\nTests de trouvabilité et d’affordance",
+     "activites_apprentissage": "Seul ou en équipe selon instructions du formateur\nA partir d’un cahier des charges ou de données sur le projet\nA l’aide de parcours utilisateurs\nTester tous les parcours\nLister les problèmes rencontrés\nLister les potentiels points bloquants\nDétailler les améliorations possibles\nItérer",
+     "duree_suggeree_pourcent": 15.0,
+     "ordre": 1
+    },
+    {
+     "lettre": "D",
+     "code": "D.2",
+     "code_incoherent": false,
+     "apprentissage_base": "Améliorer les parcours après analyse",
+     "elements_contenu": "Identifications des points de contact\nRelève des zones de risque et proposition d’amélioration",
+     "activites_apprentissage": "",
+     "duree_suggeree_pourcent": null,
+     "ordre": 2
+    }
+   ]
+  },
+  {
+   "numero": 12,
+   "code_officiel": "DIA_DESOUX_TS-12",
+   "nom": "Connaître les spécificités de l’ergonomie de différents types de solutions",
+   "duree_nationale_heures": 75,
+   "code_operationnel": "M112",
+   "cycle": "specialisation",
+   "fiche_prescrite": {
+    "contexte_realisation": [
+     "Individuellement",
+     "À partir :",
+     "De consignes",
+     "À l’aide :",
+     "De documentation sur l’ergonomie",
+     "D’indications sur les habitudes d’utilisation",
+     "De documentation sur les interfaces digitales"
+    ],
+    "criteres_generaux_performance": [
+     "Connaissances abouties des types d’interfaces",
+     "Compréhension des utilisations des interfaces",
+     "Analyse rigoureuse des besoins des utilisateurs en fonction de l’interface",
+     "Respect des normes digitales"
+    ],
+    "elements": [
+     {
+      "lettre": "A",
+      "lettre_derivee": false,
+      "intitule": "Identifier les différents types d’interface",
+      "ordre": 1,
+      "criteres": [
+       "Connaissances globales des spécificités des interfaces",
+       "Assimilation des comportements utilisateurs en fonction des types d’interfaces",
+       "Respect des habitudes et bonnes pratiques",
+       "Utilisation du bon type de logiciel en fonction de l’interface"
+      ]
+     },
+     {
+      "lettre": "B",
+      "lettre_derivee": false,
+      "intitule": "Adapter sa production aux interfaces",
+      "ordre": 2,
+      "criteres": [
+       "Respect des comportements des éléments",
+       "Respect des break points",
+       "Adaptabilité des productions de wireframes",
+       "Adaptabilité à l’environnement technique"
+      ]
+     },
+     {
+      "lettre": "C",
+      "lettre_derivee": false,
+      "intitule": "Appréhender les principes d’utilisation des supports",
+      "ordre": 3,
+      "criteres": [
+       "Respect de l’ergonomie des supports",
+       "Appréhension logique des interactions propres au support",
+       "Application correcte des méthodes de travail",
+       "Respect des normes digitales"
+      ]
+     }
+    ]
+   },
+   "suggestions": [
+    {
+     "lettre": "A",
+     "code": "A.1",
+     "code_incoherent": false,
+     "apprentissage_base": "Connaitre les spécificités des interfaces",
+     "elements_contenu": "Différenciation des interfaces de solutions digitales\nMobile\nTablette\nDesktop\nTélé\nTactile, etc\nSpécifications techniques selon le support de la solution digitale\nÉtudes des comportements utilisateurs",
+     "activites_apprentissage": "Seul\nA partir de documentation fournie par le formateur\nA l’aide de logiciel de maquettage et de prototypage\nEtude de cas comme Netflix par exemple, avec une utilisation mobile, tablette, desktop, télévision\nPour chaque interface, citer les éléments ergonomiques, spécificités et conventions à prendre en compte",
+     "duree_suggeree_pourcent": 15.0,
+     "ordre": 1
+    },
+    {
+     "lettre": "B",
+     "code": "B.1",
+     "code_incoherent": false,
+     "apprentissage_base": "Détailler les interfaces de production",
+     "elements_contenu": "Indication des breakpoints selon les points d’ergonomie à prendre en compte\nUtilisation des conventions liées à chaque type d’interface\nModélisation des processus (processus d'inscription, le processus de commande, les process transactionnels, etc)",
+     "activites_apprentissage": "Seul ou en équipe\nA partir d’études de cas, de consignes et de documentation fournie par le formateur\nA l’aide de logiciel de maquettage et de prototypage, d’analyses d’interfaces, de veille technique et graphique\nRéaliser des wireframes\nRéaliser une veille d’interfaces après un cours théorique\nDécliner les wireframe à une ou plusieurs interfaces selon les indications du formateur",
+     "duree_suggeree_pourcent": 50.0,
+     "ordre": 1
+    },
+    {
+     "lettre": "B",
+     "code": "B.2",
+     "code_incoherent": false,
+     "apprentissage_base": "Décliner la production en fonction des exigences de l’interface",
+     "elements_contenu": "Production de wireframes\nAdaptation des breakpoints\nChangement des comportements des éléments",
+     "activites_apprentissage": "",
+     "duree_suggeree_pourcent": null,
+     "ordre": 2
+    },
+    {
+     "lettre": "C",
+     "code": "C.1",
+     "code_incoherent": false,
+     "apprentissage_base": "Connaitre les règles d’ergonomie des interfaces selon le support",
+     "elements_contenu": "Connaissances des particularités de chaque type d’interface\nTest de la solution digitale\nRecommandations ergonomiques",
+     "activites_apprentissage": "Seul\nA partir de wireframes et de documentation\nA l’aide de logiciels de maquettage et de prototypage\nReprendre les wireframes de l’exercice précédent\nContinuer l’exercice en y intégrant la notion d’interaction\nCréer des composants\nRécupérer des productions d’UI Design afin de pousser l’exercice plus loin",
+     "duree_suggeree_pourcent": 35.0,
+     "ordre": 1
+    },
+    {
+     "lettre": "C",
+     "code": "C.2",
+     "code_incoherent": false,
+     "apprentissage_base": "Gérer les interactions de la solution digitale",
+     "elements_contenu": "Adaptation des composants à l’interface\nUtilisabilité de l’interface\nRespect des normes digitales",
+     "activites_apprentissage": "",
+     "duree_suggeree_pourcent": null,
+     "ordre": 2
+    }
+   ]
+  },
+  {
+   "numero": 13,
+   "code_officiel": "DIA_DESOUX_TS-13",
+   "nom": "Créer un design d’interfaces ergonomique et interactif",
+   "duree_nationale_heures": 60,
+   "code_operationnel": "M113",
+   "cycle": "specialisation",
+   "fiche_prescrite": {
+    "contexte_realisation": [
+     "Individuellement",
+     "À partir :",
+     "De cahier des charges",
+     "De consignes techniques",
+     "À l’aide :",
+     "De logiciels de maquettage",
+     "D’indications des spécificités"
+    ],
+    "criteres_generaux_performance": [
+     "Organisation cohérente du contenu",
+     "Utilisation judicieuse des logiciels de wireframing",
+     "Respect des utilisateurs",
+     "Positionnements adaptés",
+     "Déclinaisons cohérentes des wireframes",
+     "Respect des règles d’accessibilité",
+     "Respect des conventions du web"
+    ],
+    "elements": [
+     {
+      "lettre": "A",
+      "lettre_derivee": false,
+      "intitule": "Organiser le contenu de la solution digitale",
+      "ordre": 1,
+      "criteres": [
+       "Catégorisation pertinente du contenu",
+       "Placement des éléments dans les catégories adéquates",
+       "Priorisation des contenus en adéquation avec les besoins du projet",
+       "Respect des demandes client"
+      ]
+     },
+     {
+      "lettre": "B",
+      "lettre_derivee": false,
+      "intitule": "Positionner le contenu de la solution digitale",
+      "ordre": 2,
+      "criteres": [
+       "Placement pertinent des éléments",
+       "Respect des spécifications de priorisation",
+       "Utilisation judicieuse des outils de maquettage"
+      ]
+     },
+     {
+      "lettre": "C",
+      "lettre_derivee": false,
+      "intitule": "Décliner les productions des contenus",
+      "ordre": 3,
+      "criteres": [
+       "Wireframes adaptés à l’interface",
+       "Respect des normes de chaque interface",
+       "Adaptabilité du contenu",
+       "Prise en compte de l’ergonomie propre aux interfaces"
+      ]
+     },
+     {
+      "lettre": "D",
+      "lettre_derivee": false,
+      "intitule": "Rendre l’interface interactive",
+      "ordre": 4,
+      "criteres": [
+       "Placement correct des interactions",
+       "Choix judicieux des types d’interactions",
+       "Lien logique entre le storytelling et les interactions",
+       "Bonne coordination entre les espaces de navigation",
+       "Interactions adaptées aux parcours utilisateurs"
+      ]
+     }
+    ]
+   },
+   "suggestions": [
+    {
+     "lettre": "A",
+     "code": "A.1",
+     "code_incoherent": false,
+     "apprentissage_base": "Utiliser les résultats de la recherche UX",
+     "elements_contenu": "Utilisation des personas, empathy maps et user journey maps pour tirer des conclusions\nCréation des parcours d’utilisation de la solution digitale",
+     "activites_apprentissage": "En équipe\nA partir du cahier des charges\nA l’aide d’ateliers, de données sur le client et son besoin\nCréer les parcours d’utilisation\nLister les contenus\nRéaliser des ateliers de tri par cartes pour les fonctionnalités\nRéaliser des ateliers de tri par cartes pour les catégories et le contenu\nPrioriser le contenu à l’aide de gommettes",
+     "duree_suggeree_pourcent": 15.0,
+     "ordre": 1
+    },
+    {
+     "lettre": "A",
+     "code": "A.2",
+     "code_incoherent": false,
+     "apprentissage_base": "Catégoriser le contenu des pages",
+     "elements_contenu": "Ateliers de tri par cartes\nCréation de catégories de contenus pertinentes",
+     "activites_apprentissage": "",
+     "duree_suggeree_pourcent": null,
+     "ordre": 2
+    },
+    {
+     "lettre": "B",
+     "code": "B.1",
+     "code_incoherent": false,
+     "apprentissage_base": "Organiser les contenus dans les pages",
+     "elements_contenu": "Placement et Priorisation des éléments de contenus dans les pages\nPositionnement des blocs de contenus et des CTA\nHiérarchie du contenu",
+     "activites_apprentissage": "Seul ou en équipe\nA partir du cahier des charges\nA l’aide d’ateliers, de données sur le client et son besoin, des contenus et de logiciel de maquettage\nPeut se réaliser d’abord sous forme d’ateliers de fast wireframing sur papier\nÉchanges sur les wireframes papiers produits et\nRéaliser ensuite les wireframes au format digital",
+     "duree_suggeree_pourcent": 45.0,
+     "ordre": 1
+    },
+    {
+     "lettre": "B",
+     "code": "B.2",
+     "code_incoherent": false,
+     "apprentissage_base": "Créer des wireframes",
+     "elements_contenu": "Inventaire fonctionnel des wireframes\nCréation de zonings définissant les grandes zones de l’interface\nUtilisation de documents de conception fonctionnelle\nCréation des wireframes pour chacune des pages",
+     "activites_apprentissage": "",
+     "duree_suggeree_pourcent": null,
+     "ordre": 2
+    },
+    {
+     "lettre": "C",
+     "code": "C.1",
+     "code_incoherent": false,
+     "apprentissage_base": "Analyser les différents types d’interfaces de la solution",
+     "elements_contenu": "Définition des normes des interfaces de la solution digitale\nCompatibilité des contenus de l’interface avec les technologies du web\nVérification des règles d’accessibilité",
+     "activites_apprentissage": "Seul ou en équipe\nA partir du cahier des charges\nA l’aide des wireframes et de logiciel de maquettage\nDéfinir les interfaces sur lesquelles décliner les wireframes\nDécliner les wireframes sur différents types d’interfaces\nTests d’utilisabilité",
+     "duree_suggeree_pourcent": 20.0,
+     "ordre": 1
+    },
+    {
+     "lettre": "C",
+     "code": "C.2",
+     "code_incoherent": false,
+     "apprentissage_base": "Décliner les wireframes",
+     "elements_contenu": "Utilisabilité des wireframes\nAdaptabilité du contenu à la solution digitale\nRespect de l’ergonomie de l’interface",
+     "activites_apprentissage": "",
+     "duree_suggeree_pourcent": null,
+     "ordre": 2
+    },
+    {
+     "lettre": "D",
+     "code": "D.1",
+     "code_incoherent": false,
+     "apprentissage_base": "Placer les interactions dans l’interface",
+     "elements_contenu": "Choix du bon type d’interaction\nProduction de wireflows\nPositionnement des interactions sur les maquettes / prototypes\nInteractions adaptées aux parcours utilisateurs\nTest des parcours utilisateurs",
+     "activites_apprentissage": "Seul ou en équipe\nA partir du cahier des charges\nA l’aide des wireframes, de logiciel de prototypage, d’outils de collaboratoin avec les développeurs\nPlacer les interactions sur les wireframes\nParamétrer et organiser les types d’interactions\nTester le prototype en vérifiant les feedback lors de chaque action de l’utilisateur\nCréer un fichier propre pouvant être livré à des développeurs",
+     "duree_suggeree_pourcent": 20.0,
+     "ordre": 1
+    },
+    {
+     "lettre": "D",
+     "code": "D.2",
+     "code_incoherent": false,
+     "apprentissage_base": "Soumettre les indications d’interaction",
+     "elements_contenu": "Transmission des indications nécéssaires à l’intégration des interactions\nDiffusion des éléments d’interaction aux développeurs",
+     "activites_apprentissage": "",
+     "duree_suggeree_pourcent": null,
+     "ordre": 2
+    }
+   ]
+  },
+  {
+   "numero": 14,
+   "code_officiel": "DIA_DESOUX_TS-14",
+   "nom": "Architecturer des informations",
+   "duree_nationale_heures": 60,
+   "code_operationnel": "M114",
+   "cycle": "specialisation",
+   "fiche_prescrite": {
+    "contexte_realisation": [
+     "En équipe",
+     "À partir :",
+     "De contenu textuel",
+     "D’indications du client",
+     "À l’aide :",
+     "Du cahier des charges",
+     "De documents sur le contenu",
+     "D’outils de réalisation de schéma et cartes",
+     "D’outil de création de formes",
+     "Des personas"
+    ],
+    "criteres_generaux_performance": [
+     "Respect des spécifications de contenu",
+     "Respect des besoins des utilisateurs",
+     "Tri pertinent des informations",
+     "Organisation adéquate du contenu",
+     "Priorisation pertinente des contenus",
+     "Respect des règles de trouvabilité"
+    ],
+    "elements": [
+     {
+      "lettre": "A",
+      "lettre_derivee": false,
+      "intitule": "Classifier l’information",
+      "ordre": 1,
+      "criteres": [
+       "Utilisation pertinente de la méthode de tri de cartes",
+       "Définition complète des catégories",
+       "Tri pertinent des informations",
+       "Lien logique entre les contenus et les personas"
+      ]
+     },
+     {
+      "lettre": "B",
+      "lettre_derivee": false,
+      "intitule": "Prioriser l’information",
+      "ordre": 2,
+      "criteres": [
+       "Distinction pertinente des contenus et fonctionnalités",
+       "Lien tangible entre les contenus et les besoins utilisateurs",
+       "Utilisation pertinente de la méthode statistique",
+       "Identification juste des récurrences",
+       "Hiérarchie adéquate des contenus"
+      ]
+     },
+     {
+      "lettre": "C",
+      "lettre_derivee": false,
+      "intitule": "Structurer l’information",
+      "ordre": 3,
+      "criteres": [
+       "Structure efficace des catégories de la solution",
+       "Répartition logique des contenus",
+       "Respect de la trouvabilité en fonction des besoins",
+       "Utilisabilité fonctionnelle en lien avec les personas"
+      ]
+     }
+    ]
+   },
+   "suggestions": [
+    {
+     "lettre": "A",
+     "code": "A.1",
+     "code_incoherent": false,
+     "apprentissage_base": "Préparer la stratégie de contenus",
+     "elements_contenu": "Recherches sur les utilisateurs cibles\nCiblage des contenus selon les besoins et contraintes du projet",
+     "activites_apprentissage": "Seul\nDu cahier des charges et du contenu de la solution\nDe documents sur le contenu\nD’outils de réalisation de schémas et cartes et des personas",
+     "duree_suggeree_pourcent": 30.0,
+     "ordre": 1
+    },
+    {
+     "lettre": "A",
+     "code": "A.2",
+     "code_incoherent": false,
+     "apprentissage_base": "Organiser les informations",
+     "elements_contenu": "Inventaire des contenus\nFormalisations des idées concernant le contenu et la structuraiton\nIdentification des problèmes à résoudre",
+     "activites_apprentissage": "",
+     "duree_suggeree_pourcent": null,
+     "ordre": 2
+    },
+    {
+     "lettre": "B",
+     "code": "B.1",
+     "code_incoherent": false,
+     "apprentissage_base": "Définir les fonctions du contenus",
+     "elements_contenu": "Tri des informations\nMéthode statistique",
+     "activites_apprentissage": "Seul\nDu cahier des charges et du contenu de la solution\nDe documents sur le contenu\nD’outils de réalisation de schémas et cartes et des personas",
+     "duree_suggeree_pourcent": 25.0,
+     "ordre": 1
+    },
+    {
+     "lettre": "B",
+     "code": "B.2",
+     "code_incoherent": false,
+     "apprentissage_base": "Catégoriser les contenus",
+     "elements_contenu": "",
+     "activites_apprentissage": "",
+     "duree_suggeree_pourcent": null,
+     "ordre": 2
+    },
+    {
+     "lettre": "C",
+     "code": "C.1",
+     "code_incoherent": false,
+     "apprentissage_base": "Organiser les contenus",
+     "elements_contenu": "Réponse aux besoins des utilisateurs\nUtilisation de la priorisation\nPlacement logique des informations",
+     "activites_apprentissage": "Seul\nA partir du cahier des charges et du contenu de la solution\nA l’aide de documents sur le contenu et des wireframes,effectuer les manipulations suivantes :\nPlacement logique des informations\nTrouvabilité\nLien avec les personas",
+     "duree_suggeree_pourcent": 45.0,
+     "ordre": 1
+    },
+    {
+     "lettre": "C",
+     "code": "C.2",
+     "code_incoherent": false,
+     "apprentissage_base": "Placer les information dans les premiers zonings",
+     "elements_contenu": "Repérage des informations classifiées\nPlacement des informations dans le zoning",
+     "activites_apprentissage": "",
+     "duree_suggeree_pourcent": null,
+     "ordre": 2
+    }
+   ]
+  },
+  {
+   "numero": 15,
+   "code_officiel": "DIA_DESOUX_TS-15",
+   "nom": "Réaliser des tests utilisateurs",
+   "duree_nationale_heures": 90,
+   "code_operationnel": "M115",
+   "cycle": "specialisation",
+   "fiche_prescrite": {
+    "contexte_realisation": [
+     "En équipe",
+     "À partir :",
+     "De brief",
+     "De consignes",
+     "À l’aide :",
+     "De documents d’organisation",
+     "Des Prototypes"
+    ],
+    "criteres_generaux_performance": [
+     "Respect des séquences de tests",
+     "Esprit de synthèse",
+     "Cohérence du déroulement des tests",
+     "Synthétisation complète et claire",
+     "Mise en valeur adéquate des points d’amélioration",
+     "Actions correctives répondant à des problèmes donnés",
+     "Lien logique entre besoin et solution"
+    ],
+    "elements": [
+     {
+      "lettre": "A",
+      "lettre_derivee": false,
+      "intitule": "Préparer les phases de test",
+      "ordre": 1,
+      "criteres": [
+       "Logistique précise de recrutement de testeurs",
+       "Choix judicieux des testeurs",
+       "Vérification approfondie du matériel de test",
+       "Planification efficace du déroulement des tests",
+       "Anticipation efficace des points clés à évaluer"
+      ]
+     },
+     {
+      "lettre": "B",
+      "lettre_derivee": false,
+      "intitule": "Réaliser les tests",
+      "ordre": 2,
+      "criteres": [
+       "Analyse en temps réel précise",
+       "Retranscription complète des informations perçues",
+       "Manifestation d’empathie",
+       "Respect des règles de tests utilisateurs",
+       "Préparation complète des outils d’enregistrement",
+       "Organisation efficace des résultats des tests",
+       "Analyse pertinente des résultats des tests",
+       "Rigueur dans l’écoute et la visualisation des enregistrements",
+       "Mise en valeur des points à améliorer"
+      ]
+     },
+     {
+      "lettre": "D",
+      "lettre_derivee": false,
+      "intitule": "Effectuer des actions correctives",
+      "ordre": 3,
+      "criteres": [
+       "Compréhension logique des points d’amélioration",
+       "Planification efficace des actions à mener",
+       "Résolution adéquate des problèmes soulevés",
+       "Maitrise des méthodes de modification de wireframes",
+       "Respect des règles d’utilisation de la solution"
+      ]
+     }
+    ]
+   },
+   "suggestions": [
+    {
+     "lettre": "A",
+     "code": "A.1",
+     "code_incoherent": false,
+     "apprentissage_base": "Recruter les testeurs",
+     "elements_contenu": "Mise en place de la logistique\nAdéquation du panel représentatif des utilisateurs finaux",
+     "activites_apprentissage": "Seul ou en équipe\nDu cahier des charges et du prototype\nA l’aide d’outils d’enregistrement et de méthodes de réalisation de tests utilisateurs\nChoisir les types de tests à réaliser\nRecruter les participants\nPréparer les tests",
+     "duree_suggeree_pourcent": 30.0,
+     "ordre": 1
+    },
+    {
+     "lettre": "A",
+     "code": "A.2",
+     "code_incoherent": false,
+     "apprentissage_base": "Préparer le test",
+     "elements_contenu": "Planification du déroulement\nGestion du matériel nécessaire au test\nPréparation des points à anticiper",
+     "activites_apprentissage": "",
+     "duree_suggeree_pourcent": null,
+     "ordre": 2
+    },
+    {
+     "lettre": "B",
+     "code": "B.1",
+     "code_incoherent": false,
+     "apprentissage_base": "Analyser les résultats du test",
+     "elements_contenu": "Retranscription précise des données auditives et visuelles\nCondition d’exécution des tests sans interactions avec les testeurs durant le test\nParamétrage des outils d’enregistrement des tests",
+     "activites_apprentissage": "Seul ou en équipe\nDu cahier des charges et du prototype\nA l’aide d’outils d’enregistrement, de méthodes de réalisation de tests utilisateurs et des résultats du test\nRéaliser les tests\nAnalyser les comportements utilisateurs en temps réels\nAnalyser les données receuillies\nSynthéthiser les résultats obtenus",
+     "duree_suggeree_pourcent": 45.0,
+     "ordre": 1
+    },
+    {
+     "lettre": "B",
+     "code": "B.2",
+     "code_incoherent": false,
+     "apprentissage_base": "Retranscrire les données du test",
+     "elements_contenu": "Hiérarchisation des résultats\nAnalyse des enregistrements\nConclusions tirées des tests\nListe de points d’amélioration",
+     "activites_apprentissage": "",
+     "duree_suggeree_pourcent": null,
+     "ordre": 2
+    },
+    {
+     "lettre": "D",
+     "code": "D.1",
+     "code_incoherent": false,
+     "apprentissage_base": "Exploiter les conclusions des tests",
+     "elements_contenu": "Analyse des points d’amélioration\nListe des tâches à effectuer et productions à revoir\nMise en place de solutions aux problématiques\nMise en œuvre d’une planification des phases d’amélioration",
+     "activites_apprentissage": "Seul ou en équipe\nDu cahier des charges, du prototype et des wireframes\nA l’aide de logiciels de maquettage et de prototypage\nTirer des conclusions des tests\nProposer des axes d’amélioration\nTrouver des solutions aux problèmes soulevés\nPlanifier les phases d’itération à venir\nAméliorer la solution en fonction des retours et étapes à suivre",
+     "duree_suggeree_pourcent": 25.0,
+     "ordre": 1
+    },
+    {
+     "lettre": "D",
+     "code": "D.2",
+     "code_incoherent": false,
+     "apprentissage_base": "Améliorer la solution",
+     "elements_contenu": "Reprise des wireframes\nRespect de la planification selon les indications des résultats des tests\nRègles d’utilisation de la solution",
+     "activites_apprentissage": "",
+     "duree_suggeree_pourcent": null,
+     "ordre": 2
+    }
+   ]
+  },
+  {
+   "numero": 16,
+   "code_officiel": "DIA_DESOUX_TS-16",
+   "nom": "S'intégrer en milieu professionnel",
+   "duree_nationale_heures": 160,
+   "code_operationnel": "M116",
+   "cycle": "specialisation",
+   "fiche_prescrite": null,
+   "suggestions": []
+  }
+ ],
+ "alertes": [
+  "Compétence 6 : 1 cellule(s) d'activités sans apprentissage associé, recollée(s) aux activités du dernier apprentissage de leur élément.",
+  "Compétence 6 : l'apprentissage « B.3 » figure dans le groupe de l'élément C. Rattaché à C par sa position ; le libellé d'origine est conservé.",
+  "Compétence 6 : l'apprentissage « B.4 » figure dans le groupe de l'élément C. Rattaché à C par sa position ; le libellé d'origine est conservé.",
+  "Compétence 9 : sa fiche prescrite porte un code se terminant par 10. Rattachement fait sur le numéro annoncé.",
+  "Les codes courts (M101, M102...) ne figurent pas dans le document : ils sont DÉRIVÉS du numéro. Vérifier qu'ils correspondent à l'usage réel du centre.",
+  "Le cycle (tronc_commun / specialisation) n'est pas dans le document et n'est pas déductible du code officiel. Le renseigner dans programme.json avant génération : laissé à null, il ne sera pas écrasé en base mais restera vide pour un nouvel import.",
+  "Compétence 16 (DIA_DESOUX_TS-16) : aucune fiche prescrite dans le document.",
+  "Compétence 16 (DIA_DESOUX_TS-16) : aucune suggestion pédagogique dans le document.",
+  "Le document annonce 1435 h de durée totale, mais la somme des 16 compétences vaut 1375 h (écart 60 h). Les deux valeurs sont conservées sans arbitrage."
+ ],
+ "note_relecture": "Cycle renseigne 01-08 tronc commun / 09-16 specialisation, confirme par le porteur du projet. Code officiel de la competence 02 laisse a DIA_DES_TS-02 (tableau synthese)."
+}
