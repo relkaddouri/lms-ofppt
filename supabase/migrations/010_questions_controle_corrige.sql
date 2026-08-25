@@ -1,4 +1,8 @@
--- Supprime le corrigé de la lecture publique des questions
+-- Supprime le corrigé de la lecture publique des questions.
+-- `create or replace` ne peut pas modifier le type de retour d'une fonction
+-- existante (SQLSTATE 42P13) : il faut la supprimer d'abord. Les droits sont
+-- réattribués en fin de fichier.
+drop function if exists public.get_questions_by_controle_token(uuid);
 create or replace function public.get_questions_by_controle_token(p_token uuid)
 returns table (
   id uuid,
@@ -17,6 +21,7 @@ as $$
 $$;
 
 -- Fonction réservée à la notation côté serveur (ne jamais appeler depuis un composant client)
+drop function if exists public.get_questions_with_corrige_for_scoring(uuid);
 create or replace function public.get_questions_with_corrige_for_scoring(p_token uuid)
 returns table (
   id uuid,
