@@ -1,0 +1,76 @@
+import Link from "next/link";
+import { FileText, ListChecks } from "lucide-react";
+import StatusBadge from "@/components/StatusBadge";
+import type { GroupeModuleInfo } from "@/app/actions/groupes";
+
+export default function GroupModulesList({
+  modules,
+  kind,
+  groupeId,
+}: {
+  modules: GroupeModuleInfo[];
+  kind: "fiches" | "controles";
+  groupeId: string;
+}) {
+  if (modules.length === 0) {
+    return (
+      <div className="mt-6 rounded-xl border border-dashed border-border bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-10 text-center">
+        <p className="text-sm text-slate">
+          Aucun module assigné à ce groupe.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-6 space-y-3">
+      {modules.map((m) => {
+        const href =
+          kind === "fiches"
+            ? `/modules/${m.module_id}/fiche-preparation`
+            : `/modules/${m.module_id}/controle?groupe=${groupeId}`;
+
+        const status =
+          kind === "fiches" ? (
+            m.hasFiche ? (
+              <StatusBadge tone="success">Fiche disponible</StatusBadge>
+            ) : (
+              <StatusBadge tone="neutral">Aucune fiche</StatusBadge>
+            )
+          ) : m.controleStatut === "valide" ? (
+            <StatusBadge tone="success">Validé</StatusBadge>
+          ) : m.controleStatut === "brouillon" ? (
+            <StatusBadge tone="info">Brouillon</StatusBadge>
+          ) : (
+            <StatusBadge tone="neutral">Aucun contrôle</StatusBadge>
+          );
+
+        return (
+          <div
+            key={m.module_id}
+            className="flex items-center justify-between gap-4 rounded-xl border border-border bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-4"
+          >
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-ink">{m.nom}</p>
+              <p className="mt-0.5 text-xs text-slate">{m.duree_heures} h</p>
+            </div>
+            <div className="flex shrink-0 items-center gap-3">
+              {status}
+              <Link
+                href={href}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-ink hover:bg-paper focus:outline-none focus:ring-2 focus:ring-forest"
+              >
+                {kind === "fiches" ? (
+                  <FileText size={16} />
+                ) : (
+                  <ListChecks size={16} />
+                )}
+                {kind === "fiches" ? "Ouvrir la fiche" : "Ouvrir le contrôle"}
+              </Link>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}

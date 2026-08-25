@@ -1,0 +1,119 @@
+"use server";
+
+import { createClient } from "@/lib/supabase/server";
+import { revalidatePath } from "next/cache";
+
+export type Module = {
+  id: string;
+  nom: string;
+  description: string | null;
+  duree_heures: number;
+};
+
+export async function getModules(): Promise<Module[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("modules")
+    .select("*")
+    .order("nom");
+
+  if (error) throw new Error(error.message);
+  return data as Module[];
+}
+
+export type ModuleControleInfo = {
+  id: string;
+  titre: string | null;
+  statut: "brouillon" | "valide";
+};
+
+export type ModuleDetail = {
+  module: Module;
+  controles: ModuleControleInfo[];
+  hasFiche: boolean;
+  groupes: { id: string; nom: string }[];
+};
+
+export async function getModuleDetail(moduleId: string): Promise<ModuleDetail | null> {
+  const supabase = await createClient();
+
+  const [mod, fiche, groupes, controles] = await Promise.all([
+    supabase.from("modules").select("*").eq("id", moduleId).single(),
+    supabase
+      .from("fiches_preparation")
+      .select("id", { count: "exact", head: true })
+      .eq("module_id", moduleId),
+    supabase
+      .from("groupe_modules")
+      .select("groupes(id, nom)")
+      .eq("module_id", moduleId)
+      .order("created_at"),
+    supabase
+      .from("controles")
+      .select("id, titre, statut")
+      .eq("module_id", moduleId)
+      .order("created_at", { ascending: false }),
+  ]);
+
+  if (mod.error || !mod.data) return null;
+  if (fiche.error) throw new Error(fiche.error.message);
+  if (groupes.error) throw new Error(groupes.error.message);
+  if (controles.error) throw new Error(controles.error.message);
+
+  return {
+    module: mod.data as Module,
+    hasFiche: (fiche.count ?? 0) > 0,
+    groupes: (groupes.data ?? []).map((g) => {
+      const raw = Array.isArray(g.groupes) ? g.groupes[0] : g.groupes;
+      const gr = raw as { id: string; nom: string } | null;
+      return { id: gr?.id ?? "", nom: gr?.nom ?? "Groupe" };
+    }),
+    controles: (controles.data ?? []) as ModuleControleInfo[],
+  };
+}
+
+export async function createModule(input: {
+  nom: string;
+  description?: string | null;
+  duree_heures: number;
+}) {
+  const supabase = await createClient();
+  const { error } = await supabase.from("modules").insert({
+    nom: input.nom,
+    description: input.description ?? null,
+    duree_heures: input.duree_heures,
+  });
+
+  if (error) throw new Error(error.message);
+  revalidatePath("/modules");
+}
+
+export async function updateModule(
+  id: string,
+  input: {
+    nom: string;
+    description?: string | null;
+    duree_heures: number;
+  },
+) {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("modules")
+    .update({
+      nom: input.nom,
+      description: input.description ?? null,
+      duree_heures: input.duree_heures,
+    })
+    .eq("id", id);
+
+  if (error) throw new Error(error.message);
+  revalidatePath("/modules");
+}
+
+export async function deleteModule(id: string) {
+  const supabase = await createClient();
+  const { error } = await supabase.from("modules").delete().eq("id", id);
+
+  if (error) throw new Error(error.message);
+  revalidatePath("/modules");
+}
