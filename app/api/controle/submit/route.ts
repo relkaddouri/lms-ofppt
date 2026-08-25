@@ -1,5 +1,16 @@
 import { createServiceClient } from "@/lib/supabase/service";
+import { clientIp, rateLimit, tooManyRequests } from "@/lib/rate-limit";
 import { NextResponse } from "next/server";
+
+const FENETRE_MS = 60_000;
+// Volontairement large : en fin d'épreuve, toute une classe soumet sa copie
+// depuis le même réseau, donc derrière une seule IP publique (NAT). Une limite
+// serrée par IP bloquerait des copies légitimes. 20/min reste très au-dessus du
+// rythme réel d'une classe tout en coupant net une boucle d'abus.
+const LIMITE_PAR_IP = 20;
+// Un même stagiaire n'a aucune raison de relancer la correction plus de
+// quelques fois : c'est le garde-fou qui protège réellement le crédit IA.
+const LIMITE_PAR_CANDIDAT = 3;
 
 type QuestionPourNotation = {
   id: string;
@@ -28,6 +39,20 @@ export async function POST(request: Request) {
       { status: 400 },
     );
   }
+
+  // Avant toute requête base ou appel IA : la route est publique et chaque
+  // passage coûte un appel DeepSeek facturé.
+  const ip = clientIp(request);
+
+  const parIp = rateLimit(`submit:ip:${ip}`, LIMITE_PAR_IP, FENETRE_MS);
+  if (!parIp.allowed) return tooManyRequests(parIp.retryAfterSeconds);
+
+  const parCandidat = rateLimit(
+    `submit:candidat:${token}:${String(nom).trim().toLowerCase()}`,
+    LIMITE_PAR_CANDIDAT,
+    FENETRE_MS,
+  );
+  if (!parCandidat.allowed) return tooManyRequests(parCandidat.retryAfterSeconds);
 
   let supabase;
   try {
