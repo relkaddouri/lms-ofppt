@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { FileText, ListChecks } from "lucide-react";
-import StatusBadge from "@/components/StatusBadge";
+import Badge from "@/components/ui/Badge";
 import type { GroupeModuleInfo } from "@/app/actions/groupes";
 
 export default function GroupModulesList({
@@ -33,16 +33,16 @@ export default function GroupModulesList({
         const status =
           kind === "fiches" ? (
             m.hasFiche ? (
-              <StatusBadge tone="success">Fiche disponible</StatusBadge>
+              <Badge tone="success">Fiche disponible</Badge>
             ) : (
-              <StatusBadge tone="neutral">Aucune fiche</StatusBadge>
+              <Badge tone="neutral">Aucune fiche</Badge>
             )
           ) : m.controleStatut === "valide" ? (
-            <StatusBadge tone="success">Validé</StatusBadge>
+            <Badge tone="success">Validé</Badge>
           ) : m.controleStatut === "brouillon" ? (
-            <StatusBadge tone="info">Brouillon</StatusBadge>
+            <Badge tone="info">Brouillon</Badge>
           ) : (
-            <StatusBadge tone="neutral">Aucun contrôle</StatusBadge>
+            <Badge tone="neutral">Aucun contrôle</Badge>
           );
 
         return (

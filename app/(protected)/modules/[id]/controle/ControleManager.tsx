@@ -13,9 +13,9 @@ import {
   type Question,
 } from "@/app/actions/controles";
 import CopiesManager from "./CopiesManager";
-import { useToast } from "@/components/Toast";
+import { useToast } from "@/components/ui/Toast";
 import Breadcrumb from "@/components/Breadcrumb";
-import StatusBadge from "@/components/StatusBadge";
+import Badge from "@/components/ui/Badge";
 import { exportPdfFromParts } from "@/lib/pdf";
 import {
   BadgeCheck,
@@ -410,9 +410,9 @@ export default function ControleManager({
           <div className="rounded-xl border border-border bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-4">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-medium text-ink">Questions</h2>
-              <StatusBadge tone={totalBareme === 20 ? "success" : "info"}>
+              <Badge tone={totalBareme === 20 ? "success" : "info"}>
                 Barème : {totalBareme} / 20
-              </StatusBadge>
+              </Badge>
             </div>
 
             {loading ? (

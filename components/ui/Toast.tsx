@@ -8,7 +8,7 @@ import {
   type ReactNode,
 } from "react";
 
-type ToastType = "success" | "error";
+export type ToastType = "success" | "error";
 type ToastItem = { id: number; message: string; type: ToastType };
 
 const ToastContext = createContext<{
@@ -21,21 +21,28 @@ export function useToast() {
   return ctx.toast;
 }
 
+/**
+ * Notification discrète confirmant le résultat d'une action.
+ * Unique mécanisme de retour du projet : ni `alert()`, ni bandeau local.
+ */
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
 
   const toast = useCallback((message: string, type: ToastType = "success") => {
     const id = Date.now() + Math.random();
     setToasts((prev) => [...prev, { id, message, type }]);
-    setTimeout(() => {
+    window.setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 3000);
+    }, 4000);
   }, []);
 
   return (
     <ToastContext.Provider value={{ toast }}>
       {children}
-      <div className="pointer-events-none fixed bottom-6 right-6 z-[100] flex flex-col items-end gap-2">
+      <div
+        aria-live="polite"
+        className="pointer-events-none fixed bottom-6 right-6 z-[100] flex flex-col items-end gap-2"
+      >
         {toasts.map((t) => (
           <div
             key={t.id}

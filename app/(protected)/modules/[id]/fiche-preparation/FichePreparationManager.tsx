@@ -7,7 +7,7 @@ import remarkGfm from "remark-gfm";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas-pro";
 import { saveFiche, type FichePreparation } from "@/app/actions/fiches";
-import { useToast } from "@/components/Toast";
+import { useToast } from "@/components/ui/Toast";
 import Breadcrumb from "@/components/Breadcrumb";
 import { Download, Save, Sparkles } from "lucide-react";
 

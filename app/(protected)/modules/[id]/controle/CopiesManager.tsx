@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { getPassations, type Passation } from "@/app/actions/controles";
 import { Download } from "lucide-react";
-import StatusBadge from "@/components/StatusBadge";
+import Badge from "@/components/ui/Badge";
 import { exportPdfFromParts } from "@/lib/pdf";
 
 const btnGhost =
@@ -124,9 +124,9 @@ export default function CopiesManager({
                       <span className="text-sm font-medium text-ink">
                         {p.nom_complet}
                       </span>
-                      <StatusBadge tone={noteTone(Number(p.note) || 0)}>
+                      <Badge tone={noteTone(Number(p.note) || 0)}>
                         {Number(p.note) || 0} / 20
-                      </StatusBadge>
+                      </Badge>
                     </div>
                     <p className="mt-0.5 text-xs text-slate">
                       {fmtDate(p.submitted_at)}
@@ -180,7 +180,7 @@ export default function CopiesManager({
                       <h3 className="text-sm font-bold text-ink">
                         Question {i + 1}
                       </h3>
-                      <StatusBadge
+                      <Badge
                         tone={
                           d.points === d.bareme
                             ? "success"
@@ -190,7 +190,7 @@ export default function CopiesManager({
                         }
                       >
                         {d.points} / {d.bareme} pts
-                      </StatusBadge>
+                      </Badge>
                     </div>
                     <p className="mt-2 text-sm text-ink">{d.enonce}</p>
                     <p className="mt-2 text-sm text-slate">

@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useToast } from "./Toast";
+import { useToast } from "./ui/Toast";
 import Breadcrumb from "./Breadcrumb";
 import { Link as LinkIcon } from "lucide-react";
 import type { Groupe } from "@/app/actions/groupes";

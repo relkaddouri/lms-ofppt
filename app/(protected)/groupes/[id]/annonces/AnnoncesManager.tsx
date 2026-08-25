@@ -7,7 +7,7 @@ import {
   deleteAnnonce,
   type Annonce,
 } from "@/app/actions/annonces";
-import { useToast } from "@/components/Toast";
+import { useToast } from "@/components/ui/Toast";
 import { Send, Trash2 } from "lucide-react";
 
 const inputClass =

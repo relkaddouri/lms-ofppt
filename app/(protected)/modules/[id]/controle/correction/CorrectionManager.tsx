@@ -7,7 +7,7 @@ import {
   type Question,
 } from "@/app/actions/controles";
 import Breadcrumb from "@/components/Breadcrumb";
-import StatusBadge from "@/components/StatusBadge";
+import Badge from "@/components/ui/Badge";
 import { Wand2 } from "lucide-react";
 
 const inputClass =
@@ -136,9 +136,9 @@ export default function CorrectionManager({
             <div className="rounded-xl border border-border bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-4">
               <div className="flex items-start justify-between gap-4">
                 <p className="text-sm text-ink">{current.enonce}</p>
-                <StatusBadge tone="neutral">
+                <Badge tone="neutral">
                   {Number(current.bareme) || 0} pts
-                </StatusBadge>
+                </Badge>
               </div>
               <details className="mt-3">
                 <summary className="cursor-pointer text-sm font-medium text-forest">
@@ -194,7 +194,7 @@ export default function CorrectionManager({
               {result ? (
                 <div className="mt-4 rounded-lg border border-border bg-paper p-4">
                   <div className="flex flex-wrap items-center gap-3">
-                    <StatusBadge
+                    <Badge
                       tone={
                         result.points === result.bareme
                           ? "success"
@@ -204,7 +204,7 @@ export default function CorrectionManager({
                       }
                     >
                       {result.points} / {result.bareme} pts
-                    </StatusBadge>
+                    </Badge>
                     <span className="text-xs font-medium text-slate">
                       Note suggérée par l&apos;assistant
                     </span>

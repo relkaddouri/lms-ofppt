@@ -7,8 +7,8 @@ import {
   bulkImportStagiaires,
   type StagiaireImportRow,
 } from "@/app/actions/stagiaires";
-import { useToast } from "@/components/Toast";
-import StatusBadge from "@/components/StatusBadge";
+import { useToast } from "@/components/ui/Toast";
+import Badge from "@/components/ui/Badge";
 import { Check, Upload, X } from "lucide-react";
 
 type ParsedRow = {
@@ -228,9 +228,9 @@ export default function StagiaireCsvImport({
                     </td>
                     <td className="px-4 py-2">
                       {r.valid ? (
-                        <StatusBadge tone="success">OK</StatusBadge>
+                        <Badge tone="success">OK</Badge>
                       ) : (
-                        <StatusBadge tone="danger">{r.error}</StatusBadge>
+                        <Badge tone="danger">{r.error}</Badge>
                       )}
                     </td>
                   </tr>

@@ -11,7 +11,7 @@ import {
 import type { Groupe } from "@/app/actions/groupes";
 import StagiaireCsvImport from "./StagiaireCsvImport";
 import KebabMenu from "@/components/KebabMenu";
-import { useToast } from "@/components/Toast";
+import { useToast } from "@/components/ui/Toast";
 import { Check, Pencil, Plus, Save, Trash2, X } from "lucide-react";
 
 const inputClass =

@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Breadcrumb from "@/components/Breadcrumb";
-import StatusBadge from "@/components/StatusBadge";
+import Badge from "@/components/ui/Badge";
 import type { AuditEntry, Controle } from "@/app/actions/controles";
 
 const inputClass =
@@ -179,9 +179,9 @@ export default function HistoriqueManager({
                     {titreFor(e.ligne_id)}
                   </td>
                   <td className="px-4 py-3">
-                    <StatusBadge tone={actionTone(e.action)}>
+                    <Badge tone={actionTone(e.action)}>
                       {actionLabel(e.action)}
-                    </StatusBadge>
+                    </Badge>
                   </td>
                   <td className="px-4 py-3">
                     <ChangesList entry={e} />

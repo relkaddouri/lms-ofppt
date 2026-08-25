@@ -2,7 +2,7 @@ import { getModuleDetail } from "@/app/actions/modules";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import Breadcrumb from "@/components/Breadcrumb";
-import StatusBadge from "@/components/StatusBadge";
+import Badge from "@/components/ui/Badge";
 import { FileText, FolderKanban, ListChecks, Plus, Users } from "lucide-react";
 
 const linkBtn =
@@ -51,9 +51,9 @@ export default async function ModuleDetailPage({
                 Fiche de préparation
               </h2>
               {hasFiche ? (
-                <StatusBadge tone="success">Fiche disponible</StatusBadge>
+                <Badge tone="success">Fiche disponible</Badge>
               ) : (
-                <StatusBadge tone="neutral">Aucune fiche</StatusBadge>
+                <Badge tone="neutral">Aucune fiche</Badge>
               )}
             </div>
           </div>
@@ -142,9 +142,9 @@ export default async function ModuleDetailPage({
                       {c.titre ?? "Sans titre"}
                     </td>
                     <td className="px-4 py-3">
-                      <StatusBadge tone={c.statut === "valide" ? "success" : "info"}>
+                      <Badge tone={c.statut === "valide" ? "success" : "info"}>
                         {c.statut === "valide" ? "Validé" : "Brouillon"}
-                      </StatusBadge>
+                      </Badge>
                     </td>
                     <td className="px-4 py-3 text-right">
                       <Link
