@@ -8,6 +8,14 @@
 --     que la somme des durées des 16 compétences du tableau synthèse vaut 1375 h.
 --     Les deux valeurs sont enregistrées sans arbitrage : 1435 h sur la spécialité,
 --     les durées unitaires sur chaque compétence.
+--   * La compétence 02 porte deux codes différents selon l'endroit du document :
+--     DIA_DES_TS-02 dans le tableau synthèse, DIA_DESOUX_TS-02 dans sa fiche
+--     prescrite et ses suggestions pédagogiques. C'est DIA_DES_TS-02 qui fait
+--     foi ici, arbitré par le porteur du projet et cohérent avec le cycle
+--     (compétence 02 = tronc commun).
+--   * Le cycle (tronc commun / spécialisation) n'est PAS déductible du code :
+--     la compétence 08 porte DIA_DESOUX_TS-08 tout en relevant du tronc commun.
+--     Répartition retenue : 01→08 tronc commun, 09→16 spécialisation.
 --   * Le document ne contient aucun code court M1XX. Le code opérationnel est donc
 --     DÉRIVÉ du numéro selon le motif documenté au PRD §3 (M1 + numéro sur 2
 --     chiffres, ex. compétence 6 -> M106), et non lu dans le référentiel.
@@ -24,26 +32,27 @@ select id, 2021 from public.specialites where code = 'DIA_DES_TS'
 on conflict (specialite_id, annee_approbation) do nothing;
 
 insert into public.competences
-  (programme_id, numero, code_officiel, code_operationnel, nom, duree_nationale_heures)
+  (programme_id, numero, code_officiel, code_operationnel, nom, duree_nationale_heures, cycle)
 values
-  ((select p.id from public.programmes p join public.specialites s on s.id = p.specialite_id where s.code = 'DIA_DES_TS' and p.annee_approbation = 2021), 1, 'DIA_DES_TS-01', 'M101', 'Se situer au regard du métier et de la démarche de formation', 15),
-  ((select p.id from public.programmes p join public.specialites s on s.id = p.specialite_id where s.code = 'DIA_DES_TS' and p.annee_approbation = 2021), 2, 'DIA_DES_TS-02', 'M102', 'Identifier les enjeux digitaux chez l’utilisateur', 60),
-  ((select p.id from public.programmes p join public.specialites s on s.id = p.specialite_id where s.code = 'DIA_DES_TS' and p.annee_approbation = 2021), 3, 'DIA_DES_TS-03', 'M103', 'Exploiter les règles du graphisme dans les solutions digitales', 105),
-  ((select p.id from public.programmes p join public.specialites s on s.id = p.specialite_id where s.code = 'DIA_DES_TS' and p.annee_approbation = 2021), 4, 'DIA_DES_TS-04', 'M104', 'Analyser le contexte professionnel d’un projet d’UX / UI Design', 90),
-  ((select p.id from public.programmes p join public.specialites s on s.id = p.specialite_id where s.code = 'DIA_DES_TS' and p.annee_approbation = 2021), 5, 'DIA_DES_TS-05', 'M105', 'Réaliser une veille graphique', 90),
-  ((select p.id from public.programmes p join public.specialites s on s.id = p.specialite_id where s.code = 'DIA_DES_TS' and p.annee_approbation = 2021), 6, 'DIA_DES_TS-06', 'M106', 'Déterminer les concepts de l’UX/UI Design', 120),
-  ((select p.id from public.programmes p join public.specialites s on s.id = p.specialite_id where s.code = 'DIA_DES_TS' and p.annee_approbation = 2021), 7, 'DIA_DES_TS-07', 'M107', 'Utiliser les logiciels de modélisation graphique', 120),
-  ((select p.id from public.programmes p join public.specialites s on s.id = p.specialite_id where s.code = 'DIA_DES_TS' and p.annee_approbation = 2021), 8, 'DIA_DESOUX_TS-08', 'M108', 'S’initier à la création et l’utilisation d’interactions digitales', 105),
-  ((select p.id from public.programmes p join public.specialites s on s.id = p.specialite_id where s.code = 'DIA_DES_TS' and p.annee_approbation = 2021), 9, 'DIA_DESOUX_TS-09', 'M109', 'S’initier à la gestion de projet', 30),
-  ((select p.id from public.programmes p join public.specialites s on s.id = p.specialite_id where s.code = 'DIA_DES_TS' and p.annee_approbation = 2021), 10, 'DIA_DESOUX_TS-10', 'M110', 'Analyser les besoins des utilisateurs', 90),
-  ((select p.id from public.programmes p join public.specialites s on s.id = p.specialite_id where s.code = 'DIA_DES_TS' and p.annee_approbation = 2021), 11, 'DIA_DESOUX_TS-11', 'M111', 'Déterminer les parcours utilisateurs', 105),
-  ((select p.id from public.programmes p join public.specialites s on s.id = p.specialite_id where s.code = 'DIA_DES_TS' and p.annee_approbation = 2021), 12, 'DIA_DESOUX_TS-12', 'M112', 'Connaître les spécificités de l’ergonomie de différents types de solutions', 75),
-  ((select p.id from public.programmes p join public.specialites s on s.id = p.specialite_id where s.code = 'DIA_DES_TS' and p.annee_approbation = 2021), 13, 'DIA_DESOUX_TS-13', 'M113', 'Créer un design d’interfaces ergonomique et interactif', 60),
-  ((select p.id from public.programmes p join public.specialites s on s.id = p.specialite_id where s.code = 'DIA_DES_TS' and p.annee_approbation = 2021), 14, 'DIA_DESOUX_TS-14', 'M114', 'Architecturer des informations', 60),
-  ((select p.id from public.programmes p join public.specialites s on s.id = p.specialite_id where s.code = 'DIA_DES_TS' and p.annee_approbation = 2021), 15, 'DIA_DESOUX_TS-15', 'M115', 'Réaliser des tests utilisateurs', 90),
-  ((select p.id from public.programmes p join public.specialites s on s.id = p.specialite_id where s.code = 'DIA_DES_TS' and p.annee_approbation = 2021), 16, 'DIA_DESOUX_TS-16', 'M116', 'S''intégrer en milieu professionnel', 160)
+  ((select p.id from public.programmes p join public.specialites s on s.id = p.specialite_id where s.code = 'DIA_DES_TS' and p.annee_approbation = 2021), 1, 'DIA_DES_TS-01', 'M101', 'Se situer au regard du métier et de la démarche de formation', 15, 'tronc_commun'),
+  ((select p.id from public.programmes p join public.specialites s on s.id = p.specialite_id where s.code = 'DIA_DES_TS' and p.annee_approbation = 2021), 2, 'DIA_DES_TS-02', 'M102', 'Identifier les enjeux digitaux chez l’utilisateur', 60, 'tronc_commun'),
+  ((select p.id from public.programmes p join public.specialites s on s.id = p.specialite_id where s.code = 'DIA_DES_TS' and p.annee_approbation = 2021), 3, 'DIA_DES_TS-03', 'M103', 'Exploiter les règles du graphisme dans les solutions digitales', 105, 'tronc_commun'),
+  ((select p.id from public.programmes p join public.specialites s on s.id = p.specialite_id where s.code = 'DIA_DES_TS' and p.annee_approbation = 2021), 4, 'DIA_DES_TS-04', 'M104', 'Analyser le contexte professionnel d’un projet d’UX / UI Design', 90, 'tronc_commun'),
+  ((select p.id from public.programmes p join public.specialites s on s.id = p.specialite_id where s.code = 'DIA_DES_TS' and p.annee_approbation = 2021), 5, 'DIA_DES_TS-05', 'M105', 'Réaliser une veille graphique', 90, 'tronc_commun'),
+  ((select p.id from public.programmes p join public.specialites s on s.id = p.specialite_id where s.code = 'DIA_DES_TS' and p.annee_approbation = 2021), 6, 'DIA_DES_TS-06', 'M106', 'Déterminer les concepts de l’UX/UI Design', 120, 'tronc_commun'),
+  ((select p.id from public.programmes p join public.specialites s on s.id = p.specialite_id where s.code = 'DIA_DES_TS' and p.annee_approbation = 2021), 7, 'DIA_DES_TS-07', 'M107', 'Utiliser les logiciels de modélisation graphique', 120, 'tronc_commun'),
+  ((select p.id from public.programmes p join public.specialites s on s.id = p.specialite_id where s.code = 'DIA_DES_TS' and p.annee_approbation = 2021), 8, 'DIA_DESOUX_TS-08', 'M108', 'S’initier à la création et l’utilisation d’interactions digitales', 105, 'tronc_commun'),
+  ((select p.id from public.programmes p join public.specialites s on s.id = p.specialite_id where s.code = 'DIA_DES_TS' and p.annee_approbation = 2021), 9, 'DIA_DESOUX_TS-09', 'M109', 'S’initier à la gestion de projet', 30, 'specialisation'),
+  ((select p.id from public.programmes p join public.specialites s on s.id = p.specialite_id where s.code = 'DIA_DES_TS' and p.annee_approbation = 2021), 10, 'DIA_DESOUX_TS-10', 'M110', 'Analyser les besoins des utilisateurs', 90, 'specialisation'),
+  ((select p.id from public.programmes p join public.specialites s on s.id = p.specialite_id where s.code = 'DIA_DES_TS' and p.annee_approbation = 2021), 11, 'DIA_DESOUX_TS-11', 'M111', 'Déterminer les parcours utilisateurs', 105, 'specialisation'),
+  ((select p.id from public.programmes p join public.specialites s on s.id = p.specialite_id where s.code = 'DIA_DES_TS' and p.annee_approbation = 2021), 12, 'DIA_DESOUX_TS-12', 'M112', 'Connaître les spécificités de l’ergonomie de différents types de solutions', 75, 'specialisation'),
+  ((select p.id from public.programmes p join public.specialites s on s.id = p.specialite_id where s.code = 'DIA_DES_TS' and p.annee_approbation = 2021), 13, 'DIA_DESOUX_TS-13', 'M113', 'Créer un design d’interfaces ergonomique et interactif', 60, 'specialisation'),
+  ((select p.id from public.programmes p join public.specialites s on s.id = p.specialite_id where s.code = 'DIA_DES_TS' and p.annee_approbation = 2021), 14, 'DIA_DESOUX_TS-14', 'M114', 'Architecturer des informations', 60, 'specialisation'),
+  ((select p.id from public.programmes p join public.specialites s on s.id = p.specialite_id where s.code = 'DIA_DES_TS' and p.annee_approbation = 2021), 15, 'DIA_DESOUX_TS-15', 'M115', 'Réaliser des tests utilisateurs', 90, 'specialisation'),
+  ((select p.id from public.programmes p join public.specialites s on s.id = p.specialite_id where s.code = 'DIA_DES_TS' and p.annee_approbation = 2021), 16, 'DIA_DESOUX_TS-16', 'M116', 'S''intégrer en milieu professionnel', 160, 'specialisation')
 on conflict (programme_id, numero) do update
   set code_officiel = excluded.code_officiel,
       code_operationnel = excluded.code_operationnel,
       nom = excluded.nom,
-      duree_nationale_heures = excluded.duree_nationale_heures;
+      duree_nationale_heures = excluded.duree_nationale_heures,
+      cycle = excluded.cycle;
