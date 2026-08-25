@@ -18,7 +18,7 @@ Ordre des phases : sécurité et fondations d'abord, schéma du référentiel of
   **Test** : les composants s'affichent correctement dans une page de démonstration temporaire.
 - [x] **0.4** — Prompt : *"Remplace tous les `alert()` et `confirm()` natifs du projet par les composants `Toast` et `Modal` de confirmation créés en 0.3. Remplace toutes les occurrences locales de `inputClass`/`btnPrimary`/`formatDate`/`initials` par les composants et fonctions partagés."*
   **Test** : grep sur `alert(` et `confirm(` dans le projet — zéro résultat en dehors de commentaires.
-- [ ] **0.5 — Interface** — Prompt : *"Crée `app/(protected)/groupes/[id]/layout.tsx` qui charge le groupe une seule fois (`getGroupeById`, `getStagiairesCount`) et affiche `GroupeHeader` + `GroupeTabs`, partagé par toutes les sous-pages de `/groupes/[id]/*`. Supprime le chargement dupliqué dans chaque sous-page."*
+- [x] **0.5 — Interface** — Prompt : *"Crée `app/(protected)/groupes/[id]/layout.tsx` qui charge le groupe une seule fois (`getGroupeById`, `getStagiairesCount`) et affiche `GroupeHeader` + `GroupeTabs`, partagé par toutes les sous-pages de `/groupes/[id]/*`. Supprime le chargement dupliqué dans chaque sous-page."*
   **Test** : navigue entre les onglets d'un groupe, vérifie qu'il n'y a pas de rechargement visible du header.
 
 ---

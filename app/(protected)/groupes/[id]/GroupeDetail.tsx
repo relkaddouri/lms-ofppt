@@ -8,7 +8,6 @@ import {
   removeStagiaire,
   type Stagiaire,
 } from "@/app/actions/stagiaires";
-import type { Groupe } from "@/app/actions/groupes";
 import StagiaireCsvImport from "./StagiaireCsvImport";
 import KebabMenu from "@/components/KebabMenu";
 import { useToast } from "@/components/ui/Toast";
@@ -19,10 +18,10 @@ import { initials } from "@/lib/format";
 import { Check, Pencil, Plus, Save, Trash2, X } from "lucide-react";
 
 export default function GroupeDetail({
-  groupe,
+  groupeId,
   stagiaires,
 }: {
-  groupe: Groupe;
+  groupeId: string;
   stagiaires: Stagiaire[];
 }) {
   const router = useRouter();
@@ -37,7 +36,7 @@ export default function GroupeDetail({
     e.preventDefault();
     setBusy(true);
     try {
-      await addStagiaire(groupe.id, {
+      await addStagiaire(groupeId, {
         nom: form.nom,
         prenom: form.prenom,
         email: form.email || undefined,
@@ -80,7 +79,7 @@ export default function GroupeDetail({
   async function handleUpdate(id: string) {
     setBusy(true);
     try {
-      await updateStagiaire(id, groupe.id, {
+      await updateStagiaire(id, groupeId, {
         nom: editForm.nom,
         prenom: editForm.prenom,
         email: editForm.email || undefined,
@@ -142,7 +141,7 @@ export default function GroupeDetail({
           </form>
         </Card>
 
-        <StagiaireCsvImport groupeId={groupe.id} />
+        <StagiaireCsvImport groupeId={groupeId} />
 
         <div className="mt-4 overflow-hidden rounded-xl border border-border bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
           <table className="w-full text-left text-sm">
