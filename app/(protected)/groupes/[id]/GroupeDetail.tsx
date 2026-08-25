@@ -12,23 +12,11 @@ import type { Groupe } from "@/app/actions/groupes";
 import StagiaireCsvImport from "./StagiaireCsvImport";
 import KebabMenu from "@/components/KebabMenu";
 import { useToast } from "@/components/ui/Toast";
+import Button from "@/components/ui/Button";
+import Input from "@/components/ui/Input";
+import Card from "@/components/ui/Card";
+import { initials } from "@/lib/format";
 import { Check, Pencil, Plus, Save, Trash2, X } from "lucide-react";
-
-const inputClass =
-  "mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm text-ink focus:border-forest focus:outline-none focus:ring-2 focus:ring-forest";
-const btnPrimary =
-  "inline-flex items-center gap-1.5 rounded-lg bg-forest px-4 py-2 text-sm font-medium text-white hover:bg-forest/90 focus:outline-none focus:ring-2 focus:ring-forest";
-const btnDangerSolid =
-  "inline-flex items-center gap-1.5 rounded-lg bg-danger px-3 py-1.5 text-xs font-medium text-white hover:bg-danger/90 focus:outline-none focus:ring-2 focus:ring-danger";
-const btnGhost =
-  "inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-slate hover:bg-slate/10 focus:outline-none focus:ring-2 focus:ring-forest";
-
-function initials(prenom: string, nom: string) {
-  const a = prenom.trim().charAt(0);
-  const b = nom.trim().charAt(0);
-  const out = `${a}${b}`.toUpperCase();
-  return out || "?";
-}
 
 export default function GroupeDetail({
   groupe,
@@ -58,7 +46,7 @@ export default function GroupeDetail({
       toast("Stagiaire ajouté");
       router.refresh();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Erreur inattendue");
+      toast(err instanceof Error ? err.message : "Erreur inattendue", "error");
     } finally {
       setBusy(false);
     }
@@ -71,7 +59,7 @@ export default function GroupeDetail({
       toast("Stagiaire supprimé");
       router.refresh();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Erreur inattendue");
+      toast(err instanceof Error ? err.message : "Erreur inattendue", "error");
     }
   }
 
@@ -101,7 +89,7 @@ export default function GroupeDetail({
       toast("Modification enregistrée");
       router.refresh();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Erreur inattendue");
+      toast(err instanceof Error ? err.message : "Erreur inattendue", "error");
     } finally {
       setBusy(false);
     }
@@ -113,72 +101,46 @@ export default function GroupeDetail({
         Stagiaires
       </h2>
 
-      <div className="mt-4 max-w-[640px] rounded-xl border border-border bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-4">
+      <Card className="mt-4 max-w-[640px]">
         <h3 className="text-sm font-medium text-ink">Ajout rapide</h3>
         <form
           onSubmit={handleAdd}
           className="mt-3 grid grid-cols-1 gap-4 md:grid-cols-[1fr_1fr_1.5fr_auto]"
         >
-            <div>
-              <label htmlFor="nom" className="block text-sm font-medium text-ink">
-                Nom
-              </label>
-              <input
-                id="nom"
-                required
-                value={form.nom}
-                onChange={(e) => setForm({ ...form, nom: e.target.value })}
-                className={inputClass}
-              />
-            </div>
-            <div>
-              <label
-                htmlFor="prenom"
-                className="block text-sm font-medium text-ink"
-              >
-                Prénom
-              </label>
-              <input
-                id="prenom"
-                required
-                value={form.prenom}
-                onChange={(e) => setForm({ ...form, prenom: e.target.value })}
-                className={inputClass}
-              />
-            </div>
-            <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-ink"
-              >
-                Email
-              </label>
-              <input
-                id="email"
-                type="email"
-                value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-                className={inputClass}
-              />
-            </div>
+            <Input
+              id="nom"
+              label="Nom"
+              required
+              value={form.nom}
+              onChange={(e) => setForm({ ...form, nom: e.target.value })}
+            />
+            <Input
+              id="prenom"
+              label="Prénom"
+              required
+              value={form.prenom}
+              onChange={(e) => setForm({ ...form, prenom: e.target.value })}
+            />
+            <Input
+              id="email"
+              label="Email"
+              type="email"
+              value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
+            />
             <div className="flex items-end">
-              <button
+              <Button
                 type="submit"
-                disabled={busy}
-                className={`${btnPrimary} w-full md:w-auto`}
+                icon={Plus}
+                loading={busy}
+                loadingLabel="Ajout…"
+                className="w-full md:w-auto"
               >
-                {busy ? (
-                  "Ajout…"
-                ) : (
-                  <>
-                    <Plus size={16} />
-                    Ajouter
-                  </>
-                )}
-              </button>
+                Ajouter
+              </Button>
             </div>
           </form>
-        </div>
+        </Card>
 
         <StagiaireCsvImport groupeId={groupe.id} />
 
@@ -207,46 +169,42 @@ export default function GroupeDetail({
                     <tr key={s.id} className="border-t border-border bg-paper">
                       <td className="px-4 py-3">
                         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                          <input
+                          <Input
                             value={editForm.nom}
                             onChange={(e) =>
                               setEditForm({ ...editForm, nom: e.target.value })
                             }
                             placeholder="Nom"
-                            className={inputClass}
                           />
-                          <input
+                          <Input
                             value={editForm.prenom}
                             onChange={(e) =>
                               setEditForm({ ...editForm, prenom: e.target.value })
                             }
                             placeholder="Prénom"
-                            className={inputClass}
                           />
-                          <input
+                          <Input
                             type="email"
                             value={editForm.email}
                             onChange={(e) =>
                               setEditForm({ ...editForm, email: e.target.value })
                             }
                             placeholder="Email"
-                            className={inputClass}
                           />
                         </div>
                       </td>
                       <td className="px-4 py-3 text-right">
-                        <button
+                        <Button
+                          icon={Save}
                           onClick={() => handleUpdate(s.id)}
                           disabled={busy}
-                          className={`${btnPrimary} mr-2`}
+                          className="mr-2"
                         >
-                          <Save size={16} />
                           Enregistrer
-                        </button>
-                        <button onClick={cancelEdit} className={btnGhost}>
-                          <X size={16} />
+                        </Button>
+                        <Button variant="ghost" size="sm" icon={X} onClick={cancelEdit}>
                           Annuler
-                        </button>
+                        </Button>
                       </td>
                     </tr>
                   ) : (
@@ -275,20 +233,22 @@ export default function GroupeDetail({
                             <span className="text-xs text-slate">
                               Supprimer ?
                             </span>
-                            <button
+                            <Button
+                              variant="danger"
+                              size="sm"
+                              icon={Check}
                               onClick={() => handleRemove(s.id)}
-                              className={btnDangerSolid}
                             >
-                              <Check size={16} />
                               Confirmer
-                            </button>
-                            <button
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              icon={X}
                               onClick={() => setConfirmId(null)}
-                              className={btnGhost}
                             >
-                              <X size={16} />
                               Annuler
-                            </button>
+                            </Button>
                           </span>
                         ) : (
                           <KebabMenu

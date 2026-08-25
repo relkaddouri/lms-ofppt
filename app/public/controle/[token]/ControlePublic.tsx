@@ -2,13 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import { exportPdfFromParts } from "@/lib/pdf";
+import Button from "@/components/ui/Button";
+import { inputStyles } from "@/components/ui/Input";
+import { useToast } from "@/components/ui/Toast";
+import { slugify } from "@/lib/format";
 
-const inputClass =
-  "mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm text-ink focus:border-forest focus:outline-none focus:ring-2 focus:ring-forest";
-const btnPrimary =
-  "rounded-lg bg-forest px-4 py-2 text-sm font-medium text-white hover:bg-forest/90 focus:outline-none focus:ring-2 focus:ring-forest disabled:cursor-not-allowed disabled:opacity-50";
-const btnGhost =
-  "rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-slate hover:bg-slate/10 focus:outline-none focus:ring-2 focus:ring-forest";
+const inputClass = inputStyles;
 
 type Question = {
   id: string;
@@ -52,6 +51,7 @@ export default function ControlePublic({
 }) {
   const pdfHeaderRef = useRef<HTMLDivElement>(null);
   const pdfBodyRef = useRef<HTMLDivElement>(null);
+  const toast = useToast();
   const reponsesRef = useRef<Record<string, string>>({});
   const submittedRef = useRef(false);
 
@@ -100,7 +100,7 @@ export default function ControlePublic({
       setResult(data);
       setPhase("result");
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Erreur inattendue");
+      toast(err instanceof Error ? err.message : "Erreur inattendue", "error");
     } finally {
       setBusy(false);
     }
@@ -108,7 +108,7 @@ export default function ControlePublic({
 
   function startExam() {
     if (!nom.trim()) {
-      alert("Veuillez saisir votre nom complet.");
+      toast("Veuillez saisir votre nom complet.", "error");
       return;
     }
     setPhase("exam");
@@ -125,17 +125,17 @@ export default function ControlePublic({
   async function handleDownloadPdf() {
     setBusy(true);
     try {
-      const safe = (result?.titre ?? "controle")
-        .replace(/[^\w\s-]/g, "")
-        .trim()
-        .replace(/\s+/g, "-");
+      const safe = slugify(result?.titre ?? "controle", "controle");
       await exportPdfFromParts(
         pdfHeaderRef.current,
         pdfBodyRef.current,
-        `resultat-${nom.replace(/\s+/g, "-")}-${safe}.pdf`,
+        `resultat-${slugify(nom, "stagiaire")}-${safe}.pdf`,
       );
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Erreur de génération du PDF");
+      toast(
+        err instanceof Error ? err.message : "Erreur de génération du PDF",
+        "error",
+      );
     } finally {
       setBusy(false);
     }
@@ -186,9 +186,9 @@ export default function ControlePublic({
                 className={inputClass}
               />
             </div>
-            <button type="submit" className={`${btnPrimary} w-full`}>
+            <Button type="submit" size="touch" className="w-full">
               Commencer le contrôle
-            </button>
+            </Button>
           </form>
         </div>
       </main>
@@ -200,9 +200,15 @@ export default function ControlePublic({
       <main className="min-h-screen bg-paper">
         <header className="flex items-center justify-between bg-ink px-6 py-4">
           <div className="font-display text-lg font-bold text-white">LMS OFPPT</div>
-          <button onClick={handleDownloadPdf} disabled={busy} className={btnGhost}>
-            {busy ? "Génération…" : "Télécharger mon résultat (PDF)"}
-          </button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleDownloadPdf}
+            loading={busy}
+            loadingLabel="Génération…"
+          >
+            Télécharger mon résultat (PDF)
+          </Button>
         </header>
 
         <div className="mx-auto w-full max-w-[1200px] px-8 py-8">
@@ -383,13 +389,15 @@ export default function ControlePublic({
         </div>
 
         <div className="mt-6 pb-8">
-          <button
+          <Button
+            size="touch"
             onClick={handleSubmit}
-            disabled={busy}
-            className={`${btnPrimary} w-full`}
+            loading={busy}
+            loadingLabel="Correction en cours…"
+            className="w-full"
           >
-            {busy ? "Correction en cours…" : "Terminer et corriger"}
-          </button>
+            Terminer et corriger
+          </Button>
         </div>
       </div>
     </main>

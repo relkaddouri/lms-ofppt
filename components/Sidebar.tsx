@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LogOut } from "lucide-react";
 import { signOutAction } from "@/app/actions/auth";
+import { initials } from "@/lib/format";
 
 const navGroups = [
   {
@@ -15,16 +16,6 @@ const navGroups = [
     ],
   },
 ];
-
-function initials(name: string) {
-  return name
-    .split("@")[0]
-    .split(/[\s._-]+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((p) => p[0]?.toUpperCase() ?? "")
-    .join("");
-}
 
 function Icon({ name }: { name: string }) {
   const className = "h-4 w-4";

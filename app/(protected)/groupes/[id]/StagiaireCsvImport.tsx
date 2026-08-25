@@ -9,6 +9,9 @@ import {
 } from "@/app/actions/stagiaires";
 import { useToast } from "@/components/ui/Toast";
 import Badge from "@/components/ui/Badge";
+import Button from "@/components/ui/Button";
+import Card from "@/components/ui/Card";
+import { initials } from "@/lib/format";
 import { Check, Upload, X } from "lucide-react";
 
 type ParsedRow = {
@@ -19,26 +22,12 @@ type ParsedRow = {
   error?: string;
 };
 
-const btnSecondary =
-  "inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-ink hover:bg-paper focus:outline-none focus:ring-2 focus:ring-forest";
-const btnPrimary =
-  "inline-flex items-center gap-1.5 rounded-lg bg-forest px-4 py-2 text-sm font-medium text-white hover:bg-forest/90 focus:outline-none focus:ring-2 focus:ring-forest";
-const btnGhost =
-  "inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-slate hover:bg-slate/10 focus:outline-none focus:ring-2 focus:ring-forest";
-
 function getField(raw: Record<string, string>, key: string) {
   const lower = key.toLowerCase();
   const entry = Object.entries(raw).find(
     ([k]) => k.trim().toLowerCase() === lower,
   );
   return entry ? (entry[1] ?? "").trim() : "";
-}
-
-function initials(prenom: string, nom: string) {
-  const a = prenom.trim().charAt(0);
-  const b = nom.trim().charAt(0);
-  const out = `${a}${b}`.toUpperCase();
-  return out || "?";
 }
 
 export default function StagiaireCsvImport({
@@ -124,7 +113,7 @@ export default function StagiaireCsvImport({
       router.refresh();
     } catch (err) {
       setNotice(null);
-      alert(err instanceof Error ? err.message : "Erreur inattendue");
+      toast(err instanceof Error ? err.message : "Erreur inattendue", "error");
     } finally {
       setBusy(false);
     }
@@ -133,15 +122,16 @@ export default function StagiaireCsvImport({
   const validCount = rows.filter((r) => r.valid).length;
 
   return (
-    <div className="mt-4 rounded-xl border border-border bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-4">
+    <Card className="mt-4">
       <div className="flex flex-wrap items-center gap-4">
-        <button
+        <Button
+          variant="secondary"
+          size="sm"
+          icon={Upload}
           onClick={() => inputRef.current?.click()}
-          className={btnSecondary}
         >
-          <Upload size={16} />
           Importer depuis un CSV
-        </button>
+        </Button>
         <span className="text-xs text-slate">
           Colonnes attendues : <span className="font-mono">nom, prenom, email</span>
         </span>
@@ -179,24 +169,18 @@ export default function StagiaireCsvImport({
               </span>
             </p>
             <div className="flex items-center gap-2">
-              <button onClick={handleCancel} className={btnGhost}>
-                <X size={16} />
+              <Button variant="ghost" size="sm" icon={X} onClick={handleCancel}>
                 Annuler
-              </button>
-              <button
+              </Button>
+              <Button
+                icon={Check}
                 onClick={handleImport}
-                disabled={busy || validCount === 0}
-                className={btnPrimary}
+                disabled={validCount === 0}
+                loading={busy}
+                loadingLabel="Import…"
               >
-                {busy ? (
-                  "Import…"
-                ) : (
-                  <>
-                    <Check size={16} />
-                    Confirmer l&apos;import
-                  </>
-                )}
-              </button>
+                Confirmer l&apos;import
+              </Button>
             </div>
           </div>
 
@@ -240,6 +224,6 @@ export default function StagiaireCsvImport({
           </div>
         </div>
       ) : null}
-    </div>
+    </Card>
   );
 }

@@ -5,14 +5,8 @@ import { useToast } from "./ui/Toast";
 import Breadcrumb from "./Breadcrumb";
 import { Link as LinkIcon } from "lucide-react";
 import type { Groupe } from "@/app/actions/groupes";
-
-const btnSecondary =
-  "inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-ink hover:bg-paper focus:outline-none focus:ring-2 focus:ring-forest";
-
-function formatDate(d: string | null) {
-  if (!d) return "—";
-  return new Date(d).toLocaleDateString("fr-FR");
-}
+import Button from "@/components/ui/Button";
+import { formatDate } from "@/lib/format";
 
 export default function GroupeHeader({
   groupe,
@@ -55,10 +49,9 @@ export default function GroupeHeader({
         <span className="rounded-full border border-border bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.06)] px-3 py-1 text-xs font-medium text-slate">
           {stagiairesCount} stagiaire{stagiairesCount > 1 ? "s" : ""}
         </span>
-        <button onClick={copyPublicLink} className={btnSecondary}>
-          <LinkIcon size={16} />
+        <Button variant="secondary" size="sm" icon={LinkIcon} onClick={copyPublicLink}>
           Copier le lien public
-        </button>
+        </Button>
       </div>
       <p className="mt-1 text-sm text-slate">
         {formatDate(groupe.date_debut)} → {formatDate(groupe.date_fin)}

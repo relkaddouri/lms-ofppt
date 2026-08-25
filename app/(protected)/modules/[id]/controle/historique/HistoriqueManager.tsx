@@ -4,19 +4,10 @@ import { useMemo, useState } from "react";
 import Breadcrumb from "@/components/Breadcrumb";
 import Badge from "@/components/ui/Badge";
 import type { AuditEntry, Controle } from "@/app/actions/controles";
+import { inputStyles } from "@/components/ui/Input";
+import { formatDateTime } from "@/lib/format";
 
-const inputClass =
-  "w-full rounded-lg border border-border px-3 py-2 text-sm text-ink focus:border-forest focus:outline-none focus:ring-2 focus:ring-forest";
-
-function fmtDate(iso: string) {
-  return new Date(iso).toLocaleString("fr-FR", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
+const inputClass = inputStyles;
 
 function actionTone(action: string): "success" | "info" | "danger" {
   if (action === "INSERT") return "success";
@@ -173,7 +164,7 @@ export default function HistoriqueManager({
                   className="border-t border-border transition-colors hover:bg-mint/50"
                 >
                   <td className="px-4 py-3 font-mono text-xs text-slate">
-                    {fmtDate(e.date)}
+                    {formatDateTime(e.date)}
                   </td>
                   <td className="px-4 py-3 font-medium text-ink">
                     {titreFor(e.ligne_id)}

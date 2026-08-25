@@ -10,17 +10,18 @@ import {
   type Module,
 } from "@/app/actions/modules";
 import KebabMenu from "@/components/KebabMenu";
+import Button from "@/components/ui/Button";
+import Input, { Textarea } from "@/components/ui/Input";
+import Modal, { ConfirmModal } from "@/components/ui/Modal";
+import { useToast } from "@/components/ui/Toast";
 import { Pencil, Plus, Save, Trash2, X } from "lucide-react";
-
-const inputClass =
-  "mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm text-ink focus:border-forest focus:outline-none focus:ring-2 focus:ring-forest";
-const btnPrimary =
-  "inline-flex items-center gap-1.5 rounded-lg bg-forest px-4 py-2 text-sm font-medium text-white hover:bg-forest/90 focus:outline-none focus:ring-2 focus:ring-forest";
 
 export default function ModulesManager({ modules }: { modules: Module[] }) {
   const router = useRouter();
+  const toast = useToast();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Module | null>(null);
+  const [aSupprimer, setASupprimer] = useState<Module | null>(null);
   const [busy, setBusy] = useState(false);
   const [form, setForm] = useState({
     nom: "",
@@ -55,35 +56,41 @@ export default function ModulesManager({ modules }: { modules: Module[] }) {
     try {
       if (editing) {
         await updateModule(editing.id, input);
+        toast("Module modifié");
       } else {
         await createModule(input);
+        toast("Module ajouté");
       }
       setOpen(false);
       router.refresh();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Erreur inattendue");
+      toast(err instanceof Error ? err.message : "Erreur inattendue", "error");
     } finally {
       setBusy(false);
     }
   }
 
-  async function handleDelete(m: Module) {
-    if (!confirm(`Supprimer le module « ${m.nom} » ?`)) return;
+  async function handleDelete() {
+    if (!aSupprimer) return;
+    setBusy(true);
     try {
-      await deleteModule(m.id);
+      await deleteModule(aSupprimer.id);
+      setASupprimer(null);
+      toast("Module supprimé");
       router.refresh();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Erreur inattendue");
+      toast(err instanceof Error ? err.message : "Erreur inattendue", "error");
+    } finally {
+      setBusy(false);
     }
   }
 
   return (
     <div className="p-8">
       <div className="flex items-center justify-end">
-        <button onClick={openCreate} className={btnPrimary}>
-          <Plus size={16} />
+        <Button icon={Plus} onClick={openCreate}>
           Ajouter un module
-        </button>
+        </Button>
       </div>
 
       <div className="mt-6 overflow-hidden rounded-xl border border-border bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
@@ -127,7 +134,7 @@ export default function ModulesManager({ modules }: { modules: Module[] }) {
                         { label: "Modifier", onClick: () => openEdit(m), icon: Pencil },
                         {
                           label: "Supprimer",
-                          onClick: () => handleDelete(m),
+                          onClick: () => setASupprimer(m),
                           danger: true,
                           icon: Trash2,
                         },
@@ -141,91 +148,64 @@ export default function ModulesManager({ modules }: { modules: Module[] }) {
         </table>
       </div>
 
-      {open ? (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4"
-          onClick={() => setOpen(false)}
-        >
-          <div
-            className="w-full max-w-md rounded-xl border border-border bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-6"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2 className="font-display text-xl font-bold text-ink">
-              {editing ? "Modifier le module" : "Ajouter un module"}
-            </h2>
-            <form onSubmit={handleSubmit} className="mt-4 space-y-4">
-              <div>
-                <label htmlFor="nom" className="block text-sm font-medium text-ink">
-                  Nom
-                </label>
-                <input
-                  id="nom"
-                  required
-                  value={form.nom}
-                  onChange={(e) => setForm({ ...form, nom: e.target.value })}
-                  className={inputClass}
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor="description"
-                  className="block text-sm font-medium text-ink"
-                >
-                  Description
-                </label>
-                <textarea
-                  id="description"
-                  rows={3}
-                  value={form.description}
-                  onChange={(e) =>
-                    setForm({ ...form, description: e.target.value })
-                  }
-                  className={inputClass}
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor="duree"
-                  className="block text-sm font-medium text-ink"
-                >
-                  Durée (heures)
-                </label>
-                <input
-                  id="duree"
-                  type="number"
-                  min={0}
-                  required
-                  value={form.duree_heures}
-                  onChange={(e) =>
-                    setForm({ ...form, duree_heures: e.target.value })
-                  }
-                  className={inputClass}
-                />
-              </div>
-              <div className="flex justify-end gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setOpen(false)}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-border px-4 py-2 text-sm text-slate hover:bg-slate/10 focus:outline-none focus:ring-2 focus:ring-forest"
-                >
-                  <X size={16} />
-                  Annuler
-                </button>
-                <button type="submit" disabled={busy} className={btnPrimary}>
-                  {busy ? (
-                    "Enregistrement…"
-                  ) : (
-                    <>
-                      <Save size={16} />
-                      Enregistrer
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
+      <Modal
+        open={open}
+        onClose={() => setOpen(false)}
+        title={editing ? "Modifier le module" : "Ajouter un module"}
+      >
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <Input
+            id="nom"
+            label="Nom"
+            required
+            value={form.nom}
+            onChange={(e) => setForm({ ...form, nom: e.target.value })}
+          />
+          <Textarea
+            id="description"
+            label="Description"
+            rows={3}
+            value={form.description}
+            onChange={(e) => setForm({ ...form, description: e.target.value })}
+          />
+          <Input
+            id="duree"
+            label="Durée (heures)"
+            type="number"
+            min={0}
+            required
+            value={form.duree_heures}
+            onChange={(e) => setForm({ ...form, duree_heures: e.target.value })}
+          />
+          <div className="flex justify-end gap-3 pt-2">
+            <Button variant="ghost" size="md" icon={X} onClick={() => setOpen(false)}>
+              Annuler
+            </Button>
+            <Button
+              type="submit"
+              icon={Save}
+              loading={busy}
+              loadingLabel="Enregistrement…"
+            >
+              Enregistrer
+            </Button>
           </div>
-        </div>
-      ) : null}
+        </form>
+      </Modal>
+
+      <ConfirmModal
+        open={aSupprimer !== null}
+        onClose={() => setASupprimer(null)}
+        onConfirm={handleDelete}
+        busy={busy}
+        title="Supprimer ce module ?"
+        message={
+          <>
+            Supprimer définitivement «&nbsp;{aSupprimer?.nom}&nbsp;» ? Les fiches,
+            contrôles et séances rattachés seront également supprimés.
+          </>
+        }
+      />
     </div>
   );
 }

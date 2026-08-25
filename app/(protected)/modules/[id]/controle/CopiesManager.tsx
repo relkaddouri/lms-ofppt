@@ -4,21 +4,10 @@ import { useEffect, useRef, useState } from "react";
 import { getPassations, type Passation } from "@/app/actions/controles";
 import { Download } from "lucide-react";
 import Badge from "@/components/ui/Badge";
+import Button from "@/components/ui/Button";
+import { useToast } from "@/components/ui/Toast";
 import { exportPdfFromParts } from "@/lib/pdf";
-
-const btnGhost =
-  "inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-slate hover:bg-slate/10 focus:outline-none focus:ring-2 focus:ring-forest disabled:cursor-not-allowed disabled:opacity-50";
-
-function fmtDate(iso: string) {
-  if (!iso) return "";
-  return new Date(iso).toLocaleDateString("fr-FR", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
+import { formatDateTime, slugify } from "@/lib/format";
 
 function noteTone(note: number): "success" | "info" | "danger" {
   if (note >= 10) return "success";
@@ -42,6 +31,7 @@ export default function CopiesManager({
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const toast = useToast();
 
   const selected = passations.find((p) => p.id === selectedId) ?? null;
 
@@ -72,21 +62,18 @@ export default function CopiesManager({
     if (!selected) return;
     setBusy(true);
     try {
-      const safeTitre = (controleTitre || "controle")
-        .replace(/[^\w\s-]/g, "")
-        .trim()
-        .replace(/\s+/g, "-");
-      const safeNom = selected.nom_complet
-        .replace(/[^\w\s-]/g, "")
-        .trim()
-        .replace(/\s+/g, "-");
+      const safeTitre = slugify(controleTitre || "controle", "controle");
+      const safeNom = slugify(selected.nom_complet, "copie");
       await exportPdfFromParts(
         pdfHeaderRef.current,
         pdfBodyRef.current,
         `copie-${safeNom}-${safeTitre}.pdf`,
       );
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Erreur de génération du PDF");
+      toast(
+        err instanceof Error ? err.message : "Erreur de génération du PDF",
+        "error",
+      );
     } finally {
       setBusy(false);
     }
@@ -129,7 +116,7 @@ export default function CopiesManager({
                       </Badge>
                     </div>
                     <p className="mt-0.5 text-xs text-slate">
-                      {fmtDate(p.submitted_at)}
+                      {formatDateTime(p.submitted_at)}
                     </p>
                   </button>
                 </li>
@@ -146,23 +133,19 @@ export default function CopiesManager({
                   </h2>
                   <p className="text-xs text-slate">
                     {selected.email ? `${selected.email} · ` : ""}
-                    {fmtDate(selected.submitted_at)}
+                    {formatDateTime(selected.submitted_at)}
                   </p>
                 </div>
-                <button
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  icon={Download}
                   onClick={handleDownloadPdf}
-                  disabled={busy}
-                  className={btnGhost}
+                  loading={busy}
+                  loadingLabel="Génération…"
                 >
-                  {busy ? (
-                    "Génération…"
-                  ) : (
-                    <>
-                      <Download size={16} />
-                      Télécharger la copie (PDF)
-                    </>
-                  )}
-                </button>
+                  Télécharger la copie (PDF)
+                </Button>
               </div>
 
               <p className="mt-4 font-display text-4xl font-bold text-ink">

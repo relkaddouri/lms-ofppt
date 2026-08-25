@@ -10,10 +10,11 @@ import Breadcrumb from "@/components/Breadcrumb";
 import Badge from "@/components/ui/Badge";
 import { Wand2 } from "lucide-react";
 
-const inputClass =
-  "w-full rounded-lg border border-border px-3 py-2 text-sm text-ink focus:border-forest focus:outline-none focus:ring-2 focus:ring-forest";
-const btnPrimary =
-  "inline-flex items-center gap-1.5 rounded-lg bg-forest px-4 py-2 text-sm font-medium text-white hover:bg-forest/90 focus:outline-none focus:ring-2 focus:ring-forest disabled:cursor-not-allowed disabled:opacity-50";
+import { inputStyles } from "@/components/ui/Input";
+import { buttonStyles } from "@/components/ui/Button";
+
+const inputClass = inputStyles;
+const btnPrimary = buttonStyles("primary");
 
 type Result = {
   points: number;

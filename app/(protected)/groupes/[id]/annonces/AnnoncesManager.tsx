@@ -8,19 +8,12 @@ import {
   type Annonce,
 } from "@/app/actions/annonces";
 import { useToast } from "@/components/ui/Toast";
+import Button from "@/components/ui/Button";
+import Input, { Textarea } from "@/components/ui/Input";
+import Card from "@/components/ui/Card";
+import { ConfirmModal } from "@/components/ui/Modal";
+import { formatDate } from "@/lib/format";
 import { Send, Trash2 } from "lucide-react";
-
-const inputClass =
-  "mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm text-ink focus:border-forest focus:outline-none focus:ring-2 focus:ring-forest";
-const btnPrimary =
-  "inline-flex items-center gap-1.5 rounded-lg bg-forest px-4 py-2 text-sm font-medium text-white hover:bg-forest/90 focus:outline-none focus:ring-2 focus:ring-forest";
-const btnDangerGhost =
-  "inline-flex items-center gap-1.5 rounded-lg border border-danger/50 px-3 py-1.5 text-xs font-medium text-danger hover:bg-danger/10 focus:outline-none focus:ring-2 focus:ring-danger";
-
-function formatDate(d: string | null) {
-  if (!d) return "—";
-  return new Date(d).toLocaleDateString("fr-FR");
-}
 
 export default function AnnoncesManager({
   groupeId,
@@ -32,6 +25,7 @@ export default function AnnoncesManager({
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [form, setForm] = useState({ titre: "", contenu: "", date: "" });
+  const [aSupprimer, setASupprimer] = useState<Annonce | null>(null);
   const toast = useToast();
 
   async function handleSubmit(e: React.FormEvent) {
@@ -47,93 +41,74 @@ export default function AnnoncesManager({
       toast("Annonce publiée");
       router.refresh();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Erreur inattendue");
+      toast(err instanceof Error ? err.message : "Erreur inattendue", "error");
     } finally {
       setBusy(false);
     }
   }
 
-  async function handleDelete(a: Annonce) {
-    if (!confirm(`Supprimer l'annonce « ${a.titre} » ?`)) return;
+  async function handleDelete() {
+    if (!aSupprimer) return;
+    setBusy(true);
     try {
-      await deleteAnnonce(a.id, groupeId);
+      await deleteAnnonce(aSupprimer.id, groupeId);
+      setASupprimer(null);
       toast("Annonce supprimée");
       router.refresh();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Erreur inattendue");
+      toast(err instanceof Error ? err.message : "Erreur inattendue", "error");
+    } finally {
+      setBusy(false);
     }
   }
 
   return (
     <div>
-      <div className="mt-6 max-w-[640px] rounded-xl border border-border bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-4">
+      <Card className="mt-6 max-w-[640px]">
         <h2 className="text-sm font-medium text-ink">Publier une annonce</h2>
         <form onSubmit={handleSubmit} className="mt-3 space-y-4">
-          <div>
-            <label htmlFor="titre" className="block text-sm font-medium text-ink">
-              Titre
-            </label>
-            <input
-              id="titre"
-              required
-              value={form.titre}
-              onChange={(e) => setForm({ ...form, titre: e.target.value })}
-              className={inputClass}
-            />
-          </div>
-          <div>
-            <label
-              htmlFor="contenu"
-              className="block text-sm font-medium text-ink"
-            >
-              Contenu
-            </label>
-            <textarea
-              id="contenu"
-              rows={4}
-              value={form.contenu}
-              onChange={(e) => setForm({ ...form, contenu: e.target.value })}
-              className={inputClass}
-            />
-          </div>
-          <div>
-            <label htmlFor="date" className="block text-sm font-medium text-ink">
-              Date
-            </label>
-            <input
-              id="date"
-              type="date"
-              value={form.date}
-              onChange={(e) => setForm({ ...form, date: e.target.value })}
-              className={inputClass}
-            />
-          </div>
+          <Input
+            id="titre"
+            label="Titre"
+            required
+            value={form.titre}
+            onChange={(e) => setForm({ ...form, titre: e.target.value })}
+          />
+          <Textarea
+            id="contenu"
+            label="Contenu"
+            rows={4}
+            value={form.contenu}
+            onChange={(e) => setForm({ ...form, contenu: e.target.value })}
+          />
+          <Input
+            id="date"
+            label="Date"
+            type="date"
+            value={form.date}
+            onChange={(e) => setForm({ ...form, date: e.target.value })}
+          />
           <div className="flex justify-end">
-            <button type="submit" disabled={busy} className={btnPrimary}>
-              {busy ? (
-                "Publication…"
-              ) : (
-                <>
-                  <Send size={16} />
-                  Publier
-                </>
-              )}
-            </button>
+            <Button
+              type="submit"
+              icon={Send}
+              loading={busy}
+              loadingLabel="Publication…"
+            >
+              Publier
+            </Button>
           </div>
         </form>
-      </div>
+      </Card>
 
       <div className="mt-6 space-y-4">
         {annonces.length === 0 ? (
-          <p className="rounded-xl border border-border bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-6 text-center text-sm text-slate">
+          <Card className="p-6 text-center text-sm text-slate" padded={false}>
             Aucune annonce publiée.
-          </p>
+          </Card>
         ) : (
           annonces.map((a) => (
-            <div
-              key={a.id}
-              className="rounded-xl border border-border bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-4"
-            >
+            <Card key={a.id}>
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <h3 className="font-display text-lg font-bold text-ink">
@@ -143,20 +118,35 @@ export default function AnnoncesManager({
                     {formatDate(a.date)}
                   </p>
                 </div>
-                <button onClick={() => handleDelete(a)} className={btnDangerGhost}>
-                  <Trash2 size={16} />
+                <Button
+                  variant="danger"
+                  size="sm"
+                  icon={Trash2}
+                  onClick={() => setASupprimer(a)}
+                >
                   Supprimer
-                </button>
+                </Button>
               </div>
               {a.contenu ? (
                 <p className="mt-2 whitespace-pre-line text-sm text-ink">
                   {a.contenu}
                 </p>
               ) : null}
-            </div>
+            </Card>
           ))
         )}
       </div>
+
+      <ConfirmModal
+        open={aSupprimer !== null}
+        onClose={() => setASupprimer(null)}
+        onConfirm={handleDelete}
+        busy={busy}
+        title="Supprimer cette annonce ?"
+        message={
+          <>Supprimer définitivement «&nbsp;{aSupprimer?.titre}&nbsp;» ?</>
+        }
+      />
     </div>
   );
 }

@@ -3,18 +3,15 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { updateSeance, type Seance } from "@/app/actions/seances";
+import { Textarea } from "@/components/ui/Input";
+import Button from "@/components/ui/Button";
+import { useToast } from "@/components/ui/Toast";
+import { formatDate } from "@/lib/format";
 import { Save } from "lucide-react";
-
-const inputClass =
-  "w-full rounded-lg border border-border px-3 py-2 text-sm text-ink focus:border-forest focus:outline-none focus:ring-2 focus:ring-forest";
-
-function formatDate(d: string | null) {
-  if (!d) return "Date non fixée";
-  return new Date(d).toLocaleDateString("fr-FR");
-}
 
 export default function SeanceCard({ seance }: { seance: Seance }) {
   const router = useRouter();
+  const toast = useToast();
   const [realise, setRealise] = useState(seance.contenu_realise ?? "");
   const [dirty, setDirty] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -32,9 +29,10 @@ export default function SeanceCard({ seance }: { seance: Seance }) {
       await updateSeance(seance.id, {
         statut: isFait ? "a_faire" : "fait",
       });
+      toast(isFait ? "Séance remise à faire" : "Séance marquée faite");
       router.refresh();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Erreur inattendue");
+      toast(err instanceof Error ? err.message : "Erreur inattendue", "error");
     } finally {
       setBusy(false);
     }
@@ -45,9 +43,10 @@ export default function SeanceCard({ seance }: { seance: Seance }) {
     try {
       await updateSeance(seance.id, { contenu_realise: realise });
       setDirty(false);
+      toast("Contenu réalisé enregistré");
       router.refresh();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Erreur inattendue");
+      toast(err instanceof Error ? err.message : "Erreur inattendue", "error");
     } finally {
       setBusy(false);
     }
@@ -59,7 +58,7 @@ export default function SeanceCard({ seance }: { seance: Seance }) {
         <div>
           {seance.date ? (
             <p className="font-mono text-xs text-slate">
-              {formatDate(seance.date)}
+              {formatDate(seance.date, "Date non fixée")}
             </p>
           ) : (
             <p className="font-mono text-xs italic text-slate/60">
@@ -94,25 +93,23 @@ export default function SeanceCard({ seance }: { seance: Seance }) {
       </div>
 
       <div className="mt-3">
-        <label className="block text-xs font-medium text-slate">
-          Contenu réalisé
-        </label>
-        <textarea
+        <Textarea
+          label={<span className="text-xs text-slate">Contenu réalisé</span>}
           rows={2}
           value={realise}
           onChange={handleChange}
-          className={`${inputClass} mt-1`}
           placeholder="Ce qui a réellement été couvert…"
         />
         <div className="mt-2 flex justify-end">
-          <button
+          <Button
+            variant="secondary"
+            size="sm"
+            icon={Save}
             onClick={handleSaveContenu}
             disabled={busy || !dirty}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-ink hover:bg-paper focus:outline-none focus:ring-2 focus:ring-forest disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <Save size={16} />
             Enregistrer
-          </button>
+          </Button>
         </div>
       </div>
     </div>

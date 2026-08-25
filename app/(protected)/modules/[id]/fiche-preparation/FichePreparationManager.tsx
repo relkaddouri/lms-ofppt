@@ -9,12 +9,9 @@ import html2canvas from "html2canvas-pro";
 import { saveFiche, type FichePreparation } from "@/app/actions/fiches";
 import { useToast } from "@/components/ui/Toast";
 import Breadcrumb from "@/components/Breadcrumb";
+import Button from "@/components/ui/Button";
+import { slugify } from "@/lib/format";
 import { Download, Save, Sparkles } from "lucide-react";
-
-const btnPrimary =
-  "inline-flex items-center gap-1.5 rounded-lg bg-forest px-4 py-2 text-sm font-medium text-white hover:bg-forest/90 focus:outline-none focus:ring-2 focus:ring-forest disabled:cursor-not-allowed disabled:opacity-50";
-const btnSecondary =
-  "inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-ink hover:bg-paper focus:outline-none focus:ring-2 focus:ring-forest disabled:cursor-not-allowed disabled:opacity-50";
 
 export default function FichePreparationManager({
   moduleId,
@@ -92,10 +89,13 @@ export default function FichePreparationManager({
         heightLeft -= pageH - margin * 2;
       }
 
-      const safeName = moduleNom.replace(/[^\w\s-]/g, "").trim().replace(/\s+/g, "-");
+      const safeName = slugify(moduleNom, "fiche");
       pdf.save(`fiche-${safeName}.pdf`);
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Erreur de génération du PDF");
+      toast(
+        err instanceof Error ? err.message : "Erreur de génération du PDF",
+        "error",
+      );
     } finally {
       setBusy(false);
     }
@@ -116,7 +116,7 @@ export default function FichePreparationManager({
       setActiveVersion(null);
       setNotice("Fiche générée. Enregistrez-la pour créer une nouvelle version.");
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Erreur inattendue");
+      toast(err instanceof Error ? err.message : "Erreur inattendue", "error");
     } finally {
       setBusy(false);
     }
@@ -124,7 +124,7 @@ export default function FichePreparationManager({
 
   async function handleSave() {
     if (!contenu.trim()) {
-      alert("Le contenu est vide.");
+      toast("Le contenu est vide.", "error");
       return;
     }
     setBusy(true);
@@ -136,7 +136,7 @@ export default function FichePreparationManager({
       toast("Fiche enregistrée");
       router.refresh();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Erreur inattendue");
+      toast(err instanceof Error ? err.message : "Erreur inattendue", "error");
     } finally {
       setBusy(false);
     }
@@ -167,38 +167,30 @@ export default function FichePreparationManager({
       />
 
       <div className="mt-6 flex flex-wrap items-center gap-3">
-        <button onClick={handleSave} disabled={busy} className={btnPrimary}>
-          <Save size={16} />
+        <Button icon={Save} onClick={handleSave} disabled={busy}>
           Enregistrer une nouvelle version
-        </button>
-        <button
+        </Button>
+        <Button
+          variant="secondary"
+          size="sm"
+          icon={Sparkles}
           onClick={handleGenerate}
-          disabled={busy}
-          className={btnSecondary}
+          loading={busy}
+          loadingLabel="Génération…"
         >
-          {busy ? (
-            "Génération…"
-          ) : (
-            <>
-              <Sparkles size={16} />
-              Générer avec l&apos;IA
-            </>
-          )}
-        </button>
-        <button
+          Générer avec l&apos;IA
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          icon={Download}
           onClick={handleDownloadPdf}
-          disabled={busy || !contenu.trim()}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-slate hover:bg-slate/10 focus:outline-none focus:ring-2 focus:ring-forest disabled:cursor-not-allowed disabled:opacity-50"
+          disabled={!contenu.trim()}
+          loading={busy}
+          loadingLabel="Génération du PDF…"
         >
-          {busy ? (
-            "Génération du PDF…"
-          ) : (
-            <>
-              <Download size={16} />
-              Télécharger en PDF
-            </>
-          )}
-        </button>
+          Télécharger en PDF
+        </Button>
       </div>
 
       {notice ? (

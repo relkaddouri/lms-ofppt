@@ -16,7 +16,11 @@ import CopiesManager from "./CopiesManager";
 import { useToast } from "@/components/ui/Toast";
 import Breadcrumb from "@/components/Breadcrumb";
 import Badge from "@/components/ui/Badge";
+import Button, { buttonStyles } from "@/components/ui/Button";
+import { inputStyles } from "@/components/ui/Input";
+import { ConfirmModal } from "@/components/ui/Modal";
 import { exportPdfFromParts } from "@/lib/pdf";
+import { slugify } from "@/lib/format";
 import {
   BadgeCheck,
   Download,
@@ -36,16 +40,8 @@ type DraftQuestion = {
   corrige: string;
 };
 
-const inputClass =
-  "w-full rounded-lg border border-border px-3 py-2 text-sm text-ink focus:border-forest focus:outline-none focus:ring-2 focus:ring-forest";
-const btnPrimary =
-  "inline-flex items-center gap-1.5 rounded-lg bg-forest px-4 py-2 text-sm font-medium text-white hover:bg-forest/90 focus:outline-none focus:ring-2 focus:ring-forest disabled:cursor-not-allowed disabled:opacity-50";
-const btnSecondary =
-  "inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-ink hover:bg-paper focus:outline-none focus:ring-2 focus:ring-forest disabled:cursor-not-allowed disabled:opacity-50";
-const btnGhost =
-  "inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-slate hover:bg-slate/10 focus:outline-none focus:ring-2 focus:ring-forest";
-const btnDangerGhost =
-  "inline-flex items-center gap-1.5 rounded-lg border border-danger/50 px-3 py-1.5 text-xs font-medium text-danger hover:bg-danger/10 focus:outline-none focus:ring-2 focus:ring-danger";
+const inputClass = inputStyles;
+const btnGhostLink = buttonStyles("ghost", "sm");
 
 function newQuestion(): DraftQuestion {
   return { id: crypto.randomUUID(), enonce: "", bareme: 0, corrige: "" };
@@ -83,6 +79,8 @@ export default function ControleManager({
   const [loading, setLoading] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [tab, setTab] = useState<"editeur" | "copies">("editeur");
+  const [confirmBareme, setConfirmBareme] = useState(false);
+  const [confirmSuppression, setConfirmSuppression] = useState(false);
   const toast = useToast();
 
   const totalBareme = questions.reduce((s, q) => s + (Number(q.bareme) || 0), 0);
@@ -162,25 +160,27 @@ export default function ControleManager({
         `Contrôle généré — barème total : ${data.totalBareme ?? "?"} pts (vérifiez qu'il tombe sur 20).`,
       );
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Erreur inattendue");
+      toast(err instanceof Error ? err.message : "Erreur inattendue", "error");
     } finally {
       setBusy(false);
     }
   }
 
-  async function handleSave() {
+  function handleSave() {
     if (!titre.trim()) {
-      alert("Le titre est requis.");
+      toast("Le titre est requis.", "error");
       return;
     }
+    // Le barème hors 20 n'est pas bloquant, mais il demande une confirmation explicite.
     if (totalBareme !== 20) {
-      if (
-        !confirm(
-          `Le barème total est de ${totalBareme} points (attendu : 20). Enregistrer quand même ?`,
-        )
-      )
-        return;
+      setConfirmBareme(true);
+      return;
     }
+    void enregistrer();
+  }
+
+  async function enregistrer() {
+    setConfirmBareme(false);
     setBusy(true);
     try {
       const payload = {
@@ -203,7 +203,7 @@ export default function ControleManager({
       toast("Contrôle enregistré");
       router.refresh();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Erreur inattendue");
+      toast(err instanceof Error ? err.message : "Erreur inattendue", "error");
     } finally {
       setBusy(false);
     }
@@ -211,11 +211,14 @@ export default function ControleManager({
 
   async function handleValidate() {
     if (!activeId) {
-      alert("Enregistrez d'abord le contrôle avant de le valider.");
+      toast("Enregistrez d'abord le contrôle avant de le valider.", "error");
       return;
     }
     if (totalBareme !== 20) {
-      alert(`Le barème doit totaliser 20 points (actuellement : ${totalBareme}).`);
+      toast(
+        `Le barème doit totaliser 20 points (actuellement : ${totalBareme}).`,
+        "error",
+      );
       return;
     }
     setBusy(true);
@@ -226,50 +229,57 @@ export default function ControleManager({
       toast("Contrôle validé");
       router.refresh();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Erreur inattendue");
+      toast(err instanceof Error ? err.message : "Erreur inattendue", "error");
     } finally {
       setBusy(false);
     }
   }
 
-  async function handleDelete() {
+  async function supprimer() {
     if (!activeId) return;
-    if (!confirm("Supprimer ce contrôle ?")) return;
+    setBusy(true);
     try {
       await deleteControle(activeId, moduleId);
+      setConfirmSuppression(false);
       handleNew();
+      toast("Contrôle supprimé");
       router.refresh();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Erreur inattendue");
+      toast(err instanceof Error ? err.message : "Erreur inattendue", "error");
+    } finally {
+      setBusy(false);
     }
   }
 
   async function handleCopyLink() {
     if (!tokenPublic) {
-      alert("Enregistrez d'abord le contrôle pour générer son lien.");
+      toast("Enregistrez d'abord le contrôle pour générer son lien.", "error");
       return;
     }
     try {
       await navigator.clipboard.writeText(
         `${window.location.origin}/public/controle/${tokenPublic}`,
       );
-      alert("Lien de passage copié dans le presse-papiers.");
+      toast("Lien de passage copié");
     } catch {
-      alert("Impossible de copier le lien.");
+      toast("Impossible de copier le lien.", "error");
     }
   }
 
   async function handleDownloadPdf() {
     setBusy(true);
     try {
-      const safe = moduleNom.replace(/[^\w\s-]/g, "").trim().replace(/\s+/g, "-");
+      const safe = slugify(moduleNom, "controle");
       await exportPdfFromParts(
         pdfHeaderRef.current,
         pdfBodyRef.current,
         `controle-${safe}.pdf`,
       );
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Erreur de génération du PDF");
+      toast(
+        err instanceof Error ? err.message : "Erreur de génération du PDF",
+        "error",
+      );
     } finally {
       setBusy(false);
     }
@@ -308,16 +318,16 @@ export default function ControleManager({
             className={`${inputClass} mt-1 w-28`}
           />
         </div>
-        <button onClick={handleGenerate} disabled={busy} className={btnSecondary}>
-          {busy ? (
-            "Génération…"
-          ) : (
-            <>
-              <Sparkles size={16} />
-              Générer un contrôle
-            </>
-          )}
-        </button>
+        <Button
+          variant="secondary"
+          size="sm"
+          icon={Sparkles}
+          onClick={handleGenerate}
+          loading={busy}
+          loadingLabel="Génération…"
+        >
+          Générer un contrôle
+        </Button>
         <div className="ml-auto flex items-center gap-3">
           <select
             value={activeId ?? ""}
@@ -442,20 +452,15 @@ export default function ControleManager({
                   Générez un contrôle avec l&apos;IA pour préparer
                   automatiquement les questions et le barème.
                 </p>
-                <button
+                <Button
+                  icon={Sparkles}
                   onClick={handleGenerate}
-                  disabled={busy}
-                  className={`${btnPrimary} mt-5`}
+                  loading={busy}
+                  loadingLabel="Génération…"
+                  className="mt-5"
                 >
-                  {busy ? (
-                    "Génération…"
-                  ) : (
-                    <>
-                      <Sparkles size={16} />
-                      Générer un contrôle
-                    </>
-                  )}
-                </button>
+                  Générer un contrôle
+                </Button>
               </div>
             ) : (
               <div className="mt-3 space-y-4">
@@ -468,13 +473,14 @@ export default function ControleManager({
                       <span className="text-xs font-medium uppercase tracking-wide text-slate">
                         Question {i + 1}
                       </span>
-                      <button
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        icon={Trash2}
                         onClick={() => removeQuestion(q.id)}
-                        className={btnDangerGhost}
                       >
-                        <Trash2 size={16} />
                         Supprimer
-                      </button>
+                      </Button>
                     </div>
                     <div className="mt-2">
                       <label
@@ -535,13 +541,15 @@ export default function ControleManager({
                     </div>
                   </div>
                 ))}
-                <button
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  icon={Plus}
                   onClick={() => setQuestions((prev) => [...prev, newQuestion()])}
-                  className={`${btnSecondary} mt-4`}
+                  className="mt-4"
                 >
-                  <Plus size={16} />
                   Ajouter une question
-                </button>
+                </Button>
               </div>
             )}
           </div>
@@ -551,63 +559,57 @@ export default function ControleManager({
           <div className="rounded-xl border border-border bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-4">
             <h2 className="text-sm font-medium text-ink">Actions</h2>
             <div className="mt-3 flex flex-col gap-2">
-              <button onClick={handleSave} disabled={busy || loading} className={btnPrimary}>
-                <Save size={16} />
+              <Button icon={Save} onClick={handleSave} disabled={busy || loading}>
                 Enregistrer
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                icon={BadgeCheck}
                 onClick={handleValidate}
                 disabled={busy || statut === "valide"}
-                className={btnSecondary}
               >
-                {statut === "valide" ? (
-                  <>
-                    <BadgeCheck size={16} />
-                    Validé
-                  </>
-                ) : (
-                  <>
-                    <BadgeCheck size={16} />
-                    Valider le contrôle
-                  </>
-                )}
-              </button>
-              <button
+                {statut === "valide" ? "Validé" : "Valider le contrôle"}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                icon={Download}
                 onClick={handleDownloadPdf}
                 disabled={busy || questions.length === 0}
-                className={btnGhost}
               >
-                <Download size={16} />
                 Exporter en PDF
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                icon={LinkIcon}
                 onClick={handleCopyLink}
                 disabled={!tokenPublic}
-                className={btnGhost}
               >
-                <LinkIcon size={16} />
                 Copier le lien de passage
-              </button>
-              <button
-                onClick={handleDelete}
+              </Button>
+              <Button
+                variant="danger"
+                size="sm"
+                icon={Trash2}
+                onClick={() => setConfirmSuppression(true)}
                 disabled={!activeId}
-                className={btnDangerGhost}
               >
-                <Trash2 size={16} />
                 Supprimer
-              </button>
+              </Button>
               <Link
                 href={`/modules/${moduleId}/controle/correction`}
-                className={btnGhost}
+                className={btnGhostLink}
               >
-                <Wand2 size={16} />
+                <Wand2 size={16} aria-hidden />
                 Assistant de correction
               </Link>
               <Link
                 href={`/modules/${moduleId}/controle/historique`}
-                className={btnGhost}
+                className={btnGhostLink}
               >
-                <History size={16} />
+                <History size={16} aria-hidden />
                 Historique des modifications
               </Link>
             </div>
@@ -621,6 +623,25 @@ export default function ControleManager({
         </aside>
       </div>
       )}
+
+      <ConfirmModal
+        open={confirmBareme}
+        onClose={() => setConfirmBareme(false)}
+        onConfirm={() => void enregistrer()}
+        busy={busy}
+        title="Barème hors 20 points"
+        message={`Le barème total est de ${totalBareme} points (attendu : 20). Enregistrer quand même ?`}
+        confirmLabel="Enregistrer quand même"
+      />
+
+      <ConfirmModal
+        open={confirmSuppression}
+        onClose={() => setConfirmSuppression(false)}
+        onConfirm={() => void supprimer()}
+        busy={busy}
+        title="Supprimer ce contrôle ?"
+        message="Supprimer définitivement ce contrôle, ses questions et son corrigé ? Cette action est irréversible."
+      />
 
       <div className="pdf-capture" aria-hidden>
         <div className="px-10 py-8">

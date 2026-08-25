@@ -2,11 +2,7 @@ import { getDashboardData } from "@/app/actions/dashboard";
 import Link from "next/link";
 import DashboardCharts from "./DashboardCharts";
 import RailDeProgression from "@/components/RailDeProgression";
-
-function formatDate(d: string | null) {
-  if (!d) return "Pas de date de fin";
-  return new Date(d).toLocaleDateString("fr-FR");
-}
+import { formatDate } from "@/lib/format";
 
 const statsConfig: {
   key: "totalStagiaires" | "groupesActifs" | "modulesCount" | "controlesEnAttente";
@@ -83,7 +79,7 @@ export default async function DashboardPage() {
                     </Link>
                   </td>
                   <td className="px-4 py-3 font-mono text-slate">
-                    {formatDate(g.date_fin)}
+                    {formatDate(g.date_fin, "Pas de date de fin")}
                   </td>
                   <td className="max-w-xs px-4 py-3">
                     <RailDeProgression pourcentage={g.pourcentage} />
