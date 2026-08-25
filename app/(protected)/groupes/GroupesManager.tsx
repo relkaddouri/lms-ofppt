@@ -154,7 +154,7 @@ export default function GroupesManager({
                     />
                     <span className="text-ink">{m.nom}</span>
                     <span className="ml-auto font-mono text-xs text-slate">
-                      {m.duree_heures}h
+                      {m.duree_reference}h
                     </span>
                   </label>
                 ))}

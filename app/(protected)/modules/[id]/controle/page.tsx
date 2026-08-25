@@ -22,7 +22,7 @@ export default async function ControlePage({
     <ControleManager
       moduleId={id}
       moduleNom={module.nom}
-      moduleDuree={module.duree_heures}
+      moduleDuree={module.duree_reference}
       groupeId={groupe ?? null}
       controles={controles}
     />

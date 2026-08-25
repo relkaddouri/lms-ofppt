@@ -52,7 +52,7 @@ export default function GroupModulesList({
           >
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold text-ink">{m.nom}</p>
-              <p className="mt-0.5 text-xs text-slate">{m.duree_heures} h</p>
+              <p className="mt-0.5 text-xs text-slate">{m.duree_reference} h</p>
             </div>
             <div className="flex shrink-0 items-center gap-3">
               {status}

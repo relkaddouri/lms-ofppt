@@ -33,7 +33,7 @@ export async function POST(request: Request) {
     "",
     `Nom du module : ${module.nom}`,
     `Description : ${module.description ?? "Non renseignée"}`,
-    `Durée prévue : ${module.duree_heures} heures`,
+    `Durée prévue : ${module.duree_reference} heures`,
     "",
     "Structure obligatoire de la réponse (en Markdown) :",
     "# Fiche de préparation — " + module.nom,

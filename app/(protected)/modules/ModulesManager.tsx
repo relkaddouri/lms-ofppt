@@ -26,12 +26,12 @@ export default function ModulesManager({ modules }: { modules: Module[] }) {
   const [form, setForm] = useState({
     nom: "",
     description: "",
-    duree_heures: "",
+    duree_reference: "",
   });
 
   function openCreate() {
     setEditing(null);
-    setForm({ nom: "", description: "", duree_heures: "" });
+    setForm({ nom: "", description: "", duree_reference: "" });
     setOpen(true);
   }
 
@@ -40,7 +40,7 @@ export default function ModulesManager({ modules }: { modules: Module[] }) {
     setForm({
       nom: m.nom,
       description: m.description ?? "",
-      duree_heures: String(m.duree_heures),
+      duree_reference: String(m.duree_reference),
     });
     setOpen(true);
   }
@@ -51,7 +51,7 @@ export default function ModulesManager({ modules }: { modules: Module[] }) {
     const input = {
       nom: form.nom,
       description: form.description || null,
-      duree_heures: Number(form.duree_heures) || 0,
+      duree_reference: Number(form.duree_reference) || 0,
     };
     try {
       if (editing) {
@@ -126,7 +126,7 @@ export default function ModulesManager({ modules }: { modules: Module[] }) {
                   </td>
                   <td className="px-4 py-3 text-slate">{m.description ?? "—"}</td>
                   <td className="px-4 py-3 font-mono text-slate">
-                    {m.duree_heures}
+                    {m.duree_reference}
                   </td>
                   <td className="px-4 py-3 text-right">
                     <KebabMenu
@@ -174,8 +174,8 @@ export default function ModulesManager({ modules }: { modules: Module[] }) {
             type="number"
             min={0}
             required
-            value={form.duree_heures}
-            onChange={(e) => setForm({ ...form, duree_heures: e.target.value })}
+            value={form.duree_reference}
+            onChange={(e) => setForm({ ...form, duree_reference: e.target.value })}
           />
           <div className="flex justify-end gap-3 pt-2">
             <Button variant="ghost" size="md" icon={X} onClick={() => setOpen(false)}>

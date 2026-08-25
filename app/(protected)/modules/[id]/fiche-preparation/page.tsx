@@ -20,7 +20,7 @@ export default async function FichePreparationPage({
     <FichePreparationManager
       moduleId={id}
       moduleNom={module.nom}
-      moduleDuree={module.duree_heures}
+      moduleDuree={module.duree_reference}
       versions={versions}
     />
   );

@@ -7,7 +7,7 @@ export type Module = {
   id: string;
   nom: string;
   description: string | null;
-  duree_heures: number;
+  duree_reference: number;
 };
 
 export async function getModules(): Promise<Module[]> {
@@ -75,13 +75,13 @@ export async function getModuleDetail(moduleId: string): Promise<ModuleDetail | 
 export async function createModule(input: {
   nom: string;
   description?: string | null;
-  duree_heures: number;
+  duree_reference: number;
 }) {
   const supabase = await createClient();
   const { error } = await supabase.from("modules").insert({
     nom: input.nom,
     description: input.description ?? null,
-    duree_heures: input.duree_heures,
+    duree_reference: input.duree_reference,
   });
 
   if (error) throw new Error(error.message);
@@ -93,7 +93,7 @@ export async function updateModule(
   input: {
     nom: string;
     description?: string | null;
-    duree_heures: number;
+    duree_reference: number;
   },
 ) {
   const supabase = await createClient();
@@ -102,7 +102,7 @@ export async function updateModule(
     .update({
       nom: input.nom,
       description: input.description ?? null,
-      duree_heures: input.duree_heures,
+      duree_reference: input.duree_reference,
     })
     .eq("id", id);
 

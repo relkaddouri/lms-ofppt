@@ -37,6 +37,10 @@ Ordre des phases : sécurité et fondations d'abord, schéma du référentiel of
   **Test** : vérifie que les modules existants (M104, M106) sont bien liés à leurs compétences correspondantes après migration manuelle des données.
 - [ ] **1.6** — Prompt : *"Ajoute à `groupe_modules` les colonnes `masse_horaire_allouee` (numeric, obligatoire) et `formateur_id` (référence vers profils). Ajoute à `groupes` les colonnes `annee` (1 ou 2) et `specialite_id` (nullable, requis seulement si année 2)."*
   **Test** : réassigne M106 à DES101 avec 110h et à DES102 avec 85h (données réelles), vérifie que les deux valeurs coexistent indépendamment.
+- [ ] **1.7 — Interface** — Prompt : *"En respectant strictement docs/design_system.md et docs/conventions.md : sur l'écran d'assignation des modules à un groupe (probablement `GroupModulesList` ou équivalent existant), ajoute un champ de saisie de la masse horaire allouée pour chaque module assigné à ce groupe — modifiable à tout moment après l'assignation initiale, pas seulement à la création. Affiche la masse horaire actuelle à côté de chaque module dans la liste, avec une action rapide pour la modifier (inline ou modale)."*
+  **Test** : modifie la masse horaire de M106 pour DES101 de 110h à 115h depuis l'interface (pas en SQL direct), vérifie que le changement est bien pris en compte dans le calcul de progression (§2.2) sans casser la valeur de DES102.
+- [ ] **1.8 — Interface** — Prompt : *"En respectant strictement docs/design_system.md et docs/conventions.md : sur l'écran de consultation d'une compétence/module (celui créé en 3.2 pour le référentiel, ou à défaut la page Modules existante), rends `duree_reference` éditable par le formateur — ce n'est qu'un repère national indicatif, pas une valeur figée, il doit pouvoir l'ajuster à sa réalité. Affiche un texte discret rappelant que c'est une référence nationale de guidage, modifiable localement."*
+  **Test** : modifie la durée de référence de M106 (ex. 120h → 118h), vérifie que ça n'affecte ni ne casse les masses horaires déjà allouées par groupe (1.7), qui restent des valeurs indépendantes.
 
 ---
 

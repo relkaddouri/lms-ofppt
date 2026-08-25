@@ -132,7 +132,7 @@ export async function assignModulesToGroupe(
 export type GroupeModuleInfo = {
   module_id: string;
   nom: string;
-  duree_heures: number;
+  duree_reference: number;
   hasFiche: boolean;
   controleStatut: "brouillon" | "valide" | null;
 };
@@ -144,7 +144,7 @@ export async function getGroupeModules(
 
   const { data, error } = await supabase
     .from("groupe_modules")
-    .select("module_id, modules(nom, duree_heures)")
+    .select("module_id, modules(nom, duree_reference)")
     .eq("groupe_id", groupeId)
     .order("created_at");
 
@@ -181,11 +181,11 @@ export async function getGroupeModules(
   }
 
   return rows.map((r) => {
-    const mod = r.modules as { nom?: string; duree_heures?: number } | null;
+    const mod = r.modules as { nom?: string; duree_reference?: number } | null;
     return {
       module_id: r.module_id,
       nom: mod?.nom ?? "Module",
-      duree_heures: Number(mod?.duree_heures) || 0,
+      duree_reference: Number(mod?.duree_reference) || 0,
       hasFiche: hasFiche.has(r.module_id),
       controleStatut:
         (controleStatut.get(r.module_id) as "brouillon" | "valide") ?? null,
