@@ -9,15 +9,14 @@ type GroupePublic = {
   token_public: string;
 };
 
-type SeancePublic = {
-  id: string;
-  groupe_id: string;
+type ProgressionPublique = {
   module_id: string;
   module_nom: string | null;
-  date: string | null;
-  contenu_prevu: string | null;
-  contenu_realise: string | null;
-  statut: string;
+  code_operationnel: string | null;
+  masse_horaire_allouee: number | string;
+  heures_realisees: number | string;
+  nb_seances: number | string;
+  nb_seances_faites: number | string;
 };
 
 type AnnoncePublic = {
@@ -59,26 +58,19 @@ export default async function PublicGroupePage({
     );
   }
 
-  const [annoncesRes, seancesRes] = await Promise.all([
+  const [annoncesRes, progressionRes] = await Promise.all([
     supabase.rpc("get_annonces_by_token", { p_token: token }),
-    supabase.rpc("get_seances_by_groupe_token", { p_token: token }),
+    supabase.rpc("get_progression_by_groupe_token", { p_token: token }),
   ]);
 
   const annonces = (annoncesRes.data ?? []) as AnnoncePublic[];
-  const seances = (seancesRes.data ?? []) as SeancePublic[];
-
-  const byModule = new Map<string, SeancePublic[]>();
-  for (const s of seances) {
-    const key = s.module_id;
-    if (!byModule.has(key)) byModule.set(key, []);
-    byModule.get(key)!.push(s);
-  }
-
-  function moduleProgress(list: SeancePublic[]) {
-    if (!list.length) return 0;
-    const fait = list.filter((s) => s.statut === "fait").length;
-    return Math.round((fait / list.length) * 100);
-  }
+  const progression = ((progressionRes.data ?? []) as ProgressionPublique[]).map(
+    (p) => ({
+      ...p,
+      masse_horaire_allouee: Number(p.masse_horaire_allouee) || 0,
+      heures_realisees: Number(p.heures_realisees) || 0,
+    }),
+  );
 
   return (
     <main className="min-h-screen bg-paper">
@@ -139,23 +131,33 @@ export default async function PublicGroupePage({
           <h2 className="font-display text-xl font-bold text-ink">
             Progression
           </h2>
-          {byModule.size === 0 ? (
+          {progression.length === 0 ? (
             <p className="mt-3 rounded-xl border border-border bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-4 text-sm text-slate">
-              Aucune séance planifiée pour le moment.
+              Aucun module suivi pour le moment.
             </p>
           ) : (
             <div className="mt-3 space-y-4">
-              {[...byModule.entries()].map(([moduleId, list]) => (
+              {progression.map((p) => (
                 <div
-                  key={moduleId}
-                  className="rounded-xl border border-border bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-4"
+                  key={p.module_id}
+                  className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-border bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-4"
                 >
-                  <h3 className="font-display text-lg font-bold text-ink">
-                    {list[0]?.module_nom ?? "Module"}
-                  </h3>
-                  <div className="mt-3 max-w-md">
-                    <RailDeProgression pourcentage={moduleProgress(list)} />
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-baseline gap-2">
+                      {p.code_operationnel ? (
+                        <span className="font-mono text-sm font-medium text-forest">
+                          {p.code_operationnel}
+                        </span>
+                      ) : null}
+                      <h3 className="font-display text-lg font-bold text-ink">
+                        {p.module_nom ?? "Module"}
+                      </h3>
+                    </div>
                   </div>
+                  <RailDeProgression
+                    heuresRealisees={p.heures_realisees}
+                    masseHoraire={p.masse_horaire_allouee}
+                  />
                 </div>
               ))}
             </div>

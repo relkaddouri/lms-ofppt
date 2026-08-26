@@ -1,14 +1,18 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { getProgressionTousGroupes } from "@/app/actions/progression";
+import { cumule } from "@/lib/progression";
 
 export type GroupeProgression = {
   id: string;
   nom: string;
   date_fin: string | null;
-  total: number;
-  fait: number;
+  heuresRealisees: number;
+  masseHoraire: number;
   pourcentage: number;
+  /** Séances faites sans durée saisie : elles minorent le cumul. */
+  seancesSansDuree: number;
 };
 
 export type EvolutionPoint = {
@@ -62,18 +66,20 @@ export async function getDashboardData(): Promise<{
     controlesEnAttente: controlesRes.count ?? 0,
   };
 
+  // La progression se mesure en heures dispensées sur la masse horaire
+  // allouée au groupe, pas en nombre de séances cochées.
+  const progression = await getProgressionTousGroupes();
+
   const groupesProgression: GroupeProgression[] = groupes.map((g) => {
-    const gSeances = seances.filter((s) => s.groupe_id === g.id);
-    const fait = gSeances.filter((s) => s.statut === "fait").length;
+    const total = cumule(progression.filter((p) => p.groupe_id === g.id));
     return {
       id: g.id,
       nom: g.nom,
       date_fin: g.date_fin,
-      total: gSeances.length,
-      fait,
-      pourcentage: gSeances.length
-        ? Math.round((fait / gSeances.length) * 100)
-        : 0,
+      heuresRealisees: total.heuresRealisees,
+      masseHoraire: total.masseHoraire,
+      pourcentage: total.pourcentage,
+      seancesSansDuree: total.seancesSansDuree,
     };
   });
 

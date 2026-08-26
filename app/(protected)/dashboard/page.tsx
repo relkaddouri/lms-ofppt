@@ -82,7 +82,10 @@ export default async function DashboardPage() {
                     {formatDate(g.date_fin, "Pas de date de fin")}
                   </td>
                   <td className="max-w-xs px-4 py-3">
-                    <RailDeProgression pourcentage={g.pourcentage} />
+                    <RailDeProgression
+                      heuresRealisees={g.heuresRealisees}
+                      masseHoraire={g.masseHoraire}
+                    />
                   </td>
                 </tr>
               ))

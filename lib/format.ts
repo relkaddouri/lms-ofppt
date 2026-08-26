@@ -54,6 +54,13 @@ export function initials(...parts: (string | null | undefined)[]): string {
   return lettres || "?";
 }
 
+/** Heures à la française : 9.5 -> « 9,5 h », 115 -> « 115 h ». */
+export function formatHeures(valeur: number | string | null | undefined): string {
+  const n = Number(valeur);
+  if (!Number.isFinite(n)) return "—";
+  return `${n.toLocaleString("fr-FR", { maximumFractionDigits: 2 })} h`;
+}
+
 /** Fragment de nom de fichier sûr : accents et ponctuation retirés, espaces en tirets. */
 export function slugify(value: string, fallback = "document"): string {
   const slug = value
