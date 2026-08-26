@@ -3,16 +3,31 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
+export type TypeControle = "CC" | "EFM";
+export type TypeEfm = "local" | "regional";
+export type FormatControle = "theorique" | "pratique" | "mixte";
+
 export type Controle = {
   id: string;
+  groupe_id: string;
   module_id: string;
   titre: string | null;
   consignes: string | null;
   duree_heures: number;
+  type: TypeControle;
+  /** Renseigné uniquement pour un EFM. */
+  type_efm: TypeEfm | null;
+  date_prevue: string | null;
+  date_administration: string | null;
+  format: FormatControle;
   statut: "brouillon" | "valide";
   token_public: string;
   created_at: string;
 };
+
+const COLONNES_CONTROLE =
+  "id, groupe_id, module_id, titre, consignes, duree_heures, type, type_efm, " +
+  "date_prevue, date_administration, format, statut, token_public, created_at";
 
 export type Question = {
   id: string;
@@ -51,16 +66,24 @@ export type Passation = {
   submitted_at: string;
 };
 
-export async function getControles(moduleId: string): Promise<Controle[]> {
+/**
+ * Contrôles d'un couple groupe+module. Jamais du module seul : un contrôle
+ * porte sur ce que CE groupe a réellement couvert.
+ */
+export async function getControles(
+  groupeId: string,
+  moduleId: string,
+): Promise<Controle[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("controles")
-    .select("*")
+    .select(COLONNES_CONTROLE)
+    .eq("groupe_id", groupeId)
     .eq("module_id", moduleId)
     .order("created_at", { ascending: false });
 
   if (error) throw new Error(error.message);
-  return data as Controle[];
+  return data as unknown as Controle[];
 }
 
 export async function getControle(id: string): Promise<ControleDetail | null> {
@@ -68,7 +91,7 @@ export async function getControle(id: string): Promise<ControleDetail | null> {
 
   const { data: controle, error: errC } = await supabase
     .from("controles")
-    .select("*")
+    .select(COLONNES_CONTROLE)
     .eq("id", id)
     .single();
 
@@ -82,27 +105,51 @@ export async function getControle(id: string): Promise<ControleDetail | null> {
 
   if (errQ) throw new Error(errQ.message);
 
-  return { ...(controle as Controle), questions: (questions ?? []) as Question[] };
+  return {
+    ...(controle as unknown as Controle),
+    questions: (questions ?? []) as Question[],
+  };
+}
+
+export type ControleInput = {
+  titre: string;
+  consignes?: string;
+  duree_heures: number;
+  type: TypeControle;
+  type_efm?: TypeEfm | null;
+  format: FormatControle;
+  date_prevue?: string | null;
+  questions: QuestionInput[];
+};
+
+/** Un EFM est forcément local ou régional ; un CC n'a pas de sous-type. */
+function qualifieEfm(input: ControleInput): TypeEfm | null {
+  if (input.type !== "EFM") return null;
+  if (!input.type_efm) {
+    throw new Error("Un EFM doit être qualifié de local ou de régional.");
+  }
+  return input.type_efm;
 }
 
 export async function saveControle(
+  groupeId: string,
   moduleId: string,
-  input: {
-    titre: string;
-    consignes?: string;
-    duree_heures: number;
-    questions: QuestionInput[];
-  },
+  input: ControleInput,
 ): Promise<string> {
   const supabase = await createClient();
 
   const { data, error } = await supabase
     .from("controles")
     .insert({
+      groupe_id: groupeId,
       module_id: moduleId,
       titre: input.titre,
       consignes: input.consignes || null,
       duree_heures: input.duree_heures,
+      type: input.type,
+      type_efm: qualifieEfm(input),
+      format: input.format,
+      date_prevue: input.date_prevue || null,
       statut: "brouillon",
     })
     .select("id")
@@ -130,12 +177,7 @@ export async function saveControle(
 export async function updateControle(
   id: string,
   moduleId: string,
-  input: {
-    titre: string;
-    consignes?: string;
-    duree_heures: number;
-    questions: QuestionInput[];
-  },
+  input: ControleInput,
 ) {
   const supabase = await createClient();
 
@@ -145,6 +187,10 @@ export async function updateControle(
       titre: input.titre,
       consignes: input.consignes || null,
       duree_heures: input.duree_heures,
+      type: input.type,
+      type_efm: qualifieEfm(input),
+      format: input.format,
+      date_prevue: input.date_prevue || null,
     })
     .eq("id", id);
 
@@ -219,13 +265,19 @@ export type AuditEntry = {
   date: string;
 };
 
-export async function getModuleAudit(moduleId: string): Promise<AuditEntry[]> {
+export async function getModuleAudit(
+  groupeId: string,
+  moduleId: string,
+): Promise<AuditEntry[]> {
   const supabase = await createClient();
 
-  const { data: controles } = await supabase
+  const { data: controles, error: errC } = await supabase
     .from("controles")
     .select("id")
+    .eq("groupe_id", groupeId)
     .eq("module_id", moduleId);
+
+  if (errC) throw new Error(errC.message);
 
   const ids = (controles ?? []).map((c) => c.id);
   if (!ids.length) return [];

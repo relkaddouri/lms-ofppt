@@ -16,14 +16,18 @@ export default async function ControlePage({
   const module = modules.find((m) => m.id === id);
   if (!module) redirect("/modules");
 
-  const controles = await getControles(id);
+  // Un contrôle appartient à un couple groupe+module : sans groupe, on renvoie
+  // vers la fiche du module, qui liste les groupes concernés.
+  if (!groupe) redirect(`/modules/${id}`);
+
+  const controles = await getControles(groupe, id);
 
   return (
     <ControleManager
       moduleId={id}
       moduleNom={module.nom}
       moduleDuree={module.duree_reference}
-      groupeId={groupe ?? null}
+      groupeId={groupe}
       controles={controles}
     />
   );

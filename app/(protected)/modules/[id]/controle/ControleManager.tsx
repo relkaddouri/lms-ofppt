@@ -11,6 +11,9 @@ import {
   deleteControle,
   type Controle,
   type Question,
+  type TypeControle,
+  type TypeEfm,
+  type FormatControle,
 } from "@/app/actions/controles";
 import CopiesManager from "./CopiesManager";
 import { useToast } from "@/components/ui/Toast";
@@ -56,7 +59,7 @@ export default function ControleManager({
   moduleId: string;
   moduleNom: string;
   moduleDuree: number;
-  groupeId?: string | null;
+  groupeId: string;
   controles: Controle[];
 }) {
   const router = useRouter();
@@ -73,6 +76,10 @@ export default function ControleManager({
   const [consignes, setConsignes] = useState("");
   const [duree, setDuree] = useState(1);
   const [statut, setStatut] = useState<"brouillon" | "valide">("brouillon");
+  const [type, setType] = useState<TypeControle>("CC");
+  const [typeEfm, setTypeEfm] = useState<TypeEfm>("local");
+  const [format, setFormat] = useState<FormatControle>("theorique");
+  const [datePrevue, setDatePrevue] = useState("");
   const [questions, setQuestions] = useState<DraftQuestion[]>([]);
   const [genDuree, setGenDuree] = useState(2);
   const [busy, setBusy] = useState(false);
@@ -95,6 +102,10 @@ export default function ControleManager({
       setConsignes(c.consignes ?? "");
       setDuree(Number(c.duree_heures) || 1);
       setStatut(c.statut);
+      setType(c.type);
+      setTypeEfm(c.type_efm ?? "local");
+      setFormat(c.format);
+      setDatePrevue(c.date_prevue ?? "");
       setQuestions(
         c.questions.map((q: Question) => ({
           id: q.id,
@@ -123,6 +134,10 @@ export default function ControleManager({
     setConsignes("");
     setDuree(2);
     setStatut("brouillon");
+    setType("CC");
+    setTypeEfm("local");
+    setFormat("theorique");
+    setDatePrevue("");
     setQuestions([]);
     setNotice(null);
   }
@@ -187,6 +202,10 @@ export default function ControleManager({
         titre,
         consignes,
         duree_heures: duree,
+        type,
+        type_efm: type === "EFM" ? typeEfm : null,
+        format,
+        date_prevue: datePrevue || null,
         questions: questions.map((q) => ({
           enonce: q.enonce,
           bareme: Number(q.bareme) || 0,
@@ -196,7 +215,7 @@ export default function ControleManager({
       if (activeId) {
         await updateControle(activeId, moduleId, payload);
       } else {
-        const id = await saveControle(moduleId, payload);
+        const id = await saveControle(groupeId, moduleId, payload);
         setActiveId(id);
       }
       setNotice("Contrôle enregistré (brouillon).");
@@ -417,6 +436,78 @@ export default function ControleManager({
             />
           </div>
 
+          <div className="max-w-[640px] rounded-xl border border-border bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-4">
+            <h2 className="text-sm font-medium text-ink">Nature du contrôle</h2>
+            <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <label htmlFor="type" className="block text-xs text-slate">
+                  Type
+                </label>
+                <select
+                  id="type"
+                  value={type}
+                  onChange={(e) => setType(e.target.value as TypeControle)}
+                  className={`${inputClass} mt-1`}
+                >
+                  <option value="CC">Contrôle continu (CC)</option>
+                  <option value="EFM">Épreuve de fin de module (EFM)</option>
+                </select>
+              </div>
+
+              {type === "EFM" ? (
+                <div>
+                  <label htmlFor="typeEfm" className="block text-xs text-slate">
+                    Portée de l&apos;EFM
+                  </label>
+                  <select
+                    id="typeEfm"
+                    value={typeEfm}
+                    onChange={(e) => setTypeEfm(e.target.value as TypeEfm)}
+                    className={`${inputClass} mt-1`}
+                  >
+                    <option value="local">Local (date estimable)</option>
+                    <option value="regional">Régional (date imposée)</option>
+                  </select>
+                </div>
+              ) : null}
+
+              <div>
+                <label htmlFor="format" className="block text-xs text-slate">
+                  Format
+                </label>
+                <select
+                  id="format"
+                  value={format}
+                  onChange={(e) => setFormat(e.target.value as FormatControle)}
+                  className={`${inputClass} mt-1`}
+                >
+                  <option value="theorique">Théorique</option>
+                  <option value="pratique">Pratique</option>
+                  <option value="mixte">Théorique et pratique</option>
+                </select>
+              </div>
+
+              <div>
+                <label htmlFor="datePrevue" className="block text-xs text-slate">
+                  Date prévue
+                </label>
+                <input
+                  id="datePrevue"
+                  type="date"
+                  value={datePrevue}
+                  onChange={(e) => setDatePrevue(e.target.value)}
+                  className={`${inputClass} mt-1`}
+                />
+              </div>
+            </div>
+            {type === "EFM" && typeEfm === "regional" ? (
+              <p className="mt-3 text-xs text-slate">
+                La date d&apos;un EFM régional est fixée par la Direction
+                Régionale : elle se saisit ici, elle ne peut pas être estimée.
+              </p>
+            ) : null}
+          </div>
+
           <div className="rounded-xl border border-border bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-4">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-medium text-ink">Questions</h2>
@@ -599,14 +690,14 @@ export default function ControleManager({
                 Supprimer
               </Button>
               <Link
-                href={`/modules/${moduleId}/controle/correction`}
+                href={`/modules/${moduleId}/controle/correction?groupe=${groupeId}`}
                 className={btnGhostLink}
               >
                 <Wand2 size={16} aria-hidden />
                 Assistant de correction
               </Link>
               <Link
-                href={`/modules/${moduleId}/controle/historique`}
+                href={`/modules/${moduleId}/controle/historique?groupe=${groupeId}`}
                 className={btnGhostLink}
               >
                 <History size={16} aria-hidden />

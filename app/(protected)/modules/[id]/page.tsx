@@ -89,10 +89,26 @@ export default async function ModuleDetailPage({
               </p>
             </div>
           </div>
-          <Link href={`/modules/${id}/controle`} className={`${linkBtn} mt-4`}>
-            <Plus size={16} />
-            Gérer les contrôles
-          </Link>
+          {groupes.length === 0 ? (
+            <p className="mt-4 text-sm text-slate">
+              Assignez ce module à un groupe pour préparer un contrôle : un
+              contrôle porte toujours sur ce qu&apos;un groupe précis a couvert.
+            </p>
+          ) : (
+            <ul className="mt-4 space-y-1">
+              {groupes.map((g) => (
+                <li key={g.id}>
+                  <Link
+                    href={`/modules/${id}/controle?groupe=${g.id}`}
+                    className={linkBtn}
+                  >
+                    <Plus size={16} aria-hidden />
+                    Contrôles de {g.nom}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
         </section>
 
         <section className="rounded-xl border border-border bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-5">

@@ -219,6 +219,7 @@ export async function getGroupeModules(
       supabase
         .from("controles")
         .select("module_id, statut")
+        .eq("groupe_id", groupeId)
         .in("module_id", ids)
         .order("created_at", { ascending: false }),
     ]);
