@@ -56,13 +56,7 @@ export async function createGroupe(input: {
   if (error) throw new Error(error.message);
 
   if (input.module_ids?.length) {
-    const { error: errModules } = await supabase.from("groupe_modules").insert(
-      input.module_ids.map((module_id) => ({
-        groupe_id: data.id,
-        module_id,
-      })),
-    );
-    if (errModules) throw new Error(errModules.message);
+    await assignModulesToGroupe(data.id, input.module_ids);
   }
 
   revalidatePath("/groupes");
@@ -105,27 +99,83 @@ export async function deleteGroupe(id: string) {
   revalidatePath("/groupes");
 }
 
+/**
+ * Aligne les modules d'un groupe sur `moduleIds`, sans toucher aux assignations
+ * déjà en place : leur masse horaire allouée est une saisie du formateur, elle
+ * ne doit jamais être perdue parce qu'un autre module a été coché ou décoché.
+ * Une nouvelle assignation démarre sur la durée de référence du module.
+ */
 export async function assignModulesToGroupe(
   groupeId: string,
   moduleIds: string[],
 ) {
   const supabase = await createClient();
 
-  const { error: errDel } = await supabase
+  const { data: existantes, error: errLect } = await supabase
     .from("groupe_modules")
-    .delete()
+    .select("module_id")
     .eq("groupe_id", groupeId);
 
-  if (errDel) throw new Error(errDel.message);
+  if (errLect) throw new Error(errLect.message);
 
-  if (moduleIds.length) {
-    const { error: errIns } = await supabase
+  const dejaLa = new Set((existantes ?? []).map((r) => r.module_id));
+  const aRetirer = [...dejaLa].filter((id) => !moduleIds.includes(id));
+  const aAjouter = moduleIds.filter((id) => !dejaLa.has(id));
+
+  if (aRetirer.length) {
+    const { error } = await supabase
       .from("groupe_modules")
-      .insert(moduleIds.map((module_id) => ({ groupe_id: groupeId, module_id })));
-    if (errIns) throw new Error(errIns.message);
+      .delete()
+      .eq("groupe_id", groupeId)
+      .in("module_id", aRetirer);
+    if (error) throw new Error(error.message);
+  }
+
+  if (aAjouter.length) {
+    const { data: modules, error: errModules } = await supabase
+      .from("modules")
+      .select("id, duree_reference")
+      .in("id", aAjouter);
+
+    if (errModules) throw new Error(errModules.message);
+
+    const dureeParModule = new Map(
+      (modules ?? []).map((m) => [m.id, Number(m.duree_reference) || 0]),
+    );
+
+    const { error } = await supabase.from("groupe_modules").insert(
+      aAjouter.map((module_id) => ({
+        groupe_id: groupeId,
+        module_id,
+        masse_horaire_allouee: dureeParModule.get(module_id) ?? 0,
+      })),
+    );
+    if (error) throw new Error(error.message);
   }
 
   revalidatePath("/groupes");
+  revalidatePath(`/groupes/${groupeId}`);
+}
+
+/** Masse horaire d'un couple groupe+module. Saisie par le formateur (atome 1.7). */
+export async function setMasseHoraire(
+  groupeId: string,
+  moduleId: string,
+  heures: number,
+) {
+  if (!Number.isFinite(heures) || heures < 0) {
+    throw new Error("La masse horaire doit être un nombre positif.");
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("groupe_modules")
+    .update({ masse_horaire_allouee: heures })
+    .eq("groupe_id", groupeId)
+    .eq("module_id", moduleId);
+
+  if (error) throw new Error(error.message);
+
   revalidatePath(`/groupes/${groupeId}`);
 }
 
@@ -133,6 +183,7 @@ export type GroupeModuleInfo = {
   module_id: string;
   nom: string;
   duree_reference: number;
+  masse_horaire_allouee: number;
   hasFiche: boolean;
   controleStatut: "brouillon" | "valide" | null;
 };
@@ -144,7 +195,7 @@ export async function getGroupeModules(
 
   const { data, error } = await supabase
     .from("groupe_modules")
-    .select("module_id, modules(nom, duree_reference)")
+    .select("module_id, masse_horaire_allouee, modules(nom, duree_reference)")
     .eq("groupe_id", groupeId)
     .order("created_at");
 
@@ -186,6 +237,7 @@ export async function getGroupeModules(
       module_id: r.module_id,
       nom: mod?.nom ?? "Module",
       duree_reference: Number(mod?.duree_reference) || 0,
+      masse_horaire_allouee: Number(r.masse_horaire_allouee) || 0,
       hasFiche: hasFiche.has(r.module_id),
       controleStatut:
         (controleStatut.get(r.module_id) as "brouillon" | "valide") ?? null,
