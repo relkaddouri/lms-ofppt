@@ -29,11 +29,17 @@ const COLONNES_CONTROLE =
   "id, groupe_id, module_id, titre, consignes, duree_heures, type, type_efm, " +
   "date_prevue, date_administration, format, statut, token_public, created_at";
 
+export type TypeQuestion = "qcm" | "ouverte" | "exercice";
+export type OptionQcm = { texte: string; correcte: boolean };
+
 export type Question = {
   id: string;
   controle_id: string;
+  type: TypeQuestion;
   enonce: string | null;
   bareme: number;
+  /** QCM uniquement : propositions à cocher. */
+  options: OptionQcm[];
   corrige: string | null;
   position: number;
 };
@@ -41,10 +47,37 @@ export type Question = {
 export type ControleDetail = Controle & { questions: Question[] };
 
 export type QuestionInput = {
+  type: TypeQuestion;
   enonce: string;
   bareme: number;
+  options: OptionQcm[];
   corrige: string | null;
 };
+
+/** Ligne prête pour la base, propositions normalisées. */
+function versLigneQuestion(q: QuestionInput, controleId: string, i: number) {
+  const options = q.type === "qcm"
+    ? q.options
+        .filter((o) => o.texte.trim())
+        .map((o) => ({ texte: o.texte.trim(), correcte: Boolean(o.correcte) }))
+    : null;
+
+  if (q.type === "qcm" && (!options || options.length < 2)) {
+    throw new Error(
+      `La question ${i + 1} est un QCM : elle doit comporter au moins deux propositions.`,
+    );
+  }
+
+  return {
+    controle_id: controleId,
+    type: q.type,
+    enonce: q.enonce,
+    bareme: q.bareme,
+    options,
+    corrige: q.corrige,
+    position: i,
+  };
+}
 
 export type PassationDetail = {
   question_id: string;
@@ -99,7 +132,7 @@ export async function getControle(id: string): Promise<ControleDetail | null> {
 
   const { data: questions, error: errQ } = await supabase
     .from("questions_controle")
-    .select("*")
+    .select("id, controle_id, type, enonce, bareme, options, corrige, position")
     .eq("controle_id", id)
     .order("position");
 
@@ -107,7 +140,10 @@ export async function getControle(id: string): Promise<ControleDetail | null> {
 
   return {
     ...(controle as unknown as Controle),
-    questions: (questions ?? []) as Question[],
+    questions: ((questions ?? []) as unknown as Question[]).map((q) => ({
+      ...q,
+      options: Array.isArray(q.options) ? q.options : [],
+    })),
   };
 }
 
@@ -158,15 +194,9 @@ export async function saveControle(
   if (error) throw new Error(error.message);
 
   if (input.questions.length) {
-    const { error: errQ } = await supabase.from("questions_controle").insert(
-      input.questions.map((q, i) => ({
-        controle_id: data.id,
-        enonce: q.enonce,
-        bareme: q.bareme,
-        corrige: q.corrige,
-        position: i,
-      })),
-    );
+    const { error: errQ } = await supabase
+      .from("questions_controle")
+      .insert(input.questions.map((q, i) => versLigneQuestion(q, data.id, i)));
     if (errQ) throw new Error(errQ.message);
   }
 
@@ -204,15 +234,9 @@ export async function updateControle(
   if (errDel) throw new Error(errDel.message);
 
   if (input.questions.length) {
-    const { error: errIns } = await supabase.from("questions_controle").insert(
-      input.questions.map((q, i) => ({
-        controle_id: id,
-        enonce: q.enonce,
-        bareme: q.bareme,
-        corrige: q.corrige,
-        position: i,
-      })),
-    );
+    const { error: errIns } = await supabase
+      .from("questions_controle")
+      .insert(input.questions.map((q, i) => versLigneQuestion(q, id, i)));
     if (errIns) throw new Error(errIns.message);
   }
 

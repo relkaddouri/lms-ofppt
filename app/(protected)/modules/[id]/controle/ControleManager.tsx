@@ -14,6 +14,8 @@ import {
   type TypeControle,
   type TypeEfm,
   type FormatControle,
+  type TypeQuestion,
+  type OptionQcm,
 } from "@/app/actions/controles";
 import CopiesManager from "./CopiesManager";
 import { useToast } from "@/components/ui/Toast";
@@ -38,16 +40,35 @@ import {
 
 type DraftQuestion = {
   id: string;
+  type: TypeQuestion;
   enonce: string;
   bareme: number;
+  options: OptionQcm[];
   corrige: string;
+};
+
+const LIBELLE_QUESTION: Record<TypeQuestion, string> = {
+  qcm: "Choix multiple",
+  ouverte: "Question ouverte",
+  exercice: "Exercice d'application",
 };
 
 const inputClass = inputStyles;
 const btnGhostLink = buttonStyles("ghost", "sm");
 
 function newQuestion(): DraftQuestion {
-  return { id: crypto.randomUUID(), enonce: "", bareme: 0, corrige: "" };
+  return {
+    id: crypto.randomUUID(),
+    type: "ouverte",
+    enonce: "",
+    bareme: 0,
+    options: [],
+    corrige: "",
+  };
+}
+
+function optionVide(): OptionQcm {
+  return { texte: "", correcte: false };
 }
 
 export default function ControleManager({
@@ -89,6 +110,7 @@ export default function ControleManager({
   const [notice, setNotice] = useState<string | null>(null);
   const [tab, setTab] = useState<"editeur" | "copies">("editeur");
   const [confirmBareme, setConfirmBareme] = useState(false);
+  const [avertissements, setAvertissements] = useState<string[]>([]);
   const [confirmSuppression, setConfirmSuppression] = useState(false);
   const toast = useToast();
 
@@ -111,8 +133,10 @@ export default function ControleManager({
       setQuestions(
         c.questions.map((q: Question) => ({
           id: q.id,
+          type: q.type ?? "ouverte",
           enonce: q.enonce ?? "",
           bareme: Number(q.bareme) || 0,
+          options: Array.isArray(q.options) ? q.options : [],
           corrige: q.corrige ?? "",
         })),
       );
@@ -166,12 +190,17 @@ export default function ControleManager({
       setDuree(genDuree);
       setStatut("brouillon");
       setQuestions(
-        (data.questions ?? []).map((q: DraftQuestion) => ({
+        (data.questions ?? []).map((q: Partial<DraftQuestion>) => ({
           id: crypto.randomUUID(),
+          type: q.type ?? "ouverte",
           enonce: q.enonce ?? "",
           bareme: Number(q.bareme) || 0,
+          options: Array.isArray(q.options) ? q.options : [],
           corrige: q.corrige ?? "",
         })),
+      );
+      setAvertissements(
+        Array.isArray(data.avertissements) ? data.avertissements : [],
       );
       setNotice(
         `Contrôle généré — barème total : ${data.totalBareme ?? "?"} pts (vérifiez qu'il tombe sur 20).`,
@@ -209,8 +238,10 @@ export default function ControleManager({
         format,
         date_prevue: datePrevue || null,
         questions: questions.map((q) => ({
+          type: q.type,
           enonce: q.enonce,
           bareme: Number(q.bareme) || 0,
+          options: q.options,
           corrige: q.corrige || null,
         })),
       };
@@ -303,8 +334,10 @@ export default function ControleManager({
           datePrevue: datePrevue || null,
           consignes,
           questions: questions.map((q) => ({
+            type: q.type,
             enonce: q.enonce,
             bareme: Number(q.bareme) || 0,
+            options: q.options,
           })),
         },
         `controle-${slugify(`${moduleCode ?? ""} ${groupeNom} ${moduleNom}`, "controle")}.pdf`,
@@ -380,6 +413,19 @@ export default function ControleManager({
           </select>
         </div>
       </div>
+
+      {avertissements.length > 0 ? (
+        <div className="mt-4 rounded-xl border border-info/30 bg-info/10 px-4 py-3">
+          <p className="text-sm font-medium text-ink">
+            À vérifier avant validation
+          </p>
+          <ul className="mt-1 list-disc space-y-0.5 pl-5 text-sm text-ink">
+            {avertissements.map((a, i) => (
+              <li key={i}>{a}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
 
       {notice ? (
         <p className="mt-4 rounded-xl border border-success/30 bg-success/10 px-3 py-2 text-sm text-success">
@@ -575,18 +621,43 @@ export default function ControleManager({
                     key={q.id}
                     className="rounded-lg border border-border p-3"
                   >
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
                       <span className="text-xs font-medium uppercase tracking-wide text-slate">
                         Question {i + 1}
                       </span>
-                      <Button
-                        variant="danger"
-                        size="sm"
-                        icon={Trash2}
-                        onClick={() => removeQuestion(q.id)}
-                      >
-                        Supprimer
-                      </Button>
+                      <div className="flex items-center gap-2">
+                        <select
+                          aria-label={`Type de la question ${i + 1}`}
+                          value={q.type}
+                          onChange={(e) => {
+                            const type = e.target.value as TypeQuestion;
+                            updateQuestion(q.id, {
+                              type,
+                              options:
+                                type === "qcm" && q.options.length === 0
+                                  ? [optionVide(), optionVide(), optionVide()]
+                                  : q.options,
+                            });
+                          }}
+                          className={`${inputClass} w-44 py-1 text-xs`}
+                        >
+                          {(
+                            Object.keys(LIBELLE_QUESTION) as TypeQuestion[]
+                          ).map((t) => (
+                            <option key={t} value={t}>
+                              {LIBELLE_QUESTION[t]}
+                            </option>
+                          ))}
+                        </select>
+                        <Button
+                          variant="danger"
+                          size="sm"
+                          icon={Trash2}
+                          onClick={() => removeQuestion(q.id)}
+                        >
+                          Supprimer
+                        </Button>
+                      </div>
                     </div>
                     <div className="mt-2">
                       <label
@@ -605,29 +676,107 @@ export default function ControleManager({
                         className={`${inputClass} mt-1`}
                       />
                     </div>
-                    <div className="mt-2 grid grid-cols-[120px_1fr] gap-3">
-                      <div>
-                        <label
-                          className="block text-xs text-slate"
-                          htmlFor={`bareme-${q.id}`}
-                        >
-                          Barème
-                        </label>
-                        <input
-                          id={`bareme-${q.id}`}
-                          type="number"
-                          min={0}
-                          step={0.5}
-                          value={q.bareme}
-                          onChange={(e) =>
+                    <div className="mt-2 w-32">
+                      <label
+                        className="block text-xs text-slate"
+                        htmlFor={`bareme-${q.id}`}
+                      >
+                        Barème
+                      </label>
+                      <input
+                        id={`bareme-${q.id}`}
+                        type="number"
+                        min={0}
+                        step={0.5}
+                        value={q.bareme}
+                        onChange={(e) =>
+                          updateQuestion(q.id, {
+                            bareme: Number(e.target.value) || 0,
+                          })
+                        }
+                        className={`${inputClass} mt-1`}
+                      />
+                    </div>
+
+                    {q.type === "qcm" ? (
+                      <div className="mt-3">
+                        <p className="text-xs text-slate">
+                          Propositions — cochez celles qui sont correctes
+                        </p>
+                        <ul className="mt-2 space-y-2">
+                          {q.options.map((opt, j) => (
+                            <li key={j} className="flex items-center gap-2">
+                              <input
+                                type="checkbox"
+                                aria-label={`Proposition ${j + 1} correcte`}
+                                checked={opt.correcte}
+                                onChange={(e) =>
+                                  updateQuestion(q.id, {
+                                    options: q.options.map((o, k) =>
+                                      k === j
+                                        ? { ...o, correcte: e.target.checked }
+                                        : o,
+                                    ),
+                                  })
+                                }
+                                className="h-4 w-4 shrink-0 accent-forest"
+                              />
+                              <input
+                                value={opt.texte}
+                                aria-label={`Texte de la proposition ${j + 1}`}
+                                placeholder={`Proposition ${j + 1}`}
+                                onChange={(e) =>
+                                  updateQuestion(q.id, {
+                                    options: q.options.map((o, k) =>
+                                      k === j
+                                        ? { ...o, texte: e.target.value }
+                                        : o,
+                                    ),
+                                  })
+                                }
+                                className={inputClass}
+                              />
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                icon={Trash2}
+                                aria-label={`Supprimer la proposition ${j + 1}`}
+                                onClick={() =>
+                                  updateQuestion(q.id, {
+                                    options: q.options.filter((_, k) => k !== j),
+                                  })
+                                }
+                              >
+                                {""}
+                              </Button>
+                            </li>
+                          ))}
+                        </ul>
+                        {q.options.length < 2 ? (
+                          <p className="mt-2 text-xs text-danger">
+                            Un QCM demande au moins deux propositions.
+                          </p>
+                        ) : !q.options.some((o) => o.correcte) ? (
+                          <p className="mt-2 text-xs text-danger">
+                            Aucune proposition n&apos;est marquée correcte.
+                          </p>
+                        ) : null}
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          icon={Plus}
+                          className="mt-2"
+                          onClick={() =>
                             updateQuestion(q.id, {
-                              bareme: Number(e.target.value) || 0,
+                              options: [...q.options, optionVide()],
                             })
                           }
-                          className={`${inputClass} mt-1`}
-                        />
+                        >
+                          Ajouter une proposition
+                        </Button>
                       </div>
-                      <div>
+                    ) : (
+                      <div className="mt-2">
                         <label
                           className="block text-xs text-slate"
                           htmlFor={`corrige-${q.id}`}
@@ -644,7 +793,7 @@ export default function ControleManager({
                           className={`${inputClass} mt-1`}
                         />
                       </div>
-                    </div>
+                    )}
                   </div>
                 ))}
                 <Button
