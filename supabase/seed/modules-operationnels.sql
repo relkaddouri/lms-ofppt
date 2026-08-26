@@ -9,12 +9,15 @@
 
 -- Le nom ne reprend PAS le code : l'interface affiche le code opérationnel
 -- séparément, en mono, à côté du nom (design_system).
-insert into public.modules (nom, description, duree_reference, competence_id)
+-- formateur_id est renseigne explicitement : `default auth.uid()` vaut NULL
+-- quand le seed est joue par le role service, et la ligne serait invisible.
+insert into public.modules (nom, description, duree_reference, competence_id, formateur_id)
 select
   c.nom,
   'Décliné de la compétence ' || c.numero || ' (' || c.code_officiel || ')',
   c.duree_nationale_heures,
-  c.id
+  c.id,
+  (select p.id from public.profils p where (select count(*) from public.profils) = 1)
 from public.competences c
 where c.code_operationnel in ('M102', 'M104', 'M106', 'M108')
   and not exists (
@@ -22,6 +25,7 @@ where c.code_operationnel in ('M102', 'M104', 'M106', 'M108')
   );
 
 -- Groupe DES102 : 1re année, tronc commun.
-insert into public.groupes (nom)
-select 'DES102'
+insert into public.groupes (nom, formateur_id)
+select 'DES102',
+       (select p.id from public.profils p where (select count(*) from public.profils) = 1)
 where not exists (select 1 from public.groupes g where g.nom = 'DES102');
