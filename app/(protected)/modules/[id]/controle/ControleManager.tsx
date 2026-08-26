@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -22,7 +22,7 @@ import Badge from "@/components/ui/Badge";
 import Button, { buttonStyles } from "@/components/ui/Button";
 import { inputStyles } from "@/components/ui/Input";
 import { ConfirmModal } from "@/components/ui/Modal";
-import { exportPdfFromParts } from "@/lib/pdf";
+import { telechargerControlePdf } from "@/lib/pdf-controle";
 import { slugify } from "@/lib/format";
 import {
   BadgeCheck,
@@ -53,18 +53,20 @@ function newQuestion(): DraftQuestion {
 export default function ControleManager({
   moduleId,
   moduleNom,
+  moduleCode,
   groupeId,
+  groupeNom,
   controles,
 }: {
   moduleId: string;
   moduleNom: string;
   moduleDuree: number;
+  moduleCode: string | null;
   groupeId: string;
+  groupeNom: string;
   controles: Controle[];
 }) {
   const router = useRouter();
-  const pdfHeaderRef = useRef<HTMLDivElement>(null);
-  const pdfBodyRef = useRef<HTMLDivElement>(null);
 
   const [activeId, setActiveId] = useState<string | null>(
     controles[0]?.id ?? null,
@@ -285,14 +287,27 @@ export default function ControleManager({
     }
   }
 
-  async function handleDownloadPdf() {
+  function handleDownloadPdf() {
     setBusy(true);
     try {
-      const safe = slugify(moduleNom, "controle");
-      await exportPdfFromParts(
-        pdfHeaderRef.current,
-        pdfBodyRef.current,
-        `controle-${safe}.pdf`,
+      telechargerControlePdf(
+        {
+          titre: titre || "Contrôle",
+          moduleNom,
+          moduleCode,
+          groupeNom,
+          type,
+          typeEfm: type === "EFM" ? typeEfm : null,
+          format,
+          dureeHeures: duree,
+          datePrevue: datePrevue || null,
+          consignes,
+          questions: questions.map((q) => ({
+            enonce: q.enonce,
+            bareme: Number(q.bareme) || 0,
+          })),
+        },
+        `controle-${slugify(`${moduleCode ?? ""} ${groupeNom} ${moduleNom}`, "controle")}.pdf`,
       );
     } catch (err) {
       toast(
@@ -733,57 +748,6 @@ export default function ControleManager({
         title="Supprimer ce contrôle ?"
         message="Supprimer définitivement ce contrôle, ses questions et son corrigé ? Cette action est irréversible."
       />
-
-      <div className="pdf-capture" aria-hidden>
-        <div className="px-10 py-8">
-          <div ref={pdfHeaderRef}>
-            <div className="pdf-doc-header">
-              <div>
-                <div className="pdf-brand">OFPPT</div>
-                <div className="pdf-org">
-                  Office de la Formation Professionnelle et de la Promotion du Travail
-                </div>
-                <div className="pdf-org-sub">Royaume du Maroc</div>
-              </div>
-              <div className="pdf-ref">
-                <div>Durée : {duree} h</div>
-                <div>Barème : {totalBareme} pts</div>
-              </div>
-            </div>
-          </div>
-
-          <div ref={pdfBodyRef}>
-            <h1 className="pdf-title">{titre || "Contrôle"}</h1>
-            <p className="pdf-module">{moduleNom}</p>
-
-            <div className="pdf-identity">
-              <div>Nom :</div>
-              <div>Prénom :</div>
-            </div>
-
-            {consignes ? (
-              <div className="pdf-consignes">
-                <strong>Consignes :</strong> {consignes}
-              </div>
-            ) : null}
-
-            <div className="pdf-questions">
-              {questions.map((q, i) => (
-                <div key={q.id} className="pdf-question">
-                  <div className="pdf-q-head">
-                    <span className="pdf-q-num">Question {i + 1}</span>
-                    <span className="pdf-q-bareme">{Number(q.bareme) || 0} pts</span>
-                  </div>
-                  <p className="pdf-q-enonce">{q.enonce}</p>
-                  <div className="pdf-q-answer-space" />
-                </div>
-              ))}
-            </div>
-
-            <div className="pdf-footer">LMS OFPPT — {titre || "Contrôle"}</div>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
