@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import { ONGLETS_GROUPE, ongletGroupeActif } from "@/lib/navigation";
 
 const TITLES: Record<string, string> = {
   "/dashboard": "Tableau de bord",
@@ -18,11 +19,8 @@ function titleFor(pathname: string) {
     return "Module";
   }
   if (pathname.startsWith("/groupes/")) {
-    if (pathname.endsWith("/annonces")) return "Annonces";
-    if (pathname.endsWith("/progression")) return "Progression";
-    if (pathname.endsWith("/fiches")) return "Fiches";
-    if (pathname.endsWith("/controles")) return "Contrôles";
-    return "Groupe";
+    const onglet = ongletGroupeActif(pathname);
+    return onglet.key === ONGLETS_GROUPE[0].key ? "Groupe" : onglet.label;
   }
   return "LMS OFPPT";
 }

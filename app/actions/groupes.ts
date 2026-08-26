@@ -184,6 +184,7 @@ export type GroupeModuleInfo = {
   nom: string;
   duree_reference: number;
   masse_horaire_allouee: number;
+  code_operationnel: string | null;
   hasFiche: boolean;
   controleStatut: "brouillon" | "valide" | null;
 };
@@ -195,7 +196,9 @@ export async function getGroupeModules(
 
   const { data, error } = await supabase
     .from("groupe_modules")
-    .select("module_id, masse_horaire_allouee, modules(nom, duree_reference)")
+    .select(
+      "module_id, masse_horaire_allouee, modules(nom, duree_reference, competences(code_operationnel))",
+    )
     .eq("groupe_id", groupeId)
     .order("created_at");
 
@@ -232,12 +235,17 @@ export async function getGroupeModules(
   }
 
   return rows.map((r) => {
-    const mod = r.modules as { nom?: string; duree_reference?: number } | null;
+    const mod = r.modules as {
+      nom?: string;
+      duree_reference?: number;
+      competences?: { code_operationnel?: string | null } | null;
+    } | null;
     return {
       module_id: r.module_id,
       nom: mod?.nom ?? "Module",
       duree_reference: Number(mod?.duree_reference) || 0,
       masse_horaire_allouee: Number(r.masse_horaire_allouee) || 0,
+      code_operationnel: mod?.competences?.code_operationnel ?? null,
       hasFiche: hasFiche.has(r.module_id),
       controleStatut:
         (controleStatut.get(r.module_id) as "brouillon" | "valide") ?? null,

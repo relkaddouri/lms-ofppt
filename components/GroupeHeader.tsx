@@ -7,6 +7,7 @@ import { Link as LinkIcon } from "lucide-react";
 import type { Groupe } from "@/app/actions/groupes";
 import Button from "@/components/ui/Button";
 import { formatDate } from "@/lib/format";
+import { ONGLETS_GROUPE, ongletGroupeActif } from "@/lib/navigation";
 
 export default function GroupeHeader({
   groupe,
@@ -34,10 +35,8 @@ export default function GroupeHeader({
     { label: "Groupes", href: "/groupes" },
     { label: groupe.nom, href: `/groupes/${groupe.id}` },
   ];
-  if (pathname.endsWith("/progression")) items.push({ label: "Progression" });
-  else if (pathname.endsWith("/annonces")) items.push({ label: "Annonces" });
-  else if (pathname.endsWith("/fiches")) items.push({ label: "Fiches" });
-  else if (pathname.endsWith("/controles")) items.push({ label: "Contrôles" });
+  const onglet = ongletGroupeActif(pathname);
+  if (onglet.key !== ONGLETS_GROUPE[0].key) items.push({ label: onglet.label });
 
   return (
     <div>
