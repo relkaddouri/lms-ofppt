@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { appelerLlm, chargerConfigLlm, ErreurLlm } from "@/lib/llm";
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
@@ -25,12 +26,11 @@ export async function POST(request: Request) {
 
   const bareme = Number(q.bareme) || 0;
 
-  const apiKey = process.env.DEEPSEEK_API_KEY;
-  if (!apiKey) {
-    return NextResponse.json(
-      { error: "DEEPSEEK_API_KEY non configurée" },
-      { status: 500 },
-    );
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: "Authentification requise" }, { status: 401 });
   }
 
   const prompt = [
@@ -47,26 +47,23 @@ export async function POST(request: Request) {
     `{"points": X, "commentaire": "justification courte en français"}`,
   ].join("\n");
 
-  const res = await fetch("https://api.deepseek.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: "deepseek-reasoner",
-      messages: [{ role: "user", content: prompt }],
-      max_tokens: 2000,
-    }),
-  });
-
-  const data = await res.json().catch(() => null);
-  const text = data?.choices?.[0]?.message?.content;
-
-  if (!text) {
+  let text: string;
+  try {
+    const config = await chargerConfigLlm(user.id);
+    text = await appelerLlm(config, {
+      systeme: "Tu es un correcteur expert du référentiel OFPPT.",
+      prompt,
+      // Une note doit être reproductible : la correction impose sa propre
+      // température basse, quel que soit le réglage du formateur.
+      temperature: 0,
+      maxTokens: 2000,
+      json: true,
+    });
+  } catch (e) {
+    const err = e instanceof ErreurLlm ? e : null;
     return NextResponse.json(
-      { error: data?.error?.message ?? "Échec de la correction" },
-      { status: 502 },
+      { error: err?.message ?? "Échec de la correction" },
+      { status: err?.statut ?? 502 },
     );
   }
 

@@ -6,8 +6,10 @@ export const dynamic = "force-dynamic";
 type QuestionPublic = {
   id: string;
   controle_id: string;
+  type: "qcm" | "ouverte" | "exercice" | null;
   enonce: string;
   bareme: number;
+  options: { texte: string }[] | null;
   position: number;
 };
 

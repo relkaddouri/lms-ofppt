@@ -11,8 +11,11 @@ const inputClass = inputStyles;
 
 type Question = {
   id: string;
+  type: "qcm" | "ouverte" | "exercice" | null;
   enonce: string;
   bareme: number;
+  /** QCM uniquement. Le drapeau « correcte » est retiré côté base. */
+  options: { texte: string }[] | null;
 };
 
 type Controle = {
@@ -370,20 +373,69 @@ export default function ControlePublic({
                 </span>
               </div>
               <p className="mt-2 text-sm text-ink">{q.enonce}</p>
-              <label className="mt-3 block text-xs font-medium text-slate">
-                Votre réponse
-              </label>
-              <textarea
-                rows={3}
-                value={reponses[q.id] ?? ""}
-                onChange={(e) => {
-                  const next = { ...reponsesRef.current, [q.id]: e.target.value };
-                  reponsesRef.current = next;
-                  setReponses(next);
-                }}
-                className={inputClass}
-                placeholder="Écrivez votre réponse ici…"
-              />
+
+              {q.type === "qcm" && q.options?.length ? (
+                <fieldset className="mt-3">
+                  <legend className="text-xs font-medium text-slate">
+                    Cochez la ou les bonnes propositions
+                  </legend>
+                  <div className="mt-2 space-y-2">
+                    {q.options.map((opt, j) => {
+                      // Les propositions cochées sont stockées une par ligne :
+                      // c'est la forme que la notation compare côté serveur.
+                      const cochees = (reponses[q.id] ?? "")
+                        .split("\n")
+                        .filter(Boolean);
+                      const coche = cochees.includes(opt.texte);
+                      return (
+                        <label
+                          key={j}
+                          className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-border px-3 py-2 hover:border-slate/40"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={coche}
+                            onChange={(e) => {
+                              const restant = cochees.filter((c) => c !== opt.texte);
+                              const valeur = (
+                                e.target.checked ? [...restant, opt.texte] : restant
+                              ).join("\n");
+                              const next = {
+                                ...reponsesRef.current,
+                                [q.id]: valeur,
+                              };
+                              reponsesRef.current = next;
+                              setReponses(next);
+                            }}
+                            className="mt-0.5 h-4 w-4 shrink-0 accent-forest"
+                          />
+                          <span className="text-sm text-ink">{opt.texte}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </fieldset>
+              ) : (
+                <>
+                  <label className="mt-3 block text-xs font-medium text-slate">
+                    Votre réponse
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={reponses[q.id] ?? ""}
+                    onChange={(e) => {
+                      const next = {
+                        ...reponsesRef.current,
+                        [q.id]: e.target.value,
+                      };
+                      reponsesRef.current = next;
+                      setReponses(next);
+                    }}
+                    className={inputClass}
+                    placeholder="Écrivez votre réponse ici…"
+                  />
+                </>
+              )}
             </div>
           ))}
         </div>

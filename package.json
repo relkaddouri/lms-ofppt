@@ -8,6 +8,7 @@
     "start": "next start"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.121.0",
     "@supabase/ssr": "^0.12.5",
     "@supabase/supabase-js": "^2.112.4",
     "html2canvas-pro": "^2.4.0",
@@ -20,7 +21,8 @@
     "react-markdown": "^10.1.0",
     "recharts": "^3.10.1",
     "remark-gfm": "^4.0.1",
-    "resend": "^6.22.1"
+    "resend": "^6.22.1",
+    "server-only": "^0.0.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

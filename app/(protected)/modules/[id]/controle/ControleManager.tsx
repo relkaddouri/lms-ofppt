@@ -111,6 +111,7 @@ export default function ControleManager({
   const [tab, setTab] = useState<"editeur" | "copies">("editeur");
   const [confirmBareme, setConfirmBareme] = useState(false);
   const [avertissements, setAvertissements] = useState<string[]>([]);
+  const [instruction, setInstruction] = useState("");
   const [confirmSuppression, setConfirmSuppression] = useState(false);
   const toast = useToast();
 
@@ -168,7 +169,12 @@ export default function ControleManager({
     setNotice(null);
   }
 
-  async function handleGenerate() {
+  /**
+   * `raffiner` renvoie le contrôle affiché au modèle avec la consigne du
+   * formateur, au lieu d'en générer un neuf : c'est ce qui permet de corriger
+   * une génération par une phrase plutôt qu'à la main.
+   */
+  async function handleGenerate(raffiner = false) {
     setBusy(true);
     setNotice(null);
     try {
@@ -179,12 +185,30 @@ export default function ControleManager({
           moduleId,
           dureeHeures: genDuree,
           groupeId: groupeId ?? undefined,
+          ...(raffiner
+            ? {
+                instruction: instruction.trim(),
+                controleExistant: {
+                  titre,
+                  consignes,
+                  questions: questions.map((q) => ({
+                    type: q.type,
+                    enonce: q.enonce,
+                    bareme: q.bareme,
+                    options: q.options,
+                    corrige: q.corrige,
+                  })),
+                },
+              }
+            : {}),
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Erreur de génération");
 
-      setActiveId(null);
+      // Un raffinage retravaille le contrôle ouvert : on ne détache pas
+      // l'enregistrement en cours, sinon « Enregistrer » en créerait un second.
+      if (!raffiner) setActiveId(null);
       setTitre(data.titre ?? `Contrôle — ${moduleNom}`);
       setConsignes(data.consignes ?? "");
       setDuree(genDuree);
@@ -389,7 +413,7 @@ export default function ControleManager({
           variant="secondary"
           size="sm"
           icon={Sparkles}
-          onClick={handleGenerate}
+          onClick={() => handleGenerate(false)}
           loading={busy}
           loadingLabel="Génération…"
         >
@@ -569,6 +593,43 @@ export default function ControleManager({
             ) : null}
           </div>
 
+          {questions.length > 0 ? (
+            <div className="mb-4 rounded-xl border border-border bg-surface p-4 shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
+              <h2 className="text-sm font-medium text-ink">
+                Retravailler ce contrôle
+              </h2>
+              <p className="mt-1 text-xs text-slate">
+                Décrivez ce qui ne va pas plutôt que de corriger à la main. Le
+                contrôle affiché est renvoyé au modèle avec votre consigne.
+              </p>
+              <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+                <input
+                  value={instruction}
+                  onChange={(e) => setInstruction(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && instruction.trim() && !busy) {
+                      handleGenerate(true);
+                    }
+                  }}
+                  placeholder="Ex. : remplace les deux derniers exercices par des QCM, et simplifie la question 3"
+                  aria-label="Consigne de raffinage"
+                  className={inputClass}
+                />
+                <Button
+                  variant="secondary"
+                  icon={Wand2}
+                  onClick={() => handleGenerate(true)}
+                  loading={busy}
+                  loadingLabel="En cours…"
+                  disabled={!instruction.trim()}
+                  className="shrink-0"
+                >
+                  Appliquer
+                </Button>
+              </div>
+            </div>
+          ) : null}
+
           <div className="rounded-xl border border-border bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-4">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-medium text-ink">Questions</h2>
@@ -606,7 +667,7 @@ export default function ControleManager({
                 </p>
                 <Button
                   icon={Sparkles}
-                  onClick={handleGenerate}
+                  onClick={() => handleGenerate(false)}
                   loading={busy}
                   loadingLabel="Génération…"
                   className="mt-5"

@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { appelerLlm, chargerConfigLlm, ErreurLlm } from "@/lib/llm";
 import { NextResponse } from "next/server";
 
 type OptionGeneree = { texte: string; correcte: boolean };
@@ -38,6 +39,15 @@ export async function POST(request: Request) {
 
   const supabase = await createClient();
 
+  // La configuration du modèle est propre à chaque formateur : il faut savoir
+  // qui appelle avant de pouvoir déchiffrer sa clé.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: "Authentification requise" }, { status: 401 });
+  }
+
   const { data: module, error } = await supabase
     .from("modules")
     .select("nom, description, duree_reference")
@@ -75,13 +85,6 @@ export async function POST(request: Request) {
       .filter(Boolean)
       .join("\n- ") || "Non renseigné (aucune séance marquée comme faite)";
 
-  const apiKey = process.env.DEEPSEEK_API_KEY;
-  if (!apiKey) {
-    return NextResponse.json(
-      { error: "DEEPSEEK_API_KEY non configurée" },
-      { status: 500 },
-    );
-  }
 
   // Raffinage : on repart du contrôle existant plutôt que d'en générer un neuf.
   const raffinage = Boolean(instruction && controleExistant);
@@ -150,28 +153,21 @@ export async function POST(request: Request) {
     .filter((l): l is string => l !== null)
     .join("\n");
 
-  const res = await fetch("https://api.deepseek.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: "deepseek-chat",
-      messages: [{ role: "user", content: prompt }],
+  let text: string;
+  try {
+    const config = await chargerConfigLlm(user.id);
+    text = await appelerLlm(config, {
+      systeme:
+        "Tu es un formateur expert du référentiel OFPPT. Tu rédiges des évaluations en français.",
+      prompt,
       temperature: 0.7,
-      max_tokens: 8000,
-      response_format: { type: "json_object" },
-    }),
-  });
-
-  const data = await res.json().catch(() => null);
-  const text = data?.choices?.[0]?.message?.content;
-
-  if (!text) {
+      json: true,
+    });
+  } catch (e) {
+    const err = e instanceof ErreurLlm ? e : null;
     return NextResponse.json(
-      { error: data?.error?.message ?? "Échec de génération" },
-      { status: 502 },
+      { error: err?.message ?? "Échec de génération" },
+      { status: err?.statut ?? 502 },
     );
   }
 
