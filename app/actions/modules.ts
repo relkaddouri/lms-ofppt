@@ -27,8 +27,17 @@ export type ModuleControleInfo = {
   statut: "brouillon" | "valide";
 };
 
+/** Compétence du référentiel dont le module est la déclinaison opérationnelle. */
+export type CompetenceLiee = {
+  numero: number;
+  code_operationnel: string | null;
+  /** Valeur officielle du programme. Jamais modifiée localement. */
+  duree_nationale_heures: number | null;
+};
+
 export type ModuleDetail = {
   module: Module;
+  competence: CompetenceLiee | null;
   controles: ModuleControleInfo[];
   hasFiche: boolean;
   groupes: { id: string; nom: string }[];
@@ -38,7 +47,13 @@ export async function getModuleDetail(moduleId: string): Promise<ModuleDetail | 
   const supabase = await createClient();
 
   const [mod, fiche, groupes, controles] = await Promise.all([
-    supabase.from("modules").select("*").eq("id", moduleId).single(),
+    supabase
+      .from("modules")
+      .select(
+        "*, competences(numero, code_operationnel, duree_nationale_heures)",
+      )
+      .eq("id", moduleId)
+      .single(),
     supabase
       .from("fiches_preparation")
       .select("id", { count: "exact", head: true })
@@ -60,8 +75,11 @@ export async function getModuleDetail(moduleId: string): Promise<ModuleDetail | 
   if (groupes.error) throw new Error(groupes.error.message);
   if (controles.error) throw new Error(controles.error.message);
 
+  const brut = mod.data as Module & { competences?: CompetenceLiee | null };
+
   return {
-    module: mod.data as Module,
+    module: brut,
+    competence: brut.competences ?? null,
     hasFiche: (fiche.count ?? 0) > 0,
     groupes: (groupes.data ?? []).map((g) => {
       const raw = Array.isArray(g.groupes) ? g.groupes[0] : g.groupes;
@@ -108,6 +126,28 @@ export async function updateModule(
 
   if (error) throw new Error(error.message);
   revalidatePath("/modules");
+}
+
+/**
+ * Ajuste la durée de référence d'un module. Ce n'est qu'un repère local :
+ * la durée officielle du programme reste celle de la compétence, et les masses
+ * horaires déjà allouées par groupe ne sont pas touchées.
+ */
+export async function setDureeReference(moduleId: string, heures: number) {
+  if (!Number.isFinite(heures) || heures < 0) {
+    throw new Error("La durée de référence doit être un nombre positif.");
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("modules")
+    .update({ duree_reference: heures })
+    .eq("id", moduleId);
+
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/modules");
+  revalidatePath(`/modules/${moduleId}`);
 }
 
 export async function deleteModule(id: string) {

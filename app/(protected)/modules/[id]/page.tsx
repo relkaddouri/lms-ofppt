@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import Breadcrumb from "@/components/Breadcrumb";
 import Badge from "@/components/ui/Badge";
+import DureeReferenceEditor from "./DureeReferenceEditor";
 import { FileText, FolderKanban, ListChecks, Plus, Users } from "lucide-react";
 
 const linkBtn =
@@ -18,7 +19,7 @@ export default async function ModuleDetailPage({
   const detail = await getModuleDetail(id);
   if (!detail) redirect("/modules");
 
-  const { module, controles, hasFiche, groupes } = detail;
+  const { module, competence, controles, hasFiche, groupes } = detail;
 
   return (
     <div className="p-8">
@@ -26,14 +27,22 @@ export default async function ModuleDetailPage({
         items={[{ label: "Modules", href: "/modules" }, { label: module.nom }]}
       />
 
-      <div className="mt-2 flex flex-wrap items-center gap-3">
+      <div className="mt-2 flex flex-wrap items-baseline gap-2">
+        {competence?.code_operationnel ? (
+          <span className="font-mono text-lg font-medium text-forest">
+            {competence.code_operationnel}
+          </span>
+        ) : null}
         <h1 className="font-display text-[24px] font-bold text-ink">
           {module.nom}
         </h1>
-        <span className="rounded-full border border-border bg-surface px-3 py-1 font-mono text-xs text-slate">
-          {module.duree_reference} h
-        </span>
       </div>
+
+      <DureeReferenceEditor
+        moduleId={id}
+        dureeReference={module.duree_reference}
+        competence={competence}
+      />
       {module.description ? (
         <p className="mt-1 max-w-[640px] text-sm text-slate">
           {module.description}

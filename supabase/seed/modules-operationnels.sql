@@ -7,9 +7,11 @@
 --
 -- Idempotent : rejouable sans dupliquer.
 
+-- Le nom ne reprend PAS le code : l'interface affiche le code opérationnel
+-- séparément, en mono, à côté du nom (design_system).
 insert into public.modules (nom, description, duree_reference, competence_id)
 select
-  c.code_operationnel || ' - ' || c.nom,
+  c.nom,
   'Décliné de la compétence ' || c.numero || ' (' || c.code_officiel || ')',
   c.duree_nationale_heures,
   c.id
