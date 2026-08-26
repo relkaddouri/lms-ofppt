@@ -29,9 +29,70 @@ function contientPropositions(enonce: string) {
   return (enonce.match(/\b[1-4][.)]\s/g) ?? []).length >= 3;
 }
 
+/**
+ * Ce que le format attendu impose à la génération.
+ *
+ * Le formateur choisit « théorique », « pratique » ou « mixte » dans l'éditeur :
+ * cette nature doit gouverner les questions produites, pas rester une étiquette
+ * décorative posée à côté d'un contrôle qui l'ignore.
+ */
+const CONSIGNES_FORMAT = {
+  theorique: {
+    libelle: "théorique",
+    types: ["qcm", "ouverte"] as const,
+    consigne: [
+      "Ce contrôle est THÉORIQUE : il évalue des connaissances et de la",
+      "compréhension. N'utilise que les types \"qcm\" et \"ouverte\".",
+      "N'écris aucune mise en situation ni exercice de production : pas de",
+      "livrable à produire, pas de cas pratique à traiter.",
+    ],
+  },
+  pratique: {
+    libelle: "pratique",
+    types: ["exercice"] as const,
+    consigne: [
+      "Ce contrôle est PRATIQUE : il évalue un savoir-faire. N'utilise que le",
+      "type \"exercice\". Chaque question est une mise en situation",
+      "professionnelle concrète demandant de produire quelque chose (un",
+      "livrable, une analyse appliquée, une démarche à dérouler) à partir d'un",
+      "contexte que tu fournis dans l'énoncé.",
+      "N'écris aucune question de restitution de cours ni aucun QCM.",
+    ],
+  },
+  mixte: {
+    libelle: "théorique et pratique",
+    types: ["qcm", "ouverte", "exercice"] as const,
+    consigne: [
+      "Ce contrôle est THÉORIQUE ET PRATIQUE : il combine les deux. Commence",
+      "par les questions de connaissances (\"qcm\" et \"ouverte\"), puis termine",
+      "par au moins deux mises en situation de type \"exercice\".",
+      "Environ la moitié du barème doit porter sur la partie pratique.",
+    ],
+  },
+} as const;
+
+type FormatControle = keyof typeof CONSIGNES_FORMAT;
+
+function formatValide(v: unknown): FormatControle {
+  return typeof v === "string" && v in CONSIGNES_FORMAT
+    ? (v as FormatControle)
+    : "theorique";
+}
+
 export async function POST(request: Request) {
-  const { moduleId, dureeHeures, groupeId, instruction, controleExistant } =
-    await request.json().catch(() => ({}));
+  const {
+    moduleId,
+    dureeHeures,
+    groupeId,
+    instruction,
+    controleExistant,
+    format: formatRecu,
+    type: typeRecu,
+  } = await request.json().catch(() => ({}));
+
+  const format = formatValide(formatRecu);
+  const regles = CONSIGNES_FORMAT[format];
+  const estEfm = typeRecu === "EFM";
 
   if (!moduleId) {
     return NextResponse.json({ error: "moduleId requis" }, { status: 400 });
@@ -95,6 +156,7 @@ export async function POST(request: Request) {
     `Module : ${module.nom}`,
     groupeNom ? `Groupe concerné : ${groupeNom}` : null,
     `Durée de l'évaluation : ${duree} heures.`,
+    `Nature de l'épreuve : ${estEfm ? "épreuve de fin de module (EFM)" : "contrôle continu (CC)"}, ${regles.libelle}.`,
     `Contenu réellement couvert en séance :`,
     `- ${contenuCouvert}`,
     "",
@@ -114,7 +176,9 @@ export async function POST(request: Request) {
     "quatre questions à choix multiple, produis QUATRE entrées distinctes dans",
     "le tableau `questions`, chacune avec son propre barème.",
     "",
-    "Trois types de questions sont possibles :",
+    ...regles.consigne,
+    "",
+    "Types de questions :",
     '- "qcm" : l\'énoncé pose UNE question. Les propositions vont dans `options`,',
     "  jamais dans l'énoncé. Entre 3 et 4 propositions, dont au moins une correcte.",
     "  Plusieurs propositions correctes sont autorisées.",
@@ -122,7 +186,10 @@ export async function POST(request: Request) {
     '- "exercice" : mise en application, réponse longue. Fournis `corrige`.',
     "",
     "Exigences :",
-    "- Entre 8 et 14 questions, en variant les trois types.",
+    format === "pratique"
+      ? "- Entre 3 et 6 mises en situation, de difficulté croissante."
+      : "- Entre 8 et 14 questions, en variant les types autorisés.",
+    `- N'utilise que ces types : ${regles.types.map((t) => `"${t}"`).join(", ")}.`,
     "- Le barème DOIT totaliser exactement 20 points.",
     "- Des consignes claires et brèves pour le stagiaire.",
     "",
@@ -217,6 +284,14 @@ export async function POST(request: Request) {
     if (type === "qcm" && contientPropositions(enonce)) {
       avertissements.push(
         `Question ${i + 1} : les propositions semblent encore écrites dans l'énoncé.`,
+      );
+    }
+    // Le type produit est signalé, jamais réécrit d'office : convertir un
+    // exercice en question ouverte changerait le sens de l'énoncé, ce qui n'est
+    // pas à la main de la validation.
+    if (!(regles.types as readonly string[]).includes(type)) {
+      avertissements.push(
+        `Question ${i + 1} : de type « ${type} », inattendu pour un contrôle ${regles.libelle}.`,
       );
     }
 

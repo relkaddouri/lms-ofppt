@@ -185,6 +185,10 @@ export default function ControleManager({
           moduleId,
           dureeHeures: genDuree,
           groupeId: groupeId ?? undefined,
+          // La nature du contrôle gouverne la génération : sans elle, le
+          // sélecteur « Théorique / Pratique » ne serait qu'une étiquette.
+          format,
+          type,
           ...(raffiner
             ? {
                 instruction: instruction.trim(),

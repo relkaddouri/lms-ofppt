@@ -16,6 +16,12 @@ export class ErreurLlm extends Error {
   constructor(
     message: string,
     readonly statut = 502,
+    /**
+     * Message brut du fournisseur. Une erreur de validation d'API dit
+     * précisément ce qui cloche ; la masquer derrière « refusé (400) » rend la
+     * panne indiagnosticable pour le formateur comme pour nous.
+     */
+    readonly detail?: string,
   ) {
     super(message);
     this.name = "ErreurLlm";
@@ -134,23 +140,42 @@ async function appelerAnthropic(
     .filter(Boolean)
     .join("\n\n");
 
+  // Diffusion systématique : le formateur peut régler max_tokens très haut,
+  // et une requête non diffusée finirait en délai dépassé.
+  const base = {
+    model: config.modele,
+    max_tokens: maxTokens,
+    thinking: { type: "adaptive" as const },
+    ...(systeme ? { system: systeme } : {}),
+    messages: [{ role: "user" as const, content: appel.prompt }],
+  };
+
   try {
-    // Diffusion systématique : le formateur peut régler max_tokens très haut,
-    // et une requête non diffusée finirait en délai dépassé.
-    const flux = client.beta.messages.stream({
-      model: config.modele,
-      max_tokens: maxTokens,
-      thinking: { type: "adaptive" },
-      ...(systeme ? { system: systeme } : {}),
-      messages: [{ role: "user", content: appel.prompt }],
-      ...(accepteRepli(config.modele)
-        ? {
-            betas: ["server-side-fallback-2026-07-01"],
-            fallbacks: "default" as const,
-          }
-        : {}),
-    });
-    const reponse = await flux.finalMessage();
+    let reponse: Anthropic.Beta.BetaMessage;
+    try {
+      reponse = await client.beta.messages
+        .stream({
+          ...base,
+          ...(accepteRepli(config.modele)
+            ? {
+                betas: ["server-side-fallback-2026-07-01"],
+                fallbacks: "default" as const,
+              }
+            : {}),
+        })
+        .finalMessage();
+    } catch (e) {
+      // Le repli serveur en cas de refus n'est pas ouvert sur toutes les
+      // organisations. S'il est rejeté, la génération doit continuer sans lui
+      // plutôt que d'échouer sur une option de confort.
+      const rejetOption =
+        e instanceof Anthropic.APIError &&
+        e.status === 400 &&
+        /fallback|beta/i.test(e.message);
+      if (!rejetOption) throw e;
+      console.warn("[llm] repli serveur indisponible, appel sans option");
+      reponse = await client.beta.messages.stream(base).finalMessage();
+    }
 
     if (reponse.stop_reason === "refusal") {
       throw new ErreurLlm(
@@ -174,6 +199,15 @@ async function appelerAnthropic(
   }
 }
 
+/**
+ * Extrait la phrase lisible d'une erreur Anthropic. `e.message` contient le
+ * corps JSON complet, illisible dans une notification.
+ */
+function messageAnthropic(e: InstanceType<typeof Anthropic.APIError>): string {
+  const enveloppe = e.error as { error?: { message?: string } } | undefined;
+  return enveloppe?.error?.message ?? e.message;
+}
+
 function traduireErreur(e: unknown): ErreurLlm {
   if (e instanceof ErreurLlm) return e;
   if (e instanceof Anthropic.AuthenticationError) {
@@ -189,8 +223,22 @@ function traduireErreur(e: unknown): ErreurLlm {
     );
   }
   if (e instanceof Anthropic.APIError) {
-    console.error("[llm] anthropic", e.status, e.message);
-    return new ErreurLlm(`Appel au modèle refusé (${e.status}).`);
+    const detail = messageAnthropic(e);
+    console.error("[llm] anthropic", e.status, detail);
+    // Le solde épuisé est le cas le plus fréquent et le plus déroutant : la
+    // clé est valide, l'authentification passe, et l'appel échoue quand même.
+    if (/credit balance/i.test(detail)) {
+      return new ErreurLlm(
+        "Votre compte Anthropic n'a plus de crédit. Rechargez-le dans Plans & Billing, ou choisissez un autre fournisseur dans Paramètres.",
+        402,
+        detail,
+      );
+    }
+    return new ErreurLlm(
+      `Anthropic a refusé l'appel (${e.status}) : ${detail}`,
+      e.status ?? 502,
+      detail,
+    );
   }
   console.error("[llm] inattendu", e);
   return new ErreurLlm("Appel au modèle impossible.");
@@ -213,40 +261,75 @@ async function appelerCompatibleOpenai(
   if (appel.systeme) messages.push({ role: "system", content: appel.systeme });
   messages.push({ role: "user", content: appel.prompt });
 
+  const url = `${config.baseUrl.replace(/\/+$/, "")}/chat/completions`;
+  const corps: Record<string, unknown> = {
+    model: config.modele,
+    messages,
+    max_tokens: maxTokens,
+    ...(appel.json ? { response_format: { type: "json_object" } } : {}),
+  };
   const temperature = appel.temperature ?? config.temperature ?? undefined;
+  if (temperature !== undefined) corps.temperature = temperature;
 
-  const res = await fetch(`${config.baseUrl.replace(/\/+$/, "")}/chat/completions`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${config.cle}`,
-    },
-    body: JSON.stringify({
-      model: config.modele,
-      messages,
-      max_tokens: maxTokens,
-      ...(temperature !== undefined ? { temperature } : {}),
-      ...(appel.json ? { response_format: { type: "json_object" } } : {}),
-    }),
-  }).catch((e) => {
-    console.error("[llm] réseau", e);
-    throw new ErreurLlm("Service de modèle injoignable. Vérifiez l'URL.", 502);
-  });
-
-  const data = (await res.json().catch(() => null)) as {
+  type ReponseCompatible = {
     choices?: { message?: { content?: string } }[];
     error?: { message?: string };
   } | null;
 
-  if (!res.ok) {
-    console.error("[llm] compatible", res.status, data?.error?.message);
-    if (res.status === 401 || res.status === 403) {
-      throw new ErreurLlm("Clé API refusée. Vérifiez-la dans Paramètres.", 401);
+  async function envoyer(): Promise<{ status: number; data: ReponseCompatible }> {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${config.cle}`,
+      },
+      body: JSON.stringify(corps),
+    }).catch((e) => {
+      console.error("[llm] réseau", e);
+      throw new ErreurLlm("Service de modèle injoignable. Vérifiez l'URL.", 502);
+    });
+    return { status: res.status, data: (await res.json().catch(() => null)) as ReponseCompatible };
+  }
+
+  let { status, data } = await envoyer();
+
+  // Les modèles récents de plusieurs fournisseurs ont resserré ces deux
+  // paramètres : max_tokens renommé, température figée. Le service dit
+  // précisément lequel pose problème — autant le retirer et réessayer plutôt
+  // que de renvoyer une erreur au formateur, qui n'y peut rien.
+  for (let essai = 0; essai < 2 && status === 400; essai++) {
+    const message = data?.error?.message ?? "";
+    if (/max_tokens/i.test(message) && "max_tokens" in corps) {
+      corps.max_completion_tokens = corps.max_tokens;
+      delete corps.max_tokens;
+      console.warn("[llm] max_tokens refusé, bascule sur max_completion_tokens");
+    } else if (/temperature/i.test(message) && "temperature" in corps) {
+      delete corps.temperature;
+      console.warn("[llm] température refusée, appel sans température");
+    } else {
+      break;
     }
-    if (res.status === 429) {
-      throw new ErreurLlm("Quota atteint. Réessayez dans un moment.", 429);
+    ({ status, data } = await envoyer());
+  }
+
+  if (status < 200 || status >= 300) {
+    const message = data?.error?.message;
+    console.error("[llm] compatible", status, message);
+    if (status === 401 || status === 403) {
+      throw new ErreurLlm(
+        `Clé API refusée${message ? ` : ${message}` : ""}`,
+        401,
+        message,
+      );
     }
-    throw new ErreurLlm(data?.error?.message ?? `Appel refusé (${res.status}).`);
+    if (status === 429) {
+      throw new ErreurLlm("Quota atteint. Réessayez dans un moment.", 429, message);
+    }
+    throw new ErreurLlm(
+      message ? `Le service a refusé l'appel (${status}) : ${message}` : `Appel refusé (${status}).`,
+      status,
+      message,
+    );
   }
 
   const texte = data?.choices?.[0]?.message?.content?.trim();
