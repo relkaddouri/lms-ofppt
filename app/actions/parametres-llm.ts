@@ -16,10 +16,31 @@ export type ParametresLlm = {
   updated_at: string;
 };
 
+/**
+ * Traduit une erreur de base en message lisible.
+ *
+ * conventions.md L.39 : une erreur technique brute ne doit jamais être montrée
+ * au formateur. Un « duplicate key value violates unique constraint » dans une
+ * notification ne lui apprend rien et ne lui dit pas quoi faire.
+ */
+function messageLisible(erreur: { message: string; code?: string }): string {
+  console.error("[parametres-llm]", erreur.code, erreur.message);
+  if (/duplicate key|secrets_name_idx/i.test(erreur.message)) {
+    return "Une clé était déjà enregistrée dans un état incohérent. Supprimez-la, puis saisissez-la de nouveau.";
+  }
+  if (/Authentification requise/i.test(erreur.message)) {
+    return "Votre session a expiré. Reconnectez-vous.";
+  }
+  if (/violates check constraint/i.test(erreur.message)) {
+    return "Une des valeurs saisies est hors des limites autorisées.";
+  }
+  return "Enregistrement impossible. Réessayez, ou contactez l'administrateur si cela persiste.";
+}
+
 export async function getParametresLlm(): Promise<ParametresLlm | null> {
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("lire_parametres_llm");
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(messageLisible(error));
   return ((data as unknown as ParametresLlm[] | null) ?? [])[0] ?? null;
 }
 
@@ -84,7 +105,7 @@ export async function saveParametresLlm(input: SaisieParametresLlm) {
     p_max_tokens: Math.round(input.max_tokens),
     p_temperature: description.temperature ? input.temperature : null,
   });
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(messageLisible(error));
 
   revalidatePath("/parametres");
 }
@@ -92,7 +113,7 @@ export async function saveParametresLlm(input: SaisieParametresLlm) {
 export async function deleteCleLlm() {
   const supabase = await createClient();
   const { error } = await supabase.rpc("supprimer_cle_llm");
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(messageLisible(error));
   revalidatePath("/parametres");
 }
 
