@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
 import { formatDate } from "@/lib/format";
+import { formatHeure } from "@/lib/creneaux";
 import { Save } from "lucide-react";
 
 export default function SeanceCard({ seance }: { seance: Seance }) {
@@ -56,15 +57,32 @@ export default function SeanceCard({ seance }: { seance: Seance }) {
     <div className="rounded-xl border border-border bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-4">
       <div className="flex items-start justify-between gap-4">
         <div>
-          {seance.date ? (
-            <p className="font-mono text-xs text-slate">
-              {formatDate(seance.date, "Date non fixée")}
+          <p className="font-mono text-xs text-slate">
+            {seance.date ? (
+              formatDate(seance.date, "Date non fixée")
+            ) : (
+              <span className="italic text-slate/60">Date non fixée</span>
+            )}
+            {seance.heure_debut && seance.heure_fin ? (
+              <>
+                {" · "}
+                {formatHeure(seance.heure_debut)} – {formatHeure(seance.heure_fin)}
+                {seance.duree_realisee !== null
+                  ? ` · ${seance.duree_realisee} h`
+                  : null}
+              </>
+            ) : null}
+          </p>
+          {seance.mode ? (
+            <p className="mt-0.5 text-xs text-slate">
+              {seance.mode === "distance" ? "À distance" : "Présentiel"}
             </p>
-          ) : (
-            <p className="font-mono text-xs italic text-slate/60">
-              Date non fixée
+          ) : null}
+          {seance.objectif_operationnel ? (
+            <p className="mt-1 text-sm text-ink">
+              {seance.objectif_operationnel}
             </p>
-          )}
+          ) : null}
           {seance.contenu_prevu ? (
             <p className="mt-1 text-sm text-ink">{seance.contenu_prevu}</p>
           ) : (
