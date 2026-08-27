@@ -55,10 +55,21 @@ export function initials(...parts: (string | null | undefined)[]): string {
 }
 
 /** Heures à la française : 9.5 -> « 9,5 h », 115 -> « 115 h ». */
+/**
+ * Durée en heures et minutes, jamais en décimales.
+ *
+ * « 5,25 h » ne veut rien dire pour un formateur : une séance dure 2 h 30, 3 h
+ * ou 5 h. On écrit donc « 5 h 15 », comme sur un emploi du temps.
+ */
 export function formatHeures(valeur: number | string | null | undefined): string {
   const n = Number(valeur);
   if (!Number.isFinite(n)) return "—";
-  return `${n.toLocaleString("fr-FR", { maximumFractionDigits: 2 })} h`;
+  const signe = n < 0 ? "-" : "";
+  const total = Math.round(Math.abs(n) * 60);
+  const h = Math.floor(total / 60);
+  const min = total % 60;
+  if (min === 0) return `${signe}${h} h`;
+  return `${signe}${h} h ${String(min).padStart(2, "0")}`;
 }
 
 /** Fragment de nom de fichier sûr : accents et ponctuation retirés, espaces en tirets. */

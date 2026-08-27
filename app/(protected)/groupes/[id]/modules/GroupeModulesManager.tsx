@@ -8,7 +8,7 @@ import Card from "@/components/ui/Card";
 import Button, { buttonStyles } from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import { useToast } from "@/components/ui/Toast";
-import { BookOpen, Check, Clock, Pencil, X } from "lucide-react";
+import { ArrowRight, BookOpen, Check, Clock, Pencil, X } from "lucide-react";
 
 export default function GroupeModulesManager({
   groupeId,
@@ -128,6 +128,13 @@ export default function GroupeModulesManager({
                       </>
                     ) : null}
                   </p>
+                  <Link
+                    href={`/groupes/${groupeId}/modules/${m.module_id}`}
+                    className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-forest underline"
+                  >
+                    Plan de déroulement
+                    <ArrowRight className="h-3 w-3" />
+                  </Link>
                 </div>
 
                 {edition ? (
