@@ -8,6 +8,7 @@ import Badge from "@/components/ui/Badge";
 import { inputStyles as inputClass } from "@/components/ui/Input";
 import { useToast } from "@/components/ui/Toast";
 import FicheSeance from "@/components/FicheSeance";
+import SupportSeance from "@/components/SupportSeance";
 import { formatDate, formatDateTime, formatHeures } from "@/lib/format";
 import { formatHeure } from "@/lib/creneaux";
 import {
@@ -202,6 +203,36 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
         </section>
 
         <div className="space-y-6">
+          {/* ── Support remis au stagiaire ─────────────────────────────── */}
+          <section className="rounded-xl border border-border bg-surface p-4">
+            <h2 className="text-base font-semibold text-ink">
+              {seance.nature === "pratique"
+                ? "Énoncé de travaux pratiques"
+                : "Support de cours"}
+            </h2>
+            <p className="mt-1 text-xs text-slate">
+              Le document remis aux stagiaires, distinct de votre fiche.
+            </p>
+            <div className="mt-3">
+              <SupportSeance
+                contexte={{
+                  seanceId: seance.id,
+                  moduleNom: seance.moduleNom,
+                  groupeNom: seance.groupeNom,
+                  date: seance.date,
+                  dateFormatee: seance.date ? formatDate(seance.date) : null,
+                  dureeHeures: seance.duree_prevue
+                    ? Number(seance.duree_prevue)
+                    : null,
+                  objectif: seance.objectifIntitule,
+                  nature: seance.nature,
+                }}
+                initial={seance.supportContenu}
+                version={seance.supportVersion}
+              />
+            </div>
+          </section>
+
           {/* ── Présences ──────────────────────────────────────────────── */}
           <section className="rounded-xl border border-border bg-surface p-4">
             <div className="flex items-center justify-between">

@@ -46,7 +46,36 @@ export type SeanceDetail = {
   remarques: RemarqueSeance[];
   ficheContenu: string | null;
   ficheVersion: number | null;
+  supportContenu: unknown | null;
+  supportVersion: number | null;
 };
+
+/** Enregistre le support d'une séance en créant une nouvelle version. */
+export async function saveSupport(
+  seanceId: string,
+  type: "theorique" | "pratique",
+  contenu: unknown,
+) {
+  const supabase = await createClient();
+
+  const { data: derniere, error: errLecture } = await supabase
+    .from("supports_seance")
+    .select("version")
+    .eq("seance_id", seanceId)
+    .order("version", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (errLecture) throw new Error(errLecture.message);
+
+  const version = (derniere?.version ?? 0) + 1;
+  const { error } = await supabase
+    .from("supports_seance")
+    .insert({ seance_id: seanceId, type, contenu, version });
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/groupes");
+  return version;
+}
 
 export async function getSeanceDetail(
   seanceId: string,
@@ -92,7 +121,8 @@ export async function getSeanceDetail(
     } | null;
   };
 
-  const [stagiairesRes, presencesRes, remarquesRes, ficheRes] = await Promise.all([
+  const [stagiairesRes, presencesRes, remarquesRes, ficheRes, supportRes] =
+    await Promise.all([
     supabase
       .from("stagiaires")
       .select("id, nom, prenom")
@@ -114,7 +144,14 @@ export async function getSeanceDetail(
       .order("version", { ascending: false })
       .limit(1)
       .maybeSingle(),
-  ]);
+    supabase
+      .from("supports_seance")
+      .select("contenu, version")
+      .eq("seance_id", seanceId)
+      .order("version", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    ]);
 
   if (stagiairesRes.error) throw new Error(stagiairesRes.error.message);
   if (presencesRes.error) throw new Error(presencesRes.error.message);
@@ -146,6 +183,8 @@ export async function getSeanceDetail(
     remarques: (remarquesRes.data ?? []) as RemarqueSeance[],
     ficheContenu: ficheRes.data?.contenu ?? null,
     ficheVersion: ficheRes.data?.version ?? null,
+    supportContenu: supportRes.data?.contenu ?? null,
+    supportVersion: supportRes.data?.version ?? null,
   };
 }
 

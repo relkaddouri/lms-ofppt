@@ -85,7 +85,7 @@ contrôles et produire les fiches est le travail manuel que cette application do
 
 - [x] **2b.6** — Prompt : *"Crée les tables `presences` (seance_id, stagiaire_id, present, motif) et `remarques_seance` (seance_id, texte, created_at), avec leurs policies restreintes au propriétaire, et l'interface de saisie depuis la page de séance."*
 
-- [ ] **2b.7** — Prompt : *"Génère le support de cours d'une séance à partir de son objectif d'apprentissage et de sa nature : un support théorique (notions, schémas, exemples) ou un énoncé de TP (contexte, consignes, livrable attendu, critères), selon le cas."*
+- [x] **2b.7** — Prompt : *"Génère le support de cours d'une séance à partir de son objectif d'apprentissage et de sa nature : un support théorique (notions, schémas, exemples) ou un énoncé de TP (contexte, consignes, livrable attendu, critères), selon le cas."*
 
 
 ---
