@@ -1,4 +1,6 @@
 import { getModuleDetail } from "@/app/actions/modules";
+import { getManuel } from "@/app/actions/manuel";
+import ReferentielCompetence from "@/components/ReferentielCompetence";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import Breadcrumb from "@/components/Breadcrumb";
@@ -16,7 +18,10 @@ export default async function ModuleDetailPage({
 }) {
   const { id } = await params;
 
-  const detail = await getModuleDetail(id);
+  const [detail, referentiel] = await Promise.all([
+    getModuleDetail(id),
+    getManuel(id),
+  ]);
   if (!detail) redirect("/modules");
 
   const { module, competence, controles, hasFiche, groupes } = detail;
@@ -47,6 +52,12 @@ export default async function ModuleDetailPage({
         <p className="mt-1 max-w-[640px] text-sm text-slate">
           {module.description}
         </p>
+      ) : null}
+
+      {referentiel ? (
+        <div className="mt-6">
+          <ReferentielCompetence referentiel={referentiel} />
+        </div>
       ) : null}
 
       <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-3">
