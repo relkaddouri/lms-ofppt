@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createSeance, type ModeSeance } from "@/app/actions/seances";
 import type { GroupeModuleInfo } from "@/app/actions/groupes";
-import Card from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
 import Input, { Textarea, inputStyles } from "@/components/ui/Input";
 import { useToast } from "@/components/ui/Toast";
@@ -19,12 +18,22 @@ import {
 } from "@/lib/creneaux";
 import { Plus } from "lucide-react";
 
+/**
+ * Formulaire de planification d'une séance.
+ *
+ * Il vit dans une modale : occupant le haut de la page en permanence, il
+ * repoussait la progression sous la ligne de flottaison alors qu'on ne
+ * planifie une séance isolée qu'occasionnellement — le plan de déroulement les
+ * crée en lot.
+ */
 export default function NouvelleSeanceForm({
   groupeId,
   modules,
+  onCree,
 }: {
   groupeId: string;
   modules: GroupeModuleInfo[];
+  onCree?: () => void;
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -61,6 +70,7 @@ export default function NouvelleSeanceForm({
       setForm((f) => ({ ...f, objectif: "" }));
       toast("Séance planifiée");
       router.refresh();
+      onCree?.();
     } catch (err) {
       toast(err instanceof Error ? err.message : "Erreur inattendue", "error");
     } finally {
@@ -69,8 +79,7 @@ export default function NouvelleSeanceForm({
   }
 
   return (
-    <Card className="mt-6 max-w-[640px]">
-      <h2 className="text-sm font-medium text-ink">Planifier une séance</h2>
+    <>
 
       <form onSubmit={handleSubmit} className="mt-3 space-y-4">
         <div>
@@ -194,6 +203,6 @@ export default function NouvelleSeanceForm({
           </Button>
         </div>
       </form>
-    </Card>
+    </>
   );
 }

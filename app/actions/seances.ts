@@ -25,13 +25,20 @@ export type Seance = {
   duree_realisee: number | null;
   a_prevoir_prochaine_seance: string | null;
   statut: "a_faire" | "fait";
+  duree_prevue: number | null;
+  nature: "theorique" | "pratique" | null;
+  suggestion_pedagogique_id: string | null;
   modules?: { nom: string } | null;
+  /** Objectif d'apprentissage du référentiel, quand la séance vient du plan. */
+  suggestions_pedagogiques?: { code: string | null; apprentissage_base: string } | null;
 };
 
 const COLONNES =
   "id, groupe_id, module_id, date, heure_debut, heure_fin, mode, " +
   "objectif_operationnel, contenu_prevu, contenu_realise, duree_realisee, " +
-  "a_prevoir_prochaine_seance, statut, modules(nom)";
+  "a_prevoir_prochaine_seance, statut, duree_prevue, nature, " +
+  "suggestion_pedagogique_id, modules(nom), " +
+  "suggestions_pedagogiques(code, apprentissage_base)";
 
 export async function getSeancesByGroupe(groupeId: string): Promise<Seance[]> {
   const supabase = await createClient();
@@ -39,8 +46,11 @@ export async function getSeancesByGroupe(groupeId: string): Promise<Seance[]> {
     .from("seances")
     .select(COLONNES)
     .eq("groupe_id", groupeId)
+    // Les séances issues du plan n'ont pas encore de date : elles se lisent
+    // dans l'ordre où elles ont été posées, qui est celui du référentiel.
     .order("date", { ascending: true, nullsFirst: false })
-    .order("heure_debut", { ascending: true, nullsFirst: false });
+    .order("heure_debut", { ascending: true, nullsFirst: false })
+    .order("created_at", { ascending: true });
 
   if (error) throw new Error(error.message);
   return (data ?? []) as unknown as Seance[];
