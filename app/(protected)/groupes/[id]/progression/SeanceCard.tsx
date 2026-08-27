@@ -8,7 +8,8 @@ import Button from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
 import { formatDate } from "@/lib/format";
 import { formatHeure } from "@/lib/creneaux";
-import { Save } from "lucide-react";
+import Link from "next/link";
+import { ArrowRight, Save } from "lucide-react";
 
 export default function SeanceCard({ seance }: { seance: Seance }) {
   const router = useRouter();
@@ -83,6 +84,13 @@ export default function SeanceCard({ seance }: { seance: Seance }) {
               {seance.objectif_operationnel}
             </p>
           ) : null}
+          <Link
+            href={`/groupes/${seance.groupe_id}/seances/${seance.id}`}
+            className="mt-1.5 inline-flex items-center gap-1 text-xs font-medium text-forest underline"
+          >
+            Ouvrir la séance
+            <ArrowRight className="h-3 w-3" />
+          </Link>
           {seance.contenu_prevu ? (
             <p className="mt-1 text-sm text-ink">{seance.contenu_prevu}</p>
           ) : (

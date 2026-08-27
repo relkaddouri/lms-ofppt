@@ -81,9 +81,9 @@ contrôles et produire les fiches est le travail manuel que cette application do
 
 - [x] **2b.4** — Prompt : *"Génère le plan de séances d'un couple groupe+module à partir de la répartition horaire : découpe en séances selon les blocs horaires réels, alterne théorie et pratique, et insère un contrôle tous les 30 heures environ (seuil du PRD). Le plan est proposé, jamais appliqué sans validation du formateur."*
 
-- [ ] **2b.5 — Interface** — Prompt : *"En respectant strictement docs/design_system.md et docs/conventions.md : crée la page dédiée d'une séance. Elle réunit l'objectif pédagogique, la fiche de préparation directement éditable sur place (plus de recherche de fiche à part), la liste de présence des stagiaires, et les remarques de séance."*
+- [x] **2b.5 — Interface** — Prompt : *"En respectant strictement docs/design_system.md et docs/conventions.md : crée la page dédiée d'une séance. Elle réunit l'objectif pédagogique, la fiche de préparation directement éditable sur place (plus de recherche de fiche à part), la liste de présence des stagiaires, et les remarques de séance."*
 
-- [ ] **2b.6** — Prompt : *"Crée les tables `presences` (seance_id, stagiaire_id, present, motif) et `remarques_seance` (seance_id, texte, created_at), avec leurs policies restreintes au propriétaire, et l'interface de saisie depuis la page de séance."*
+- [x] **2b.6** — Prompt : *"Crée les tables `presences` (seance_id, stagiaire_id, present, motif) et `remarques_seance` (seance_id, texte, created_at), avec leurs policies restreintes au propriétaire, et l'interface de saisie depuis la page de séance."*
 
 - [ ] **2b.7** — Prompt : *"Génère le support de cours d'une séance à partir de son objectif d'apprentissage et de sa nature : un support théorique (notions, schémas, exemples) ou un énoncé de TP (contexte, consignes, livrable attendu, critères), selon le cas."*
 
