@@ -15,7 +15,9 @@ import {
 } from "@/app/actions/repartition";
 import { construirePlan, HEURES_PAR_CONTROLE } from "@/lib/planification";
 import { ConfirmModal } from "@/components/ui/Modal";
-import { RotateCcw, Save } from "lucide-react";
+import { getManuel } from "@/app/actions/manuel";
+import { slugify } from "@/lib/format";
+import { BookOpen, RotateCcw, Save } from "lucide-react";
 
 export default function RepartitionManager({
   groupeId,
@@ -54,6 +56,25 @@ export default function RepartitionManager({
       ls.map((l) => (l.id === id ? { ...l, [champ]: Math.max(0, v) } : l)),
     );
     setProposition(false);
+  }
+
+  async function telechargerManuel() {
+    startTransition(async () => {
+      try {
+        const manuel = await getManuel(moduleId, groupeId);
+        if (!manuel) throw new Error("Référentiel introuvable pour ce module.");
+        const { telechargerManuelPdf } = await import("@/lib/pdf-manuel");
+        await telechargerManuelPdf(
+          manuel,
+          `manuel-formateur-competence-${manuel.numero}-${slugify(
+            plan.groupeNom,
+            "groupe",
+          )}.pdf`,
+        );
+      } catch (e) {
+        toast(e instanceof Error ? e.message : "Export impossible.", "error");
+      }
+    });
   }
 
   function reproposer() {
@@ -267,6 +288,19 @@ export default function RepartitionManager({
         </Button>
         <Button variant="secondary" icon={RotateCcw} onClick={reproposer}>
           Recalculer depuis le référentiel
+        </Button>
+        <Button
+          variant="ghost"
+          icon={BookOpen}
+          onClick={telechargerManuel}
+          disabled={enCours || proposition}
+          title={
+            proposition
+              ? "Enregistrez la répartition avant d'éditer le manuel"
+              : undefined
+          }
+        >
+          Manuel de formateur
         </Button>
         <span
           className={`ml-auto text-sm ${ecart === 0 ? "text-slate" : "text-danger"}`}
