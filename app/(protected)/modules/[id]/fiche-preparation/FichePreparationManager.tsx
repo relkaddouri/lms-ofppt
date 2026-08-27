@@ -113,19 +113,28 @@ export default function FichePreparationManager({
   }
 
   async function handleGenerate() {
+    if (!seanceId) {
+      toast("Choisissez d'abord la séance à préparer.", "error");
+      return;
+    }
     setBusy(true);
     setNotice(null);
     try {
+      // L'aide-mémoire se génère à partir de la séance : sa durée exacte, son
+      // objectif, et ce qui a déjà été traité avec ce groupe.
       const res = await fetch("/api/generate/fiche-preparation", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ moduleId }),
+        body: JSON.stringify({ seanceId }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Erreur de génération");
       setContenu(data.contenu);
       setActiveVersion(null);
-      setNotice("Fiche générée. Enregistrez-la pour créer une nouvelle version.");
+      setNotice(
+        data.avertissement ??
+          `Aide-mémoire généré (${data.mots} mots). Enregistrez-le pour créer une version.`,
+      );
     } catch (err) {
       toast(err instanceof Error ? err.message : "Erreur inattendue", "error");
     } finally {
@@ -262,8 +271,9 @@ export default function FichePreparationManager({
           onClick={handleGenerate}
           loading={busy}
           loadingLabel="Génération…"
+          disabled={!seanceId}
         >
-          Générer avec l&apos;IA
+          Générer l&apos;aide-mémoire
         </Button>
         <Button
           variant="ghost"
