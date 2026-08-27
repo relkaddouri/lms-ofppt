@@ -23,6 +23,9 @@ export type SeanceAPreparer = {
   contenu_realise: string | null;
   groupe_id: string;
   groupe_nom: string;
+  /** Pour l'en-tête du formulaire officiel. */
+  groupe_annee: number | null;
+  filiere: string;
   /** Nombre de versions de fiche déjà enregistrées pour cette séance. */
   nb_versions: number;
 };
@@ -42,7 +45,7 @@ export async function getSeancesAPreparer(
   let query = supabase
     .from("seances")
     .select(
-      "id, date, heure_debut, heure_fin, statut, objectif_operationnel, contenu_prevu, contenu_realise, groupe_id, groupes(nom)",
+      "id, date, heure_debut, heure_fin, statut, objectif_operationnel, contenu_prevu, contenu_realise, groupe_id, groupes(nom, annee, specialites(nom))",
     )
     .eq("module_id", moduleId)
     .order("date", { ascending: true });
@@ -54,8 +57,14 @@ export async function getSeancesAPreparer(
 
   const seances = (data ?? []) as unknown as (Omit<
     SeanceAPreparer,
-    "groupe_nom" | "nb_versions"
-  > & { groupes: { nom: string } | null })[];
+    "groupe_nom" | "groupe_annee" | "filiere" | "nb_versions"
+  > & {
+    groupes: {
+      nom: string;
+      annee: number | null;
+      specialites: { nom: string } | null;
+    } | null;
+  })[];
 
   if (seances.length === 0) return [];
 
@@ -86,6 +95,8 @@ export async function getSeancesAPreparer(
     contenu_realise: s.contenu_realise,
     groupe_id: s.groupe_id,
     groupe_nom: s.groupes?.nom ?? "—",
+    groupe_annee: s.groupes?.annee ?? null,
+    filiere: s.groupes?.specialites?.nom ?? "Digital Design",
     nb_versions: comptes.get(s.id) ?? 0,
   }));
 }

@@ -11,10 +11,30 @@ import { NextResponse } from "next/server";
  * déroulé minuté ne sert personne — il ne survit pas aux dix premières minutes
  * réelles d'une séance — et sa longueur le rend inconsultable.
  */
-const MOTS_MAX = 400;
+export type BlocFiche = { contenu: string; minutes: number };
+export type LigneDeveloppement = {
+  strategie: string;
+  contenu: string;
+  minutes: number;
+};
 
-function compterMots(texte: string): number {
-  return texte.trim().split(/\s+/).filter(Boolean).length;
+export type FicheGeneree = {
+  objectifs: string;
+  modalite: string;
+  fichiers: string;
+  motivation: BlocFiche;
+  plan: BlocFiche;
+  developpement: LigneDeveloppement[];
+  evaluation: BlocFiche;
+  prochaine: BlocFiche;
+};
+
+function bloc(v: unknown, defaut = ""): BlocFiche {
+  const o = (v ?? {}) as Partial<BlocFiche>;
+  return {
+    contenu: String(o.contenu ?? defaut).trim(),
+    minutes: Math.max(0, Math.round(Number(o.minutes) || 0)),
+  };
 }
 
 type SuggestionRef = {
@@ -155,6 +175,8 @@ export async function POST(request: Request) {
     ].filter((l): l is string => l !== null);
   });
 
+  const minutes = duree ? Math.round(duree * 60) : null;
+
   const prompt = [
     `Séance à préparer : ${s.date ?? "date à définir"}`,
     s.heure_debut && s.heure_fin
@@ -182,37 +204,39 @@ export async function POST(request: Request) {
     "",
     "─────",
     "",
-    "Rédige un AIDE-MÉMOIRE que le formateur parcourt du regard pendant la",
-    "séance. Ce n'est pas un document administratif.",
+    "Remplis la fiche de préparation officielle OFPPT. Elle se compose d'une",
+    "introduction, d'un développement et d'une conclusion, chaque bloc portant",
+    "sa durée.",
     "",
-    "INTERDIT — ne produis jamais :",
-    "- un déroulé minuté ou un tableau horaire, sous quelque forme que ce soit ;",
-    "- des phrases développées ou des paragraphes rédigés ;",
-    "- une section « Objectifs pédagogiques » recopiant l'objectif ci-dessus ;",
-    "- du remplissage : mieux vaut trois lignes justes que dix approximatives.",
+    minutes
+      ? `La séance dure ${minutes} minutes. La somme de toutes les durées doit valoir exactement ${minutes}.`
+      : "La durée de la séance n'est pas connue : reste cohérent d'un bloc à l'autre.",
+    "Compte environ 15 minutes pour l'introduction et 15 pour la conclusion,",
+    "le reste au développement.",
     "",
-    `LONGUEUR : ${MOTS_MAX} mots maximum, tout compris. C'est une contrainte`,
-    "stricte : un aide-mémoire trop long ne se consulte pas.",
+    "Écris de façon télégraphique : des lignes courtes, jamais de paragraphes.",
+    "Chaque contenu tient en quelques lignes séparées par des retours à la",
+    "ligne — c'est une fiche que le formateur parcourt du regard, pas un",
+    "rapport. Ne recopie pas l'objectif de la séance dans les contenus.",
     "",
     "Appuie-toi sur le référentiel ci-dessus et enchaîne sur ce qui a déjà été",
     "traité — ne le répète pas.",
     "",
-    "Structure exacte, en Markdown, sans rien ajouter autour :",
+    "Réponds UNIQUEMENT en JSON, sans markdown, avec exactement cette structure :",
+    `{
+  "objectifs": "ce que le stagiaire doit savoir faire à la fin, en une phrase",
+  "modalite": "Synchrone présentiel",
+  "fichiers": "supports nécessaires, ou -",
+  "motivation": { "contenu": "l'accroche : question, situation, vidéo…", "minutes": 10 },
+  "plan": { "contenu": "les points annoncés, un par ligne", "minutes": 5 },
+  "developpement": [
+    { "strategie": "Méthode active (learning by doing)", "contenu": "notion traitée et activité", "minutes": 50 }
+  ],
+  "evaluation": { "contenu": "questions de synthèse posées aux stagiaires", "minutes": 10 },
+  "prochaine": { "contenu": "notions à aborder la fois suivante", "minutes": 5 }
+}`,
     "",
-    "## Idées clés",
-    "- (3 à 5 puces, une idée par puce, formulées comme on les dirait à voix haute)",
-    "",
-    "## Mots-clés",
-    "- (le vocabulaire à faire passer, en une seule ligne séparée par des virgules)",
-    "",
-    "## Exemples concrets",
-    "- (2 à 3 exemples du métier visé, nommés, pas décrits)",
-    "",
-    "## Points de vigilance",
-    "- (2 à 3 erreurs ou confusions fréquentes des stagiaires sur ce sujet)",
-    "",
-    "## Pour la prochaine fois",
-    "- (une ligne : ce qu'il restera à couvrir)",
+    "Le tableau `developpement` compte 3 à 6 entrées, dans l'ordre de la séance.",
   ]
     .filter((l): l is string => l !== null)
     .join("\n");
@@ -224,21 +248,68 @@ export async function POST(request: Request) {
         "Tu es un formateur expert du référentiel OFPPT. Tu écris en français, en Markdown, de façon télégraphique : des puces courtes, jamais de paragraphes.",
       prompt,
       temperature: 0.6,
-      // Une enveloppe serrée : 400 mots tiennent largement dedans, et le
-      // modèle ne peut pas déborder vers un texte développé.
-      maxTokens: 1200,
+      // Enveloppe serrée : la fiche tient largement dedans, et le modèle ne
+      // peut pas déborder vers des paragraphes rédigés.
+      maxTokens: 2500,
+      json: true,
     });
 
-    // conventions.md L.34 : une limite annoncée dans le prompt reste une
-    // suggestion. On la mesure côté serveur et on le dit au formateur.
-    const mots = compterMots(contenu);
+    let brut: Partial<FicheGeneree>;
+    try {
+      brut = JSON.parse(contenu) as Partial<FicheGeneree>;
+    } catch {
+      return NextResponse.json(
+        { error: "Le modèle n'a pas retourné un JSON valide." },
+        { status: 502 },
+      );
+    }
+
+    const developpement: LigneDeveloppement[] = (
+      Array.isArray(brut.developpement) ? brut.developpement : []
+    )
+      .map((l) => ({
+        strategie: String(l?.strategie ?? "").trim(),
+        contenu: String(l?.contenu ?? "").trim(),
+        minutes: Math.max(0, Math.round(Number(l?.minutes) || 0)),
+      }))
+      .filter((l) => l.contenu);
+
+    const fiche: FicheGeneree = {
+      objectifs: String(brut.objectifs ?? s.objectif_operationnel ?? "").trim(),
+      modalite: String(brut.modalite ?? "Synchrone présentiel").trim(),
+      fichiers: String(brut.fichiers ?? "-").trim(),
+      motivation: bloc(brut.motivation),
+      plan: bloc(brut.plan),
+      developpement,
+      evaluation: bloc(brut.evaluation),
+      prochaine: bloc(brut.prochaine),
+    };
+
+    // conventions.md L.34 : la durée annoncée dans le prompt reste une
+    // suggestion. On la vérifie ici — une fiche dont les durées ne tombent pas
+    // sur le créneau sera refusée en commission.
+    const total =
+      fiche.motivation.minutes +
+      fiche.plan.minutes +
+      developpement.reduce((s, l) => s + l.minutes, 0) +
+      fiche.evaluation.minutes +
+      fiche.prochaine.minutes;
+
+    const avertissements: string[] = [];
+    if (minutes && total !== minutes) {
+      avertissements.push(
+        `Les durées totalisent ${total} minutes au lieu des ${minutes} de la séance. Ajustez avant d'enregistrer.`,
+      );
+    }
+    if (developpement.length === 0) {
+      avertissements.push("Le développement est vide.");
+    }
+
     return NextResponse.json({
-      contenu,
-      mots,
-      avertissement:
-        mots > MOTS_MAX
-          ? `L'aide-mémoire fait ${mots} mots au lieu des ${MOTS_MAX} visés. Élaguez avant d'enregistrer.`
-          : null,
+      fiche,
+      totalMinutes: total,
+      minutesSeance: minutes,
+      avertissements,
     });
   } catch (e) {
     const err = e instanceof ErreurLlm ? e : null;

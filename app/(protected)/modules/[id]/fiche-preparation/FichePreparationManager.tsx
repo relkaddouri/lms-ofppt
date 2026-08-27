@@ -1,11 +1,7 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import jsPDF from "jspdf";
-import html2canvas from "html2canvas-pro";
 import {
   saveFiche,
   type FichePreparation,
@@ -14,14 +10,65 @@ import {
 import { useToast } from "@/components/ui/Toast";
 import Breadcrumb from "@/components/Breadcrumb";
 import Button from "@/components/ui/Button";
-import { slugify, formatDate } from "@/lib/format";
 import { inputStyles as inputClass } from "@/components/ui/Input";
-import { Download, Save, Sparkles } from "lucide-react";
+import { slugify, formatDate } from "@/lib/format";
+import { dureeHeures } from "@/lib/creneaux";
+import { Download, Plus, Save, Sparkles, Trash2 } from "lucide-react";
+
+type Bloc = { contenu: string; minutes: number };
+type LigneDev = { strategie: string; contenu: string; minutes: number };
+
+type Fiche = {
+  nature: string;
+  objectifs: string;
+  modalite: string;
+  fichiers: string;
+  motivation: Bloc;
+  plan: Bloc;
+  developpement: LigneDev[];
+  evaluation: Bloc;
+  prochaine: Bloc;
+};
+
+function ficheVide(): Fiche {
+  return {
+    nature: "cours théorique",
+    objectifs: "",
+    modalite: "Synchrone présentiel",
+    fichiers: "-",
+    motivation: { contenu: "", minutes: 10 },
+    plan: { contenu: "", minutes: 5 },
+    developpement: [],
+    evaluation: { contenu: "", minutes: 10 },
+    prochaine: { contenu: "", minutes: 5 },
+  };
+}
+
+/**
+ * Une version enregistrée avant la mise au format officiel contient du
+ * Markdown libre. On ne la perd pas : son texte atterrit dans le
+ * développement, à charge du formateur de le répartir.
+ */
+function lireFiche(contenu: string | null): Fiche {
+  if (!contenu?.trim()) return ficheVide();
+  try {
+    const brut = JSON.parse(contenu) as Partial<Fiche>;
+    if (!brut || typeof brut !== "object" || !("developpement" in brut)) {
+      throw new Error("format inconnu");
+    }
+    return { ...ficheVide(), ...brut } as Fiche;
+  } catch {
+    const v = ficheVide();
+    v.developpement = [
+      { strategie: "À répartir", contenu: contenu.trim(), minutes: 0 },
+    ];
+    return v;
+  }
+}
 
 export default function FichePreparationManager({
   moduleId,
   moduleNom,
-  moduleDuree,
   seances,
   seanceId,
   versions,
@@ -36,80 +83,33 @@ export default function FichePreparationManager({
   ficheLegacy: string | null;
 }) {
   const router = useRouter();
-  const [contenu, setContenu] = useState(versions[0]?.contenu ?? "");
+  const toast = useToast();
+
+  const [fiche, setFiche] = useState<Fiche>(() =>
+    lireFiche(versions[0]?.contenu ?? null),
+  );
   const [activeVersion, setActiveVersion] = useState<number | null>(
     versions[0]?.version ?? null,
   );
   const [busy, setBusy] = useState(false);
-  const [notice, setNotice] = useState<string | null>(null);
-  const [mode, setMode] = useState<"edit" | "apercu">("apercu");
-  const pdfRef = useRef<HTMLDivElement>(null);
-  const toast = useToast();
+  const [avertissements, setAvertissements] = useState<string[]>([]);
 
-  async function handleDownloadPdf() {
-    const el = pdfRef.current;
-    if (!el || !contenu.trim()) return;
+  const seance = seances.find((s) => s.id === seanceId) ?? null;
 
-    setBusy(true);
-    try {
-      await document.fonts.ready;
+  const minutesSeance =
+    seance?.heure_debut && seance.heure_fin
+      ? Math.round(dureeHeures(seance.heure_debut, seance.heure_fin) * 60)
+      : null;
 
-      const canvas = await html2canvas(el, {
-        scale: 2,
-        backgroundColor: "#ffffff",
-        logging: false,
-      });
+  const totalMinutes =
+    fiche.motivation.minutes +
+    fiche.plan.minutes +
+    fiche.developpement.reduce((s, l) => s + l.minutes, 0) +
+    fiche.evaluation.minutes +
+    fiche.prochaine.minutes;
 
-      const pdf = new jsPDF({
-        orientation: "p",
-        unit: "mm",
-        format: "a4",
-        compress: true,
-      });
-
-      const pageW = 210;
-      const pageH = 297;
-      const margin = 0;
-      const imgW = pageW - margin * 2;
-      const imgH = (canvas.height * imgW) / canvas.width;
-
-      let heightLeft = imgH;
-      let position = margin;
-
-      pdf.addImage(
-        canvas.toDataURL("image/jpeg", 0.95),
-        "JPEG",
-        margin,
-        position,
-        imgW,
-        imgH,
-      );
-      heightLeft -= pageH - margin * 2;
-
-      while (heightLeft > 0) {
-        position -= pageH - margin * 2;
-        pdf.addPage();
-        pdf.addImage(
-          canvas.toDataURL("image/jpeg", 0.95),
-          "JPEG",
-          margin,
-          position,
-          imgW,
-          imgH,
-        );
-        heightLeft -= pageH - margin * 2;
-      }
-
-      const safeName = slugify(moduleNom, "fiche");
-      pdf.save(`fiche-${safeName}.pdf`);
-    } catch (err) {
-      toast(
-        err instanceof Error ? err.message : "Erreur de génération du PDF",
-        "error",
-      );
-    } finally {
-      setBusy(false);
-    }
+  function majBloc(cle: "motivation" | "plan" | "evaluation" | "prochaine", v: Partial<Bloc>) {
+    setFiche((f) => ({ ...f, [cle]: { ...f[cle], ...v } }));
   }
 
   async function handleGenerate() {
@@ -118,10 +118,7 @@ export default function FichePreparationManager({
       return;
     }
     setBusy(true);
-    setNotice(null);
     try {
-      // L'aide-mémoire se génère à partir de la séance : sa durée exacte, son
-      // objectif, et ce qui a déjà été traité avec ce groupe.
       const res = await fetch("/api/generate/fiche-preparation", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -129,12 +126,10 @@ export default function FichePreparationManager({
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Erreur de génération");
-      setContenu(data.contenu);
+      setFiche({ ...ficheVide(), ...data.fiche });
       setActiveVersion(null);
-      setNotice(
-        data.avertissement ??
-          `Aide-mémoire généré (${data.mots} mots). Enregistrez-le pour créer une version.`,
-      );
+      setAvertissements(data.avertissements ?? []);
+      toast("Fiche générée. Relisez-la avant d'enregistrer.");
     } catch (err) {
       toast(err instanceof Error ? err.message : "Erreur inattendue", "error");
     } finally {
@@ -143,21 +138,19 @@ export default function FichePreparationManager({
   }
 
   async function handleSave() {
-    if (!contenu.trim()) {
-      toast("Le contenu est vide.", "error");
+    if (!seanceId) {
+      toast("Choisissez d'abord la séance à préparer.", "error");
+      return;
+    }
+    if (fiche.developpement.length === 0) {
+      toast("Le développement est vide.", "error");
       return;
     }
     setBusy(true);
-    setNotice(null);
     try {
-      if (!seanceId) {
-        toast("Choisissez d'abord la séance à préparer.", "error");
-        return;
-      }
-      const version = await saveFiche(seanceId, contenu);
+      const version = await saveFiche(seanceId, JSON.stringify(fiche));
       setActiveVersion(version);
-      setNotice(`Version ${version} enregistrée.`);
-      toast("Fiche enregistrée");
+      toast(`Version ${version} enregistrée`);
       router.refresh();
     } catch (err) {
       toast(err instanceof Error ? err.message : "Erreur inattendue", "error");
@@ -166,20 +159,65 @@ export default function FichePreparationManager({
     }
   }
 
-  function loadVersion(v: FichePreparation) {
-    setActiveVersion(v.version);
-    setContenu(v.contenu ?? "");
-    setNotice(
-      v.version === versions[0]?.version
-        ? null
-        : `Affichage de la version ${v.version} (ancienne version).`,
-    );
+  async function handleDownloadPdf() {
+    if (!seance) return;
+    setBusy(true);
+    try {
+      const { telechargerFichePdf } = await import("@/lib/pdf-fiche");
+      await telechargerFichePdf(
+        {
+          nature: fiche.nature,
+          date: seance.date ? formatDate(seance.date) : null,
+          dureeHeures: minutesSeance ? minutesSeance / 60 : null,
+          filiere: seance.filiere,
+          annee: seance.groupe_annee,
+          groupe: seance.groupe_nom,
+          module: moduleNom,
+          objectifs: fiche.objectifs,
+          modalite: fiche.modalite,
+          fichiers: fiche.fichiers,
+          motivation: fiche.motivation,
+          plan: fiche.plan,
+          developpement: fiche.developpement,
+          evaluation: fiche.evaluation,
+          prochaine: fiche.prochaine,
+        },
+        `fiche-${slugify(moduleNom)}-${seance.date ?? ""}.pdf`,
+      );
+    } catch {
+      toast("Export PDF impossible.", "error");
+    } finally {
+      setBusy(false);
+    }
   }
 
-  const seanceChoisie = seances.find((s) => s.id === seanceId) ?? null;
-  const latestVersion = versions[0]?.version ?? null;
-  const isViewingOld =
-    activeVersion !== null && latestVersion !== null && activeVersion < latestVersion;
+  const champBloc = (
+    libelle: string,
+    cle: "motivation" | "plan" | "evaluation" | "prochaine",
+  ) => (
+    <div className="grid gap-2 sm:grid-cols-[1fr_110px]">
+      <div>
+        <label className="block text-xs text-slate">{libelle}</label>
+        <textarea
+          rows={3}
+          value={fiche[cle].contenu}
+          onChange={(e) => majBloc(cle, { contenu: e.target.value })}
+          className={`${inputClass} mt-1`}
+        />
+      </div>
+      <div>
+        <label className="block text-xs text-slate">Durée (min)</label>
+        <input
+          type="number"
+          min={0}
+          step={5}
+          value={fiche[cle].minutes}
+          onChange={(e) => majBloc(cle, { minutes: Number(e.target.value) || 0 })}
+          className={`${inputClass} mt-1`}
+        />
+      </div>
+    </div>
+  );
 
   return (
     <div className="p-8">
@@ -195,10 +233,6 @@ export default function FichePreparationManager({
         <label className="block text-sm font-medium text-ink" htmlFor="seance">
           Séance préparée
         </label>
-        <p className="mt-0.5 text-xs text-slate">
-          Une fiche prépare une séance précise, avec sa durée et son objectif —
-          plus le module dans son ensemble.
-        </p>
         {seances.length === 0 ? (
           <p className="mt-2 rounded-lg bg-info/10 px-3 py-2 text-sm text-ink">
             Aucune séance n&apos;est encore planifiée pour ce module. Créez-en une
@@ -226,10 +260,10 @@ export default function FichePreparationManager({
             ))}
           </select>
         )}
-        {seanceChoisie?.objectif_operationnel ? (
+        {seance?.objectif_operationnel ? (
           <p className="mt-2 text-sm text-ink">
             <span className="text-slate">Objectif : </span>
-            {seanceChoisie.objectif_operationnel}
+            {seance.objectif_operationnel}
           </p>
         ) : null}
       </div>
@@ -240,23 +274,36 @@ export default function FichePreparationManager({
             Une ancienne fiche existe pour ce module
           </p>
           <p className="mt-1 text-sm text-ink">
-            Elle était rattachée au module, pas à une séance : rien ne permet de
-            la rattacher automatiquement. Reprenez son contenu si vous le
-            souhaitez.
+            Elle était rattachée au module, pas à une séance. Reprenez son
+            contenu si vous le souhaitez.
           </p>
           <Button
             variant="secondary"
             size="sm"
             className="mt-2"
-            onClick={() => {
-              setContenu(ficheLegacy);
-              setActiveVersion(null);
-              setMode("edit");
-              setNotice("Ancien contenu repris. Enregistrez-le pour cette séance.");
-            }}
+            onClick={() =>
+              setFiche((f) => ({
+                ...f,
+                developpement: [
+                  ...f.developpement,
+                  { strategie: "À répartir", contenu: ficheLegacy, minutes: 0 },
+                ],
+              }))
+            }
           >
             Reprendre son contenu
           </Button>
+        </div>
+      ) : null}
+
+      {avertissements.length > 0 ? (
+        <div className="mt-4 rounded-xl border border-info/30 bg-info/10 px-4 py-3">
+          <p className="text-sm font-medium text-ink">À vérifier</p>
+          <ul className="mt-1 list-disc space-y-0.5 pl-5 text-sm text-ink">
+            {avertissements.map((a, i) => (
+              <li key={i}>{a}</li>
+            ))}
+          </ul>
         </div>
       ) : null}
 
@@ -273,45 +320,224 @@ export default function FichePreparationManager({
           loadingLabel="Génération…"
           disabled={!seanceId}
         >
-          Générer l&apos;aide-mémoire
+          Générer la fiche
         </Button>
         <Button
           variant="ghost"
           size="sm"
           icon={Download}
           onClick={handleDownloadPdf}
-          disabled={!contenu.trim()}
-          loading={busy}
-          loadingLabel="Génération du PDF…"
+          disabled={busy || !seance}
         >
-          Télécharger en PDF
+          Exporter au format officiel
         </Button>
+        <span
+          className={`ml-auto text-sm ${
+            minutesSeance && totalMinutes !== minutesSeance
+              ? "text-danger"
+              : "text-slate"
+          }`}
+        >
+          {totalMinutes} min
+          {minutesSeance ? ` / ${minutesSeance} min de séance` : ""}
+        </span>
       </div>
 
-      {notice ? (
-        <p className="mt-4 rounded-xl border border-success/30 bg-success/10 px-3 py-2 text-sm text-success">
-          {notice}
-        </p>
-      ) : null}
+      <div className="mt-6 grid gap-4 lg:grid-cols-[1fr_220px]">
+        <div className="space-y-4">
+          <section className="rounded-xl border border-border bg-surface p-4">
+            <h2 className="text-sm font-medium text-ink">Identification</h2>
+            <div className="mt-3 space-y-3">
+              <div>
+                <label className="block text-xs text-slate">
+                  Objectifs de la séance
+                </label>
+                <textarea
+                  rows={2}
+                  value={fiche.objectifs}
+                  onChange={(e) =>
+                    setFiche((f) => ({ ...f, objectifs: e.target.value }))
+                  }
+                  className={`${inputClass} mt-1`}
+                />
+              </div>
+              <div className="grid gap-3 sm:grid-cols-3">
+                <div>
+                  <label className="block text-xs text-slate">Nature</label>
+                  <select
+                    value={fiche.nature}
+                    onChange={(e) =>
+                      setFiche((f) => ({ ...f, nature: e.target.value }))
+                    }
+                    className={`${inputClass} mt-1`}
+                  >
+                    <option value="cours théorique">cours théorique</option>
+                    <option value="cours pratique">cours pratique</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs text-slate">Modalité</label>
+                  <input
+                    value={fiche.modalite}
+                    onChange={(e) =>
+                      setFiche((f) => ({ ...f, modalite: e.target.value }))
+                    }
+                    className={`${inputClass} mt-1`}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-slate">
+                    Fichiers de travail
+                  </label>
+                  <input
+                    value={fiche.fichiers}
+                    onChange={(e) =>
+                      setFiche((f) => ({ ...f, fichiers: e.target.value }))
+                    }
+                    className={`${inputClass} mt-1`}
+                  />
+                </div>
+              </div>
+            </div>
+          </section>
 
-      {isViewingOld ? (
-        <p className="mt-4 rounded-xl border border-info/30 bg-info/10 px-3 py-2 text-sm text-info">
-          Vous consultez une ancienne version. Enregistrer créera une nouvelle
-          version à partir de son contenu.
-        </p>
-      ) : null}
+          <section className="rounded-xl border border-border bg-surface p-4">
+            <h2 className="text-sm font-medium text-ink">Introduction</h2>
+            <div className="mt-3 space-y-3">
+              {champBloc("Éléments de motivation", "motivation")}
+              {champBloc("Plan de la séance", "plan")}
+            </div>
+          </section>
 
-      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[240px_1fr]">
-        <aside className="rounded-xl border border-border bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-4">
+          <section className="rounded-xl border border-border bg-surface p-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-medium text-ink">Développement</h2>
+              <Button
+                variant="secondary"
+                size="sm"
+                icon={Plus}
+                onClick={() =>
+                  setFiche((f) => ({
+                    ...f,
+                    developpement: [
+                      ...f.developpement,
+                      { strategie: "", contenu: "", minutes: 0 },
+                    ],
+                  }))
+                }
+              >
+                Ajouter une étape
+              </Button>
+            </div>
+            <div className="mt-3 space-y-3">
+              {fiche.developpement.map((l, i) => (
+                <div key={i} className="rounded-lg border border-border p-3">
+                  <div className="grid gap-2 sm:grid-cols-[180px_1fr_110px]">
+                    <div>
+                      <label className="block text-xs text-slate">
+                        Stratégie pédagogique
+                      </label>
+                      <textarea
+                        rows={3}
+                        value={l.strategie}
+                        onChange={(e) =>
+                          setFiche((f) => ({
+                            ...f,
+                            developpement: f.developpement.map((x, k) =>
+                              k === i ? { ...x, strategie: e.target.value } : x,
+                            ),
+                          }))
+                        }
+                        className={`${inputClass} mt-1`}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-slate">Contenu</label>
+                      <textarea
+                        rows={3}
+                        value={l.contenu}
+                        onChange={(e) =>
+                          setFiche((f) => ({
+                            ...f,
+                            developpement: f.developpement.map((x, k) =>
+                              k === i ? { ...x, contenu: e.target.value } : x,
+                            ),
+                          }))
+                        }
+                        className={`${inputClass} mt-1`}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-slate">
+                        Durée (min)
+                      </label>
+                      <input
+                        type="number"
+                        min={0}
+                        step={5}
+                        value={l.minutes}
+                        onChange={(e) =>
+                          setFiche((f) => ({
+                            ...f,
+                            developpement: f.developpement.map((x, k) =>
+                              k === i
+                                ? { ...x, minutes: Number(e.target.value) || 0 }
+                                : x,
+                            ),
+                          }))
+                        }
+                        className={`${inputClass} mt-1`}
+                      />
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        icon={Trash2}
+                        className="mt-2 w-full"
+                        onClick={() =>
+                          setFiche((f) => ({
+                            ...f,
+                            developpement: f.developpement.filter(
+                              (_, k) => k !== i,
+                            ),
+                          }))
+                        }
+                      >
+                        Retirer
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {fiche.developpement.length === 0 ? (
+                <p className="text-sm text-slate">
+                  Aucune étape. Générez la fiche ou ajoutez-en une.
+                </p>
+              ) : null}
+            </div>
+          </section>
+
+          <section className="rounded-xl border border-border bg-surface p-4">
+            <h2 className="text-sm font-medium text-ink">Conclusion</h2>
+            <div className="mt-3 space-y-3">
+              {champBloc("Évaluation formative", "evaluation")}
+              {champBloc("Prochaine séance (pédagogie inversée)", "prochaine")}
+            </div>
+          </section>
+        </div>
+
+        <aside className="rounded-xl border border-border bg-surface p-4">
           <h2 className="text-sm font-medium text-ink">Versions</h2>
           {versions.length === 0 ? (
-            <p className="mt-2 text-xs text-slate">Aucune version enregistrée.</p>
+            <p className="mt-2 text-sm text-slate">Aucune version enregistrée.</p>
           ) : (
-            <ul className="mt-3 space-y-2">
+            <ul className="mt-2 space-y-2">
               {versions.map((v) => (
                 <li key={v.id}>
                   <button
-                    onClick={() => loadVersion(v)}
+                    onClick={() => {
+                      setFiche(lireFiche(v.contenu));
+                      setActiveVersion(v.version);
+                    }}
                     className={`w-full rounded-lg border px-3 py-2 text-left text-sm focus:outline-none focus:ring-2 focus:ring-forest ${
                       activeVersion === v.version
                         ? "border-forest bg-mint text-ink"
@@ -328,114 +554,6 @@ export default function FichePreparationManager({
             </ul>
           )}
         </aside>
-
-        <div className="rounded-xl border border-border bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-4">
-          <div className="flex items-center justify-between">
-            <label htmlFor="contenu" className="text-sm font-medium text-ink">
-              Contenu
-            </label>
-            <div className="inline-flex rounded-lg border border-border p-0.5">
-              <button
-                onClick={() => setMode("edit")}
-                className={`rounded-[5px] px-3 py-1 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-forest ${
-                  mode === "edit"
-                    ? "bg-mint text-forest"
-                    : "text-slate hover:text-ink"
-                }`}
-              >
-                Éditeur
-              </button>
-              <button
-                onClick={() => setMode("apercu")}
-                className={`rounded-[5px] px-3 py-1 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-forest ${
-                  mode === "apercu"
-                    ? "bg-mint text-forest"
-                    : "text-slate hover:text-ink"
-                }`}
-              >
-                Aperçu
-              </button>
-            </div>
-          </div>
-
-          {mode === "edit" ? (
-            <textarea
-              id="contenu"
-              rows={26}
-              value={contenu}
-              onChange={(e) => setContenu(e.target.value)}
-              className="mt-2 w-full rounded-lg border border-border px-3 py-2 text-sm text-ink focus:border-forest focus:outline-none focus:ring-2 focus:ring-forest"
-              placeholder="Cliquez sur « Générer avec l'IA » ou saisissez la fiche."
-            />
-          ) : (
-            <div className="md-view mt-2 max-h-[520px] overflow-auto rounded-xl border border-border bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.06)] px-5 py-4">
-              {contenu.trim() ? (
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                  {contenu}
-                </ReactMarkdown>
-              ) : (
-                <p className="text-sm text-slate">
-                  Aucun contenu à afficher.
-                </p>
-              )}
-            </div>
-          )}
-          <div className="mt-2 flex justify-between text-xs text-slate">
-            <span>
-              Dernière version :{" "}
-              <span className="font-mono">{latestVersion ?? "—"}</span>
-            </span>
-            <span>{contenu.length} caractères</span>
-          </div>
-        </div>
-      </div>
-
-      <div className="pdf-capture" ref={pdfRef} aria-hidden>
-        <div className="px-10 py-8">
-          <div className="pdf-doc-header">
-            <div>
-              <div className="pdf-brand">OFPPT</div>
-              <div className="pdf-org">
-                Office de la Formation Professionnelle et de la Promotion du Travail
-              </div>
-              <div className="pdf-org-sub">Royaume du Maroc</div>
-            </div>
-            <div className="pdf-ref">
-              <div>Réf. : {moduleId.slice(0, 8)}</div>
-              <div>v{latestVersion ?? 1}</div>
-            </div>
-          </div>
-
-          <h1 className="pdf-title">Fiche de préparation</h1>
-          <p className="pdf-module">{moduleNom}</p>
-
-          <table className="pdf-meta">
-            <tbody>
-              <tr>
-                <th>Durée prévue</th>
-                <td>{moduleDuree} heures</td>
-                <th>Version</th>
-                <td>v{latestVersion ?? 1}</td>
-              </tr>
-              <tr>
-                <th>Date</th>
-                <td>{new Date().toLocaleDateString("fr-FR")}</td>
-                <th>Statut</th>
-                <td>Brouillon</td>
-              </tr>
-            </tbody>
-          </table>
-
-          <div className="md-view pdf-body">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>
-              {contenu || "*Aucun contenu.*"}
-            </ReactMarkdown>
-          </div>
-
-          <div className="pdf-footer">
-            LMS OFPPT — Fiche de préparation pédagogique
-          </div>
-        </div>
       </div>
     </div>
   );
