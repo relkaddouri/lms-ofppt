@@ -130,7 +130,7 @@ contrôles et produire les fiches est le travail manuel que cette application do
 
 ## Phase 5 — Fonctionnalités périphériques
 
-- [ ] **5.1** — Prompt : *"Crée la génération de support de cours 16:9 (diaporama) alignée sur le contenu de la fiche de préparation d'une séance, pour les modules sans cours existant."*
+- [x] **5.1** — Prompt : *"Crée la génération de support de cours 16:9 (diaporama) alignée sur le contenu de la fiche de préparation d'une séance, pour les modules sans cours existant."*
   **Test** : génère un support pour une séance test, vérifie le format 16:9 et la cohérence avec la fiche de préparation associée.
 - [ ] **5.2** — Prompt : *"Ajoute la prise de présence par séance (liste des absents), avec vue agrégée du taux de présence par stagiaire sur un module."*
   **Test** : marque 2 stagiaires absents sur une séance, vérifie le calcul du taux de présence cumulé.

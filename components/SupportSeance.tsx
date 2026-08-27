@@ -8,6 +8,7 @@ import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
 import { inputStyles as inputClass } from "@/components/ui/Input";
 import { slugify } from "@/lib/format";
+import DiaporamaCours from "@/components/DiaporamaCours";
 import type { Support } from "@/app/api/generate/support/route";
 import { Download, Save, Sparkles } from "lucide-react";
 
@@ -44,6 +45,9 @@ export default function SupportSeance({
   );
   const [busy, setBusy] = useState(false);
   const [avertissements, setAvertissements] = useState<string[]>([]);
+  // Un cours se projette autant qu'il s'édite : les deux vues portent le même
+  // contenu, on bascule plutôt que d'empiler.
+  const [vue, setVue] = useState<"edition" | "diaporama">("edition");
 
   const pratique = contexte.nature === "pratique";
 
@@ -141,6 +145,36 @@ export default function SupportSeance({
         )}
       </div>
 
+      {support?.type === "theorique" ? (
+        <div
+          role="tablist"
+          aria-label="Vue du support"
+          className="mt-3 inline-flex rounded-lg border border-border p-0.5"
+        >
+          {(
+            [
+              ["edition", "Édition"],
+              ["diaporama", "Diaporama 16:9"],
+            ] as const
+          ).map(([cle, libelle]) => (
+            <button
+              key={cle}
+              type="button"
+              role="tab"
+              aria-selected={vue === cle}
+              onClick={() => setVue(cle)}
+              className={`rounded-md px-3 py-1 text-sm ${
+                vue === cle
+                  ? "bg-mint font-medium text-forest"
+                  : "text-slate hover:text-ink"
+              }`}
+            >
+              {libelle}
+            </button>
+          ))}
+        </div>
+      ) : null}
+
       {avertissements.length > 0 ? (
         <ul className="mt-3 list-disc space-y-0.5 rounded-lg bg-info/10 px-5 py-2 text-sm text-ink">
           {avertissements.map((a, i) => (
@@ -155,6 +189,15 @@ export default function SupportSeance({
             ? `Aucun support. Cette séance est ${pratique ? "pratique" : "théorique"} : la génération produira ${pratique ? "un énoncé de travaux pratiques" : "un support de cours"}.`
             : "Cette séance n'a pas de nature définie ; la génération produira un support de cours."}
         </p>
+      ) : support.type === "theorique" && vue === "diaporama" ? (
+        <div className="mt-4">
+          <DiaporamaCours
+            support={support}
+            sousTitre={[contexte.moduleNom, contexte.groupeNom]
+              .filter(Boolean)
+              .join(" · ")}
+          />
+        </div>
       ) : support.type === "theorique" ? (
         <div className="mt-4 space-y-4">
           <input
