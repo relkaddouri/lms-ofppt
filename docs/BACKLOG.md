@@ -69,7 +69,7 @@ théoriques et leur liste de TP — mais laisse **toutes les heures en « ? »**
 masse horaire réelle sur ces objectifs, en alterner théorie et pratique, placer les
 contrôles et produire les fiches est le travail manuel que cette application doit reprendre.
 
-- [ ] **2b.0** — Prompt : *"Deux exports produisent encore une image rasterisée au lieu d'un PDF (`app/public/controle/[token]/ControlePublic.tsx` et `CopiesManager.tsx`, via `lib/pdf.ts`). Remplace-les par une génération vectorielle. Nomme tout PDF exporté d'après la séance ou le contrôle concerné, pas d'après le module."*
+- [x] **2b.0** — Prompt : *"Deux exports produisent encore une image rasterisée au lieu d'un PDF (`app/public/controle/[token]/ControlePublic.tsx` et `CopiesManager.tsx`, via `lib/pdf.ts`). Remplace-les par une génération vectorielle. Nomme tout PDF exporté d'après la séance ou le contrôle concerné, pas d'après le module."*
 
 - [x] **2b.1** — Prompt : *"Le manuel de formateur n'est pas un document à importer : tout son contenu vient du programme officiel, déjà en base depuis la Phase 1 — les « apprentissages de base » de `suggestions_pedagogiques` SONT les objectifs d'apprentissage du manuel (A.1, A.2, B.1…). Ajoute seulement les champs manquants : énoncé de la compétence, description générale du cours, pourcentages théorique/pratique/évaluation sur `competences`, et les modes présentiel/synchrone/asynchrone sur `suggestions_pedagogiques`."*
 

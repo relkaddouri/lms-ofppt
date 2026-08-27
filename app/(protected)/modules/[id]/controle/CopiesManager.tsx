@@ -6,7 +6,7 @@ import { Download } from "lucide-react";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
-import { exportPdfFromParts } from "@/lib/pdf";
+
 import { formatDateTime, slugify } from "@/lib/format";
 
 function noteTone(note: number): "success" | "info" | "danger" {
@@ -24,8 +24,6 @@ export default function CopiesManager({
   controleTitre: string;
   moduleNom: string;
 }) {
-  const pdfHeaderRef = useRef<HTMLDivElement>(null);
-  const pdfBodyRef = useRef<HTMLDivElement>(null);
   const [passations, setPassations] = useState<Passation[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -62,12 +60,27 @@ export default function CopiesManager({
     if (!selected) return;
     setBusy(true);
     try {
-      const safeTitre = slugify(controleTitre || "controle", "controle");
-      const safeNom = slugify(selected.nom_complet, "copie");
-      await exportPdfFromParts(
-        pdfHeaderRef.current,
-        pdfBodyRef.current,
-        `copie-${safeNom}-${safeTitre}.pdf`,
+      const { telechargerCopiePdf } = await import("@/lib/pdf-copie");
+      await telechargerCopiePdf(
+        {
+          titre: controleTitre || "Contrôle",
+          stagiaire: selected.nom_complet,
+          email: selected.email,
+          dateRemise: formatDateTime(selected.submitted_at),
+          note: Number(selected.note) || 0,
+          total: 20,
+          questions: (selected.responses ?? []).map((d) => ({
+            enonce: d.enonce,
+            bareme: d.bareme,
+            points: d.points,
+            commentaire: d.commentaire,
+            reponse: d.reponse,
+            corrige: d.corrige,
+          })),
+          // Le formateur archive la copie avec le corrigé de référence.
+          avecCorrige: true,
+        },
+        `copie-${slugify(selected.nom_complet, "copie")}-${slugify(controleTitre || "controle", "controle")}.pdf`,
       );
     } catch (err) {
       toast(
@@ -204,64 +217,6 @@ export default function CopiesManager({
         </div>
       )}
 
-      {selected ? (
-        <div className="pdf-capture" aria-hidden>
-          <div className="px-10 py-8">
-            <div ref={pdfHeaderRef}>
-              <div className="pdf-doc-header">
-                <div>
-                  <div className="pdf-brand">OFPPT</div>
-                  <div className="pdf-org">
-                    Office de la Formation Professionnelle et de la Promotion du
-                    Travail
-                  </div>
-                  <div className="pdf-org-sub">Royaume du Maroc</div>
-                </div>
-                <div className="pdf-ref">
-                  <div>Stagiaire : {selected.nom_complet}</div>
-                  <div>
-                    Note : {Number(selected.note) || 0} / 20
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div ref={pdfBodyRef}>
-              <h1 className="pdf-title">{controleTitre || "Contrôle"}</h1>
-              <p className="pdf-module">{moduleNom}</p>
-              <div className="pdf-questions">
-              {(selected.responses ?? []).map((d, i) => (
-                <div key={d.question_id} className="pdf-question">
-                  <div className="pdf-q-head">
-                    <span className="pdf-q-num">Question {i + 1}</span>
-                    <span className="pdf-q-bareme">
-                      {d.points} / {d.bareme} pts
-                    </span>
-                  </div>
-                  <p className="pdf-q-enonce">{d.enonce}</p>
-                  <p className="pdf-q-answer">
-                    <strong>Réponse :</strong> {d.reponse || "(vide)"}
-                  </p>
-                  {d.commentaire ? (
-                    <p className="pdf-q-comment">
-                      <strong>Commentaire :</strong> {d.commentaire}
-                    </p>
-                  ) : null}
-                  <div className="pdf-q-corrige">
-                    <p>
-                      <strong>Corrigé :</strong> {d.corrige}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="pdf-footer">
-              LMS OFPPT — {controleTitre || "Contrôle"}
-            </div>
-            </div>
-          </div>
-        </div>
-      ) : null}
     </div>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { exportPdfFromParts } from "@/lib/pdf";
+
 import Button from "@/components/ui/Button";
 import { inputStyles } from "@/components/ui/Input";
 import { useToast } from "@/components/ui/Toast";
@@ -52,8 +52,6 @@ export default function ControlePublic({
   controle: Controle;
   questions: Question[];
 }) {
-  const pdfHeaderRef = useRef<HTMLDivElement>(null);
-  const pdfBodyRef = useRef<HTMLDivElement>(null);
   const toast = useToast();
   const reponsesRef = useRef<Record<string, string>>({});
   const submittedRef = useRef(false);
@@ -126,13 +124,27 @@ export default function ControlePublic({
   const pct = Math.max(0, Math.min(100, (tempsRestant / tempsTotal) * 100));
 
   async function handleDownloadPdf() {
+    if (!result) return;
     setBusy(true);
     try {
-      const safe = slugify(result?.titre ?? "controle", "controle");
-      await exportPdfFromParts(
-        pdfHeaderRef.current,
-        pdfBodyRef.current,
-        `resultat-${slugify(nom, "stagiaire")}-${safe}.pdf`,
+      const { telechargerCopiePdf } = await import("@/lib/pdf-copie");
+      await telechargerCopiePdf(
+        {
+          titre: result.titre,
+          stagiaire: nom,
+          note: result.note,
+          total: result.total,
+          questions: result.details.map((d) => ({
+            enonce: d.enonce,
+            bareme: d.bareme,
+            points: d.points,
+            commentaire: d.commentaire,
+            reponse: d.reponse,
+          })),
+          // Le stagiaire reçoit sa copie, jamais le corrigé de référence.
+          avecCorrige: false,
+        },
+        `resultat-${slugify(nom, "stagiaire")}-${slugify(result.titre, "controle")}.pdf`,
       );
     } catch (err) {
       toast(
@@ -266,60 +278,6 @@ export default function ControlePublic({
           </div>
         </div>
 
-        <div className="pdf-capture" aria-hidden>
-          <div className="px-10 py-8">
-            <div ref={pdfHeaderRef}>
-              <div className="pdf-doc-header">
-                <div>
-                  <div className="pdf-brand">OFPPT</div>
-                  <div className="pdf-org">
-                    Office de la Formation Professionnelle et de la Promotion du Travail
-                  </div>
-                  <div className="pdf-org-sub">Royaume du Maroc</div>
-                </div>
-                <div className="pdf-ref">
-                  <div>Stagiaire : {nom}</div>
-                  <div>
-                    Note : {result.note} / {result.total}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div ref={pdfBodyRef}>
-              <h1 className="pdf-title">{result.titre}</h1>
-
-              <div className="pdf-questions">
-                {result.details.map((d, i) => (
-                  <div key={d.question_id} className="pdf-question">
-                    <div className="pdf-q-head">
-                      <span className="pdf-q-num">Question {i + 1}</span>
-                      <span className="pdf-q-bareme">
-                        {d.points} / {d.bareme} pts
-                      </span>
-                    </div>
-                    <p className="pdf-q-enonce">{d.enonce}</p>
-                    <p className="pdf-q-answer">
-                      <strong>Réponse :</strong> {d.reponse || "(vide)"}
-                    </p>
-                    {d.commentaire ? (
-                      <p className="pdf-q-comment">
-                        <strong>Commentaire :</strong> {d.commentaire}
-                      </p>
-                    ) : null}
-                    <div className="pdf-q-corrige">
-                      <p>
-                        <strong>Corrigé :</strong> {d.corrige}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="pdf-footer">LMS OFPPT — {result.titre}</div>
-            </div>
-          </div>
-        </div>
       </main>
     );
   }

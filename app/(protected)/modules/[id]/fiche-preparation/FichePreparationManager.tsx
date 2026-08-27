@@ -182,7 +182,19 @@ export default function FichePreparationManager({
           evaluation: fiche.evaluation,
           prochaine: fiche.prochaine,
         },
-        `fiche-${slugify(moduleNom)}-${seance.date ?? ""}.pdf`,
+        // Le fichier porte le nom de la séance : son objectif, son groupe et
+        // sa date. « fiche-module.pdf » ne distinguait pas deux séances du
+        // même module.
+        `fiche-${slugify(
+          [
+            seance.groupe_nom,
+            seance.date ?? "",
+            seance.objectif_operationnel ?? fiche.objectifs,
+          ]
+            .filter(Boolean)
+            .join(" "),
+          "seance",
+        )}.pdf`,
       );
     } catch {
       toast("Export PDF impossible.", "error");
