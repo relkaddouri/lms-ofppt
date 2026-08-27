@@ -1,5 +1,6 @@
 import { getSeancesByGroupe, type Seance } from "@/app/actions/seances";
 import { getGroupeModules } from "@/app/actions/groupes";
+import { getRappelsControle } from "@/app/actions/rappels";
 import ModuleProgression, { type ObjectifBloc } from "./ModuleProgression";
 import PlanifierSeance from "./PlanifierSeance";
 import Card from "@/components/ui/Card";
@@ -9,10 +10,17 @@ export default async function ProgressionPage({
   params,
 }: PageProps<"/groupes/[id]/progression">) {
   const { id } = await params;
-  const [seances, modules] = await Promise.all([
+  const [seances, modules, rappels] = await Promise.all([
     getSeancesByGroupe(id),
     getGroupeModules(id),
+    getRappelsControle(id),
   ]);
+
+  // Le rappel a besoin du nombre de contrôles réellement posés, que la liste
+  // des séances ne connaît pas.
+  const couverts = new Map(
+    rappels.map((r) => [r.module_id, r.rappel.couverts]),
+  );
 
   // Deux niveaux de regroupement : le module, puis l'objectif d'apprentissage.
   // Sans le second, trois séances du même objectif se suivent à l'identique.
@@ -95,6 +103,7 @@ export default async function ProgressionPage({
               nom={m.nom}
               code={m.code}
               masseHoraire={m.masseHoraire}
+              controlesCouverts={couverts.get(moduleId) ?? 0}
               objectifs={[...m.objectifs.values()]}
               seances={m.seances}
               ouvertParDefaut={moduleId === premierEnCours}

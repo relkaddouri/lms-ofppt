@@ -4,6 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import LigneSeance from "./LigneSeance";
 import Badge from "@/components/ui/Badge";
+import RappelControle from "@/components/RappelControle";
+import { calculerRappel } from "@/lib/rappels";
 import { formatHeures } from "@/lib/format";
 import type { Seance } from "@/app/actions/seances";
 import { ChevronDown, ChevronRight } from "lucide-react";
@@ -27,6 +29,7 @@ export default function ModuleProgression({
   nom,
   code,
   masseHoraire,
+  controlesCouverts,
   objectifs,
   seances,
   ouvertParDefaut = false,
@@ -36,6 +39,8 @@ export default function ModuleProgression({
   nom: string;
   code: string | null;
   masseHoraire: number | null;
+  /** Contrôles déjà validés sur ce couple : un brouillon ne couvre rien. */
+  controlesCouverts: number;
   objectifs: ObjectifBloc[];
   seances: Seance[];
   ouvertParDefaut?: boolean;
@@ -54,6 +59,11 @@ export default function ModuleProgression({
   const pct =
     heuresTotales > 0 ? Math.round((heuresFaites / heuresTotales) * 100) : 0;
   const prochaine = seances.find((s) => s.statut !== "fait");
+  const rappel = calculerRappel(
+    masseHoraire ?? heuresTotales,
+    heuresFaites,
+    controlesCouverts,
+  );
 
   let numero = 0;
 
@@ -80,6 +90,11 @@ export default function ModuleProgression({
             ) : null}
             <span className="font-display text-lg font-bold text-ink">{nom}</span>
             {pct === 100 ? <Badge tone="success">terminé</Badge> : null}
+            <RappelControle
+              rappel={rappel}
+              href={`/modules/${moduleId}/controle?groupe=${groupeId}`}
+              compact
+            />
           </span>
 
           <span className="mt-1.5 flex flex-wrap items-center gap-3">
