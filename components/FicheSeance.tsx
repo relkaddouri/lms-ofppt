@@ -6,8 +6,17 @@ import { saveFiche } from "@/app/actions/fiches";
 import { useToast } from "@/components/ui/Toast";
 import Button from "@/components/ui/Button";
 import { inputStyles as inputClass } from "@/components/ui/Input";
+import AutoTextarea from "@/components/ui/AutoTextarea";
 import { slugify } from "@/lib/format";
-import { Download, Plus, Save, Sparkles, Trash2 } from "lucide-react";
+import {
+  Download,
+  Pencil,
+  Plus,
+  Save,
+  Sparkles,
+  Trash2,
+  X,
+} from "lucide-react";
 
 export type Bloc = { contenu: string; minutes: number };
 export type LigneDev = { strategie: string; contenu: string; minutes: number };
@@ -92,6 +101,9 @@ export default function FicheSeance({
   const [fiche, setFiche] = useState<Fiche>(() => lireFiche(initial));
   const [busy, setBusy] = useState(false);
   const [avertissements, setAvertissements] = useState<string[]>([]);
+  // On consulte une fiche bien plus souvent qu'on ne la modifie : la lecture
+  // est l'état par défaut dès qu'il y a quelque chose à lire.
+  const [edition, setEdition] = useState(!initial);
 
   const totalMinutes =
     fiche.motivation.minutes +
@@ -136,6 +148,7 @@ export default function FicheSeance({
     try {
       const version = await saveFiche(contexte.seanceId, JSON.stringify(fiche));
       toast(`Version ${version} enregistrée`);
+      setEdition(false);
       router.refresh();
     } catch (e) {
       toast(e instanceof Error ? e.message : "Erreur inattendue", "error");
@@ -152,7 +165,9 @@ export default function FicheSeance({
         {
           nature: fiche.nature,
           date: contexte.dateFormatee,
-          dureeHeures: contexte.minutesSeance ? contexte.minutesSeance / 60 : null,
+          dureeHeures: contexte.minutesSeance
+            ? contexte.minutesSeance / 60
+            : null,
           filiere: contexte.filiere,
           annee: contexte.annee,
           groupe: contexte.groupeNom,
@@ -187,11 +202,11 @@ export default function FicheSeance({
     <div className="grid gap-2 sm:grid-cols-[1fr_110px]">
       <div>
         <label className="block text-xs text-slate">{libelle}</label>
-        <textarea
-          rows={3}
+        <AutoTextarea
+          minRows={3}
           value={fiche[cle].contenu}
           onChange={(e) => majBloc(cle, { contenu: e.target.value })}
-          className={`${inputClass} mt-1`}
+          className="mt-1"
         />
       </div>
       <div>
@@ -201,8 +216,10 @@ export default function FicheSeance({
           min={0}
           step={5}
           value={fiche[cle].minutes}
-          onChange={(e) => majBloc(cle, { minutes: Number(e.target.value) || 0 })}
-          className={`${inputClass} mt-1`}
+          onChange={(e) =>
+            majBloc(cle, { minutes: Number(e.target.value) || 0 })
+          }
+          className="mt-1"
         />
       </div>
     </div>
@@ -211,18 +228,43 @@ export default function FicheSeance({
   return (
     <div>
       <div className="flex flex-wrap items-center gap-2">
+        {edition ? (
+          <>
+            <Button icon={Save} size="sm" onClick={enregistrer} disabled={busy}>
+              Enregistrer
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              icon={X}
+              onClick={() => {
+                setFiche(lireFiche(initial));
+                setEdition(false);
+              }}
+              disabled={busy}
+            >
+              Annuler
+            </Button>
+          </>
+        ) : (
+          <Button
+            variant="secondary"
+            size="sm"
+            icon={Pencil}
+            onClick={() => setEdition(true)}
+          >
+            Modifier
+          </Button>
+        )}
         <Button
-          variant="secondary"
+          variant="ghost"
           size="sm"
           icon={Sparkles}
           onClick={generer}
           loading={busy}
           loadingLabel="Génération…"
         >
-          Générer la fiche
-        </Button>
-        <Button icon={Save} size="sm" onClick={enregistrer} disabled={busy}>
-          Enregistrer
+          {initial ? "Regénérer" : "Générer la fiche"}
         </Button>
         <Button
           variant="ghost"
@@ -253,13 +295,114 @@ export default function FicheSeance({
         </ul>
       ) : null}
 
-      {!compact ? (
+      {!edition ? (
+        <div className="mt-4">
+          <dl className="grid gap-x-6 gap-y-2 sm:grid-cols-3">
+            {(
+              [
+                ["Nature", fiche.nature],
+                ["Modalité", fiche.modalite],
+                ["Fichiers de travail", fiche.fichiers],
+              ] as const
+            ).map(([libelle, valeur]) => (
+              <div key={libelle}>
+                <dt className="text-xs text-slate">{libelle}</dt>
+                <dd className="text-sm text-ink">{valeur || "—"}</dd>
+              </div>
+            ))}
+          </dl>
+
+          {fiche.objectifs ? (
+            <p className="mt-4 rounded-lg bg-mint px-3 py-2 text-sm text-ink">
+              <span className="text-slate">Objectifs : </span>
+              {fiche.objectifs}
+            </p>
+          ) : null}
+
+          <div className="mt-4 overflow-x-auto">
+            <table className="w-full min-w-[560px] text-sm">
+              <tbody>
+                {(
+                  [
+                    [
+                      "Introduction",
+                      "Éléments de motivation",
+                      fiche.motivation,
+                    ],
+                    ["", "Plan de la séance", fiche.plan],
+                  ] as const
+                ).map(([groupe, libelle, bloc], i) => (
+                  <tr key={i} className="border-b border-border align-top">
+                    <th className="w-28 py-2 pr-3 text-left text-xs font-medium text-slate">
+                      {groupe}
+                    </th>
+                    <td className="w-44 py-2 pr-3 text-xs text-slate">
+                      {libelle}
+                    </td>
+                    <td className="whitespace-pre-line py-2 text-ink">
+                      {bloc.contenu || "—"}
+                    </td>
+                    <td className="w-20 py-2 text-right font-mono text-xs text-slate">
+                      {bloc.minutes} min
+                    </td>
+                  </tr>
+                ))}
+                {fiche.developpement.map((l, i) => (
+                  <tr
+                    key={`d${i}`}
+                    className="border-b border-border align-top"
+                  >
+                    <th className="py-2 pr-3 text-left text-xs font-medium text-slate">
+                      {i === 0 ? "Développement" : ""}
+                    </th>
+                    <td className="whitespace-pre-line py-2 pr-3 text-xs text-slate">
+                      {l.strategie}
+                    </td>
+                    <td className="whitespace-pre-line py-2 text-ink">
+                      {l.contenu}
+                    </td>
+                    <td className="py-2 text-right font-mono text-xs text-slate">
+                      {l.minutes} min
+                    </td>
+                  </tr>
+                ))}
+                {(
+                  [
+                    ["Conclusion", "Évaluation formative", fiche.evaluation],
+                    ["", "Prochaine séance", fiche.prochaine],
+                  ] as const
+                ).map(([groupe, libelle, bloc], i) => (
+                  <tr
+                    key={`c${i}`}
+                    className="border-b border-border align-top last:border-0"
+                  >
+                    <th className="py-2 pr-3 text-left text-xs font-medium text-slate">
+                      {groupe}
+                    </th>
+                    <td className="py-2 pr-3 text-xs text-slate">{libelle}</td>
+                    <td className="whitespace-pre-line py-2 text-ink">
+                      {bloc.contenu || "—"}
+                    </td>
+                    <td className="py-2 text-right font-mono text-xs text-slate">
+                      {bloc.minutes} min
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : null}
+
+      {edition && !compact ? (
         <div className="mt-4 grid gap-3 sm:grid-cols-3">
           <div>
             <label className="block text-xs text-slate">Nature</label>
             <select
               value={fiche.nature}
-              onChange={(e) => setFiche((f) => ({ ...f, nature: e.target.value }))}
+              onChange={(e) =>
+                setFiche((f) => ({ ...f, nature: e.target.value }))
+              }
               className={`${inputClass} mt-1`}
             >
               <option value="cours théorique">cours théorique</option>
@@ -270,139 +413,161 @@ export default function FicheSeance({
             <label className="block text-xs text-slate">Modalité</label>
             <input
               value={fiche.modalite}
-              onChange={(e) => setFiche((f) => ({ ...f, modalite: e.target.value }))}
+              onChange={(e) =>
+                setFiche((f) => ({ ...f, modalite: e.target.value }))
+              }
               className={`${inputClass} mt-1`}
             />
           </div>
           <div>
-            <label className="block text-xs text-slate">Fichiers de travail</label>
+            <label className="block text-xs text-slate">
+              Fichiers de travail
+            </label>
             <input
               value={fiche.fichiers}
-              onChange={(e) => setFiche((f) => ({ ...f, fichiers: e.target.value }))}
+              onChange={(e) =>
+                setFiche((f) => ({ ...f, fichiers: e.target.value }))
+              }
               className={`${inputClass} mt-1`}
             />
           </div>
         </div>
       ) : null}
 
-      <div className="mt-4">
-        <label className="block text-xs text-slate">Objectifs de la séance</label>
-        <textarea
-          rows={2}
-          value={fiche.objectifs}
-          onChange={(e) => setFiche((f) => ({ ...f, objectifs: e.target.value }))}
-          className={`${inputClass} mt-1`}
-        />
-      </div>
-
-      <h3 className="mt-5 text-sm font-medium text-ink">Introduction</h3>
-      <div className="mt-2 space-y-3">
-        {champBloc("Éléments de motivation", "motivation")}
-        {champBloc("Plan de la séance", "plan")}
-      </div>
-
-      <div className="mt-5 flex items-center justify-between">
-        <h3 className="text-sm font-medium text-ink">Développement</h3>
-        <Button
-          variant="secondary"
-          size="sm"
-          icon={Plus}
-          onClick={() =>
-            setFiche((f) => ({
-              ...f,
-              developpement: [
-                ...f.developpement,
-                { strategie: "", contenu: "", minutes: 0 },
-              ],
-            }))
-          }
-        >
-          Ajouter une étape
-        </Button>
-      </div>
-      <div className="mt-2 space-y-3">
-        {fiche.developpement.map((l, i) => (
-          <div key={i} className="rounded-lg border border-border p-3">
-            <div className="grid gap-2 sm:grid-cols-[170px_1fr_110px]">
-              <div>
-                <label className="block text-xs text-slate">Stratégie</label>
-                <textarea
-                  rows={3}
-                  value={l.strategie}
-                  onChange={(e) =>
-                    setFiche((f) => ({
-                      ...f,
-                      developpement: f.developpement.map((x, k) =>
-                        k === i ? { ...x, strategie: e.target.value } : x,
-                      ),
-                    }))
-                  }
-                  className={`${inputClass} mt-1`}
-                />
-              </div>
-              <div>
-                <label className="block text-xs text-slate">Contenu</label>
-                <textarea
-                  rows={3}
-                  value={l.contenu}
-                  onChange={(e) =>
-                    setFiche((f) => ({
-                      ...f,
-                      developpement: f.developpement.map((x, k) =>
-                        k === i ? { ...x, contenu: e.target.value } : x,
-                      ),
-                    }))
-                  }
-                  className={`${inputClass} mt-1`}
-                />
-              </div>
-              <div>
-                <label className="block text-xs text-slate">Durée (min)</label>
-                <input
-                  type="number"
-                  min={0}
-                  step={5}
-                  value={l.minutes}
-                  onChange={(e) =>
-                    setFiche((f) => ({
-                      ...f,
-                      developpement: f.developpement.map((x, k) =>
-                        k === i ? { ...x, minutes: Number(e.target.value) || 0 } : x,
-                      ),
-                    }))
-                  }
-                  className={`${inputClass} mt-1`}
-                />
-                <Button
-                  variant="danger"
-                  size="sm"
-                  icon={Trash2}
-                  className="mt-2 w-full"
-                  onClick={() =>
-                    setFiche((f) => ({
-                      ...f,
-                      developpement: f.developpement.filter((_, k) => k !== i),
-                    }))
-                  }
-                >
-                  Retirer
-                </Button>
-              </div>
-            </div>
+      {edition ? (
+        <>
+          <div className="mt-4">
+            <label className="block text-xs text-slate">
+              Objectifs de la séance
+            </label>
+            <AutoTextarea
+              minRows={2}
+              value={fiche.objectifs}
+              onChange={(e) =>
+                setFiche((f) => ({ ...f, objectifs: e.target.value }))
+              }
+              className="mt-1"
+            />
           </div>
-        ))}
-        {fiche.developpement.length === 0 ? (
-          <p className="text-sm text-slate">
-            Aucune étape. Générez la fiche ou ajoutez-en une.
-          </p>
-        ) : null}
-      </div>
 
-      <h3 className="mt-5 text-sm font-medium text-ink">Conclusion</h3>
-      <div className="mt-2 space-y-3">
-        {champBloc("Évaluation formative", "evaluation")}
-        {champBloc("Prochaine séance (pédagogie inversée)", "prochaine")}
-      </div>
+          <h3 className="mt-5 text-sm font-medium text-ink">Introduction</h3>
+          <div className="mt-2 space-y-3">
+            {champBloc("Éléments de motivation", "motivation")}
+            {champBloc("Plan de la séance", "plan")}
+          </div>
+
+          <div className="mt-5 flex items-center justify-between">
+            <h3 className="text-sm font-medium text-ink">Développement</h3>
+            <Button
+              variant="secondary"
+              size="sm"
+              icon={Plus}
+              onClick={() =>
+                setFiche((f) => ({
+                  ...f,
+                  developpement: [
+                    ...f.developpement,
+                    { strategie: "", contenu: "", minutes: 0 },
+                  ],
+                }))
+              }
+            >
+              Ajouter une étape
+            </Button>
+          </div>
+          <div className="mt-2 space-y-3">
+            {fiche.developpement.map((l, i) => (
+              <div key={i} className="rounded-lg border border-border p-3">
+                <div className="grid gap-2 sm:grid-cols-[170px_1fr_110px]">
+                  <div>
+                    <label className="block text-xs text-slate">
+                      Stratégie
+                    </label>
+                    <AutoTextarea
+                      minRows={3}
+                      value={l.strategie}
+                      onChange={(e) =>
+                        setFiche((f) => ({
+                          ...f,
+                          developpement: f.developpement.map((x, k) =>
+                            k === i ? { ...x, strategie: e.target.value } : x,
+                          ),
+                        }))
+                      }
+                      className={`${inputClass} mt-1`}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-slate">Contenu</label>
+                    <AutoTextarea
+                      minRows={3}
+                      value={l.contenu}
+                      onChange={(e) =>
+                        setFiche((f) => ({
+                          ...f,
+                          developpement: f.developpement.map((x, k) =>
+                            k === i ? { ...x, contenu: e.target.value } : x,
+                          ),
+                        }))
+                      }
+                      className={`${inputClass} mt-1`}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-slate">
+                      Durée (min)
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      step={5}
+                      value={l.minutes}
+                      onChange={(e) =>
+                        setFiche((f) => ({
+                          ...f,
+                          developpement: f.developpement.map((x, k) =>
+                            k === i
+                              ? { ...x, minutes: Number(e.target.value) || 0 }
+                              : x,
+                          ),
+                        }))
+                      }
+                      className={`${inputClass} mt-1`}
+                    />
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      icon={Trash2}
+                      className="mt-2 w-full"
+                      onClick={() =>
+                        setFiche((f) => ({
+                          ...f,
+                          developpement: f.developpement.filter(
+                            (_, k) => k !== i,
+                          ),
+                        }))
+                      }
+                    >
+                      Retirer
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ))}
+            {fiche.developpement.length === 0 ? (
+              <p className="text-sm text-slate">
+                Aucune étape. Générez la fiche ou ajoutez-en une.
+              </p>
+            ) : null}
+          </div>
+
+          <h3 className="mt-5 text-sm font-medium text-ink">Conclusion</h3>
+          <div className="mt-2 space-y-3">
+            {champBloc("Évaluation formative", "evaluation")}
+            {champBloc("Prochaine séance (pédagogie inversée)", "prochaine")}
+          </div>
+        </>
+      ) : null}
     </div>
   );
 }

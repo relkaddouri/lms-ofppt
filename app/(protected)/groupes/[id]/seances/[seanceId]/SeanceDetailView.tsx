@@ -31,6 +31,11 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
   const [contenuRealise, setContenuRealise] = useState(
     seance.contenu_realise ?? "",
   );
+  // Trois moments distincts : préparer, projeter, tenir le cahier. Les empiler
+  // obligeait à traverser mille pixels de formulaire pour atteindre le support.
+  const [onglet, setOnglet] = useState<
+    "preparation" | "support" | "deroulement"
+  >("preparation");
 
   const minutesSeance = seance.duree_prevue
     ? Math.round(Number(seance.duree_prevue) * 60)
@@ -54,7 +59,10 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
       try {
         await setPresence(seance.id, stagiaireId, present, null);
       } catch (e) {
-        toast(e instanceof Error ? e.message : "Appel non enregistré.", "error");
+        toast(
+          e instanceof Error ? e.message : "Appel non enregistré.",
+          "error",
+        );
       }
     });
   }
@@ -69,7 +77,10 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
         );
         toast("Tout le monde est marqué présent.");
       } catch (e) {
-        toast(e instanceof Error ? e.message : "Appel non enregistré.", "error");
+        toast(
+          e instanceof Error ? e.message : "Appel non enregistré.",
+          "error",
+        );
       }
     });
   }
@@ -83,7 +94,10 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
         setNouvelleRemarque("");
         router.refresh();
       } catch (e) {
-        toast(e instanceof Error ? e.message : "Remarque non ajoutée.", "error");
+        toast(
+          e instanceof Error ? e.message : "Remarque non ajoutée.",
+          "error",
+        );
       }
     });
   }
@@ -95,10 +109,17 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
           contenu_realise: contenuRealise.trim() || null,
           ...(statut ? { statut } : {}),
         });
-        toast(statut === "fait" ? "Séance marquée faite." : "Déroulement enregistré.");
+        toast(
+          statut === "fait"
+            ? "Séance marquée faite."
+            : "Déroulement enregistré.",
+        );
         router.refresh();
       } catch (e) {
-        toast(e instanceof Error ? e.message : "Enregistrement impossible.", "error");
+        toast(
+          e instanceof Error ? e.message : "Enregistrement impossible.",
+          "error",
+        );
       }
     });
   }
@@ -172,222 +193,262 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
         </div>
       ) : null}
 
-      <div className="mt-6 grid gap-6 xl:grid-cols-[1fr_360px]">
-        {/* ── Fiche de préparation, éditable sur place ─────────────────── */}
-        <section className="rounded-xl border border-border bg-surface p-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-base font-semibold text-ink">
-              Fiche de préparation
-            </h2>
-            {seance.ficheVersion ? (
-              <Badge tone="success">version {seance.ficheVersion}</Badge>
-            ) : (
-              <Badge tone="neutral">aucune version</Badge>
-            )}
-          </div>
-          <div className="mt-4">
-            <FicheSeance
-              contexte={{
-                seanceId: seance.id,
-                date: seance.date,
-                dateFormatee: seance.date ? formatDate(seance.date) : null,
-                groupeNom: seance.groupeNom,
-                filiere: seance.filiere,
-                annee: seance.annee,
-                moduleNom: seance.moduleNom,
-                minutesSeance,
-              }}
-              initial={seance.ficheContenu}
-            />
-          </div>
-        </section>
-
-        <div className="space-y-6">
-          {/* ── Présences ──────────────────────────────────────────────── */}
+      <div
+        role="tablist"
+        aria-label="Vue de la séance"
+        className="mt-6 flex gap-1 border-b border-border"
+      >
+        <button
+          type="button"
+          role="tab"
+          aria-selected={onglet === "preparation"}
+          onClick={() => setOnglet("preparation")}
+          className={`-mb-px border-b-2 px-4 py-2 text-sm ${
+            onglet === "preparation"
+              ? "border-forest font-medium text-forest"
+              : "border-transparent text-slate hover:text-ink"
+          }`}
+        >
+          Préparation
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={onglet === "support"}
+          onClick={() => setOnglet("support")}
+          className={`-mb-px border-b-2 px-4 py-2 text-sm ${
+            onglet === "support"
+              ? "border-forest font-medium text-forest"
+              : "border-transparent text-slate hover:text-ink"
+          }`}
+        >
+          Support
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={onglet === "deroulement"}
+          onClick={() => setOnglet("deroulement")}
+          className={`-mb-px border-b-2 px-4 py-2 text-sm ${
+            onglet === "deroulement"
+              ? "border-forest font-medium text-forest"
+              : "border-transparent text-slate hover:text-ink"
+          }`}
+        >
+          Déroulement
+        </button>
+      </div>
+      <div className="mt-5">
+        {onglet === "preparation" ? (
           <section className="rounded-xl border border-border bg-surface p-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-base font-semibold text-ink">Présences</h2>
-              <Button
-                variant="secondary"
-                size="sm"
-                icon={CheckCheck}
-                onClick={toutPresent}
-                disabled={enCours || presences.length === 0}
-              >
-                Tous présents
-              </Button>
+              <h2 className="text-base font-semibold text-ink">
+                Fiche de préparation
+              </h2>
+              {seance.ficheVersion ? (
+                <Badge tone="success">version {seance.ficheVersion}</Badge>
+              ) : (
+                <Badge tone="neutral">aucune version</Badge>
+              )}
             </div>
-
-            {presences.length === 0 ? (
-              <p className="mt-3 text-sm text-slate">
-                Aucun stagiaire inscrit dans ce groupe.
-              </p>
-            ) : (
-              <>
-                <p className="mt-1 text-xs text-slate">
-                  {presents} présents · {absents} absents
-                  {nonPointes > 0 ? ` · ${nonPointes} non pointés` : ""}
-                </p>
-                <ul className="mt-3 space-y-1.5">
-                  {presences.map((p) => (
-                    <li
-                      key={p.stagiaire_id}
-                      className="flex items-center justify-between gap-2 rounded-lg border border-border px-3 py-1.5"
-                    >
-                      <span className="truncate text-sm text-ink">
-                        {p.prenom} {p.nom}
-                      </span>
-                      <span className="flex shrink-0 gap-1">
-                        <button
-                          type="button"
-                          aria-label={`${p.prenom} ${p.nom} présent`}
-                          aria-pressed={p.present === true}
-                          onClick={() => pointer(p.stagiaire_id, true)}
-                          className={`rounded-md border px-2 py-1 ${
-                            p.present === true
-                              ? "border-success bg-success/10 text-success"
-                              : "border-border text-slate hover:border-success/50"
-                          }`}
-                        >
-                          <Check className="h-3.5 w-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          aria-label={`${p.prenom} ${p.nom} absent`}
-                          aria-pressed={p.present === false}
-                          onClick={() => pointer(p.stagiaire_id, false)}
-                          className={`rounded-md border px-2 py-1 ${
-                            p.present === false
-                              ? "border-danger bg-danger/10 text-danger"
-                              : "border-border text-slate hover:border-danger/50"
-                          }`}
-                        >
-                          <X className="h-3.5 w-3.5" />
-                        </button>
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </>
-            )}
+            <div className="mt-4">
+              <FicheSeance
+                contexte={{
+                  seanceId: seance.id,
+                  date: seance.date,
+                  dateFormatee: seance.date ? formatDate(seance.date) : null,
+                  groupeNom: seance.groupeNom,
+                  filiere: seance.filiere,
+                  annee: seance.annee,
+                  moduleNom: seance.moduleNom,
+                  minutesSeance,
+                }}
+                initial={seance.ficheContenu}
+              />
+            </div>
           </section>
-
-          {/* ── Déroulement réel ───────────────────────────────────────── */}
+        ) : onglet === "support" ? (
           <section className="rounded-xl border border-border bg-surface p-4">
             <h2 className="text-base font-semibold text-ink">
-              Ce qui a été fait
+              {seance.nature === "pratique"
+                ? "Énoncé de travaux pratiques"
+                : "Support de cours"}
             </h2>
             <p className="mt-1 text-xs text-slate">
-              Alimente la préparation de la séance suivante et le contenu couvert
-              par les contrôles.
+              Le document remis aux stagiaires, distinct de votre fiche.
             </p>
-            <textarea
-              rows={4}
-              value={contenuRealise}
-              onChange={(e) => setContenuRealise(e.target.value)}
-              placeholder="Notions réellement traitées…"
-              className={`${inputClass} mt-2`}
-            />
-            <Button
-              size="sm"
-              className="mt-2"
-              onClick={() => enregistrerDeroulement()}
-              disabled={enCours}
-            >
-              Enregistrer
-            </Button>
-          </section>
-
-          {/* ── Remarques ──────────────────────────────────────────────── */}
-          <section className="rounded-xl border border-border bg-surface p-4">
-            <h2 className="text-base font-semibold text-ink">Remarques</h2>
-            <div className="mt-2 flex gap-2">
-              <input
-                value={nouvelleRemarque}
-                onChange={(e) => setNouvelleRemarque(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !enCours) ajouter();
+            <div className="mt-3">
+              <SupportSeance
+                contexte={{
+                  seanceId: seance.id,
+                  moduleNom: seance.moduleNom,
+                  groupeNom: seance.groupeNom,
+                  date: seance.date,
+                  dateFormatee: seance.date ? formatDate(seance.date) : null,
+                  dureeHeures: seance.duree_prevue
+                    ? Number(seance.duree_prevue)
+                    : null,
+                  objectif: seance.objectifIntitule,
+                  nature: seance.nature,
                 }}
-                placeholder="Incident, point à reprendre…"
-                aria-label="Nouvelle remarque"
-                className={inputClass}
+                initial={seance.supportContenu}
+                version={seance.supportVersion}
+              />
+            </div>
+          </section>
+        ) : (
+          <div className="grid gap-6 lg:grid-cols-2">
+            <section className="rounded-xl border border-border bg-surface p-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-base font-semibold text-ink">Présences</h2>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  icon={CheckCheck}
+                  onClick={toutPresent}
+                  disabled={enCours || presences.length === 0}
+                >
+                  Tous présents
+                </Button>
+              </div>
+
+              {presences.length === 0 ? (
+                <p className="mt-3 text-sm text-slate">
+                  Aucun stagiaire inscrit dans ce groupe.
+                </p>
+              ) : (
+                <>
+                  <p className="mt-1 text-xs text-slate">
+                    {presents} présents · {absents} absents
+                    {nonPointes > 0 ? ` · ${nonPointes} non pointés` : ""}
+                  </p>
+                  <ul className="mt-3 space-y-1.5">
+                    {presences.map((p) => (
+                      <li
+                        key={p.stagiaire_id}
+                        className="flex items-center justify-between gap-2 rounded-lg border border-border px-3 py-1.5"
+                      >
+                        <span className="truncate text-sm text-ink">
+                          {p.prenom} {p.nom}
+                        </span>
+                        <span className="flex shrink-0 gap-1">
+                          <button
+                            type="button"
+                            aria-label={`${p.prenom} ${p.nom} présent`}
+                            aria-pressed={p.present === true}
+                            onClick={() => pointer(p.stagiaire_id, true)}
+                            className={`rounded-md border px-2 py-1 ${
+                              p.present === true
+                                ? "border-success bg-success/10 text-success"
+                                : "border-border text-slate hover:border-success/50"
+                            }`}
+                          >
+                            <Check className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            aria-label={`${p.prenom} ${p.nom} absent`}
+                            aria-pressed={p.present === false}
+                            onClick={() => pointer(p.stagiaire_id, false)}
+                            className={`rounded-md border px-2 py-1 ${
+                              p.present === false
+                                ? "border-danger bg-danger/10 text-danger"
+                                : "border-border text-slate hover:border-danger/50"
+                            }`}
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
+            </section>
+            <section className="rounded-xl border border-border bg-surface p-4">
+              <h2 className="text-base font-semibold text-ink">
+                Ce qui a été fait
+              </h2>
+              <p className="mt-1 text-xs text-slate">
+                Alimente la préparation de la séance suivante et le contenu
+                couvert par les contrôles.
+              </p>
+              <textarea
+                rows={4}
+                value={contenuRealise}
+                onChange={(e) => setContenuRealise(e.target.value)}
+                placeholder="Notions réellement traitées…"
+                className={`${inputClass} mt-2`}
               />
               <Button
                 size="sm"
-                icon={Plus}
-                onClick={ajouter}
-                disabled={enCours || !nouvelleRemarque.trim()}
+                className="mt-2"
+                onClick={() => enregistrerDeroulement()}
+                disabled={enCours}
               >
-                Ajouter
+                Enregistrer
               </Button>
-            </div>
+            </section>
+            <section className="rounded-xl border border-border bg-surface p-4">
+              <h2 className="text-base font-semibold text-ink">Remarques</h2>
+              <div className="mt-2 flex gap-2">
+                <input
+                  value={nouvelleRemarque}
+                  onChange={(e) => setNouvelleRemarque(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !enCours) ajouter();
+                  }}
+                  placeholder="Incident, point à reprendre…"
+                  aria-label="Nouvelle remarque"
+                  className={inputClass}
+                />
+                <Button
+                  size="sm"
+                  icon={Plus}
+                  onClick={ajouter}
+                  disabled={enCours || !nouvelleRemarque.trim()}
+                >
+                  Ajouter
+                </Button>
+              </div>
 
-            {seance.remarques.length === 0 ? (
-              <p className="mt-3 text-sm text-slate">Aucune remarque.</p>
-            ) : (
-              <ul className="mt-3 space-y-2">
-                {seance.remarques.map((r) => (
-                  <li
-                    key={r.id}
-                    className="flex items-start justify-between gap-2 rounded-lg border border-border px-3 py-2"
-                  >
-                    <div className="min-w-0">
-                      <p className="text-sm text-ink">{r.texte}</p>
-                      <p className="mt-0.5 text-xs text-slate">
-                        {formatDateTime(r.created_at)}
-                      </p>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      icon={Trash2}
-                      aria-label="Supprimer la remarque"
-                      onClick={() =>
-                        startTransition(async () => {
-                          await supprimerRemarque(r.id);
-                          router.refresh();
-                        })
-                      }
+              {seance.remarques.length === 0 ? (
+                <p className="mt-3 text-sm text-slate">Aucune remarque.</p>
+              ) : (
+                <ul className="mt-3 space-y-2">
+                  {seance.remarques.map((r) => (
+                    <li
+                      key={r.id}
+                      className="flex items-start justify-between gap-2 rounded-lg border border-border px-3 py-2"
                     >
-                      {""}
-                    </Button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-        </div>
+                      <div className="min-w-0">
+                        <p className="text-sm text-ink">{r.texte}</p>
+                        <p className="mt-0.5 text-xs text-slate">
+                          {formatDateTime(r.created_at)}
+                        </p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        icon={Trash2}
+                        aria-label="Supprimer la remarque"
+                        onClick={() =>
+                          startTransition(async () => {
+                            await supprimerRemarque(r.id);
+                            router.refresh();
+                          })
+                        }
+                      >
+                        {""}
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          </div>
+        )}
       </div>
-
-      {/* ── Support remis au stagiaire ─────────────────────────────── */}
-      <section className="rounded-xl border border-border bg-surface p-4">
-        <h2 className="text-base font-semibold text-ink">
-          {seance.nature === "pratique"
-            ? "Énoncé de travaux pratiques"
-            : "Support de cours"}
-        </h2>
-        <p className="mt-1 text-xs text-slate">
-          Le document remis aux stagiaires, distinct de votre fiche.
-        </p>
-        <div className="mt-3">
-          <SupportSeance
-            contexte={{
-              seanceId: seance.id,
-              moduleNom: seance.moduleNom,
-              groupeNom: seance.groupeNom,
-              date: seance.date,
-              dateFormatee: seance.date ? formatDate(seance.date) : null,
-              dureeHeures: seance.duree_prevue
-            ? Number(seance.duree_prevue)
-            : null,
-              objectif: seance.objectifIntitule,
-              nature: seance.nature,
-            }}
-            initial={seance.supportContenu}
-            version={seance.supportVersion}
-          />
-        </div>
-      </section>
     </div>
   );
 }
