@@ -61,6 +61,33 @@ Ordre des phases : sécurité et fondations d'abord, schéma du référentiel of
 
 ---
 
+## Phase 2bis — Planification du module à partir du manuel de formateur
+
+**C'est le cœur de l'application.** Le manuel de formateur OFPPT donne, pour chaque
+compétence, la liste des objectifs d'apprentissage (A.1, A.2, B.1…) avec leurs éléments
+théoriques et leur liste de TP — mais laisse **toutes les heures en « ? »**. Répartir sa
+masse horaire réelle sur ces objectifs, en alterner théorie et pratique, placer les
+contrôles et produire les fiches est le travail manuel que cette application doit reprendre.
+
+- [ ] **2b.0** — Prompt : *"Deux exports produisent encore une image rasterisée au lieu d'un PDF (`app/public/controle/[token]/ControlePublic.tsx` et `CopiesManager.tsx`, via `lib/pdf.ts`). Remplace-les par une génération vectorielle. Nomme tout PDF exporté d'après la séance ou le contrôle concerné, pas d'après le module."*
+
+- [ ] **2b.1** — Prompt : *"Crée la migration `objectifs_apprentissage` (competence_id, code type 'A.1', intitulé, ordre, éléments théoriques, liste TP, modes présentiel/synchrone/asynchrone, pourcentages nationaux théorique/pratique/évaluation portés par la compétence). Ajoute un import semi-automatique depuis le manuel de formateur PDF, avec relecture humaine obligatoire avant insertion, sur le modèle de l'atome 1.4."*
+
+- [ ] **2b.2** — Prompt : *"Crée la migration `repartition_horaire` (groupe_id, module_id, objectif_apprentissage_id, heures_theoriques, heures_pratiques). À partir de la masse horaire allouée au couple groupe+module (atome 1.6) et des pourcentages du manuel, propose une répartition sur les objectifs, entièrement ajustable à la main. La somme doit retomber sur la masse horaire allouée, écart signalé."*
+
+- [ ] **2b.3** — Prompt : *"Ajoute à `seances` la colonne `objectif_apprentissage_id` (obligatoire) et `nature` (théorique/pratique). Toute séance porte un objectif pédagogique : c'est lui qui fonde la fiche de préparation et le support."*
+
+- [ ] **2b.4** — Prompt : *"Génère le plan de séances d'un couple groupe+module à partir de la répartition horaire : découpe en séances selon les blocs horaires réels, alterne théorie et pratique, et insère un contrôle tous les 30 heures environ (seuil du PRD). Le plan est proposé, jamais appliqué sans validation du formateur."*
+
+- [ ] **2b.5 — Interface** — Prompt : *"En respectant strictement docs/design_system.md et docs/conventions.md : crée la page dédiée d'une séance. Elle réunit l'objectif pédagogique, la fiche de préparation directement éditable sur place (plus de recherche de fiche à part), la liste de présence des stagiaires, et les remarques de séance."*
+
+- [ ] **2b.6** — Prompt : *"Crée les tables `presences` (seance_id, stagiaire_id, present, motif) et `remarques_seance` (seance_id, texte, created_at), avec leurs policies restreintes au propriétaire, et l'interface de saisie depuis la page de séance."*
+
+- [ ] **2b.7** — Prompt : *"Génère le support de cours d'une séance à partir de son objectif d'apprentissage et de sa nature : un support théorique (notions, schémas, exemples) ou un énoncé de TP (contexte, consignes, livrable attendu, critères), selon le cas."*
+
+
+---
+
 ## Phase 3 — Interface formateur (fiches, contrôles, calendrier, masse horaire)
 
 - [x] **3.1** — Prompt : *"En respectant strictement docs/design_system.md et docs/conventions.md : réécris le prompt système de `/api/generate/fiche-preparation` pour produire un aide-mémoire synthétique (mots-clés, idées clés, exemples, points de vigilance) — jamais un déroulé minuté détaillé. Contrains explicitement la longueur (ex. maximum 400 mots) pour éviter que le modèle déborde vers un texte développé. La génération doit s'appuyer sur la fiche prescrite et les suggestions pédagogiques de la compétence, le contenu déjà réalisé sur ce couple groupe+module, et la durée exacte de la séance."*
