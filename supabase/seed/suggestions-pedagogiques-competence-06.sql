@@ -4,11 +4,10 @@
 -- l'UX / UI Design » (DIA_DES_TS-06), extraites de docs/programme-ux-designer.docx.
 --
 -- Réserves consignées :
---   * Le référentiel étiquette « B.3 » et « B.4 » deux apprentissages qui figurent
---     physiquement dans le groupe de l'élément C, et dont le contenu correspond aux
---     critères particuliers de C (axes d'amélioration, zonings, wireframes). Ils sont
---     rattachés à l'élément C par leur position ; leur libellé d'origine est conservé
---     tel quel dans la colonne , sans correction silencieuse.
+--   * Réserve levée (migration 028) : le programme étiquetait « B.3 » et « B.4 » deux
+--     apprentissages placés sous l'élément C. Faute de seconde source, ils avaient été
+--     conservés tels quels. Le manuel de formateur de la compétence 6 les nomme C.3 et
+--     C.4 : la coquille est dans le programme, les codes sont corrigés ici.
 --   * Une cellule d'activités d'apprentissage sans apprentissage associé apparaît dans
 --     le groupe C ; elle est recollée aux activités du premier apprentissage de C.
 --   * Durée suggérée et activités ne sont portées que par le premier apprentissage de
@@ -135,7 +134,7 @@ on conflict (element_competence_id, ordre) do update
 
 insert into public.suggestions_pedagogiques
   (element_competence_id, code, apprentissage_base, elements_contenu, activites_apprentissage, duree_suggeree_pourcent, ordre)
-select e.id, 'B.3', 'Relever des points d’amélioration', 'Analyse du parcours utilisateurs qui permette d’identifier les points d’amélioration
+select e.id, 'C.3', 'Relever des points d’amélioration', 'Analyse du parcours utilisateurs qui permette d’identifier les points d’amélioration
 Règles d’accessibilité et de trouvabilité', null, null, 3
 from public.elements_competence e
 join public.fiches_prescrites f on f.id = e.fiche_prescrite_id
@@ -150,7 +149,7 @@ on conflict (element_competence_id, ordre) do update
 
 insert into public.suggestions_pedagogiques
   (element_competence_id, code, apprentissage_base, elements_contenu, activites_apprentissage, duree_suggeree_pourcent, ordre)
-select e.id, 'B.4', 'Maquetter le parcours', 'Création de zoning pour concevoir une vue schématique du parcours utilisateur
+select e.id, 'C.4', 'Maquetter le parcours', 'Création de zoning pour concevoir une vue schématique du parcours utilisateur
 Création de wireframes qui révèle une vue plus détaillée du parcours utilisateur', null, null, 4
 from public.elements_competence e
 join public.fiches_prescrites f on f.id = e.fiche_prescrite_id
