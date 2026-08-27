@@ -56,7 +56,7 @@ Ordre des phases : sécurité et fondations d'abord, schéma du référentiel of
   **Test** : marque 3 séances de durées différentes comme réalisées, vérifie que le cumul affiché correspond à la somme exacte.
 - [x] **2.3** — Prompt : *"Ajoute à `controles` les colonnes `groupe_id` (obligatoire, référence groupes), `type` (CC/EFM), `type_efm` (local/régional, nullable si type=CC), `date_prevue` (nullable), `date_administration` (nullable), `format` (théorique/pratique/mixte). Modifie toutes les requêtes de génération et de préparation de contrôle pour filtrer par couple groupe+module, jamais par module seul."*
   **Test** : crée un contrôle pour DES101 sur M106, vérifie qu'il n'apparaît pas dans la liste des contrôles de DES102 sur ce même module.
-- [ ] **2.4** — Prompt : *"Crée la migration `015_fiches_operationnelles.sql` : renomme la table actuelle `fiches_preparation` en `fiches_prescrites_legacy` (à supprimer plus tard une fois la Phase 1 validée), crée une nouvelle table `fiches_preparation` avec `id, seance_id (référence unique vers seances), contenu text, version integer`. Une fiche de préparation est désormais rattachée à une séance précise, pas à un module."*
+- [x] **2.4** — Prompt : *"Crée la migration `015_fiches_operationnelles.sql` : renomme la table actuelle `fiches_preparation` en `fiches_prescrites_legacy` (à supprimer plus tard une fois la Phase 1 validée), crée une nouvelle table `fiches_preparation` avec `id, seance_id (référence unique vers seances), contenu text, version integer`. Une fiche de préparation est désormais rattachée à une séance précise, pas à un module."*
   **Test** : génère une fiche pour une séance de 2h30, vérifie qu'elle reste propre à cette séance et n'apparaît pas sur une autre séance du même module.
 
 ---

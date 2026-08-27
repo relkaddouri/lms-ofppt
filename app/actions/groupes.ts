@@ -212,10 +212,14 @@ export async function getGroupeModules(
 
   if (ids.length) {
     const [fRes, cRes] = await Promise.all([
+      // Une fiche est désormais rattachée à une séance : « ce module a une
+      // fiche » se lit donc « une séance de ce module, dans ce groupe, en a
+      // une ». Le filtre passe par la séance.
       supabase
         .from("fiches_preparation")
-        .select("module_id")
-        .in("module_id", ids),
+        .select("seances!inner(module_id, groupe_id)")
+        .eq("seances.groupe_id", groupeId)
+        .in("seances.module_id", ids),
       supabase
         .from("controles")
         .select("module_id, statut")
@@ -227,7 +231,11 @@ export async function getGroupeModules(
     if (fRes.error) throw new Error(fRes.error.message);
     if (cRes.error) throw new Error(cRes.error.message);
 
-    fRes.data.forEach((r) => hasFiche.add(r.module_id));
+    (
+      fRes.data as unknown as { seances: { module_id: string } | null }[]
+    ).forEach((r) => {
+      if (r.seances?.module_id) hasFiche.add(r.seances.module_id);
+    });
     cRes.data.forEach((r) => {
       if (!controleStatut.has(r.module_id)) {
         controleStatut.set(r.module_id, r.statut);

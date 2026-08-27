@@ -56,8 +56,8 @@ export async function getModuleDetail(moduleId: string): Promise<ModuleDetail | 
       .single(),
     supabase
       .from("fiches_preparation")
-      .select("id", { count: "exact", head: true })
-      .eq("module_id", moduleId),
+      .select("id, seances!inner(module_id)", { count: "exact", head: true })
+      .eq("seances.module_id", moduleId),
     supabase
       .from("groupe_modules")
       .select("groupes(id, nom)")

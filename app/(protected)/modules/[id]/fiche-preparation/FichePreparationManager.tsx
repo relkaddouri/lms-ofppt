@@ -6,23 +6,34 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas-pro";
-import { saveFiche, type FichePreparation } from "@/app/actions/fiches";
+import {
+  saveFiche,
+  type FichePreparation,
+  type SeanceAPreparer,
+} from "@/app/actions/fiches";
 import { useToast } from "@/components/ui/Toast";
 import Breadcrumb from "@/components/Breadcrumb";
 import Button from "@/components/ui/Button";
-import { slugify } from "@/lib/format";
+import { slugify, formatDate } from "@/lib/format";
+import { inputStyles as inputClass } from "@/components/ui/Input";
 import { Download, Save, Sparkles } from "lucide-react";
 
 export default function FichePreparationManager({
   moduleId,
   moduleNom,
   moduleDuree,
+  seances,
+  seanceId,
   versions,
+  ficheLegacy,
 }: {
   moduleId: string;
   moduleNom: string;
   moduleDuree: number;
+  seances: SeanceAPreparer[];
+  seanceId: string | null;
   versions: FichePreparation[];
+  ficheLegacy: string | null;
 }) {
   const router = useRouter();
   const [contenu, setContenu] = useState(versions[0]?.contenu ?? "");
@@ -130,7 +141,11 @@ export default function FichePreparationManager({
     setBusy(true);
     setNotice(null);
     try {
-      const version = await saveFiche(moduleId, contenu);
+      if (!seanceId) {
+        toast("Choisissez d'abord la séance à préparer.", "error");
+        return;
+      }
+      const version = await saveFiche(seanceId, contenu);
       setActiveVersion(version);
       setNotice(`Version ${version} enregistrée.`);
       toast("Fiche enregistrée");
@@ -152,6 +167,7 @@ export default function FichePreparationManager({
     );
   }
 
+  const seanceChoisie = seances.find((s) => s.id === seanceId) ?? null;
   const latestVersion = versions[0]?.version ?? null;
   const isViewingOld =
     activeVersion !== null && latestVersion !== null && activeVersion < latestVersion;
@@ -166,8 +182,77 @@ export default function FichePreparationManager({
         ]}
       />
 
+      <div className="mt-6 rounded-xl border border-border bg-surface p-4 shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
+        <label className="block text-sm font-medium text-ink" htmlFor="seance">
+          Séance préparée
+        </label>
+        <p className="mt-0.5 text-xs text-slate">
+          Une fiche prépare une séance précise, avec sa durée et son objectif —
+          plus le module dans son ensemble.
+        </p>
+        {seances.length === 0 ? (
+          <p className="mt-2 rounded-lg bg-info/10 px-3 py-2 text-sm text-ink">
+            Aucune séance n&apos;est encore planifiée pour ce module. Créez-en une
+            depuis la progression d&apos;un groupe pour pouvoir la préparer.
+          </p>
+        ) : (
+          <select
+            id="seance"
+            value={seanceId ?? ""}
+            onChange={(e) => router.push(`?seance=${e.target.value}`)}
+            className={`${inputClass} mt-2`}
+          >
+            {seances.map((s) => (
+              <option key={s.id} value={s.id}>
+                {[
+                  s.groupe_nom,
+                  s.date ? formatDate(s.date) : "date à définir",
+                  s.heure_debut ? s.heure_debut.slice(0, 5) : null,
+                  s.statut === "fait" ? "faite" : "à faire",
+                  s.nb_versions > 0 ? `${s.nb_versions} version(s)` : "aucune fiche",
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </option>
+            ))}
+          </select>
+        )}
+        {seanceChoisie?.objectif_operationnel ? (
+          <p className="mt-2 text-sm text-ink">
+            <span className="text-slate">Objectif : </span>
+            {seanceChoisie.objectif_operationnel}
+          </p>
+        ) : null}
+      </div>
+
+      {ficheLegacy && versions.length === 0 ? (
+        <div className="mt-4 rounded-xl border border-info/30 bg-info/10 px-4 py-3">
+          <p className="text-sm font-medium text-ink">
+            Une ancienne fiche existe pour ce module
+          </p>
+          <p className="mt-1 text-sm text-ink">
+            Elle était rattachée au module, pas à une séance : rien ne permet de
+            la rattacher automatiquement. Reprenez son contenu si vous le
+            souhaitez.
+          </p>
+          <Button
+            variant="secondary"
+            size="sm"
+            className="mt-2"
+            onClick={() => {
+              setContenu(ficheLegacy);
+              setActiveVersion(null);
+              setMode("edit");
+              setNotice("Ancien contenu repris. Enregistrez-le pour cette séance.");
+            }}
+          >
+            Reprendre son contenu
+          </Button>
+        </div>
+      ) : null}
+
       <div className="mt-6 flex flex-wrap items-center gap-3">
-        <Button icon={Save} onClick={handleSave} disabled={busy}>
+        <Button icon={Save} onClick={handleSave} disabled={busy || !seanceId}>
           Enregistrer une nouvelle version
         </Button>
         <Button
