@@ -15,6 +15,13 @@ export default async function ProtectedLayout({
 
   const role = await getCurrentUserRole();
 
+  // Un stagiaire n'a rien à faire dans l'espace formateur : les policies lui
+  // rendraient des pages vides, ce qui ressemble à une panne. Il est renvoyé
+  // vers le sien.
+  if (role === "stagiaire") {
+    redirect("/espace-stagiaire/fil");
+  }
+
   return (
     <AppShell email={user.email ?? null} role={role}>
       {children}
