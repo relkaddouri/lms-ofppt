@@ -155,28 +155,48 @@ export default function CalendrierSemaine({
 
       <div className="mt-4 grid gap-6 2xl:grid-cols-[1fr_320px]">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[640px] border-collapse">
+          {/* `table-fixed` donne aux six jours la même largeur : sans lui, le
+              seul jour occupé écrasait les cinq autres. */}
+          <table className="w-full min-w-[680px] table-fixed border-collapse overflow-hidden rounded-xl border border-border bg-surface">
+            <colgroup>
+              <col className="w-[124px]" />
+              {jours.map((j) => (
+                <col key={j.date} />
+              ))}
+            </colgroup>
             <thead>
               <tr>
-                <th className="w-32 border border-border bg-mist px-2 py-2 text-left text-xs font-medium text-slate">
-                  Bloc
-                </th>
+                <th className="border-b border-border bg-mist px-3 py-2.5" />
                 {jours.map((j) => (
                   <th
                     key={j.date}
-                    className={`border border-border px-2 py-2 text-left text-xs font-medium ${
-                      j.estAujourdhui
-                        ? "bg-mint text-forest"
-                        : "bg-mist text-slate"
+                    scope="col"
+                    className={`border-b border-l border-border px-3 py-2.5 text-left ${
+                      j.estAujourdhui ? "bg-mint" : "bg-mist"
                     }`}
                   >
-                    {j.nom}{" "}
-                    <span className="font-mono">
-                      {j.date.slice(8, 10)}/{j.date.slice(5, 7)}
+                    <span className="flex items-baseline gap-1.5">
+                      <span
+                        className={`text-sm font-semibold ${
+                          j.estAujourdhui ? "text-forest" : "text-ink"
+                        }`}
+                      >
+                        {j.nom}
+                      </span>
+                      <span
+                        className={`text-xs ${
+                          j.estAujourdhui ? "text-forest/70" : "text-slate"
+                        }`}
+                      >
+                        {j.date.slice(8, 10)}/{j.date.slice(5, 7)}
+                      </span>
+                      {j.estAujourdhui ? (
+                        <span
+                          className="ml-auto h-1.5 w-1.5 rounded-full bg-forest"
+                          aria-label="aujourd'hui"
+                        />
+                      ) : null}
                     </span>
-                    {j.estAujourdhui ? (
-                      <span className="ml-1 font-normal">· aujourd&apos;hui</span>
-                    ) : null}
                   </th>
                 ))}
               </tr>
@@ -185,15 +205,16 @@ export default function CalendrierSemaine({
               {(["matin", "soir"] as const).map((bloc) => {
                 const b = BLOCS[bloc];
                 return (
-                  <tr key={bloc}>
-                    <th className="border border-border bg-mist px-2 py-2 text-left align-top">
-                      <span className="block text-xs font-medium text-ink">
+                  <tr key={bloc} className="border-t border-border first:border-t-0">
+                    <th scope="row" className="bg-mist px-3 py-3 text-left align-top">
+                      <span className="block text-sm font-medium text-ink">
                         {b.label}
                       </span>
-                      <span className="mt-0.5 block whitespace-nowrap font-mono text-[11px] text-slate">
+                      <span className="mt-0.5 block whitespace-nowrap text-xs text-slate">
                         {formatHeure(b.debut)} – {formatHeure(b.fin)}
                       </span>
-                      <span className="mt-1 block whitespace-nowrap border-y border-dashed border-slate/50 py-0.5 font-mono text-[10px] text-slate/80">
+                      <span className="mt-2 flex items-center gap-1.5 text-[11px] text-slate/70">
+                        <span className="h-px w-3 border-t border-dashed border-slate/50" />
                         pause {formatHeure(b.pause.debut)}
                       </span>
                     </th>
@@ -205,63 +226,89 @@ export default function CalendrierSemaine({
                       return (
                         <td
                           key={j.date}
-                          className={`h-24 border border-border p-1.5 align-top ${
-                            j.estAujourdhui ? "bg-mint/25" : ""
+                          className={`h-28 border-l border-border p-1.5 align-top ${
+                            j.estAujourdhui ? "bg-mint/20" : ""
                           }`}
                         >
-                          {/* Une case vide reste vide : un tiret par créneau
-                              libre ne fait que du bruit. */}
                           <div className="space-y-1.5">
                             {ctrls.map((c) => (
                               <Link
                                 key={c.id}
                                 href={`/modules/${c.module_id}/controle`}
-                                className={`block rounded-lg px-2 py-1.5 ${
+                                title={`${c.groupeNom} — ${c.titre ?? c.moduleNom}`}
+                                className={`block rounded-lg px-2 py-1.5 transition-colors ${
                                   c.confirmee
-                                    ? "border-2 border-solid border-forest bg-mint"
-                                    : "border border-dashed border-slate/60 bg-surface"
+                                    ? "border-2 border-solid border-forest bg-mint hover:bg-mint/70"
+                                    : "border border-dashed border-slate/60 bg-surface hover:border-forest/60"
                                 }`}
                               >
-                                <Badge tone={c.type === "EFM" ? "danger" : "info"}>
+                                <span className="block text-[10px] font-semibold uppercase tracking-wide text-forest">
                                   {c.type === "EFM"
                                     ? c.type_efm === "regional"
                                       ? "EFM régional"
                                       : "EFM local"
-                                    : "CC"}
-                                </Badge>
+                                    : "Contrôle continu"}
+                                </span>
                                 <span className="mt-0.5 block truncate text-xs text-ink">
                                   {c.groupeNom}
                                 </span>
                               </Link>
                             ))}
 
-                            {liste.map((s) => (
-                              <Link
-                                key={s.id}
-                                href={`/groupes/${s.groupe_id}/seances/${s.id}`}
-                                className={`block rounded-lg border-l-[3px] px-2 py-1.5 text-left ${
-                                  s.statut === "fait"
-                                    ? "border-l-slate/40 bg-mist text-slate"
-                                    : s.nature === "pratique"
-                                      ? "border-l-info bg-info/5 hover:bg-info/10"
-                                      : "border-l-forest bg-surface hover:bg-mint/40"
-                                }`}
-                              >
-                                <span className="block font-mono text-[11px] text-slate">
-                                  {s.heure_debut ? formatHeure(s.heure_debut) : "—"}
-                                  {s.heure_fin ? `–${formatHeure(s.heure_fin)}` : ""}
-                                </span>
-                                <span className="mt-0.5 block truncate text-xs font-medium text-ink">
-                                  {s.groupeNom}
-                                  {s.codeOperationnel
-                                    ? ` · ${s.codeOperationnel}`
-                                    : ""}
-                                </span>
-                                <span className="block truncate text-[11px] text-slate">
-                                  {s.objectif ?? s.moduleNom}
-                                </span>
-                              </Link>
-                            ))}
+                            {liste.map((s) => {
+                              const fait = s.statut === "fait";
+                              const tp = s.nature === "pratique";
+                              return (
+                                <Link
+                                  key={s.id}
+                                  href={`/groupes/${s.groupe_id}/seances/${s.id}`}
+                                  title={[
+                                    s.groupeNom,
+                                    s.moduleNom,
+                                    s.objectif,
+                                  ]
+                                    .filter(Boolean)
+                                    .join(" — ")}
+                                  className={`block rounded-lg px-2.5 py-2 transition-colors ${
+                                    fait
+                                      ? "bg-mist text-slate hover:bg-border/60"
+                                      : tp
+                                        ? "bg-info/10 hover:bg-info/15"
+                                        : "bg-mint hover:bg-mint/70"
+                                  }`}
+                                >
+                                  <span className="flex items-center gap-1.5">
+                                    <span
+                                      className={`h-1.5 w-1.5 shrink-0 rounded-full ${
+                                        fait
+                                          ? "bg-slate/50"
+                                          : tp
+                                            ? "bg-info"
+                                            : "bg-forest"
+                                      }`}
+                                      aria-hidden
+                                    />
+                                    <span className="truncate text-[11px] text-slate">
+                                      {s.heure_debut
+                                        ? formatHeure(s.heure_debut)
+                                        : "—"}
+                                      {s.heure_fin
+                                        ? `–${formatHeure(s.heure_fin)}`
+                                        : ""}
+                                    </span>
+                                  </span>
+                                  <span className="mt-1 block truncate text-xs font-semibold text-ink">
+                                    {s.groupeNom}
+                                    {s.codeOperationnel
+                                      ? ` · ${s.codeOperationnel}`
+                                      : ""}
+                                  </span>
+                                  <span className="mt-0.5 block truncate text-[11px] text-slate">
+                                    {s.objectif ?? s.moduleNom}
+                                  </span>
+                                </Link>
+                              );
+                            })}
                           </div>
                           {vide ? <span className="sr-only">libre</span> : null}
                         </td>
