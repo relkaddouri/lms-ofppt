@@ -15,7 +15,10 @@ import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Card from "@/components/ui/Card";
 import { initials } from "@/lib/format";
-import { Check, Pencil, Plus, Save, Trash2, X } from "lucide-react";
+import { Check, Mail, Pencil, Plus, Save, Trash2, X } from "lucide-react";
+import { inviterStagiaire } from "@/app/actions/invitations";
+import Modal from "@/components/ui/Modal";
+import { inputStyles as inputClass } from "@/components/ui/Input";
 
 export default function GroupeDetail({
   groupeId,
@@ -27,6 +30,21 @@ export default function GroupeDetail({
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [confirmId, setConfirmId] = useState<string | null>(null);
+  // Le lien est rendu au formateur : sans serveur d'envoi configuré, un
+  // courriel échouerait en silence.
+  const [invitation, setInvitation] = useState<{
+    lien: string;
+    email: string;
+    existant: boolean;
+  } | null>(null);
+
+  async function inviter(stagiaireId: string) {
+    try {
+      setInvitation(await inviterStagiaire(stagiaireId));
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "Invitation impossible.", "error");
+    }
+  }
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({ nom: "", prenom: "", email: "" });
   const [editForm, setEditForm] = useState({ nom: "", prenom: "", email: "" });
@@ -222,6 +240,11 @@ export default function GroupeDetail({
                             </p>
                             <p className="truncate text-xs text-slate">
                               {s.email ?? "—"}
+                              {s.user_id ? (
+                                <span className="ml-1.5 text-success">
+                                  · compte actif
+                                </span>
+                              ) : null}
                             </p>
                           </div>
                         </div>
@@ -253,6 +276,13 @@ export default function GroupeDetail({
                           <KebabMenu
                             items={[
                               {
+                                label: s.user_id
+                                  ? "Renvoyer le lien d'accès"
+                                  : "Inviter",
+                                onClick: () => inviter(s.id),
+                                icon: Mail,
+                              },
+                              {
                                 label: "Modifier",
                                 onClick: () => startEdit(s),
                                 icon: Pencil,
@@ -273,6 +303,40 @@ export default function GroupeDetail({
               )}
             </tbody>
           </table>
+
+      <Modal
+        open={invitation !== null}
+        onClose={() => setInvitation(null)}
+        title={
+          invitation?.existant
+            ? "Lien d'accès renvoyé"
+            : "Stagiaire invité"
+        }
+        description={`Transmettez ce lien à ${invitation?.email ?? ""}. Il choisira lui-même son mot de passe — vous ne le connaîtrez jamais.`}
+      >
+        <div className="flex gap-2">
+          <input
+            readOnly
+            value={invitation?.lien ?? ""}
+            aria-label="Lien d'invitation"
+            onFocus={(e) => e.currentTarget.select()}
+            className={inputClass}
+          />
+          <Button
+            variant="secondary"
+            onClick={() => {
+              navigator.clipboard.writeText(invitation?.lien ?? "");
+              toast("Lien copié");
+            }}
+          >
+            Copier
+          </Button>
+        </div>
+        <p className="mt-2 text-xs text-slate">
+          Ce lien ouvre une session : ne le publiez pas, transmettez-le
+          directement au stagiaire concerné.
+        </p>
+      </Modal>
         </div>
     </section>
   );

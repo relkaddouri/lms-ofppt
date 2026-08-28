@@ -9,6 +9,8 @@ export type Stagiaire = {
   prenom: string;
   email: string | null;
   groupe_id: string;
+  /** Compte du stagiaire ; nul tant qu'il n'a pas été invité. */
+  user_id: string | null;
 };
 
 export async function getStagiairesByGroupe(
