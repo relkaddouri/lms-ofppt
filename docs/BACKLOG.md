@@ -117,7 +117,7 @@ contrôles et produire les fiches est le travail manuel que cette application do
   **Test** : ouvre sur un viewport mobile (375px), vérifie que la barre inférieure est utilisable au pouce.
 - [x] **4.3 — Interface** — Prompt : *"En respectant strictement docs/design_system.md : transforme les annonces en fil d'actualité pour les stagiaires — cartes empilées pleine largeur, commentaires, réaction 'j'aime' toujours visibles en bas de carte, mention `@camarade` avec autocomplétion."*
   **Test** : publie une annonce côté formateur, vérifie qu'elle apparaît dans le fil du stagiaire avec les actions commentaire/j'aime fonctionnelles.
-- [ ] **4.4** — Prompt : *"Crée la fonctionnalité 'devoirs' : table `devoirs` (id, seance_id ou module_id, titre, description, date_echeance, type_rendu texte/fichier/lien), table `devoirs_rendus` (devoir_id, stagiaire_id, contenu, date_rendu, statut). Interface formateur pour assigner un devoir, interface stagiaire pour le consulter et le rendre."*
+- [x] **4.4** — Prompt : *"Crée la fonctionnalité 'devoirs' : table `devoirs` (id, seance_id ou module_id, titre, description, date_echeance, type_rendu texte/fichier/lien), table `devoirs_rendus` (devoir_id, stagiaire_id, contenu, date_rendu, statut). Interface formateur pour assigner un devoir, interface stagiaire pour le consulter et le rendre."*
   **Test** : assigne un devoir test, rends-le depuis un compte stagiaire, vérifie que le formateur voit le rendu.
 - [ ] **4.5 — Interface** — Prompt : *"Crée la page Contrôles côté stagiaire (accessible depuis le compte authentifié) listant les contrôles de son groupe par module, avec passation directe."*
   **Test** : un stagiaire connecté peut passer un contrôle actif de son groupe sans lien externe.
