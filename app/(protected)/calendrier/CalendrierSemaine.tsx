@@ -12,6 +12,8 @@ import type {
   APlanifier,
 } from "@/app/actions/calendrier";
 import EfmRegionalForm from "./EfmRegionalForm";
+import SuiviHeures from "@/components/SuiviHeures";
+import type { BilanHeures } from "@/lib/heures-formateur";
 import { CalendarPlus, ChevronLeft, ChevronRight } from "lucide-react";
 
 const JOURS = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
@@ -36,12 +38,14 @@ export default function CalendrierSemaine({
   controles,
   aPlanifier,
   seancesSansDate,
+  bilan,
 }: {
   lundi: string;
   seances: SeanceCalendrier[];
   controles: ControleCalendrier[];
   aPlanifier: APlanifier[];
   seancesSansDate: number;
+  bilan: BilanHeures;
 }) {
   const router = useRouter();
   const aujourdhui = iso(new Date());
@@ -323,6 +327,8 @@ export default function CalendrierSemaine({
 
         {/* Ce qui n'est pas encore posé : c'est là que se trouve le travail. */}
         <aside className="space-y-4">
+          <SuiviHeures bilan={bilan} />
+
           {seancesSansDate > 0 ? (
             <section className="rounded-xl border border-border bg-surface p-4">
               <div className="flex items-start gap-2">
