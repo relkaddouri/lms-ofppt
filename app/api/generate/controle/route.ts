@@ -131,20 +131,29 @@ export async function POST(request: Request) {
 
   const duree = Number(dureeHeures) || 2;
 
+  // Un contrôle continu porte sur ce qui a été fait à ce jour ; une épreuve de
+  // fin de module porte sur le module entier, y compris ce qui reste à faire.
   let seancesQuery = supabase
     .from("seances")
-    .select("contenu_realise")
-    .eq("module_id", moduleId)
-    .eq("statut", "fait");
+    .select("contenu_realise, contenu_prevu, objectif_operationnel, statut")
+    .eq("module_id", moduleId);
+  if (!estEfm) seancesQuery = seancesQuery.eq("statut", "fait");
   if (groupeId) seancesQuery = seancesQuery.eq("groupe_id", groupeId);
 
   const { data: seances } = await seancesQuery;
 
   const contenuCouvert =
     (seances ?? [])
-      .map((s) => s.contenu_realise)
+      .map((s) =>
+        s.statut === "fait"
+          ? s.contenu_realise
+          : (s.contenu_prevu ?? s.objectif_operationnel),
+      )
       .filter(Boolean)
-      .join("\n- ") || "Non renseigné (aucune séance marquée comme faite)";
+      .join("\n- ") ||
+    (estEfm
+      ? "Non renseigné (aucune séance planifiée sur ce module)"
+      : "Non renseigné (aucune séance marquée comme faite)");
 
 
   // Raffinage : on repart du contrôle existant plutôt que d'en générer un neuf.

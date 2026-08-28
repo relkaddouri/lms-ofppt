@@ -18,6 +18,8 @@ import {
   type OptionQcm,
 } from "@/app/actions/controles";
 import CopiesManager from "./CopiesManager";
+import ContenuCouvert from "./ContenuCouvert";
+import { Stepper, NavigationEtapes } from "./Stepper";
 import { useToast } from "@/components/ui/Toast";
 import Breadcrumb from "@/components/Breadcrumb";
 import Badge from "@/components/ui/Badge";
@@ -112,10 +114,16 @@ export default function ControleManager({
   const [confirmBareme, setConfirmBareme] = useState(false);
   const [avertissements, setAvertissements] = useState<string[]>([]);
   const [instruction, setInstruction] = useState("");
+  // Préparer un contrôle se fait en quatre temps : voir ce qui est couvert,
+  // choisir la nature, produire les questions, relire.
+  const [etape, setEtape] = useState(1);
   const [confirmSuppression, setConfirmSuppression] = useState(false);
   const toast = useToast();
 
-  const totalBareme = questions.reduce((s, q) => s + (Number(q.bareme) || 0), 0);
+  const totalBareme = questions.reduce(
+    (s, q) => s + (Number(q.bareme) || 0),
+    0,
+  );
 
   async function loadControle(id: string) {
     setLoading(true);
@@ -381,7 +389,9 @@ export default function ControleManager({
   }
 
   function updateQuestion(id: string, patch: Partial<DraftQuestion>) {
-    setQuestions((prev) => prev.map((q) => (q.id === id ? { ...q, ...patch } : q)));
+    setQuestions((prev) =>
+      prev.map((q) => (q.id === id ? { ...q, ...patch } : q)),
+    );
   }
 
   function removeQuestion(id: string) {
@@ -400,7 +410,10 @@ export default function ControleManager({
 
       <div className="mt-6 flex flex-wrap items-end gap-4 rounded-xl border border-border bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-4">
         <div>
-          <label htmlFor="genDuree" className="block text-sm font-medium text-ink">
+          <label
+            htmlFor="genDuree"
+            className="block text-sm font-medium text-ink"
+          >
             Durée du contrôle (heures)
           </label>
           <input
@@ -465,7 +478,9 @@ export default function ControleManager({
         <button
           onClick={() => setTab("editeur")}
           className={`flex-1 rounded-[4px] px-3 py-1.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-forest ${
-            tab === "editeur" ? "bg-mint text-forest" : "text-slate hover:bg-slate/5"
+            tab === "editeur"
+              ? "bg-mint text-forest"
+              : "text-slate hover:bg-slate/5"
           }`}
         >
           Éditeur
@@ -473,7 +488,9 @@ export default function ControleManager({
         <button
           onClick={() => setTab("copies")}
           className={`flex-1 rounded-[4px] px-3 py-1.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-forest ${
-            tab === "copies" ? "bg-mint text-forest" : "text-slate hover:bg-slate/5"
+            tab === "copies"
+              ? "bg-mint text-forest"
+              : "text-slate hover:bg-slate/5"
           }`}
         >
           Copies
@@ -495,453 +512,514 @@ export default function ControleManager({
           </p>
         )
       ) : (
-        <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-[1fr_340px]">
-        <div className="space-y-4">
-          <div className="max-w-[640px] rounded-xl border border-border bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-4">
-            <label htmlFor="titre" className="block text-sm font-medium text-ink">
-              Titre
-            </label>
-            <input
-              id="titre"
-              value={titre}
-              onChange={(e) => setTitre(e.target.value)}
-              className={`${inputClass} mt-1`}
-            />
-          </div>
+        <div className="mt-6">
+          <Stepper etape={etape} onAller={setEtape} />
 
-          <div className="max-w-[640px] rounded-xl border border-border bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-4">
-            <label
-              htmlFor="consignes"
-              className="block text-sm font-medium text-ink"
-            >
-              Consignes
-            </label>
-            <textarea
-              id="consignes"
-              rows={3}
-              value={consignes}
-              onChange={(e) => setConsignes(e.target.value)}
-              className={`${inputClass} mt-1`}
-            />
-          </div>
+          {etape === 1 ? (
+            <div className="max-w-[760px]">
+              <ContenuCouvert
+                groupeId={groupeId ?? null}
+                moduleId={moduleId}
+                type={type}
+              />
+            </div>
+          ) : etape === 2 ? (
+            <div className="max-w-[760px] space-y-4">
+              <div className="max-w-[640px] rounded-xl border border-border bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-4">
+                <h2 className="text-sm font-medium text-ink">
+                  Nature du contrôle
+                </h2>
+                <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <label htmlFor="type" className="block text-xs text-slate">
+                      Type
+                    </label>
+                    <select
+                      id="type"
+                      value={type}
+                      onChange={(e) => setType(e.target.value as TypeControle)}
+                      className={`${inputClass} mt-1`}
+                    >
+                      <option value="CC">Contrôle continu (CC)</option>
+                      <option value="EFM">
+                        Épreuve de fin de module (EFM)
+                      </option>
+                    </select>
+                  </div>
 
-          <div className="max-w-[640px] rounded-xl border border-border bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-4">
-            <h2 className="text-sm font-medium text-ink">Nature du contrôle</h2>
-            <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div>
-                <label htmlFor="type" className="block text-xs text-slate">
-                  Type
-                </label>
-                <select
-                  id="type"
-                  value={type}
-                  onChange={(e) => setType(e.target.value as TypeControle)}
-                  className={`${inputClass} mt-1`}
-                >
-                  <option value="CC">Contrôle continu (CC)</option>
-                  <option value="EFM">Épreuve de fin de module (EFM)</option>
-                </select>
+                  {type === "EFM" ? (
+                    <div>
+                      <label
+                        htmlFor="typeEfm"
+                        className="block text-xs text-slate"
+                      >
+                        Portée de l&apos;EFM
+                      </label>
+                      <select
+                        id="typeEfm"
+                        value={typeEfm}
+                        onChange={(e) => setTypeEfm(e.target.value as TypeEfm)}
+                        className={`${inputClass} mt-1`}
+                      >
+                        <option value="local">Local (date estimable)</option>
+                        <option value="regional">
+                          Régional (date imposée)
+                        </option>
+                      </select>
+                    </div>
+                  ) : null}
+
+                  <div>
+                    <label
+                      htmlFor="format"
+                      className="block text-xs text-slate"
+                    >
+                      Format
+                    </label>
+                    <select
+                      id="format"
+                      value={format}
+                      onChange={(e) =>
+                        setFormat(e.target.value as FormatControle)
+                      }
+                      className={`${inputClass} mt-1`}
+                    >
+                      <option value="theorique">Théorique</option>
+                      <option value="pratique">Pratique</option>
+                      <option value="mixte">Théorique et pratique</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="datePrevue"
+                      className="block text-xs text-slate"
+                    >
+                      Date prévue
+                    </label>
+                    <input
+                      id="datePrevue"
+                      type="date"
+                      value={datePrevue}
+                      onChange={(e) => setDatePrevue(e.target.value)}
+                      className={`${inputClass} mt-1`}
+                    />
+                  </div>
+                </div>
+                {type === "EFM" && typeEfm === "regional" ? (
+                  <p className="mt-3 text-xs text-slate">
+                    La date d&apos;un EFM régional est fixée par la Direction
+                    Régionale : elle se saisit ici, elle ne peut pas être
+                    estimée.
+                  </p>
+                ) : null}
               </div>
-
-              {type === "EFM" ? (
-                <div>
-                  <label htmlFor="typeEfm" className="block text-xs text-slate">
-                    Portée de l&apos;EFM
-                  </label>
-                  <select
-                    id="typeEfm"
-                    value={typeEfm}
-                    onChange={(e) => setTypeEfm(e.target.value as TypeEfm)}
-                    className={`${inputClass} mt-1`}
-                  >
-                    <option value="local">Local (date estimable)</option>
-                    <option value="regional">Régional (date imposée)</option>
-                  </select>
+            </div>
+          ) : etape === 3 ? (
+            <div className="space-y-4">
+              {questions.length > 0 ? (
+                <div className="mb-4 rounded-xl border border-border bg-surface p-4 shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
+                  <h2 className="text-sm font-medium text-ink">
+                    Retravailler ce contrôle
+                  </h2>
+                  <p className="mt-1 text-xs text-slate">
+                    Décrivez ce qui ne va pas plutôt que de corriger à la main.
+                    Le contrôle affiché est renvoyé au modèle avec votre
+                    consigne.
+                  </p>
+                  <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+                    <input
+                      value={instruction}
+                      onChange={(e) => setInstruction(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && instruction.trim() && !busy) {
+                          handleGenerate(true);
+                        }
+                      }}
+                      placeholder="Ex. : remplace les deux derniers exercices par des QCM, et simplifie la question 3"
+                      aria-label="Consigne de raffinage"
+                      className={inputClass}
+                    />
+                    <Button
+                      variant="secondary"
+                      icon={Wand2}
+                      onClick={() => handleGenerate(true)}
+                      loading={busy}
+                      loadingLabel="En cours…"
+                      disabled={!instruction.trim()}
+                      className="shrink-0"
+                    >
+                      Appliquer
+                    </Button>
+                  </div>
                 </div>
               ) : null}
 
-              <div>
-                <label htmlFor="format" className="block text-xs text-slate">
-                  Format
-                </label>
-                <select
-                  id="format"
-                  value={format}
-                  onChange={(e) => setFormat(e.target.value as FormatControle)}
-                  className={`${inputClass} mt-1`}
-                >
-                  <option value="theorique">Théorique</option>
-                  <option value="pratique">Pratique</option>
-                  <option value="mixte">Théorique et pratique</option>
-                </select>
-              </div>
-
-              <div>
-                <label htmlFor="datePrevue" className="block text-xs text-slate">
-                  Date prévue
-                </label>
-                <input
-                  id="datePrevue"
-                  type="date"
-                  value={datePrevue}
-                  onChange={(e) => setDatePrevue(e.target.value)}
-                  className={`${inputClass} mt-1`}
-                />
-              </div>
-            </div>
-            {type === "EFM" && typeEfm === "regional" ? (
-              <p className="mt-3 text-xs text-slate">
-                La date d&apos;un EFM régional est fixée par la Direction
-                Régionale : elle se saisit ici, elle ne peut pas être estimée.
-              </p>
-            ) : null}
-          </div>
-
-          {questions.length > 0 ? (
-            <div className="mb-4 rounded-xl border border-border bg-surface p-4 shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
-              <h2 className="text-sm font-medium text-ink">
-                Retravailler ce contrôle
-              </h2>
-              <p className="mt-1 text-xs text-slate">
-                Décrivez ce qui ne va pas plutôt que de corriger à la main. Le
-                contrôle affiché est renvoyé au modèle avec votre consigne.
-              </p>
-              <div className="mt-2 flex flex-col gap-2 sm:flex-row">
-                <input
-                  value={instruction}
-                  onChange={(e) => setInstruction(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && instruction.trim() && !busy) {
-                      handleGenerate(true);
-                    }
-                  }}
-                  placeholder="Ex. : remplace les deux derniers exercices par des QCM, et simplifie la question 3"
-                  aria-label="Consigne de raffinage"
-                  className={inputClass}
-                />
-                <Button
-                  variant="secondary"
-                  icon={Wand2}
-                  onClick={() => handleGenerate(true)}
-                  loading={busy}
-                  loadingLabel="En cours…"
-                  disabled={!instruction.trim()}
-                  className="shrink-0"
-                >
-                  Appliquer
-                </Button>
-              </div>
-            </div>
-          ) : null}
-
-          <div className="rounded-xl border border-border bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-medium text-ink">Questions</h2>
-              <Badge tone={totalBareme === 20 ? "success" : "info"}>
-                Barème : {totalBareme} / 20
-              </Badge>
-            </div>
-
-            {loading ? (
-              <p className="mt-3 text-sm text-slate">
-                Chargement du contrôle…
-              </p>
-            ) : questions.length === 0 ? (
-              <div className="mt-6 flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-paper px-6 py-10 text-center">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-mint">
-                  <svg
-                    className="h-6 w-6 text-forest"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    aria-hidden
-                  >
-                    <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
-                    <rect x="9" y="3" width="6" height="4" rx="1" />
-                    <path d="M9 12l2 2 4-4" />
-                  </svg>
+              <div className="rounded-xl border border-border bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-4">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-sm font-medium text-ink">Questions</h2>
+                  <Badge tone={totalBareme === 20 ? "success" : "info"}>
+                    Barème : {totalBareme} / 20
+                  </Badge>
                 </div>
-                <p className="mt-4 text-sm font-medium text-ink">
-                  Aucune question pour l&apos;instant
-                </p>
-                <p className="mt-1 text-sm text-slate">
-                  Générez un contrôle avec l&apos;IA pour préparer
-                  automatiquement les questions et le barème.
-                </p>
-                <Button
-                  icon={Sparkles}
-                  onClick={() => handleGenerate(false)}
-                  loading={busy}
-                  loadingLabel="Génération…"
-                  className="mt-5"
-                >
-                  Générer un contrôle
-                </Button>
-              </div>
-            ) : (
-              <div className="mt-3 space-y-4">
-                {questions.map((q, i) => (
-                  <div
-                    key={q.id}
-                    className="rounded-lg border border-border p-3"
-                  >
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <span className="text-xs font-medium uppercase tracking-wide text-slate">
-                        Question {i + 1}
-                      </span>
-                      <div className="flex items-center gap-2">
-                        <select
-                          aria-label={`Type de la question ${i + 1}`}
-                          value={q.type}
-                          onChange={(e) => {
-                            const type = e.target.value as TypeQuestion;
-                            updateQuestion(q.id, {
-                              type,
-                              options:
-                                type === "qcm" && q.options.length === 0
-                                  ? [optionVide(), optionVide(), optionVide()]
-                                  : q.options,
-                            });
-                          }}
-                          className={`${inputClass} w-44 py-1 text-xs`}
-                        >
-                          {(
-                            Object.keys(LIBELLE_QUESTION) as TypeQuestion[]
-                          ).map((t) => (
-                            <option key={t} value={t}>
-                              {LIBELLE_QUESTION[t]}
-                            </option>
-                          ))}
-                        </select>
-                        <Button
-                          variant="danger"
-                          size="sm"
-                          icon={Trash2}
-                          onClick={() => removeQuestion(q.id)}
-                        >
-                          Supprimer
-                        </Button>
-                      </div>
-                    </div>
-                    <div className="mt-2">
-                      <label
-                        className="block text-xs text-slate"
-                        htmlFor={`enonce-${q.id}`}
-                      >
-                        Énoncé
-                      </label>
-                      <textarea
-                        id={`enonce-${q.id}`}
-                        rows={2}
-                        value={q.enonce}
-                        onChange={(e) =>
-                          updateQuestion(q.id, { enonce: e.target.value })
-                        }
-                        className={`${inputClass} mt-1`}
-                      />
-                    </div>
-                    <div className="mt-2 w-32">
-                      <label
-                        className="block text-xs text-slate"
-                        htmlFor={`bareme-${q.id}`}
-                      >
-                        Barème
-                      </label>
-                      <input
-                        id={`bareme-${q.id}`}
-                        type="number"
-                        min={0}
-                        step={0.5}
-                        value={q.bareme}
-                        onChange={(e) =>
-                          updateQuestion(q.id, {
-                            bareme: Number(e.target.value) || 0,
-                          })
-                        }
-                        className={`${inputClass} mt-1`}
-                      />
-                    </div>
 
-                    {q.type === "qcm" ? (
-                      <div className="mt-3">
-                        <p className="text-xs text-slate">
-                          Propositions — cochez celles qui sont correctes
-                        </p>
-                        <ul className="mt-2 space-y-2">
-                          {q.options.map((opt, j) => (
-                            <li key={j} className="flex items-center gap-2">
-                              <input
-                                type="checkbox"
-                                aria-label={`Proposition ${j + 1} correcte`}
-                                checked={opt.correcte}
-                                onChange={(e) =>
-                                  updateQuestion(q.id, {
-                                    options: q.options.map((o, k) =>
-                                      k === j
-                                        ? { ...o, correcte: e.target.checked }
-                                        : o,
-                                    ),
-                                  })
-                                }
-                                className="h-4 w-4 shrink-0 accent-forest"
-                              />
-                              <input
-                                value={opt.texte}
-                                aria-label={`Texte de la proposition ${j + 1}`}
-                                placeholder={`Proposition ${j + 1}`}
-                                onChange={(e) =>
-                                  updateQuestion(q.id, {
-                                    options: q.options.map((o, k) =>
-                                      k === j
-                                        ? { ...o, texte: e.target.value }
-                                        : o,
-                                    ),
-                                  })
-                                }
-                                className={inputClass}
-                              />
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                icon={Trash2}
-                                aria-label={`Supprimer la proposition ${j + 1}`}
-                                onClick={() =>
-                                  updateQuestion(q.id, {
-                                    options: q.options.filter((_, k) => k !== j),
-                                  })
-                                }
-                              >
-                                {""}
-                              </Button>
-                            </li>
-                          ))}
-                        </ul>
-                        {q.options.length < 2 ? (
-                          <p className="mt-2 text-xs text-danger">
-                            Un QCM demande au moins deux propositions.
-                          </p>
-                        ) : !q.options.some((o) => o.correcte) ? (
-                          <p className="mt-2 text-xs text-danger">
-                            Aucune proposition n&apos;est marquée correcte.
-                          </p>
-                        ) : null}
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          icon={Plus}
-                          className="mt-2"
-                          onClick={() =>
-                            updateQuestion(q.id, {
-                              options: [...q.options, optionVide()],
-                            })
-                          }
-                        >
-                          Ajouter une proposition
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="mt-2">
-                        <label
-                          className="block text-xs text-slate"
-                          htmlFor={`corrige-${q.id}`}
-                        >
-                          Corrigé
-                        </label>
-                        <textarea
-                          id={`corrige-${q.id}`}
-                          rows={2}
-                          value={q.corrige}
-                          onChange={(e) =>
-                            updateQuestion(q.id, { corrige: e.target.value })
-                          }
-                          className={`${inputClass} mt-1`}
-                        />
-                      </div>
-                    )}
+                {loading ? (
+                  <p className="mt-3 text-sm text-slate">
+                    Chargement du contrôle…
+                  </p>
+                ) : questions.length === 0 ? (
+                  <div className="mt-6 flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-paper px-6 py-10 text-center">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-mint">
+                      <svg
+                        className="h-6 w-6 text-forest"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        aria-hidden
+                      >
+                        <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
+                        <rect x="9" y="3" width="6" height="4" rx="1" />
+                        <path d="M9 12l2 2 4-4" />
+                      </svg>
+                    </div>
+                    <p className="mt-4 text-sm font-medium text-ink">
+                      Aucune question pour l&apos;instant
+                    </p>
+                    <p className="mt-1 text-sm text-slate">
+                      Générez un contrôle avec l&apos;IA pour préparer
+                      automatiquement les questions et le barème.
+                    </p>
+                    <Button
+                      icon={Sparkles}
+                      onClick={() => handleGenerate(false)}
+                      loading={busy}
+                      loadingLabel="Génération…"
+                      className="mt-5"
+                    >
+                      Générer un contrôle
+                    </Button>
                   </div>
-                ))}
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  icon={Plus}
-                  onClick={() => setQuestions((prev) => [...prev, newQuestion()])}
-                  className="mt-4"
-                >
-                  Ajouter une question
-                </Button>
-              </div>
-            )}
-          </div>
-        </div>
+                ) : (
+                  <div className="mt-3 space-y-4">
+                    {questions.map((q, i) => (
+                      <div
+                        key={q.id}
+                        className="rounded-lg border border-border p-3"
+                      >
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <span className="text-xs font-medium uppercase tracking-wide text-slate">
+                            Question {i + 1}
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <select
+                              aria-label={`Type de la question ${i + 1}`}
+                              value={q.type}
+                              onChange={(e) => {
+                                const type = e.target.value as TypeQuestion;
+                                updateQuestion(q.id, {
+                                  type,
+                                  options:
+                                    type === "qcm" && q.options.length === 0
+                                      ? [
+                                          optionVide(),
+                                          optionVide(),
+                                          optionVide(),
+                                        ]
+                                      : q.options,
+                                });
+                              }}
+                              className={`${inputClass} w-44 py-1 text-xs`}
+                            >
+                              {(
+                                Object.keys(LIBELLE_QUESTION) as TypeQuestion[]
+                              ).map((t) => (
+                                <option key={t} value={t}>
+                                  {LIBELLE_QUESTION[t]}
+                                </option>
+                              ))}
+                            </select>
+                            <Button
+                              variant="danger"
+                              size="sm"
+                              icon={Trash2}
+                              onClick={() => removeQuestion(q.id)}
+                            >
+                              Supprimer
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="mt-2">
+                          <label
+                            className="block text-xs text-slate"
+                            htmlFor={`enonce-${q.id}`}
+                          >
+                            Énoncé
+                          </label>
+                          <textarea
+                            id={`enonce-${q.id}`}
+                            rows={2}
+                            value={q.enonce}
+                            onChange={(e) =>
+                              updateQuestion(q.id, { enonce: e.target.value })
+                            }
+                            className={`${inputClass} mt-1`}
+                          />
+                        </div>
+                        <div className="mt-2 w-32">
+                          <label
+                            className="block text-xs text-slate"
+                            htmlFor={`bareme-${q.id}`}
+                          >
+                            Barème
+                          </label>
+                          <input
+                            id={`bareme-${q.id}`}
+                            type="number"
+                            min={0}
+                            step={0.5}
+                            value={q.bareme}
+                            onChange={(e) =>
+                              updateQuestion(q.id, {
+                                bareme: Number(e.target.value) || 0,
+                              })
+                            }
+                            className={`${inputClass} mt-1`}
+                          />
+                        </div>
 
-        <aside className="space-y-4">
-          <div className="rounded-xl border border-border bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-4">
-            <h2 className="text-sm font-medium text-ink">Actions</h2>
-            <div className="mt-3 flex flex-col gap-2">
-              <Button icon={Save} onClick={handleSave} disabled={busy || loading}>
-                Enregistrer
-              </Button>
-              <Button
-                variant="secondary"
-                size="sm"
-                icon={BadgeCheck}
-                onClick={handleValidate}
-                disabled={busy || statut === "valide"}
-              >
-                {statut === "valide" ? "Validé" : "Valider le contrôle"}
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                icon={Download}
-                onClick={handleDownloadPdf}
-                disabled={busy || questions.length === 0}
-              >
-                Exporter en PDF
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                icon={LinkIcon}
-                onClick={handleCopyLink}
-                disabled={!tokenPublic}
-              >
-                Copier le lien de passage
-              </Button>
-              <Button
-                variant="danger"
-                size="sm"
-                icon={Trash2}
-                onClick={() => setConfirmSuppression(true)}
-                disabled={!activeId}
-              >
-                Supprimer
-              </Button>
-              <Link
-                href={`/modules/${moduleId}/controle/correction?groupe=${groupeId}`}
-                className={btnGhostLink}
-              >
-                <Wand2 size={16} aria-hidden />
-                Assistant de correction
-              </Link>
-              <Link
-                href={`/modules/${moduleId}/controle/historique?groupe=${groupeId}`}
-                className={btnGhostLink}
-              >
-                <History size={16} aria-hidden />
-                Historique des modifications
-              </Link>
+                        {q.type === "qcm" ? (
+                          <div className="mt-3">
+                            <p className="text-xs text-slate">
+                              Propositions — cochez celles qui sont correctes
+                            </p>
+                            <ul className="mt-2 space-y-2">
+                              {q.options.map((opt, j) => (
+                                <li key={j} className="flex items-center gap-2">
+                                  <input
+                                    type="checkbox"
+                                    aria-label={`Proposition ${j + 1} correcte`}
+                                    checked={opt.correcte}
+                                    onChange={(e) =>
+                                      updateQuestion(q.id, {
+                                        options: q.options.map((o, k) =>
+                                          k === j
+                                            ? {
+                                                ...o,
+                                                correcte: e.target.checked,
+                                              }
+                                            : o,
+                                        ),
+                                      })
+                                    }
+                                    className="h-4 w-4 shrink-0 accent-forest"
+                                  />
+                                  <input
+                                    value={opt.texte}
+                                    aria-label={`Texte de la proposition ${j + 1}`}
+                                    placeholder={`Proposition ${j + 1}`}
+                                    onChange={(e) =>
+                                      updateQuestion(q.id, {
+                                        options: q.options.map((o, k) =>
+                                          k === j
+                                            ? { ...o, texte: e.target.value }
+                                            : o,
+                                        ),
+                                      })
+                                    }
+                                    className={inputClass}
+                                  />
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    icon={Trash2}
+                                    aria-label={`Supprimer la proposition ${j + 1}`}
+                                    onClick={() =>
+                                      updateQuestion(q.id, {
+                                        options: q.options.filter(
+                                          (_, k) => k !== j,
+                                        ),
+                                      })
+                                    }
+                                  >
+                                    {""}
+                                  </Button>
+                                </li>
+                              ))}
+                            </ul>
+                            {q.options.length < 2 ? (
+                              <p className="mt-2 text-xs text-danger">
+                                Un QCM demande au moins deux propositions.
+                              </p>
+                            ) : !q.options.some((o) => o.correcte) ? (
+                              <p className="mt-2 text-xs text-danger">
+                                Aucune proposition n&apos;est marquée correcte.
+                              </p>
+                            ) : null}
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              icon={Plus}
+                              className="mt-2"
+                              onClick={() =>
+                                updateQuestion(q.id, {
+                                  options: [...q.options, optionVide()],
+                                })
+                              }
+                            >
+                              Ajouter une proposition
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="mt-2">
+                            <label
+                              className="block text-xs text-slate"
+                              htmlFor={`corrige-${q.id}`}
+                            >
+                              Corrigé
+                            </label>
+                            <textarea
+                              id={`corrige-${q.id}`}
+                              rows={2}
+                              value={q.corrige}
+                              onChange={(e) =>
+                                updateQuestion(q.id, {
+                                  corrige: e.target.value,
+                                })
+                              }
+                              className={`${inputClass} mt-1`}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      icon={Plus}
+                      onClick={() =>
+                        setQuestions((prev) => [...prev, newQuestion()])
+                      }
+                      className="mt-4"
+                    >
+                      Ajouter une question
+                    </Button>
+                  </div>
+                )}
+              </div>
             </div>
-            <p className="mt-3 text-xs text-slate">
-              Statut :{" "}
-              <span className="font-medium">
-                {statut === "valide" ? "validé" : "brouillon"}
-              </span>
-            </p>
-          </div>
-        </aside>
-      </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_340px]">
+              <div className="space-y-4">
+                <div className="max-w-[640px] rounded-xl border border-border bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-4">
+                  <label
+                    htmlFor="titre"
+                    className="block text-sm font-medium text-ink"
+                  >
+                    Titre
+                  </label>
+                  <input
+                    id="titre"
+                    value={titre}
+                    onChange={(e) => setTitre(e.target.value)}
+                    className={`${inputClass} mt-1`}
+                  />
+                </div>
+                <div className="max-w-[640px] rounded-xl border border-border bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-4">
+                  <label
+                    htmlFor="consignes"
+                    className="block text-sm font-medium text-ink"
+                  >
+                    Consignes
+                  </label>
+                  <textarea
+                    id="consignes"
+                    rows={3}
+                    value={consignes}
+                    onChange={(e) => setConsignes(e.target.value)}
+                    className={`${inputClass} mt-1`}
+                  />
+                </div>
+              </div>
+              <aside className="space-y-4">
+                <div className="rounded-xl border border-border bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-4">
+                  <h2 className="text-sm font-medium text-ink">Actions</h2>
+                  <div className="mt-3 flex flex-col gap-2">
+                    <Button
+                      icon={Save}
+                      onClick={handleSave}
+                      disabled={busy || loading}
+                    >
+                      Enregistrer
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      icon={BadgeCheck}
+                      onClick={handleValidate}
+                      disabled={busy || statut === "valide"}
+                    >
+                      {statut === "valide" ? "Validé" : "Valider le contrôle"}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      icon={Download}
+                      onClick={handleDownloadPdf}
+                      disabled={busy || questions.length === 0}
+                    >
+                      Exporter en PDF
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      icon={LinkIcon}
+                      onClick={handleCopyLink}
+                      disabled={!tokenPublic}
+                    >
+                      Copier le lien de passage
+                    </Button>
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      icon={Trash2}
+                      onClick={() => setConfirmSuppression(true)}
+                      disabled={!activeId}
+                    >
+                      Supprimer
+                    </Button>
+                    <Link
+                      href={`/modules/${moduleId}/controle/correction?groupe=${groupeId}`}
+                      className={btnGhostLink}
+                    >
+                      <Wand2 size={16} aria-hidden />
+                      Assistant de correction
+                    </Link>
+                    <Link
+                      href={`/modules/${moduleId}/controle/historique?groupe=${groupeId}`}
+                      className={btnGhostLink}
+                    >
+                      <History size={16} aria-hidden />
+                      Historique des modifications
+                    </Link>
+                  </div>
+                  <p className="mt-3 text-xs text-slate">
+                    Statut :{" "}
+                    <span className="font-medium">
+                      {statut === "valide" ? "validé" : "brouillon"}
+                    </span>
+                  </p>
+                </div>
+              </aside>
+            </div>
+          )}
+
+          <NavigationEtapes
+            etape={etape}
+            onAller={setEtape}
+            peutAvancer={etape !== 3 || questions.length > 0}
+          />
+        </div>
       )}
 
       <ConfirmModal

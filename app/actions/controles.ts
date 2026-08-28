@@ -315,3 +315,85 @@ export async function getModuleAudit(
   if (error) throw new Error(error.message);
   return (data ?? []) as AuditEntry[];
 }
+
+
+export type SeanceCouverte = {
+  id: string;
+  date: string | null;
+  statut: string;
+  nature: "theorique" | "pratique" | null;
+  duree: number | null;
+  objectif: string | null;
+  contenu: string | null;
+};
+
+export type ContenuCouvert = {
+  seances: SeanceCouverte[];
+  heures: number;
+  /** Total du module, pour situer la part couverte par un contrôle continu. */
+  heuresModule: number;
+  seancesModule: number;
+};
+
+/**
+ * Contenu de référence d'un contrôle.
+ *
+ * Un contrôle continu porte sur ce qui a été fait à ce jour ; une épreuve de
+ * fin de module porte sur le module entier, y compris les séances à venir.
+ * Confondre les deux ferait interroger les stagiaires sur ce qu'ils n'ont pas
+ * encore vu, ou dispenserait l'EFM de la moitié du programme.
+ */
+export async function getContenuCouvert(
+  groupeId: string,
+  moduleId: string,
+  type: TypeControle,
+): Promise<ContenuCouvert> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("seances")
+    .select(
+      "id, date, statut, nature, duree_realisee, duree_prevue, objectif_operationnel, contenu_prevu, contenu_realise, created_at",
+    )
+    .eq("groupe_id", groupeId)
+    .eq("module_id", moduleId)
+    .order("date", { ascending: true, nullsFirst: false })
+    .order("created_at", { ascending: true });
+
+  if (error) throw new Error(error.message);
+
+  const toutes = (data ?? []) as unknown as {
+    id: string;
+    date: string | null;
+    statut: string;
+    nature: "theorique" | "pratique" | null;
+    duree_realisee: number | null;
+    duree_prevue: number | null;
+    objectif_operationnel: string | null;
+    contenu_prevu: string | null;
+    contenu_realise: string | null;
+  }[];
+
+  const retenues = type === "EFM" ? toutes : toutes.filter((s) => s.statut === "fait");
+
+  const duree = (s: (typeof toutes)[number]) =>
+    Number(s.duree_realisee ?? s.duree_prevue ?? 0);
+
+  return {
+    seances: retenues.map((s) => ({
+      id: s.id,
+      date: s.date,
+      statut: s.statut,
+      nature: s.nature,
+      duree: duree(s) || null,
+      objectif: s.objectif_operationnel,
+      contenu:
+        s.statut === "fait"
+          ? (s.contenu_realise ?? s.contenu_prevu)
+          : s.contenu_prevu,
+    })),
+    heures: retenues.reduce((t, s) => t + duree(s), 0),
+    heuresModule: toutes.reduce((t, s) => t + duree(s), 0),
+    seancesModule: toutes.length,
+  };
+}
