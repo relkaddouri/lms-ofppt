@@ -32,9 +32,22 @@ export type ControleCalendrier = {
   confirmee: boolean;
 };
 
+export type APlanifier = {
+  groupe_id: string;
+  groupeNom: string;
+  module_id: string;
+  moduleNom: string;
+  codeOperationnel: string | null;
+  seances: number;
+  heures: number;
+};
+
 export type Calendrier = {
   seances: SeanceCalendrier[];
   controles: ControleCalendrier[];
+  /** Séances sans date, regroupées par couple : le travail qui reste à poser. */
+  aPlanifier: APlanifier[];
+  seancesSansDate: number;
 };
 
 export async function getCalendrier(
@@ -43,7 +56,7 @@ export async function getCalendrier(
 ): Promise<Calendrier> {
   const supabase = await createClient();
 
-  const [seancesRes, controlesRes] = await Promise.all([
+  const [seancesRes, controlesRes, sansDateRes] = await Promise.all([
     supabase
       .from("seances")
       .select(
@@ -62,10 +75,46 @@ export async function getCalendrier(
         "id, module_id, titre, type, type_efm, date_prevue, date_administration, date_envoi_propositions, groupes(nom), modules(nom)",
       )
       .order("date_prevue", { nullsFirst: false }),
+    // Ce qui reste à poser dans le calendrier : sans ce compte, une grille
+    // vide laisse croire qu'il n'y a rien à faire.
+    supabase
+      .from("seances")
+      .select(
+        "groupe_id, module_id, duree_prevue, duree_realisee, groupes(nom), modules(nom, competences(code_operationnel))",
+      )
+      .is("date", null),
   ]);
 
   if (seancesRes.error) throw new Error(seancesRes.error.message);
   if (controlesRes.error) throw new Error(controlesRes.error.message);
+  if (sansDateRes.error) throw new Error(sansDateRes.error.message);
+
+  const groupes = new Map<string, APlanifier>();
+  for (const s of (sansDateRes.data ?? []) as unknown as {
+    groupe_id: string;
+    module_id: string;
+    duree_prevue: number | null;
+    duree_realisee: number | null;
+    groupes: { nom: string } | null;
+    modules: {
+      nom: string;
+      competences: { code_operationnel: string | null } | null;
+    } | null;
+  }[]) {
+    const cle = `${s.groupe_id}|${s.module_id}`;
+    const courant = groupes.get(cle) ?? {
+      groupe_id: s.groupe_id,
+      groupeNom: s.groupes?.nom ?? "—",
+      module_id: s.module_id,
+      moduleNom: s.modules?.nom ?? "—",
+      codeOperationnel: s.modules?.competences?.code_operationnel ?? null,
+      seances: 0,
+      heures: 0,
+    };
+    courant.seances += 1;
+    courant.heures += Number(s.duree_prevue ?? s.duree_realisee ?? 0);
+    groupes.set(cle, courant);
+  }
 
   const seances = (seancesRes.data ?? []) as unknown as (Omit<
     SeanceCalendrier,
@@ -88,6 +137,8 @@ export async function getCalendrier(
   })[];
 
   return {
+    aPlanifier: [...groupes.values()].sort((a, b) => b.seances - a.seances),
+    seancesSansDate: (sansDateRes.data ?? []).length,
     seances: seances.map((s) => ({
       id: s.id,
       groupe_id: s.groupe_id,

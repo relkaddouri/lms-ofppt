@@ -33,6 +33,8 @@ export default async function CalendrierPage({
       lundi={iso(lundi)}
       seances={calendrier.seances}
       controles={calendrier.controles}
+      aPlanifier={calendrier.aPlanifier}
+      seancesSansDate={calendrier.seancesSansDate}
     />
   );
 }
