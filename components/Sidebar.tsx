@@ -13,6 +13,7 @@ const navGroups = [
       { href: "/dashboard", label: "Tableau de bord" },
       { href: "/modules", label: "Modules" },
       { href: "/groupes", label: "Groupes" },
+      { href: "/calendrier", label: "Calendrier" },
     ],
   },
   {
@@ -65,6 +66,19 @@ function Icon({ name }: { name: string }) {
       <path d="M16 3.13a4 4 0 0 1 0 7.75" />
     </svg>
   );
+  if (name === "calendrier")
+    return (
+      <svg
+        className={className}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
+        <rect x="3" y="4" width="18" height="17" rx="2" />
+        <path d="M3 10h18M8 2v4M16 2v4" />
+      </svg>
+    );
   if (name === "parametres")
     return (
       <svg
