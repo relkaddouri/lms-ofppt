@@ -26,6 +26,7 @@ export default function ParametresHeuresForm({
   const toast = useToast();
   const [enCours, startTransition] = useTransition();
   const [annuelles, setAnnuelles] = useState(String(initial.heures_annuelles));
+  const [hebdo, setHebdo] = useState(String(initial.heures_hebdomadaires));
   const [supActives, setSupActives] = useState(initial.heures_sup_actives);
   const [supMensuel, setSupMensuel] = useState(String(initial.plafond_sup_mensuel));
   const [supAnnuel, setSupAnnuel] = useState(String(initial.plafond_sup_annuel));
@@ -35,6 +36,7 @@ export default function ParametresHeuresForm({
       try {
         await saveParametresFormateur({
           heures_annuelles: Number(annuelles) || 0,
+          heures_hebdomadaires: Number(hebdo) || 0,
           heures_sup_actives: supActives,
           plafond_sup_mensuel: Number(supMensuel) || 0,
           plafond_sup_annuel: Number(supAnnuel) || 0,
@@ -53,7 +55,7 @@ export default function ParametresHeuresForm({
         Sert au suivi cumulatif affiché sur le calendrier.
       </p>
 
-      <div className="mt-4 max-w-[280px]">
+      <div className="mt-4 grid gap-4 sm:grid-cols-2">
         <Input
           label="Volume horaire de l'année"
           type="number"
@@ -63,6 +65,16 @@ export default function ParametresHeuresForm({
           value={annuelles}
           onChange={(e) => setAnnuelles(e.target.value)}
           hint="910 h par défaut, conformément au cadre légal."
+        />
+        <Input
+          label="Masse horaire de la semaine"
+          type="number"
+          min={1}
+          max={60}
+          step={0.5}
+          value={hebdo}
+          onChange={(e) => setHebdo(e.target.value)}
+          hint="Au-delà, les heures sont comptées supplémentaires."
         />
       </div>
 

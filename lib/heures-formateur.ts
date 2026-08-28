@@ -14,6 +14,12 @@
  * contractuelle varie d'un formateur à l'autre et se saisit dans les
  * paramètres.
  */
+/**
+ * Cible hebdomadaire par défaut, quand aucune période n'en fixe une.
+ * 910 h réparties sur les 35 semaines travaillées d'une année de formation.
+ */
+export const CIBLE_PAR_DEFAUT = 26;
+
 export const PLAFONDS_PAR_DEFAUT = {
   annuel: 910,
   supMensuel: 30,
@@ -22,6 +28,8 @@ export const PLAFONDS_PAR_DEFAUT = {
 
 export type PlafondsFormateur = {
   heuresAnnuelles: number;
+  /** Cible hebdomadaire hors période de rythme déclarée. */
+  heuresHebdomadaires: number;
   heuresSupActives: boolean;
   plafondSupMensuel: number;
   plafondSupAnnuel: number;
@@ -29,16 +37,11 @@ export type PlafondsFormateur = {
 
 export const PLAFONDS_INITIAUX: PlafondsFormateur = {
   heuresAnnuelles: PLAFONDS_PAR_DEFAUT.annuel,
+  heuresHebdomadaires: CIBLE_PAR_DEFAUT,
   heuresSupActives: false,
   plafondSupMensuel: PLAFONDS_PAR_DEFAUT.supMensuel,
   plafondSupAnnuel: PLAFONDS_PAR_DEFAUT.supAnnuel,
 };
-
-/**
- * Cible hebdomadaire par défaut, quand aucune période n'en fixe une.
- * 910 h réparties sur les 35 semaines travaillées d'une année de formation.
- */
-export const CIBLE_PAR_DEFAUT = 26;
 
 /** Au-delà de ce taux d'occupation d'un plafond, on prévient. */
 const SEUIL_ALERTE = 0.9;
@@ -69,10 +72,20 @@ export type Plafond = {
   message: string | null;
 };
 
-/** Cible applicable à une semaine, d'après les périodes déclarées. */
-export function cibleDe(lundi: string, rythmes: Rythme[]): number {
+/**
+ * Cible applicable à une semaine.
+ *
+ * Une période de rythme déclarée l'emporte : c'est elle qui porte la variation
+ * de 27,5 h à 25 h au fil de l'année. À défaut, la cible hebdomadaire du
+ * formateur s'applique.
+ */
+export function cibleDe(
+  lundi: string,
+  rythmes: Rythme[],
+  parDefaut = CIBLE_PAR_DEFAUT,
+): number {
   const r = rythmes.find((x) => lundi >= x.date_debut && lundi <= x.date_fin);
-  return r ? Number(r.heures_cible) : CIBLE_PAR_DEFAUT;
+  return r ? Number(r.heures_cible) : parDefaut;
 }
 
 function arrondi(h: number): number {
@@ -82,11 +95,12 @@ function arrondi(h: number): number {
 export function construireSemaines(
   heuresParLundi: Map<string, number>,
   rythmes: Rythme[],
+  cibleParDefaut = CIBLE_PAR_DEFAUT,
 ): Semaine[] {
   return [...heuresParLundi.entries()]
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([lundi, heures]) => {
-      const cible = cibleDe(lundi, rythmes);
+      const cible = cibleDe(lundi, rythmes, cibleParDefaut);
       return {
         lundi,
         heures: arrondi(heures),

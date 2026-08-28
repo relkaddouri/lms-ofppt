@@ -6,6 +6,7 @@ import {
   construireSemaines,
   construireBilan,
   PLAFONDS_PAR_DEFAUT,
+  CIBLE_PAR_DEFAUT,
   type BilanHeures,
   type Rythme,
 } from "@/lib/heures-formateur";
@@ -63,12 +64,17 @@ export async function getBilanHeures(reference?: string): Promise<BilanHeures> {
   }
 
   const rythmes = (rythmesRes.data ?? []) as unknown as Rythme[];
-  const semaines = construireSemaines(parLundi, rythmes);
+  const semaines = construireSemaines(
+    parLundi,
+    rythmes,
+    parametres.heures_hebdomadaires,
+  );
 
   // Le suivi n'a de sens que pour le formateur connecté ; sans session, on
   // renvoie un bilan vide plutôt qu'un cumul d'un autre.
   const plafonds = {
     heuresAnnuelles: parametres.heures_annuelles,
+    heuresHebdomadaires: parametres.heures_hebdomadaires,
     heuresSupActives: parametres.heures_sup_actives,
     plafondSupMensuel: parametres.plafond_sup_mensuel,
     plafondSupAnnuel: parametres.plafond_sup_annuel,
@@ -107,6 +113,7 @@ export async function setRythme(
 
 export type ParametresFormateur = {
   heures_annuelles: number;
+  heures_hebdomadaires: number;
   heures_sup_actives: boolean;
   plafond_sup_mensuel: number;
   plafond_sup_annuel: number;
@@ -117,7 +124,7 @@ export async function getParametresFormateur(): Promise<ParametresFormateur> {
   const { data, error } = await supabase
     .from("parametres_formateur")
     .select(
-      "heures_annuelles, heures_sup_actives, plafond_sup_mensuel, plafond_sup_annuel",
+      "heures_annuelles, heures_hebdomadaires, heures_sup_actives, plafond_sup_mensuel, plafond_sup_annuel",
     )
     .maybeSingle();
 
@@ -126,6 +133,7 @@ export async function getParametresFormateur(): Promise<ParametresFormateur> {
   // Aucune ligne : le formateur n'a rien saisi, on part des valeurs du PRD.
   return {
     heures_annuelles: Number(data?.heures_annuelles ?? PLAFONDS_PAR_DEFAUT.annuel),
+    heures_hebdomadaires: Number(data?.heures_hebdomadaires ?? CIBLE_PAR_DEFAUT),
     heures_sup_actives: data?.heures_sup_actives ?? false,
     plafond_sup_mensuel: Number(
       data?.plafond_sup_mensuel ?? PLAFONDS_PAR_DEFAUT.supMensuel,
@@ -139,6 +147,9 @@ export async function getParametresFormateur(): Promise<ParametresFormateur> {
 export async function saveParametresFormateur(input: ParametresFormateur) {
   if (!(input.heures_annuelles > 0 && input.heures_annuelles <= 2000)) {
     throw new Error("Le volume annuel doit être compris entre 1 et 2000 heures.");
+  }
+  if (!(input.heures_hebdomadaires > 0 && input.heures_hebdomadaires <= 60)) {
+    throw new Error("La cible hebdomadaire doit être comprise entre 1 et 60 heures.");
   }
   if (input.heures_sup_actives) {
     if (input.plafond_sup_mensuel < 0 || input.plafond_sup_mensuel > 200) {
@@ -162,6 +173,7 @@ export async function saveParametresFormateur(input: ParametresFormateur) {
     {
       formateur_id: user.id,
       heures_annuelles: input.heures_annuelles,
+      heures_hebdomadaires: input.heures_hebdomadaires,
       heures_sup_actives: input.heures_sup_actives,
       plafond_sup_mensuel: input.plafond_sup_mensuel,
       plafond_sup_annuel: input.plafond_sup_annuel,
