@@ -32,7 +32,6 @@ import {
   BadgeCheck,
   Download,
   History,
-  Link as LinkIcon,
   Plus,
   Save,
   Sparkles,
@@ -94,9 +93,6 @@ export default function ControleManager({
   const [activeId, setActiveId] = useState<string | null>(
     controles[0]?.id ?? null,
   );
-  const [tokenPublic, setTokenPublic] = useState<string | null>(
-    controles[0]?.token_public ?? null,
-  );
   const [titre, setTitre] = useState("");
   const [consignes, setConsignes] = useState("");
   const [duree, setDuree] = useState(1);
@@ -130,7 +126,6 @@ export default function ControleManager({
     try {
       const c = await getControle(id);
       if (!c) return;
-      setTokenPublic(c.token_public);
       setTitre(c.titre ?? "");
       setConsignes(c.consignes ?? "");
       setDuree(Number(c.duree_heures) || 1);
@@ -163,7 +158,6 @@ export default function ControleManager({
 
   function handleNew() {
     setActiveId(null);
-    setTokenPublic(null);
     setLoading(false);
     setTitre(`Contrôle — ${moduleNom}`);
     setConsignes("");
@@ -339,20 +333,6 @@ export default function ControleManager({
     }
   }
 
-  async function handleCopyLink() {
-    if (!tokenPublic) {
-      toast("Enregistrez d'abord le contrôle pour générer son lien.", "error");
-      return;
-    }
-    try {
-      await navigator.clipboard.writeText(
-        `${window.location.origin}/public/controle/${tokenPublic}`,
-      );
-      toast("Lien de passage copié");
-    } catch {
-      toast("Impossible de copier le lien.", "error");
-    }
-  }
 
   function handleDownloadPdf() {
     setBusy(true);
@@ -969,15 +949,6 @@ export default function ControleManager({
                       disabled={busy || questions.length === 0}
                     >
                       Exporter en PDF
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      icon={LinkIcon}
-                      onClick={handleCopyLink}
-                      disabled={!tokenPublic}
-                    >
-                      Copier le lien de passage
                     </Button>
                     <Button
                       variant="danger"

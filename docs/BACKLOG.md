@@ -111,7 +111,7 @@ contrôles et produire les fiches est le travail manuel que cette application do
 
 ## Phase 4 — Espace stagiaire (compte authentifié obligatoire, mobile-first)
 
-- [ ] **4.1** — Prompt : *"Ajoute `'stagiaire'` aux rôles acceptés dans `profils.role`. Lie chaque `stagiaire` à une ligne `auth.users` (compte email/mot de passe). Supprime toute logique reposant sur `token_public` pour l'accès aux groupes et aux contrôles — la passation et la consultation se font uniquement via le compte stagiaire authentifié, jamais par lien public."*
+- [x] **4.1** — Prompt : *"Ajoute `'stagiaire'` aux rôles acceptés dans `profils.role`. Lie chaque `stagiaire` à une ligne `auth.users` (compte email/mot de passe). Supprime toute logique reposant sur `token_public` pour l'accès aux groupes et aux contrôles — la passation et la consultation se font uniquement via le compte stagiaire authentifié, jamais par lien public."*
   **Test** : crée un compte stagiaire test, connecte-toi, vérifie l'accès aux données de son propre groupe uniquement (pas celles d'un autre groupe).
 - [x] **4.2 — Interface** — Prompt : *"En respectant strictement docs/design_system.md et docs/conventions.md (section Espace stagiaire mobile-first) : crée le layout `/espace-stagiaire` avec barre de navigation inférieure fixe (Fil / Devoirs / Contrôles / Emploi du temps), cibles tactiles 44px minimum."*
   **Test** : ouvre sur un viewport mobile (375px), vérifie que la barre inférieure est utilisable au pouce.

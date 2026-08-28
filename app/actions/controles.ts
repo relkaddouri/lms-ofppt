@@ -21,13 +21,12 @@ export type Controle = {
   date_administration: string | null;
   format: FormatControle;
   statut: "brouillon" | "valide";
-  token_public: string;
   created_at: string;
 };
 
 const COLONNES_CONTROLE =
   "id, groupe_id, module_id, titre, consignes, duree_heures, type, type_efm, " +
-  "date_prevue, date_administration, format, statut, token_public, created_at";
+  "date_prevue, date_administration, format, statut, created_at";
 
 export type TypeQuestion = "qcm" | "ouverte" | "exercice";
 export type OptionQcm = { texte: string; correcte: boolean };

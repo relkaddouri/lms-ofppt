@@ -102,8 +102,8 @@ export default function CopiesManager({
         <p className="text-sm text-slate">Chargement des copies…</p>
       ) : passations.length === 0 ? (
         <p className="rounded-xl border border-border bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-4 text-sm text-slate">
-          Aucune copie soumise pour l&apos;instant. Partagez le lien de passage
-          pour collecter les réponses des stagiaires.
+          Aucune copie rendue pour l&apos;instant. Les stagiaires composent depuis
+          leur espace, une fois le contrôle validé.
         </p>
       ) : (
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-[340px_1fr]">

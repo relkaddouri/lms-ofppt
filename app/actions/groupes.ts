@@ -8,7 +8,6 @@ export type Groupe = {
   nom: string;
   date_debut: string | null;
   date_fin: string | null;
-  token_public: string;
   stagiaires?: { count: number }[];
 };
 

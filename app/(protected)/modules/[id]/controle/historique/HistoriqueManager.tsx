@@ -62,7 +62,7 @@ function ChangesList({
 
   const changed: { key: string; avant: unknown; apres: unknown }[] = [];
   for (const key of keys) {
-    if (key === "id" || key === "module_id" || key === "token_public") continue;
+    if (key === "id" || key === "module_id") continue;
     if (JSON.stringify(oldRow[key]) !== JSON.stringify(newRow[key])) {
       changed.push({ key, avant: oldRow[key], apres: newRow[key] });
     }
