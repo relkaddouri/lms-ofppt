@@ -35,7 +35,7 @@ export default async function LoginPage({
         <h1 className="font-display text-[28px] font-bold text-ink">
           Connexion
         </h1>
-        <p className="mt-1 text-sm text-slate">LMS OFPPT — Espace formateur</p>
+        <p className="mt-1 text-sm text-slate">LMS OFPPT</p>
 
         {params.error ? (
           <div
