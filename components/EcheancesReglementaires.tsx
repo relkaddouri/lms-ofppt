@@ -32,7 +32,7 @@ export default function EcheancesReglementaires({
         Échéances réglementaires
       </h2>
 
-      <ul className="mt-3 space-y-1.5">
+      <ul className="mt-3 grid gap-1.5 sm:grid-cols-2">
         {visibles.map((e, i) => {
           const retard = e.etat === "depasse";
           const presse = e.etat === "imminent";
@@ -89,16 +89,19 @@ export default function EcheancesReglementaires({
                         ? "aujourd'hui"
                         : `dans ${e.jours} jour${e.jours > 1 ? "s" : ""}`}
                   </span>
-                ) : e.detail ? (
-                  <span className="mt-0.5 block text-[11px] text-slate">
-                    {e.detail}
-                  </span>
                 ) : null}
               </Link>
             </li>
           );
         })}
       </ul>
+
+      {visibles.some((e) => e.etat === "inconnu") ? (
+        <p className="mt-2 text-[11px] text-slate">
+          Une échéance « à dater » attend que les séances suivant le contrôle
+          soient posées : les notes se rendent à la deuxième d&apos;entre elles.
+        </p>
+      ) : null}
     </section>
   );
 }

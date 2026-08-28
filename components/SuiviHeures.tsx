@@ -44,9 +44,66 @@ function Jauge({ p }: { p: Plafond }) {
  * masse légale annuelle ne dit rien du plafond mensuel d'heures
  * supplémentaires, ni de leur plafond annuel.
  */
-export default function SuiviHeures({ bilan }: { bilan: BilanHeures }) {
+export default function SuiviHeures({
+  bilan,
+  compact = false,
+}: {
+  bilan: BilanHeures;
+  /** En bandeau : l'essentiel sur une ligne, sans les jauges. */
+  compact?: boolean;
+}) {
   const s = bilan.semaineCourante;
   const alertes = bilan.plafonds.filter((p) => p.niveau !== "aucun");
+  const annuel = bilan.plafonds[0];
+
+  if (compact) {
+    return (
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-sm">
+        <span className="text-ink">
+          <span className="font-semibold">{formatHeures(s?.heures ?? 0)}</span>{" "}
+          <span className="text-slate">
+            cette semaine · cible {formatHeures(s?.cible ?? 0)}
+          </span>
+        </span>
+        {bilan.heuresSupActives && s && s.supplementaires > 0 ? (
+          <span className="font-medium text-info">
+            +{formatHeures(s.supplementaires)} sup.
+          </span>
+        ) : null}
+        {annuel ? (
+          <span className="flex items-center gap-2">
+            <span className="h-1.5 w-24 overflow-hidden rounded-full bg-border">
+              <span
+                className={`block h-full rounded-full ${
+                  annuel.niveau === "depasse"
+                    ? "bg-danger"
+                    : annuel.niveau === "proche"
+                      ? "bg-info"
+                      : "bg-forest"
+                }`}
+                style={{ width: `${Math.min(100, Math.round(annuel.taux * 100))}%` }}
+              />
+            </span>
+            <span className="whitespace-nowrap text-xs text-slate">
+              {formatHeures(annuel.valeur)} / {annuel.plafond} h sur l&apos;année
+            </span>
+          </span>
+        ) : null}
+        {alertes.map((p) => (
+          <span
+            key={p.libelle}
+            className={`rounded-md px-2 py-0.5 text-xs ${
+              p.niveau === "depasse"
+                ? "bg-danger/10 text-danger"
+                : "bg-info/10 text-info"
+            }`}
+          >
+            {p.message}
+          </span>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <section className="rounded-xl border border-border bg-surface p-4">

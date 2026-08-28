@@ -128,14 +128,10 @@ export default function CalendrierSemaine({
       </header>
 
       {/* Ce que la semaine représente, avant de la détailler. */}
-      <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-1 text-sm">
+      <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 rounded-xl border border-border bg-surface px-4 py-2.5 text-sm">
         <span className="text-ink">
           <span className="font-semibold">{seances.length}</span> séance
           {seances.length > 1 ? "s" : ""}
-        </span>
-        <span className="text-ink">
-          <span className="font-semibold">{formatHeures(heuresSemaine)}</span> de
-          cours
         </span>
         {controlesSemaine > 0 ? (
           <span className="text-ink">
@@ -146,6 +142,8 @@ export default function CalendrierSemaine({
         {groupesSemaine.length > 0 ? (
           <span className="text-slate">{groupesSemaine.join(", ")}</span>
         ) : null}
+        <span className="h-4 w-px bg-border" aria-hidden />
+        <SuiviHeures bilan={bilan} compact />
       </div>
 
       {afficherLegende ? (
@@ -161,7 +159,7 @@ export default function CalendrierSemaine({
         </div>
       ) : null}
 
-      <div className="mt-4 grid gap-6 2xl:grid-cols-[1fr_320px]">
+      <div className="mt-4">
         <div className="overflow-x-auto">
           {/* `table-fixed` donne aux six jours la même largeur : sans lui, le
               seul jour occupé écrasait les cinq autres. */}
@@ -311,7 +309,7 @@ export default function CalendrierSemaine({
                                       ? ` · ${s.codeOperationnel}`
                                       : ""}
                                   </span>
-                                  <span className="mt-0.5 block truncate text-[11px] text-slate">
+                                  <span className="mt-0.5 line-clamp-2 text-[11px] leading-snug text-slate">
                                     {s.objectif ?? s.moduleNom}
                                   </span>
                                 </Link>
@@ -329,102 +327,98 @@ export default function CalendrierSemaine({
           </table>
         </div>
 
-        {/* Ce qui n'est pas encore posé : c'est là que se trouve le travail. */}
-        <aside className="space-y-4">
-          <SuiviHeures bilan={bilan} />
-
+        <div className="mt-6 grid gap-4 lg:grid-cols-2">
           <EcheancesReglementaires
             echeances={echeances}
-            controleHref={(id) => `/modules/${
-              controles.find((c) => c.id === id)?.module_id ?? ""
-            }/controle`}
+            controleHref={(id) =>
+              `/modules/${controles.find((c) => c.id === id)?.module_id ?? ""}/controle`
+            }
           />
 
-          {seancesSansDate > 0 ? (
+          {/* « Sans date » est une seule idée : séances et contrôles la
+              partagent, ils tiennent dans le même bloc. */}
+          {seancesSansDate > 0 || controlesSansDate.length > 0 ? (
             <section className="rounded-xl border border-border bg-surface p-4">
-              <div className="flex items-start gap-2">
-                <CalendarPlus
-                  className="mt-0.5 h-4 w-4 shrink-0 text-slate"
-                  aria-hidden
-                />
-                <div className="min-w-0">
-                  <h2 className="text-sm font-medium text-ink">
-                    {seancesSansDate} séance{seancesSansDate > 1 ? "s" : ""} sans
-                    date
-                  </h2>
-                  <p className="mt-0.5 text-xs text-slate">
-                    Le plan de déroulement les a créées ; il reste à les poser
-                    dans la semaine.
+              <h2 className="flex items-center gap-1.5 text-sm font-medium text-ink">
+                <CalendarPlus className="h-4 w-4 text-slate" aria-hidden />
+                Reste à poser dans le calendrier
+              </h2>
+
+              {seancesSansDate > 0 ? (
+                <>
+                  <p className="mt-2 text-xs text-slate">
+                    {seancesSansDate} séance{seancesSansDate > 1 ? "s" : ""} créée
+                    {seancesSansDate > 1 ? "s" : ""} par le plan de déroulement
                   </p>
-                </div>
-              </div>
-              <ul className="mt-3 space-y-1.5">
-                {aPlanifier.map((p) => (
-                  <li key={`${p.groupe_id}|${p.module_id}`}>
-                    <Link
-                      href={`/groupes/${p.groupe_id}/progression`}
-                      className="flex items-baseline justify-between gap-2 rounded-lg border border-border px-2.5 py-1.5 hover:border-forest/50"
-                    >
-                      <span className="min-w-0">
-                        <span className="text-sm text-ink">{p.groupeNom}</span>
-                        {p.codeOperationnel ? (
-                          <span className="ml-1 font-mono text-xs text-forest">
-                            {p.codeOperationnel}
+                  <ul className="mt-2 space-y-1.5">
+                    {aPlanifier.map((p) => (
+                      <li key={`${p.groupe_id}|${p.module_id}`}>
+                        <Link
+                          href={`/groupes/${p.groupe_id}/progression`}
+                          className="flex items-baseline justify-between gap-2 rounded-lg border border-border px-2.5 py-1.5 hover:border-forest/50"
+                        >
+                          <span className="min-w-0 truncate text-sm text-ink">
+                            {p.groupeNom}
+                            {p.codeOperationnel ? (
+                              <span className="ml-1 text-xs text-forest">
+                                {p.codeOperationnel}
+                              </span>
+                            ) : null}
                           </span>
-                        ) : null}
-                      </span>
-                      <span className="shrink-0 font-mono text-xs text-slate">
-                        {p.seances} · {formatHeures(p.heures)}
-                      </span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ) : null}
+                          <span className="shrink-0 whitespace-nowrap text-xs text-slate">
+                            {p.seances} séances · {formatHeures(p.heures)}
+                          </span>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              ) : null}
 
-          {controlesSansDate.length > 0 ? (
-            <section className="rounded-xl border border-border bg-surface p-4">
-              <h2 className="text-sm font-medium text-ink">
-                {controlesSansDate.length} contrôle
-                {controlesSansDate.length > 1 ? "s" : ""} sans date
-              </h2>
-              <ul className="mt-2 space-y-1.5">
-                {controlesSansDate.map((c) => (
-                  <li key={c.id}>
-                    <Link
-                      href={`/modules/${c.module_id}/controle`}
-                      className="flex items-baseline gap-2 rounded-lg border border-dashed border-slate/50 px-2.5 py-1.5 hover:border-forest"
-                    >
-                      <Badge tone={c.type === "EFM" ? "danger" : "info"}>
-                        {c.type}
-                      </Badge>
-                      <span className="min-w-0 truncate text-xs text-ink">
-                        {c.groupeNom} · {c.titre ?? c.moduleNom}
-                      </span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
+              {controlesSansDate.length > 0 ? (
+                <>
+                  <p className="mt-3 text-xs text-slate">
+                    {controlesSansDate.length} contrôle
+                    {controlesSansDate.length > 1 ? "s" : ""} sans date
+                  </p>
+                  <ul className="mt-2 flex flex-wrap gap-1.5">
+                    {controlesSansDate.map((c) => (
+                      <li key={c.id}>
+                        <Link
+                          href={`/modules/${c.module_id}/controle`}
+                          title={`${c.groupeNom} — ${c.titre ?? c.moduleNom}`}
+                          className="flex max-w-[220px] items-center gap-1.5 rounded-lg border border-dashed border-slate/50 px-2 py-1 hover:border-forest"
+                        >
+                          <Badge tone={c.type === "EFM" ? "danger" : "info"}>
+                            {c.type}
+                          </Badge>
+                          <span className="truncate text-xs text-ink">
+                            {c.groupeNom} · {c.titre ?? c.moduleNom}
+                          </span>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              ) : null}
             </section>
           ) : null}
+        </div>
 
-          {regionales.length > 0 ? (
-            <section>
-              <h2 className="text-sm font-medium text-ink">
-                Épreuves régionales
-              </h2>
-              <p className="mt-0.5 text-xs text-slate">
-                Dates arrêtées par la région : elles se saisissent.
-              </p>
-              <div className="mt-2 space-y-3">
-                {regionales.map((c) => (
-                  <EfmRegionalForm key={c.id} controle={c} />
-                ))}
-              </div>
-            </section>
-          ) : null}
-        </aside>
+        {regionales.length > 0 ? (
+          <section className="mt-4">
+            <h2 className="text-sm font-medium text-ink">Épreuves régionales</h2>
+            <p className="mt-0.5 text-xs text-slate">
+              Dates arrêtées par la région : elles se saisissent.
+            </p>
+            <div className="mt-2 space-y-3">
+              {regionales.map((c) => (
+                <EfmRegionalForm key={c.id} controle={c} />
+              ))}
+            </div>
+          </section>
+        ) : null}
+
       </div>
     </div>
   );
