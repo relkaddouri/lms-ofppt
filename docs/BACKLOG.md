@@ -104,7 +104,7 @@ contrôles et produire les fiches est le travail manuel que cette application do
   **Test** : vérifie visuellement la distinction pointillé/plein sur un module EFML et un module EFMR.
 - [x] **3.6** — Prompt : *"Ajoute le suivi cumulatif des heures dispensées par le formateur (semaine/mois/année), avec distinction heures normales/supplémentaires, et alerte si le cumul approche 910h/an, 30h supplémentaires/mois, ou 260h supplémentaires/an."*
   **Test** : simule un cumul dépassant 25h sur une semaine, vérifie que l'alerte se déclenche au bon seuil.
-- [ ] **3.7** — Prompt : *"Ajoute les rappels calendaires liés aux échéances réglementaires : restitution de notes CC à la 2ème séance suivante, préparation EFM à J-20 avant validation commission, restitution EFM à J+10, affichage résultats à J+15."*
+- [x] **3.7** — Prompt : *"Ajoute les rappels calendaires liés aux échéances réglementaires : restitution de notes CC à la 2ème séance suivante, préparation EFM à J-20 avant validation commission, restitution EFM à J+10, affichage résultats à J+15."*
   **Test** : crée un CC avec une date de séance suivante connue, vérifie qu'un rappel apparaît à la bonne échéance.
 
 ---

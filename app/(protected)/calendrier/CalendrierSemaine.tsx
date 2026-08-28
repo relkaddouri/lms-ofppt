@@ -13,6 +13,8 @@ import type {
 } from "@/app/actions/calendrier";
 import EfmRegionalForm from "./EfmRegionalForm";
 import SuiviHeures from "@/components/SuiviHeures";
+import EcheancesReglementaires from "@/components/EcheancesReglementaires";
+import type { Echeance } from "@/lib/echeances";
 import type { BilanHeures } from "@/lib/heures-formateur";
 import { CalendarPlus, ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -39,6 +41,7 @@ export default function CalendrierSemaine({
   aPlanifier,
   seancesSansDate,
   bilan,
+  echeances,
 }: {
   lundi: string;
   seances: SeanceCalendrier[];
@@ -46,6 +49,7 @@ export default function CalendrierSemaine({
   aPlanifier: APlanifier[];
   seancesSansDate: number;
   bilan: BilanHeures;
+  echeances: Echeance[];
 }) {
   const router = useRouter();
   const aujourdhui = iso(new Date());
@@ -328,6 +332,13 @@ export default function CalendrierSemaine({
         {/* Ce qui n'est pas encore posé : c'est là que se trouve le travail. */}
         <aside className="space-y-4">
           <SuiviHeures bilan={bilan} />
+
+          <EcheancesReglementaires
+            echeances={echeances}
+            controleHref={(id) => `/modules/${
+              controles.find((c) => c.id === id)?.module_id ?? ""
+            }/controle`}
+          />
 
           {seancesSansDate > 0 ? (
             <section className="rounded-xl border border-border bg-surface p-4">

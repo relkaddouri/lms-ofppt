@@ -1,5 +1,6 @@
 import { getCalendrier } from "@/app/actions/calendrier";
 import { getBilanHeures } from "@/app/actions/heures";
+import { getEcheances } from "@/app/actions/echeances";
 import CalendrierSemaine from "./CalendrierSemaine";
 
 /** Lundi de la semaine contenant la date donnée. */
@@ -27,9 +28,10 @@ export default async function CalendrierPage({
   const dimanche = new Date(lundi);
   dimanche.setDate(lundi.getDate() + 6);
 
-  const [calendrier, bilan] = await Promise.all([
+  const [calendrier, bilan, echeances] = await Promise.all([
     getCalendrier(iso(lundi), iso(dimanche)),
     getBilanHeures(),
+    getEcheances(),
   ]);
 
   return (
@@ -40,6 +42,7 @@ export default async function CalendrierPage({
       aPlanifier={calendrier.aPlanifier}
       seancesSansDate={calendrier.seancesSansDate}
       bilan={bilan}
+      echeances={echeances}
     />
   );
 }
