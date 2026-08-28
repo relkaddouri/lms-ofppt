@@ -14,9 +14,9 @@ function Jauge({ p }: { p: Plafond }) {
   return (
     <div>
       <div className="flex items-baseline justify-between gap-2">
-        <span className="text-xs text-slate">{p.libelle}</span>
+        <span className="min-w-0 text-xs text-slate">{p.libelle}</span>
         <span
-          className={`font-mono text-xs ${
+          className={`shrink-0 whitespace-nowrap text-xs tabular-nums ${
             p.niveau === "depasse" ? "font-semibold text-danger" : "text-ink"
           }`}
         >
@@ -61,7 +61,7 @@ export default function SuiviHeures({ bilan }: { bilan: BilanHeures }) {
             cette semaine · cible {formatHeures(s?.cible ?? 0)}
           </span>
         </span>
-        {s && s.supplementaires > 0 ? (
+        {bilan.heuresSupActives && s && s.supplementaires > 0 ? (
           <span className="text-sm font-medium text-info">
             +{formatHeures(s.supplementaires)} supplémentaires
           </span>
@@ -98,8 +98,10 @@ export default function SuiviHeures({ bilan }: { bilan: BilanHeures }) {
 
       <p className="mt-3 text-[11px] text-slate">
         Calculé sur les séances marquées faites, du 1<sup>er</sup> septembre au
-        31 août. Au-delà de la cible de la semaine, les heures sont comptées
-        supplémentaires.
+        31 août.
+        {bilan.heuresSupActives
+          ? " Au-delà de la cible de la semaine, les heures sont comptées supplémentaires."
+          : null}
       </p>
     </section>
   );

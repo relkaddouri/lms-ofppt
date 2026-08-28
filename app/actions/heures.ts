@@ -1,9 +1,11 @@
 "use server";
 
 import { createClient, getUser } from "@/lib/supabase/server";
+import { revalidatePath } from "next/cache";
 import {
   construireSemaines,
   construireBilan,
+  PLAFONDS_PAR_DEFAUT,
   type BilanHeures,
   type Rythme,
 } from "@/lib/heures-formateur";
@@ -32,7 +34,7 @@ export async function getBilanHeures(reference?: string): Promise<BilanHeures> {
   const maintenant = reference ? new Date(`${reference}T12:00:00Z`) : new Date();
   const { debut, fin } = anneeFormation(maintenant);
 
-  const [seancesRes, rythmesRes] = await Promise.all([
+  const [seancesRes, rythmesRes, parametres] = await Promise.all([
     // Seules les séances faites comptent : une séance planifiée n'a été
     // dispensée par personne.
     supabase
@@ -46,6 +48,7 @@ export async function getBilanHeures(reference?: string): Promise<BilanHeures> {
       .from("rythmes_hebdomadaires")
       .select("date_debut, date_fin, heures_cible")
       .order("date_debut"),
+    getParametresFormateur(),
   ]);
 
   if (seancesRes.error) throw new Error(seancesRes.error.message);
@@ -64,14 +67,20 @@ export async function getBilanHeures(reference?: string): Promise<BilanHeures> {
 
   // Le suivi n'a de sens que pour le formateur connecté ; sans session, on
   // renvoie un bilan vide plutôt qu'un cumul d'un autre.
-  if (!user) {
-    return construireBilan([], lundiDe(maintenant), maintenant.toISOString().slice(0, 7));
-  }
+  const plafonds = {
+    heuresAnnuelles: parametres.heures_annuelles,
+    heuresSupActives: parametres.heures_sup_actives,
+    plafondSupMensuel: parametres.plafond_sup_mensuel,
+    plafondSupAnnuel: parametres.plafond_sup_annuel,
+  };
 
+  // Le suivi n'a de sens que pour le formateur connecté ; sans session, on
+  // renvoie un bilan vide plutôt qu'un cumul d'un autre.
   return construireBilan(
-    semaines,
+    user ? semaines : [],
     lundiDe(maintenant),
     maintenant.toISOString().slice(0, 7),
+    plafonds,
   );
 }
 
@@ -94,4 +103,74 @@ export async function setRythme(
     heures_cible: heuresCible,
   });
   if (error) throw new Error(error.message);
+}
+
+export type ParametresFormateur = {
+  heures_annuelles: number;
+  heures_sup_actives: boolean;
+  plafond_sup_mensuel: number;
+  plafond_sup_annuel: number;
+};
+
+export async function getParametresFormateur(): Promise<ParametresFormateur> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("parametres_formateur")
+    .select(
+      "heures_annuelles, heures_sup_actives, plafond_sup_mensuel, plafond_sup_annuel",
+    )
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+
+  // Aucune ligne : le formateur n'a rien saisi, on part des valeurs du PRD.
+  return {
+    heures_annuelles: Number(data?.heures_annuelles ?? PLAFONDS_PAR_DEFAUT.annuel),
+    heures_sup_actives: data?.heures_sup_actives ?? false,
+    plafond_sup_mensuel: Number(
+      data?.plafond_sup_mensuel ?? PLAFONDS_PAR_DEFAUT.supMensuel,
+    ),
+    plafond_sup_annuel: Number(
+      data?.plafond_sup_annuel ?? PLAFONDS_PAR_DEFAUT.supAnnuel,
+    ),
+  };
+}
+
+export async function saveParametresFormateur(input: ParametresFormateur) {
+  if (!(input.heures_annuelles > 0 && input.heures_annuelles <= 2000)) {
+    throw new Error("Le volume annuel doit être compris entre 1 et 2000 heures.");
+  }
+  if (input.heures_sup_actives) {
+    if (input.plafond_sup_mensuel < 0 || input.plafond_sup_mensuel > 200) {
+      throw new Error("Le plafond mensuel doit être compris entre 0 et 200 heures.");
+    }
+    if (input.plafond_sup_annuel < 0 || input.plafond_sup_annuel > 1000) {
+      throw new Error("Le plafond annuel doit être compris entre 0 et 1000 heures.");
+    }
+    if (input.plafond_sup_annuel < input.plafond_sup_mensuel) {
+      throw new Error(
+        "Le plafond annuel ne peut pas être inférieur au plafond mensuel.",
+      );
+    }
+  }
+
+  const user = await getUser();
+  if (!user) throw new Error("Authentification requise.");
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("parametres_formateur").upsert(
+    {
+      formateur_id: user.id,
+      heures_annuelles: input.heures_annuelles,
+      heures_sup_actives: input.heures_sup_actives,
+      plafond_sup_mensuel: input.plafond_sup_mensuel,
+      plafond_sup_annuel: input.plafond_sup_annuel,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "formateur_id" },
+  );
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/parametres");
+  revalidatePath("/calendrier");
 }

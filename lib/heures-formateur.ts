@@ -7,12 +7,32 @@
  * rester sous l'un ne dit rien des deux autres.
  */
 
-/** Masse horaire légale annuelle, en heures. */
-export const PLAFOND_ANNUEL = 910;
-/** Heures supplémentaires : plafond mensuel. */
-export const PLAFOND_SUP_MENSUEL = 30;
-/** Heures supplémentaires : plafond annuel. */
-export const PLAFOND_SUP_ANNUEL = 260;
+/**
+ * Valeurs par défaut du PRD §4.10.
+ *
+ * Ce sont des points de départ, pas des constantes du produit : la charge
+ * contractuelle varie d'un formateur à l'autre et se saisit dans les
+ * paramètres.
+ */
+export const PLAFONDS_PAR_DEFAUT = {
+  annuel: 910,
+  supMensuel: 30,
+  supAnnuel: 260,
+} as const;
+
+export type PlafondsFormateur = {
+  heuresAnnuelles: number;
+  heuresSupActives: boolean;
+  plafondSupMensuel: number;
+  plafondSupAnnuel: number;
+};
+
+export const PLAFONDS_INITIAUX: PlafondsFormateur = {
+  heuresAnnuelles: PLAFONDS_PAR_DEFAUT.annuel,
+  heuresSupActives: false,
+  plafondSupMensuel: PLAFONDS_PAR_DEFAUT.supMensuel,
+  plafondSupAnnuel: PLAFONDS_PAR_DEFAUT.supAnnuel,
+};
 
 /**
  * Cible hebdomadaire par défaut, quand aucune période n'en fixe une.
@@ -102,6 +122,8 @@ function evaluer(
 }
 
 export type BilanHeures = {
+  /** Recopié du paramétrage : le suivi masque les heures sup si elles sont inactives. */
+  heuresSupActives: boolean;
   semaines: Semaine[];
   semaineCourante: Semaine | null;
   /** Heures supplémentaires du mois en cours. */
@@ -115,6 +137,7 @@ export function construireBilan(
   semaines: Semaine[],
   lundiCourant: string,
   moisCourant: string,
+  plafonds: PlafondsFormateur = PLAFONDS_INITIAUX,
 ): BilanHeures {
   const semaineCourante = semaines.find((s) => s.lundi === lundiCourant) ?? null;
 
@@ -127,40 +150,46 @@ export function construireBilan(
   const totalAnnuel = semaines.reduce((t, s) => t + s.heures, 0);
   const supAnnuel = semaines.reduce((t, s) => t + s.supplementaires, 0);
 
-  const plafonds: Plafond[] = [
+  const jauges: Plafond[] = [
     evaluer(
       "Masse horaire annuelle",
       totalAnnuel,
-      PLAFOND_ANNUEL,
-      `Vous approchez des ${PLAFOND_ANNUEL} h légales.`,
-      `Les ${PLAFOND_ANNUEL} h légales sont dépassées : le surplus doit être couvert par des heures supplémentaires.`,
-    ),
-    evaluerSupMensuel(supMois),
-    evaluer(
-      "Heures supplémentaires sur l'année",
-      supAnnuel,
-      PLAFOND_SUP_ANNUEL,
-      `Vous approchez du plafond annuel de ${PLAFOND_SUP_ANNUEL} h supplémentaires.`,
-      `Le plafond annuel de ${PLAFOND_SUP_ANNUEL} h supplémentaires est dépassé.`,
+      plafonds.heuresAnnuelles,
+      `Vous approchez de vos ${plafonds.heuresAnnuelles} h annuelles.`,
+      plafonds.heuresSupActives
+        ? `Vos ${plafonds.heuresAnnuelles} h annuelles sont dépassées : le surplus relève des heures supplémentaires.`
+        : `Vos ${plafonds.heuresAnnuelles} h annuelles sont dépassées.`,
     ),
   ];
 
+  // Sans heures supplémentaires déclarées, leurs deux plafonds n'ont rien à
+  // dire : les afficher à zéro n'informerait de rien.
+  if (plafonds.heuresSupActives) {
+    jauges.push(
+      evaluer(
+        "Heures supplémentaires ce mois",
+        supMois,
+        plafonds.plafondSupMensuel,
+        `Vous approchez du plafond mensuel de ${plafonds.plafondSupMensuel} h supplémentaires.`,
+        `Le plafond mensuel de ${plafonds.plafondSupMensuel} h supplémentaires est dépassé.`,
+      ),
+      evaluer(
+        "Heures supplémentaires sur l'année",
+        supAnnuel,
+        plafonds.plafondSupAnnuel,
+        `Vous approchez du plafond annuel de ${plafonds.plafondSupAnnuel} h supplémentaires.`,
+        `Le plafond annuel de ${plafonds.plafondSupAnnuel} h supplémentaires est dépassé.`,
+      ),
+    );
+  }
+
   return {
+    heuresSupActives: plafonds.heuresSupActives,
     semaines,
     semaineCourante,
     supMois: arrondi(supMois),
     totalAnnuel: arrondi(totalAnnuel),
     supAnnuel: arrondi(supAnnuel),
-    plafonds,
+    plafonds: jauges,
   };
-}
-
-function evaluerSupMensuel(supMois: number): Plafond {
-  return evaluer(
-    "Heures supplémentaires ce mois",
-    supMois,
-    PLAFOND_SUP_MENSUEL,
-    `Vous approchez du plafond mensuel de ${PLAFOND_SUP_MENSUEL} h supplémentaires.`,
-    `Le plafond mensuel de ${PLAFOND_SUP_MENSUEL} h supplémentaires est dépassé.`,
-  );
 }
