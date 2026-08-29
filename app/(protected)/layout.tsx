@@ -1,4 +1,5 @@
 import { getUser, getCurrentUserRole } from "@/lib/supabase/server";
+import { getCompteurNotifications } from "@/app/actions/dashboard";
 import { redirect } from "next/navigation";
 import AppShell from "@/components/AppShell";
 
@@ -22,8 +23,14 @@ export default async function ProtectedLayout({
     redirect("/espace-stagiaire/fil");
   }
 
+  const notifications = await getCompteurNotifications();
+
   return (
-    <AppShell email={user.email ?? null} role={role}>
+    <AppShell
+      email={user.email ?? null}
+      role={role}
+      notifications={notifications}
+    >
       {children}
     </AppShell>
   );

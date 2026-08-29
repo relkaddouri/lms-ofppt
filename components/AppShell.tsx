@@ -7,10 +7,12 @@ import Topbar from "./Topbar";
 export default function AppShell({
   email,
   role,
+  notifications = 0,
   children,
 }: {
   email: string | null;
   role: string | null;
+  notifications?: number;
   children: React.ReactNode;
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -30,7 +32,11 @@ export default function AppShell({
         />
       ) : null}
       <div className="flex min-h-screen flex-1 flex-col">
-        <Topbar email={email} onMenuClick={() => setSidebarOpen(true)} />
+        <Topbar
+          email={email}
+          notifications={notifications}
+          onMenuClick={() => setSidebarOpen(true)}
+        />
         <main className="mx-auto w-full max-w-[1200px] flex-1">
           {children}
         </main>

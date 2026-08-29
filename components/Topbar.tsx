@@ -1,13 +1,16 @@
 "use client";
 
-import { Menu } from "lucide-react";
+import { Bell, Menu, Search } from "lucide-react";
 import Avatar from "./ui/Avatar";
 
 export default function Topbar({
   email,
+  notifications = 0,
   onMenuClick,
 }: {
   email: string | null;
+  /** Compteur du badge de la cloche. Zéro tant qu'aucune source ne l'alimente. */
+  notifications?: number;
   onMenuClick: () => void;
 }) {
   return (
@@ -28,8 +31,37 @@ export default function Topbar({
       </div>
 
       <div className="flex items-center gap-2.5">
-        <span className="hidden text-[13px] text-slate sm:block">{email}</span>
+        {/* Recherche et notifications sont dans la maquette : elles restent
+            visibles. Leur fonction viendra avec son propre atome — la
+            recherche au lot 3 de la revue, le panneau de notifications avec
+            son écran dédié. En attendant elles sont inertes, pas absentes. */}
+        <button
+          type="button"
+          disabled
+          aria-label="Rechercher"
+          title="Recherche — disponible prochainement"
+          className="flex h-10 w-10 items-center justify-center rounded-[10px] border border-border bg-surface text-slate-2 disabled:cursor-not-allowed disabled:text-muted"
+        >
+          <Search size={18} strokeWidth={2} aria-hidden />
+        </button>
+
+        <button
+          type="button"
+          disabled
+          aria-label={`Notifications (${notifications})`}
+          title="Notifications — disponible prochainement"
+          className="relative flex h-10 w-10 items-center justify-center rounded-[10px] border border-border bg-surface text-slate-2 disabled:cursor-not-allowed disabled:text-muted"
+        >
+          <Bell size={18} strokeWidth={2} aria-hidden />
+          {notifications > 0 ? (
+            <span className="absolute -right-[5px] -top-[5px] flex h-[19px] min-w-[19px] items-center justify-center rounded-full border-2 border-surface bg-coral px-1 font-mono text-[11px] font-semibold text-white">
+              {notifications}
+            </span>
+          ) : null}
+        </button>
+
         <span className="mx-1 hidden h-6 w-0.5 bg-separator sm:block" />
+        <span className="hidden text-[13px] text-slate sm:block">{email}</span>
         <Avatar prenom={email ?? "F"} />
       </div>
     </header>

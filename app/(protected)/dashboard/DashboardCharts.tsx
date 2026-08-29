@@ -4,6 +4,7 @@ import {
   Area,
   AreaChart,
   CartesianGrid,
+  Line,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -13,53 +14,43 @@ import { theme } from "@/lib/theme";
 import type { EvolutionPoint } from "@/app/actions/dashboard";
 
 /**
- * Évolution de la progression, en aire pleine.
+ * Progression réalisée contre progression attendue.
  *
- * La maquette (`Tableau de bord formateur v2.dc.html`) trace une aire
- * `#2E3B4E` à 7 % sous une ligne de 2,5 px de la même couleur. Le dégradé
- * vert de la v2 n'existe plus : les écrans livrés n'emploient aucun dégradé.
- *
- * Le graphique en barres « Avancement par groupe » a disparu avec lui — la
- * carte « Groupes par urgence » porte déjà la même information, chiffrée, et
- * la maquette ne garde que celle-là.
+ * Fidèle à `Tableau de bord formateur v2.dc.html` : aire `--ofppt-ink` à 7 %
+ * sous une ligne de 2,5 px, et une ligne pointillée `--muted` de 2 px pour le
+ * prévisionnel. Aucun dégradé — les écrans livrés n'en emploient nulle part.
+ * L'axe vertical est en pourcentage, de 0 à 100.
  */
 export default function DashboardCharts({
-  evolution,
+  points,
 }: {
-  evolution: EvolutionPoint[];
+  points: EvolutionPoint[];
 }) {
-  const donnees = evolution.map((e) => ({
-    date: e.label,
-    totalFait: e.totalFait,
-  }));
-
   return (
-    <div className="h-[260px] w-full">
+    <div className="h-[220px] w-full">
       <ResponsiveContainer width="100%" height="100%">
-        <AreaChart
-          data={donnees}
-          margin={{ top: 8, right: 8, bottom: 0, left: -18 }}
-        >
-          <CartesianGrid
-            stroke={theme.separator}
-            strokeDasharray="0"
-            vertical={false}
-          />
+        <AreaChart data={points} margin={{ top: 8, right: 8, bottom: 0, left: -20 }}>
+          <CartesianGrid stroke={theme.separator} vertical={false} />
           <XAxis
-            dataKey="date"
+            dataKey="label"
             tick={{ fontSize: 12, fill: theme.slateLight }}
             axisLine={false}
             tickLine={false}
+            minTickGap={24}
           />
           <YAxis
-            allowDecimals={false}
+            domain={[0, 100]}
+            ticks={[0, 25, 50, 75, 100]}
             tick={{ fontSize: 12, fill: theme.slateLight }}
             axisLine={false}
             tickLine={false}
           />
           <Tooltip
             cursor={{ stroke: theme.borderStrong, strokeWidth: 1 }}
-            formatter={(value) => [`${value} séance(s)`, "Cumul fait"]}
+            formatter={(valeur, nom) => [
+              `${valeur} %`,
+              nom === "realise" ? "Réalisé" : "Prévisionnel",
+            ]}
             contentStyle={{
               borderRadius: 10,
               border: `1px solid ${theme.border}`,
@@ -69,13 +60,22 @@ export default function DashboardCharts({
           />
           <Area
             type="linear"
-            dataKey="totalFait"
+            dataKey="realise"
             stroke={theme.ink}
             strokeWidth={2.5}
             strokeLinejoin="round"
             strokeLinecap="round"
             fill={theme.ink}
             fillOpacity={0.07}
+            dot={false}
+          />
+          <Line
+            type="linear"
+            dataKey="previsionnel"
+            stroke={theme.muted}
+            strokeWidth={2}
+            strokeDasharray="5 5"
+            strokeLinecap="round"
             dot={false}
           />
         </AreaChart>

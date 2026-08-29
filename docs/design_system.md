@@ -97,6 +97,7 @@ Identité "tableau de pilotage clair" inspirée d'un dashboard SaaS professionne
 | Niveau | Valeur | Usage |
 |---|---|---|
 | Repos | `0 1px 2px rgba(46,59,78,.05)` | Carte au repos (le plus courant, valeur par défaut) |
+| Carte détachée | `0 2px 8px rgba(46,59,78,.06)` | Carte isolée sur un fond vide, sans voisine pour la cadrer — carte de connexion, carte de définition de mot de passe. Confirmé dans `Connexion.dc.html` |
 | Flottant | `0 10px 28px rgba(46,59,78,.14)` | Menu déroulant ouvert, popover |
 | Panneau latéral | `-18px 0 44px rgba(46,59,78,.18)` | Panneau qui glisse depuis la droite (notifications, filtres) |
 | Barre/feuille ancrée | `0 -4px 16px rgba(46,59,78,.06)` | Barre de navigation mobile fixe en bas, feuille modale mobile |
@@ -169,7 +170,7 @@ Une fiche prescrite ou un tableau de suggestions pédagogiques contient beaucoup
 
 - **Bouton** : rayon 9px, padding 11×20px, 5 variantes —
   - *Primaire* : fond `--ofppt-ink`, texte blanc
-  - *Secondaire* : fond `--surface`, bordure 1px `--border-strong` (#C9D2DC), texte `--body`
+  - *Secondaire* : fond `--surface`, bordure 1px `--border-strong` (#C9D2DC), texte `--ofppt-ink` (#2E3B4E — confirmé dans la planche de style, et non `--body`)
   - *Ghost* : pas de bordure (réservé aux actions d'icône) — pas de bordure, contrairement aux autres variantes
   - *Danger* (signal, pas engagement définitif — ex. "Signaler un retard") : contour corail, bordure `#F0BDB8`, texte `--ofppt-coral`
   - *Destructive* (l'action la plus engageante de l'écran — ex. confirmer une suppression, valider une proposition IA) : fond `--ofppt-coral` plein, texte blanc — devient alors l'unique élément corail autorisé sur cet écran (voir règle du corail en §1)

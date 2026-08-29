@@ -83,7 +83,7 @@ export default function DefinirMotDePasseForm({ email }: { email: string }) {
 
         <form
           onSubmit={soumettre}
-          className="flex flex-col gap-5 rounded-[14px] border border-border bg-surface px-7 py-[30px] shadow-[0_2px_8px_rgba(46,59,78,0.06)]"
+          className="flex flex-col gap-5 rounded-[14px] border border-border bg-surface px-7 py-[30px] shadow-detachee"
         >
           <div className="flex flex-col gap-[5px]">
             <h1 className="font-display text-[21px] font-semibold leading-tight text-ink">
