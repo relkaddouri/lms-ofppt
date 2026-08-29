@@ -126,7 +126,7 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
     });
   }
 
-  function enregistrerDeroulement(statut?: string) {
+  function enregistrerDeroulement(statut?: "a_faire" | "fait") {
     startTransition(async () => {
       try {
         await majSeance(seance.id, {

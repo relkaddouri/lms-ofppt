@@ -103,10 +103,14 @@ export async function getMesSupports(): Promise<SupportListe[]> {
 /** Résout les noms des auteurs : hors stagiaires du groupe, c'est le formateur. */
 async function nomsDesAuteurs(groupeId: string) {
   const supabase = await createClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("stagiaires")
     .select("user_id, nom, prenom")
     .eq("groupe_id", groupeId);
+
+  // Sans ce contrôle, une lecture en échec affichait tout le monde comme
+  // « Formateur » — un fil de discussion faux, sans rien qui le signale.
+  if (error) throw new Error(error.message);
 
   const noms = new Map<string, string>();
   for (const s of data ?? []) {

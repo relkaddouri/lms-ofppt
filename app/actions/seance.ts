@@ -262,27 +262,49 @@ export type MajSeance = {
   date?: string | null;
   heure_debut?: string | null;
   heure_fin?: string | null;
-  statut?: string;
+  statut?: "a_faire" | "fait";
   contenu_realise?: string | null;
   a_prevoir_prochaine_seance?: string | null;
 };
 
+/**
+ * Colonnes qu'un appel client a le droit de toucher.
+ *
+ * Le type ci-dessus décrit ce que l'interface envoie, pas ce qu'une requête
+ * forgée peut envoyer : `...input` étalé dans l'update aurait écrit n'importe
+ * quelle clé supplémentaire présente dans la charge utile. La RLS borne la
+ * ligne atteignable, pas les colonnes écrites.
+ */
+const CHAMPS_MAJ_SEANCE = [
+  "date",
+  "heure_debut",
+  "heure_fin",
+  "statut",
+  "contenu_realise",
+  "a_prevoir_prochaine_seance",
+] as const;
+
 export async function majSeance(seanceId: string, input: MajSeance) {
+  if (input.statut && input.statut !== "a_faire" && input.statut !== "fait") {
+    throw new Error("Statut de séance inconnu.");
+  }
+
   const supabase = await createClient();
+
+  const update: Record<string, unknown> = { updated_at: new Date().toISOString() };
+  for (const cle of CHAMPS_MAJ_SEANCE) {
+    if (input[cle] !== undefined) update[cle] = input[cle];
+  }
 
   // La durée réalisée se déduit du créneau : la ressaisir serait une occasion
   // de plus de se contredire.
-  const duree =
-    input.heure_debut && input.heure_fin
-      ? dureeHeures(input.heure_debut, input.heure_fin)
-      : undefined;
+  if (input.heure_debut && input.heure_fin) {
+    update.duree_realisee = dureeHeures(input.heure_debut, input.heure_fin);
+  }
 
   const { error } = await supabase
     .from("seances")
-    .update({
-      ...input,
-      ...(duree !== undefined ? { duree_realisee: duree } : {}),
-    })
+    .update(update)
     .eq("id", seanceId);
 
   if (error) throw new Error(error.message);

@@ -43,11 +43,18 @@ export async function getCurrentUserRole() {
 
   if (!user) return null;
 
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("profils")
     .select("role")
     .eq("id", user.id)
     .maybeSingle();
+
+  // Une panne de lecture donnait un rôle nul, donc une redirection vers la
+  // connexion : l'utilisateur se croyait déconnecté. On distingue les deux.
+  if (error) {
+    console.error("[auth] lecture du rôle", error.message);
+    throw new Error("Impossible de vérifier vos droits. Réessayez.");
+  }
 
   return data?.role ?? null;
 }
