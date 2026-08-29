@@ -27,7 +27,6 @@ import Badge from "@/components/ui/Badge";
 import Button, { buttonStyles } from "@/components/ui/Button";
 import { inputStyles } from "@/components/ui/Input";
 import { ConfirmModal } from "@/components/ui/Modal";
-import { telechargerControlePdf } from "@/lib/pdf-controle";
 import { slugify } from "@/lib/format";
 import {
   BadgeCheck,
@@ -347,10 +346,11 @@ export default function ControleManager({
   }
 
 
-  function handleDownloadPdf() {
+  async function handleDownloadPdf() {
     setBusy(true);
     try {
-      telechargerControlePdf(
+      const { telechargerControlePdf } = await import("@/lib/pdf-controle");
+      await telechargerControlePdf(
         {
           titre: titre || "Contrôle",
           moduleNom,

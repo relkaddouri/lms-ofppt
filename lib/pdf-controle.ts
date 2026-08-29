@@ -1,4 +1,4 @@
-import jsPDF from "jspdf";
+import type jsPDF from "jspdf";
 
 /**
  * Sujet de contrôle, mise en page « document officiel ».
@@ -93,8 +93,12 @@ function decoupeEnonce(enonce: string): { nature: string | null; corps: string }
 const heureFr = (n: number) =>
   `${n.toLocaleString("fr-FR", { maximumFractionDigits: 2 })} h`;
 
-export function construireControlePdf(c: ControlePdf): jsPDF {
-  const doc = new jsPDF({ orientation: "p", unit: "mm", format: "a4", compress: true });
+export async function construireControlePdf(c: ControlePdf): Promise<jsPDF> {
+  // Import dynamique comme les quatre autres modules PDF : jsPDF pèse trop
+  // lourd pour entrer dans le bundle d'un écran qu'on ouvre pour éditer un
+  // contrôle, pas forcément pour l'exporter (conventions.md, performance).
+  const { default: JsPDF } = await import("jspdf");
+  const doc = new JsPDF({ orientation: "p", unit: "mm", format: "a4", compress: true });
   doc.setFont("helvetica", "normal");
 
   const totalBareme = c.questions.reduce((s, q) => s + (Number(q.bareme) || 0), 0);
@@ -349,6 +353,10 @@ export function construireControlePdf(c: ControlePdf): jsPDF {
   return doc;
 }
 
-export function telechargerControlePdf(c: ControlePdf, nomFichier: string) {
-  construireControlePdf(c).save(nomFichier);
+export async function telechargerControlePdf(
+  c: ControlePdf,
+  nomFichier: string,
+) {
+  const doc = await construireControlePdf(c);
+  doc.save(nomFichier);
 }
