@@ -92,7 +92,7 @@ function Evenement({ ev }: { ev: EvenementStagiaire }) {
   return ev.genre === "controle" ? (
     <Link
       href={`/espace-stagiaire/controles/${ev.id}`}
-      className={`${classes} hover:bg-mist`}
+      className={`${classes} hover:bg-mint`}
     >
       {contenu}
     </Link>
@@ -182,7 +182,7 @@ export default async function EmploiDuTempsPage() {
 
       {passe.length > 0 ? (
         <details className="group">
-          <summary className="flex min-h-[44px] cursor-pointer list-none items-center justify-center rounded-xl border border-border bg-surface px-4 text-sm font-medium text-slate hover:bg-mist">
+          <summary className="flex min-h-[44px] cursor-pointer list-none items-center justify-center rounded-xl border border-border bg-surface px-4 text-sm font-medium text-slate hover:bg-mint">
             Séances passées ({passe.reduce((n, [, l]) => n + l.length, 0)})
             <ChevronDown
               className="ml-2 h-4 w-4 transition-transform group-open:rotate-180"

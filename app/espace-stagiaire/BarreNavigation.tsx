@@ -49,7 +49,7 @@ export function NavigationHaute() {
                 className={`flex min-h-[44px] items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors ${
                   actif
                     ? "bg-mint font-medium text-forest"
-                    : "text-slate hover:bg-mist hover:text-ink"
+                    : "text-slate hover:bg-mint hover:text-ink"
                 }`}
               >
                 <Icone className="h-4 w-4 shrink-0" aria-hidden />

@@ -27,7 +27,7 @@ export default async function ControlesPage() {
     <Link
       key={c.id}
       href={`/espace-stagiaire/controles/${c.id}`}
-      className="block border-b border-border p-4 last:border-0 hover:bg-mist"
+      className="block border-b border-border p-4 last:border-0 hover:bg-mint"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">

@@ -203,7 +203,7 @@ export default function RepartitionManager({
       <div className="mt-4 overflow-x-auto rounded-xl border border-border bg-surface">
         <table className="w-full min-w-[720px] text-sm">
           <thead>
-            <tr className="border-b border-border bg-mist text-left">
+            <tr className="border-b border-border bg-paper text-left">
               <th className="px-3 py-2 font-medium text-slate">
                 Objectif d&apos;apprentissage
               </th>

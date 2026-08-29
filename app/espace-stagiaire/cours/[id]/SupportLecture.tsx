@@ -68,7 +68,7 @@ export default function SupportLecture({ support }: { support: Support }) {
             ))}
           </ul>
           {sec.exemple ? (
-            <p className="mt-3 rounded-lg bg-mist p-3 text-sm leading-relaxed text-slate">
+            <p className="mt-3 rounded-lg bg-paper p-3 text-sm leading-relaxed text-slate">
               <span className="font-medium text-ink">Exemple — </span>
               {sec.exemple}
             </p>

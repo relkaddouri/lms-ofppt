@@ -79,7 +79,7 @@ export default function MaCopieVue({
               </p>
 
               {d.reponse ? (
-                <div className="mt-2 rounded-lg bg-mist px-3 py-2">
+                <div className="mt-2 rounded-lg bg-paper px-3 py-2">
                   <p className="text-[11px] text-slate">Votre réponse</p>
                   <p className="mt-0.5 whitespace-pre-line text-sm text-ink">
                     {d.reponse}

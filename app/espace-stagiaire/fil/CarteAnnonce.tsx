@@ -129,7 +129,7 @@ export default function CarteAnnonce({
         <div className="mt-2 space-y-3">
           {annonce.commentaires.map((c) => (
             <div key={c.id} className="flex gap-2">
-              <div className="min-w-0 flex-1 rounded-lg bg-mist px-3 py-2">
+              <div className="min-w-0 flex-1 rounded-lg bg-paper px-3 py-2">
                 <p className="flex flex-wrap items-baseline gap-x-2">
                   <span className="text-sm font-medium text-ink">
                     {c.auteurNom}

@@ -73,7 +73,7 @@ export default function ModuleProgression({
         type="button"
         onClick={() => setOuvert((o) => !o)}
         aria-expanded={ouvert}
-        className="flex w-full items-start gap-3 px-4 py-3 text-left hover:bg-mist"
+        className="flex w-full items-start gap-3 px-4 py-3 text-left hover:bg-mint"
       >
         {ouvert ? (
           <ChevronDown className="mt-0.5 h-4 w-4 shrink-0 text-slate" aria-hidden />
@@ -140,7 +140,7 @@ export default function ModuleProgression({
       </button>
 
       {ouvert ? (
-        <div className="space-y-3 border-t border-border bg-mist/40 p-3">
+        <div className="space-y-3 border-t border-border bg-paper p-3">
           {objectifs.map((o) => {
             const heuresObjectif = o.seances.reduce(
               (t, s) => t + Number(s.duree_prevue ?? 0),
@@ -152,7 +152,7 @@ export default function ModuleProgression({
                 key={o.code}
                 className="overflow-hidden rounded-lg border border-border bg-surface"
               >
-                <div className="flex flex-wrap items-center gap-2 border-b border-border bg-mist px-3 py-2">
+                <div className="flex flex-wrap items-center gap-2 border-b border-border bg-paper px-3 py-2">
                   <span className="font-mono text-xs font-medium text-forest">
                     {o.code}
                   </span>

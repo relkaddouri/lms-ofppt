@@ -48,7 +48,7 @@ export default async function EspaceStagiaireLayout({
                 type="submit"
                 aria-label="Se déconnecter"
                 title="Se déconnecter"
-                className="flex min-h-[44px] min-w-[44px] items-center justify-center gap-2 rounded-lg text-slate transition-colors hover:bg-mist hover:text-ink md:px-3"
+                className="flex min-h-[44px] min-w-[44px] items-center justify-center gap-2 rounded-lg text-slate transition-colors hover:bg-mint hover:text-ink md:px-3"
               >
                 <LogOut className="h-5 w-5 shrink-0" aria-hidden />
                 <span className="hidden text-sm md:inline">Déconnexion</span>

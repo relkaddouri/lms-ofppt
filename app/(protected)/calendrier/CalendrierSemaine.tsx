@@ -12,10 +12,15 @@ import type {
   APlanifier,
 } from "@/app/actions/calendrier";
 import EfmRegionalForm from "./EfmRegionalForm";
+import IndisponibilitesPanel from "./IndisponibilitesPanel";
 import SuiviHeures from "@/components/SuiviHeures";
 import EcheancesReglementaires from "@/components/EcheancesReglementaires";
 import type { Echeance } from "@/lib/echeances";
 import type { BilanHeures } from "@/lib/heures-formateur";
+import {
+  TYPES_INDISPONIBILITE,
+  type Indisponibilite,
+} from "@/lib/indisponibilites";
 import { CalendarPlus, ChevronLeft, ChevronRight } from "lucide-react";
 
 const JOURS = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
@@ -42,6 +47,7 @@ export default function CalendrierSemaine({
   seancesSansDate,
   bilan,
   echeances,
+  indisponibilites,
 }: {
   lundi: string;
   seances: SeanceCalendrier[];
@@ -50,6 +56,7 @@ export default function CalendrierSemaine({
   seancesSansDate: number;
   bilan: BilanHeures;
   echeances: Echeance[];
+  indisponibilites: Indisponibilite[];
 }) {
   const router = useRouter();
   const aujourdhui = iso(new Date());
@@ -63,6 +70,23 @@ export default function CalendrierSemaine({
     const cle = `${s.date}|${blocDe(s)}`;
     parJourBloc.set(cle, [...(parJourBloc.get(cle) ?? []), s]);
   }
+
+  /**
+   * Indisponibilités couvrant un jour, éventuellement restreintes à un bloc.
+   * Une déclaration « journée entière » vaut pour les deux blocs.
+   */
+  const indispoDuJour = (date: string, bloc?: "matin" | "soir") =>
+    indisponibilites.filter(
+      (i) =>
+        i.date_debut <= date &&
+        date <= i.date_fin &&
+        (bloc === undefined || i.demi_journee === null || i.demi_journee === bloc),
+    );
+
+  const libelleIndispo = (i: Indisponibilite) =>
+    i.libelle ??
+    TYPES_INDISPONIBILITE.find((t) => t.valeur === i.type)?.defaut ??
+    "Indisponible";
 
   const controlesDuJour = (date: string) =>
     controles.filter((c) => (c.date_administration ?? c.date_prevue) === date);
@@ -172,13 +196,21 @@ export default function CalendrierSemaine({
             </colgroup>
             <thead>
               <tr>
-                <th className="border-b border-border bg-mist px-3 py-2.5" />
-                {jours.map((j) => (
+                <th className="border-b border-border bg-paper px-3 py-2.5" />
+                {jours.map((j) => {
+                  const indispoJour = indispoDuJour(j.date).filter(
+                    (i) => i.demi_journee === null,
+                  );
+                  return (
                   <th
                     key={j.date}
                     scope="col"
                     className={`border-b border-l border-border px-3 py-2.5 text-left ${
-                      j.estAujourdhui ? "bg-mint" : "bg-mist"
+                      indispoJour.length > 0
+                        ? "bg-paper"
+                        : j.estAujourdhui
+                          ? "bg-mint"
+                          : "bg-paper"
                     }`}
                   >
                     <span className="flex items-baseline gap-1.5">
@@ -203,8 +235,14 @@ export default function CalendrierSemaine({
                         />
                       ) : null}
                     </span>
+                    {indispoJour.length > 0 ? (
+                      <span className="mt-1 block truncate text-[11px] font-medium text-slate">
+                        {indispoJour.map(libelleIndispo).join(" · ")}
+                      </span>
+                    ) : null}
                   </th>
-                ))}
+                  );
+                })}
               </tr>
             </thead>
             <tbody>
@@ -212,7 +250,7 @@ export default function CalendrierSemaine({
                 const b = BLOCS[bloc];
                 return (
                   <tr key={bloc} className="border-t border-border first:border-t-0">
-                    <th scope="row" className="bg-mist px-3 py-3 text-left align-top">
+                    <th scope="row" className="bg-paper px-3 py-3 text-left align-top">
                       <span className="block text-sm font-medium text-ink">
                         {b.label}
                       </span>
@@ -228,15 +266,41 @@ export default function CalendrierSemaine({
                     {jours.map((j) => {
                       const liste = parJourBloc.get(`${j.date}|${bloc}`) ?? [];
                       const ctrls = bloc === "matin" ? controlesDuJour(j.date) : [];
-                      const vide = liste.length === 0 && ctrls.length === 0;
+                      const indispos = indispoDuJour(j.date, bloc);
+                      const vide =
+                        liste.length === 0 &&
+                        ctrls.length === 0 &&
+                        indispos.length === 0;
                       return (
                         <td
                           key={j.date}
                           className={`h-28 border-l border-border p-1.5 align-top ${
-                            j.estAujourdhui ? "bg-mint/20" : ""
+                            indispos.length > 0
+                              ? "bg-[repeating-linear-gradient(135deg,var(--paper)_0px,var(--paper)_7px,var(--surface)_7px,var(--surface)_14px)]"
+                              : j.estAujourdhui
+                                ? "bg-mint/20"
+                                : ""
                           }`}
                         >
                           <div className="space-y-1.5">
+                            {/* Le motif hachuré porte l'indisponibilité ; le
+                                libellé la nomme, la couleur seule ne suffit
+                                jamais (design_system.md). */}
+                            {indispos.map((i) => (
+                              <p
+                                key={i.id}
+                                className="rounded-lg border border-slate/30 bg-surface/80 px-2 py-1 text-[11px] font-medium text-slate"
+                              >
+                                {libelleIndispo(i)}
+                                {i.demi_journee ? (
+                                  <span className="font-normal">
+                                    {" "}
+                                    ({i.demi_journee === "matin" ? "matin" : "après-midi"})
+                                  </span>
+                                ) : null}
+                              </p>
+                            ))}
+
                             {ctrls.map((c) => (
                               <Link
                                 key={c.id}
@@ -277,7 +341,7 @@ export default function CalendrierSemaine({
                                     .join(" — ")}
                                   className={`block rounded-lg px-2.5 py-2 transition-colors ${
                                     fait
-                                      ? "bg-mist text-slate hover:bg-border/60"
+                                      ? "bg-paper text-slate hover:bg-border/60"
                                       : tp
                                         ? "bg-info/10 hover:bg-info/15"
                                         : "bg-mint hover:bg-mint/70"
@@ -328,6 +392,8 @@ export default function CalendrierSemaine({
         </div>
 
         <div className="mt-6 grid gap-4 lg:grid-cols-2">
+          <IndisponibilitesPanel indisponibilites={indisponibilites} />
+
           <EcheancesReglementaires
             echeances={echeances}
             controleHref={(id) =>

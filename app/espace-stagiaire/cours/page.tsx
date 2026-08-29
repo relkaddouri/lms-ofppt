@@ -26,7 +26,7 @@ export default async function CoursPage() {
         <Link
           key={s.id}
           href={`/espace-stagiaire/cours/${s.id}`}
-          className="flex min-h-[64px] items-start gap-3 border-b border-border p-4 last:border-0 hover:bg-mist"
+          className="flex min-h-[64px] items-start gap-3 border-b border-border p-4 last:border-0 hover:bg-mint"
         >
           <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-mint">
             <BookOpen className="h-4 w-4 text-forest" aria-hidden />
