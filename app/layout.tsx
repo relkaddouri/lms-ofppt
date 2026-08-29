@@ -35,8 +35,8 @@ const plexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "LMS OFPPT",
-  description: "Plateforme de gestion de formation — LMS OFPPT",
+  title: "Pédago",
+  description: "Plateforme de gestion pédagogique pour les formateurs OFPPT",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

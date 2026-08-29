@@ -1,4 +1,4 @@
-# BACKLOG.md — LMS OFPPT, backlog atomique v2
+# BACKLOG.md — Pédago, backlog atomique v2
 
 **Ce fichier remplace intégralement l'ancien backlog.** Il est construit strictement à partir de `docs/PRD.md` v2 — ne pas réutiliser ou consulter un ancien BACKLOG.md, ses atomes ne correspondent plus au produit cible.
 

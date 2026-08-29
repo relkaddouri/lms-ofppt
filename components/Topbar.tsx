@@ -26,7 +26,7 @@ export default function Topbar({
         {/* Le titre de l'application, pas celui de la page : la page porte son
             propre titre dans son en-tête, comme dans les écrans livrés. */}
         <span className="truncate font-display text-[15px] font-semibold tracking-[0.02em] text-ink">
-          LMS OFPPT — Gestion pédagogique
+          Pédago — Gestion pédagogique
         </span>
       </div>
 

@@ -30,7 +30,7 @@ async function notifyStagiaires(
   annonce: { titre: string; contenu?: string | null },
 ) {
   const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.RESEND_FROM ?? "LMS OFPPT <onboarding@resend.dev>";
+  const from = process.env.RESEND_FROM ?? "Pédago <onboarding@resend.dev>";
   if (!apiKey) return;
 
   const supabase = await createClient();
@@ -62,7 +62,7 @@ async function notifyStagiaires(
     ``,
     annonce.contenu ?? "",
     ``,
-    `— LMS OFPPT`,
+    `— Pédago`,
   ].join("\n");
 
   const results = await Promise.allSettled(

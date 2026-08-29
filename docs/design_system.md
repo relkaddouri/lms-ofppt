@@ -1,4 +1,4 @@
-# Design System — LMS OFPPT (v3 — confirmée par Claude Design)
+# Design System — Pédago (v3 — confirmée par Claude Design)
 
 **Cette version remplace les palettes/typographies estimées des versions précédentes par les valeurs réelles extraites des 20 écrans produits dans `docs/new_design/`.** Toute divergence trouvée par la suite entre ce fichier et un écran livré doit être signalée, pas silencieusement arbitrée.
 

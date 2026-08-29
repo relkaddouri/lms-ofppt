@@ -1,4 +1,4 @@
-# PRD — LMS OFPPT (Classeur pédagogique numérique) — v2
+# PRD — Pédago (Classeur pédagogique numérique) — v2
 
 **Version 2** — mise à jour après réception du programme de formation complet, d'un exemple réel de classeur pédagogique, et du document de soutenance OFPPT. Quelques points restent ouverts, signalés au fil du document et récapitulés en §8.
 

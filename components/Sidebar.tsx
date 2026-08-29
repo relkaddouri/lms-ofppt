@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LogOut } from "lucide-react";
 import { signOutAction } from "@/app/actions/auth";
-import MarqueOfppt from "./MarqueOfppt";
+import MarquePedago from "./MarquePedago";
 import Avatar from "./ui/Avatar";
 
 /**
@@ -57,10 +57,10 @@ export default function Sidebar({
     >
       <div className="flex flex-col gap-8">
         <div className="flex items-center gap-[11px] px-6">
-          <MarqueOfppt taille={12} ecart={3} />
+          <MarquePedago taille={12} ecart={3} />
           <span className="flex flex-col gap-px">
             <span className="font-display text-base font-bold tracking-[-0.01em] text-ink">
-              LMS OFPPT
+              Pédago
             </span>
             <span className="text-xs text-slate-light">Espace formateur</span>
           </span>

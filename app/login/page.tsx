@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import MarqueOfppt from "@/components/MarqueOfppt";
+import MarquePedago from "@/components/MarquePedago";
 import ChampMotDePasse from "@/components/ui/ChampMotDePasse";
 
 export const metadata = { title: "Connexion" };
@@ -36,10 +36,10 @@ export default async function LoginPage({
     <main className="flex min-h-screen items-center justify-center bg-paper px-8 py-14">
       <div className="flex w-full max-w-[396px] flex-col gap-[26px]">
         <div className="flex flex-col items-center gap-3.5">
-          <MarqueOfppt />
+          <MarquePedago />
           <div className="flex flex-col items-center gap-[3px]">
             <span className="font-display text-[23px] font-bold tracking-[-0.01em] text-ink">
-              LMS OFPPT
+              Pédago
             </span>
             <span className="text-sm text-slate-light">
               Espace formateur · OFPPT
