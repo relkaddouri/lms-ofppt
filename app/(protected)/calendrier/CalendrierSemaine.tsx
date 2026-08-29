@@ -13,7 +13,6 @@ import type {
 } from "@/app/actions/calendrier";
 import EfmRegionalForm from "./EfmRegionalForm";
 import IndisponibilitesPanel from "./IndisponibilitesPanel";
-import SuiviHeures from "@/components/SuiviHeures";
 import EcheancesReglementaires from "@/components/EcheancesReglementaires";
 import type { Echeance } from "@/lib/echeances";
 import type { BilanHeures } from "@/lib/heures-formateur";
@@ -31,6 +30,41 @@ function decale(lundi: string, jours: number): string {
   const d = new Date(`${lundi}T12:00:00`);
   d.setDate(d.getDate() + jours);
   return iso(d);
+}
+
+/** Numéro de semaine ISO, affiché en exergue de l'écran. */
+function numeroSemaine(lundi: string): number {
+  const d = new Date(`${lundi}T12:00:00Z`);
+  const jeudi = new Date(d);
+  jeudi.setUTCDate(d.getUTCDate() + 3);
+  const premier = new Date(Date.UTC(jeudi.getUTCFullYear(), 0, 4));
+  return (
+    1 +
+    Math.round(
+      ((jeudi.getTime() - premier.getTime()) / 86400000 -
+        3 +
+        ((premier.getUTCDay() + 6) % 7)) /
+        7,
+    )
+  );
+}
+
+/**
+ * Liseré gauche d'une séance, stable pour un même groupe.
+ * Quatre teintes, comme dans la maquette — le corail en est exclu : une
+ * semaine chargée afficherait plusieurs séances corail à la fois.
+ */
+const LISERES = [
+  "border-l-ink",
+  "border-l-teal",
+  "border-l-green",
+  "border-l-wash",
+] as const;
+
+function lisereDe(groupe: string): string {
+  let somme = 0;
+  for (let i = 0; i < groupe.length; i++) somme += groupe.charCodeAt(i);
+  return LISERES[somme % LISERES.length]!;
 }
 
 /** Une séance appartient au bloc dans lequel son heure de début tombe. */
@@ -113,62 +147,93 @@ export default function CalendrierSemaine({
   // La légende n'a de sens que si la distinction est visible dans la grille.
   const afficherLegende = controlesSemaine > 0 || regionales.length > 0;
 
+  const modulesSemaine = [...new Set(seances.map((s) => s.moduleNom))];
+
+  const dureeDe = (s: SeanceCalendrier) => {
+    if (!s.heure_debut || !s.heure_fin) return 0;
+    const min = (h: string) => {
+      const [a, b] = h.split(":").map(Number);
+      return (a ?? 0) * 60 + (b ?? 0);
+    };
+    return (min(s.heure_fin) - min(s.heure_debut)) / 60;
+  };
+
+  // Une semaine appartient au mois de son lundi, même règle que le bilan.
+  const moisCourant = lundi.slice(0, 7);
+  const heuresDuMois = bilan.semaines
+    .filter((s) => s.lundi.slice(0, 7) === moisCourant)
+    .reduce((t, s) => t + s.heures, 0);
+
+  const plafondAnnuel = bilan.plafonds[0] ?? null;
+
+  const heuresParGroupe = [
+    ...seances
+      .reduce((acc, s) => {
+        acc.set(s.groupeNom, (acc.get(s.groupeNom) ?? 0) + dureeDe(s));
+        return acc;
+      }, new Map<string, number>())
+      .entries(),
+  ].sort((a, b) => b[1] - a[1]);
+
   return (
-    <div className="p-8">
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="font-display text-2xl font-bold text-ink">Calendrier</h1>
-          <p className="mt-0.5 text-sm text-slate">
-            Semaine du {formatDate(lundi)} au {formatDate(decale(lundi, 5))}
+    <div className="flex flex-col gap-8 px-6 py-10 md:px-10 md:pb-14">
+      <header className="flex flex-wrap items-end justify-between gap-6">
+        <div className="flex flex-col gap-2">
+          <span className="font-mono text-[11.5px] uppercase tracking-[0.12em] text-slate-light">
+            Semaine {numeroSemaine(lundi)} · {new Date(`${lundi}T12:00:00`).getFullYear()}
+          </span>
+          <h1 className="font-display text-[34px] font-bold leading-tight tracking-[-0.02em] text-ink">
+            Emploi du temps
+          </h1>
+          <p className="text-base text-slate-2">
+            <span className="font-mono text-body">
+              {formatDate(lundi)} — {formatDate(decale(lundi, 5))}
+            </span>
+            {groupesSemaine.length > 0
+              ? ` · ${groupesSemaine.length} groupe${groupesSemaine.length > 1 ? "s" : ""}, ${modulesSemaine.length} module${modulesSemaine.length > 1 ? "s" : ""}`
+              : " · aucune séance"}
           </p>
         </div>
-        <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            icon={ChevronLeft}
-            aria-label="Semaine précédente"
-            onClick={() => router.push(`/calendrier?semaine=${decale(lundi, -7)}`)}
+
+        <div className="flex items-center gap-2.5">
+          <div className="flex overflow-hidden rounded-[9px] border border-border-strong bg-surface">
+            <button
+              type="button"
+              aria-label="Semaine précédente"
+              onClick={() => router.push(`/calendrier?semaine=${decale(lundi, -7)}`)}
+              className="flex h-10 w-10 items-center justify-center border-r border-border transition-colors duration-150 ease-out hover:bg-paper"
+            >
+              <ChevronLeft size={15} strokeWidth={2.2} className="text-slate-2" aria-hidden />
+            </button>
+            <button
+              type="button"
+              onClick={() => router.push("/calendrier")}
+              className="whitespace-nowrap px-[18px] text-sm font-semibold text-ink transition-colors duration-150 ease-out hover:bg-paper"
+            >
+              Aujourd&apos;hui
+            </button>
+            <button
+              type="button"
+              aria-label="Semaine suivante"
+              onClick={() => router.push(`/calendrier?semaine=${decale(lundi, 7)}`)}
+              className="flex h-10 w-10 items-center justify-center border-l border-border transition-colors duration-150 ease-out hover:bg-paper"
+            >
+              <ChevronRight size={15} strokeWidth={2.2} className="text-slate-2" aria-hidden />
+            </button>
+          </div>
+
+          {/* Présent parce que la maquette le montre. La planification se fait
+              par couple groupe + module ; ce raccourci global attend son atome. */}
+          <button
+            type="button"
+            disabled
+            title="Planification — passez par un module d'un groupe"
+            className="rounded-[9px] border border-ink bg-ink px-[18px] py-2.5 text-[14.5px] font-semibold text-white disabled:cursor-not-allowed disabled:border-border disabled:bg-wash-strong disabled:text-muted"
           >
-            {""}
-          </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => router.push("/calendrier")}
-          >
-            Cette semaine
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            icon={ChevronRight}
-            aria-label="Semaine suivante"
-            onClick={() => router.push(`/calendrier?semaine=${decale(lundi, 7)}`)}
-          >
-            {""}
-          </Button>
+            Planifier une séance
+          </button>
         </div>
       </header>
-
-      {/* Ce que la semaine représente, avant de la détailler. */}
-      <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 rounded-xl border border-border bg-surface px-4 py-2.5 text-sm">
-        <span className="text-ink">
-          <span className="font-semibold">{seances.length}</span> séance
-          {seances.length > 1 ? "s" : ""}
-        </span>
-        {controlesSemaine > 0 ? (
-          <span className="text-ink">
-            <span className="font-semibold">{controlesSemaine}</span> contrôle
-            {controlesSemaine > 1 ? "s" : ""}
-          </span>
-        ) : null}
-        {groupesSemaine.length > 0 ? (
-          <span className="text-slate">{groupesSemaine.join(", ")}</span>
-        ) : null}
-        <span className="h-4 w-px bg-border" aria-hidden />
-        <SuiviHeures bilan={bilan} compact />
-      </div>
 
       {afficherLegende ? (
         <div className="mt-3 flex flex-wrap items-center gap-4 text-xs text-slate">
@@ -236,7 +301,7 @@ export default function CalendrierSemaine({
                       ) : null}
                     </span>
                     {indispoJour.length > 0 ? (
-                      <span className="mt-1 block truncate text-[11px] font-medium text-slate">
+                      <span className="mt-1 inline-block self-start whitespace-nowrap rounded-[5px] border border-border bg-wash px-[7px] py-px text-[11.5px] font-semibold text-slate-2">
                         {indispoJour.map(libelleIndispo).join(" · ")}
                       </span>
                     ) : null}
@@ -286,20 +351,17 @@ export default function CalendrierSemaine({
                             {/* Le motif hachuré porte l'indisponibilité ; le
                                 libellé la nomme, la couleur seule ne suffit
                                 jamais (design_system.md). */}
-                            {indispos.map((i) => (
-                              <p
-                                key={i.id}
-                                className="rounded-lg border border-slate/30 bg-surface/80 px-2 py-1 text-[11px] font-medium text-slate"
-                              >
-                                {libelleIndispo(i)}
-                                {i.demi_journee ? (
-                                  <span className="font-normal">
-                                    {" "}
-                                    ({i.demi_journee === "matin" ? "matin" : "après-midi"})
-                                  </span>
-                                ) : null}
-                              </p>
-                            ))}
+                            {indispos
+                              .filter((i) => i.demi_journee !== null)
+                              .map((i) => (
+                                <p
+                                  key={i.id}
+                                  className="rounded-[5px] border border-border bg-wash px-[7px] py-px text-[11.5px] font-semibold text-slate-2"
+                                >
+                                  {libelleIndispo(i)} (
+                                  {i.demi_journee === "matin" ? "matin" : "après-midi"})
+                                </p>
+                              ))}
 
                             {ctrls.map((c) => (
                               <Link
@@ -339,26 +401,22 @@ export default function CalendrierSemaine({
                                   ]
                                     .filter(Boolean)
                                     .join(" — ")}
-                                  className={`block rounded-lg px-2.5 py-2 transition-colors ${
-                                    fait
-                                      ? "bg-paper text-slate hover:bg-border/60"
-                                      : tp
-                                        ? "bg-info/10 hover:bg-info/15"
-                                        : "bg-mint hover:bg-mint/70"
+                                  className={`block rounded-[9px] border border-border border-l-[3px] bg-surface px-2.5 py-2.5 no-underline transition-colors duration-150 ease-out hover:bg-paper hover:no-underline ${lisereDe(s.groupeNom)} ${
+                                    fait ? "opacity-70" : ""
                                   }`}
                                 >
                                   <span className="flex items-center gap-1.5">
                                     <span
                                       className={`h-1.5 w-1.5 shrink-0 rounded-full ${
                                         fait
-                                          ? "bg-slate/50"
+                                          ? "bg-muted"
                                           : tp
-                                            ? "bg-info"
-                                            : "bg-forest"
+                                            ? "bg-teal"
+                                            : "bg-green"
                                       }`}
                                       aria-hidden
                                     />
-                                    <span className="truncate text-[11px] text-slate">
+                                    <span className="truncate font-mono text-[10.5px] text-slate-light">
                                       {s.heure_debut
                                         ? formatHeure(s.heure_debut)
                                         : "—"}
@@ -389,6 +447,98 @@ export default function CalendrierSemaine({
               })}
             </tbody>
           </table>
+        </div>
+
+        {/* Deux cartes de synthèse, comme dans la maquette : le volume dispensé
+            et sa répartition par groupe sur la semaine affichée. */}
+        <div className="mt-6 grid gap-5 lg:grid-cols-[1.2fr_1fr]">
+          <section className="flex flex-col gap-5 rounded-[14px] border border-border bg-surface p-6 shadow-repos">
+            <div className="flex flex-col gap-1">
+              <h2 className="font-display text-[17px] font-semibold text-ink">
+                Heures cumulées
+              </h2>
+              <span className="text-[13.5px] text-slate-light">
+                Volume de formation dispensé
+              </span>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-3">
+              {[
+                ["Cette semaine", bilan.semaineCourante?.heures ?? 0],
+                ["Ce mois", heuresDuMois],
+                ["Depuis septembre", bilan.totalAnnuel],
+              ].map(([libelle, valeur]) => (
+                <div key={String(libelle)} className="flex flex-col gap-1">
+                  <span className="text-[13px] text-slate-light">{libelle}</span>
+                  <span className="font-mono text-[19px] font-medium text-ink">
+                    {formatHeures(Number(valeur))}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            {plafondAnnuel ? (
+              <div className="flex flex-col gap-2 border-t border-separator pt-[18px]">
+                <div className="flex items-baseline justify-between gap-3">
+                  <span className="text-[13.5px] text-slate-2">
+                    {plafondAnnuel.libelle}
+                  </span>
+                  <span className="font-mono text-sm font-medium text-ink">
+                    {formatHeures(plafondAnnuel.valeur)} /{" "}
+                    {formatHeures(plafondAnnuel.plafond)}
+                  </span>
+                </div>
+                <span className="h-2 overflow-hidden rounded-full bg-wash">
+                  <span
+                    className={`block h-full rounded-full ${
+                      plafondAnnuel.taux >= 100 ? "bg-coral" : "bg-teal"
+                    }`}
+                    style={{ width: `${Math.min(100, plafondAnnuel.taux)}%` }}
+                  />
+                </span>
+                <div className="flex items-baseline justify-between gap-3 text-[13px] text-slate-light">
+                  <span>{Math.round(plafondAnnuel.taux)} % du plafond</span>
+                  <span className="font-mono">
+                    {formatHeures(
+                      Math.max(0, plafondAnnuel.plafond - plafondAnnuel.valeur),
+                    )}{" "}
+                    restantes
+                  </span>
+                </div>
+              </div>
+            ) : null}
+          </section>
+
+          <section className="flex flex-col gap-4 rounded-[14px] border border-border bg-surface p-6 shadow-repos">
+            <h2 className="font-display text-[17px] font-semibold text-ink">
+              Répartition par groupe
+            </h2>
+            {heuresParGroupe.length === 0 ? (
+              <p className="text-[14.5px] text-slate-light">
+                Aucune séance planifiée cette semaine.
+              </p>
+            ) : (
+              <ul className="flex flex-col gap-3">
+                {heuresParGroupe.map(([nom, heures]) => (
+                  <li
+                    key={nom}
+                    className="flex items-center justify-between gap-3 border-b border-separator pb-3 last:border-0 last:pb-0"
+                  >
+                    <span className="flex min-w-0 items-center gap-2.5">
+                      <span
+                        aria-hidden
+                        className={`h-2 w-2 shrink-0 rotate-45 border-l-[3px] ${lisereDe(nom)}`}
+                      />
+                      <span className="truncate text-[14.5px] text-body">{nom}</span>
+                    </span>
+                    <span className="shrink-0 font-mono text-[15px] font-medium text-ink">
+                      {formatHeures(heures)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
         </div>
 
         <div className="mt-6 grid gap-4 lg:grid-cols-2">
