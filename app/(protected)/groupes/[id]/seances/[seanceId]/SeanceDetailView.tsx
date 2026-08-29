@@ -9,6 +9,7 @@ import { inputStyles as inputClass } from "@/components/ui/Input";
 import { useToast } from "@/components/ui/Toast";
 import FicheSeance from "@/components/FicheSeance";
 import SupportSeance from "@/components/SupportSeance";
+import QuestionsSupport from "@/components/QuestionsSupport";
 import { formatDate, formatDateTime, formatHeures } from "@/lib/format";
 import { formatHeure } from "@/lib/creneaux";
 import {
@@ -295,6 +296,20 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
                 version={seance.supportVersion}
               />
             </div>
+
+            {seance.supportId ? (
+              <div className="mt-6 border-t border-border pt-5">
+                <QuestionsSupport
+                  supportId={seance.supportId}
+                  questions={seance.questions}
+                  camarades={seance.presences.map((p) => ({
+                    id: p.stagiaire_id,
+                    nom: `${p.prenom} ${p.nom}`,
+                  }))}
+                  vue="formateur"
+                />
+              </div>
+            ) : null}
           </section>
         ) : (
           <div className="grid gap-6 lg:grid-cols-2">

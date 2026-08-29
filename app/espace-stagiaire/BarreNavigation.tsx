@@ -2,7 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarDays, ClipboardList, FileCheck2, Newspaper } from "lucide-react";
+import {
+  BookOpen,
+  CalendarDays,
+  ClipboardList,
+  FileCheck2,
+  Newspaper,
+} from "lucide-react";
 
 /**
  * Navigation de l'espace stagiaire, sous deux formes.
@@ -14,11 +20,15 @@ import { CalendarDays, ClipboardList, FileCheck2, Newspaper } from "lucide-react
  */
 export const ONGLETS = [
   { href: "/espace-stagiaire/fil", libelle: "Fil", Icone: Newspaper },
+  { href: "/espace-stagiaire/cours", libelle: "Cours", Icone: BookOpen },
   { href: "/espace-stagiaire/devoirs", libelle: "Devoirs", Icone: ClipboardList },
   { href: "/espace-stagiaire/controles", libelle: "Contrôles", Icone: FileCheck2 },
   {
     href: "/espace-stagiaire/emploi-du-temps",
     libelle: "Emploi du temps",
+    // À cinq onglets, « Emploi du temps » déborde de sa case sur un écran de
+    // 375 px : la barre basse en montre la version courte.
+    libelleCourt: "Planning",
     Icone: CalendarDays,
   },
 ] as const;
@@ -62,7 +72,9 @@ export function NavigationBasse() {
       className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-surface pb-[env(safe-area-inset-bottom)] md:hidden"
     >
       <ul className="mx-auto flex max-w-lg">
-        {ONGLETS.map(({ href, libelle, Icone }) => {
+        {ONGLETS.map((onglet) => {
+          const { href, libelle, Icone } = onglet;
+          const court = "libelleCourt" in onglet ? onglet.libelleCourt : libelle;
           const actif = pathname.startsWith(href);
           return (
             <li key={href} className="flex-1">
@@ -83,7 +95,7 @@ export function NavigationBasse() {
                     actif ? "font-medium text-forest" : "text-slate"
                   }`}
                 >
-                  {libelle}
+                  {court}
                 </span>
               </Link>
             </li>

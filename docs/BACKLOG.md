@@ -123,7 +123,7 @@ contrôles et produire les fiches est le travail manuel que cette application do
   **Test** : un stagiaire connecté peut passer un contrôle actif de son groupe sans lien externe.
 - [x] **4.6 — Interface** — Prompt : *"Crée la page Emploi du temps côté stagiaire, affichant les séances de son groupe et les dates de contrôle."*
   **Test** : vérifie que l'emploi du temps affiché correspond aux séances réellement planifiées du groupe du stagiaire connecté.
-- [ ] **4.7** — Prompt : *"Ajoute la possibilité de poser une question sur un support de cours consulté, avec mention `@camarade` possible dans la question ou la réponse. Conserve ces questions en archive pluriannuelle (table dédiée, sans mécanisme de réutilisation automatique pour l'instant)."*
+- [x] **4.7** — Prompt : *"Ajoute la possibilité de poser une question sur un support de cours consulté, avec mention `@camarade` possible dans la question ou la réponse. Conserve ces questions en archive pluriannuelle (table dédiée, sans mécanisme de réutilisation automatique pour l'instant)."*
   **Test** : pose une question sur un support test, vérifie qu'elle est bien rattachée au support et visible par le formateur.
 
 ---

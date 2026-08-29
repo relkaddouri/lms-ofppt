@@ -2,6 +2,10 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import {
+  chargerQuestions,
+  type QuestionSupport,
+} from "@/app/actions/questions-support";
 import { dureeHeures } from "@/lib/creneaux";
 
 export type PresenceStagiaire = {
@@ -48,6 +52,9 @@ export type SeanceDetail = {
   ficheVersion: number | null;
   supportContenu: unknown | null;
   supportVersion: number | null;
+  supportId: string | null;
+  /** Questions posées par les stagiaires sur ce support. */
+  questions: QuestionSupport[];
 };
 
 /** Enregistre le support d'une séance en créant une nouvelle version. */
@@ -146,7 +153,7 @@ export async function getSeanceDetail(
       .maybeSingle(),
     supabase
       .from("supports_seance")
-      .select("contenu, version")
+      .select("id, contenu, version")
       .eq("seance_id", seanceId)
       .order("version", { ascending: false })
       .limit(1)
@@ -185,6 +192,10 @@ export async function getSeanceDetail(
     ficheVersion: ficheRes.data?.version ?? null,
     supportContenu: supportRes.data?.contenu ?? null,
     supportVersion: supportRes.data?.version ?? null,
+    supportId: supportRes.data?.id ?? null,
+    questions: supportRes.data?.id
+      ? await chargerQuestions(supportRes.data.id, s.groupe_id)
+      : [],
   };
 }
 

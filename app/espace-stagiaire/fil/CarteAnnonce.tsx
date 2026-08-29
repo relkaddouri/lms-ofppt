@@ -4,8 +4,8 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/ui/Toast";
 import { formatDateTime } from "@/lib/format";
-import TexteMentions from "./TexteMentions";
-import ChampCommentaire from "./ChampCommentaire";
+import TexteMentions from "@/components/TexteMentions";
+import ChampMention from "@/components/ChampMention";
 import {
   basculerJaime,
   commenter,
@@ -146,7 +146,7 @@ export default function CarteAnnonce({
             </div>
           ))}
 
-          <ChampCommentaire
+          <ChampMention
             camarades={camarades}
             onEnvoyer={envoyer}
             busy={enCours}

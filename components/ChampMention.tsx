@@ -7,19 +7,23 @@ import type { Camarade } from "@/app/actions/fil";
 import { Send } from "lucide-react";
 
 /**
- * Saisie d'un commentaire, avec mention d'un camarade.
+ * Saisie d'un message, avec mention d'un camarade.
  *
  * Le « @ » ouvre une liste filtrée au fil de la frappe : c'est le geste décrit
- * par design_system.md, et il évite d'avoir à taper un nom exactement.
+ * par design_system.md, et il évite d'avoir à taper un nom exactement. Le
+ * champ sert au fil comme aux questions sur un support : une seule mécanique
+ * de mention pour tout l'espace stagiaire.
  */
-export default function ChampCommentaire({
+export default function ChampMention({
   camarades,
   onEnvoyer,
   busy,
+  placeholder = "Écrire un commentaire… @ pour mentionner",
 }: {
   camarades: Camarade[];
   onEnvoyer: (texte: string) => void;
   busy: boolean;
+  placeholder?: string;
 }) {
   const [texte, setTexte] = useState("");
   const [recherche, setRecherche] = useState<string | null>(null);
@@ -85,8 +89,8 @@ export default function ChampCommentaire({
             if (e.key === "Enter") envoyer();
             if (e.key === "Escape") setRecherche(null);
           }}
-          placeholder="Écrire un commentaire… @ pour mentionner"
-          aria-label="Écrire un commentaire"
+          placeholder={placeholder}
+          aria-label={placeholder}
           className={inputStyles}
         />
         <Button
