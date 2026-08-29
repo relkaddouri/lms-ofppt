@@ -35,8 +35,9 @@ export const theme = {
   slateLight: "#8C99A8",
   muted: "#A9B4C0",
 
-  // Fond des états actifs
+  // Fond des états actifs, et filet interne des cartes
   mint: "#EDF0F3",
+  separator: "#EDF0F3",
 
   // Teintes de statut
   bgSuccess: "#EAF3EE",

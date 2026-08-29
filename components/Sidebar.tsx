@@ -4,9 +4,20 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LogOut } from "lucide-react";
 import { signOutAction } from "@/app/actions/auth";
-import { initials } from "@/lib/format";
+import MarqueOfppt from "./MarqueOfppt";
+import Avatar from "./ui/Avatar";
 
-const navGroups = [
+/**
+ * Barre latérale du système visuel v3.
+ *
+ * Les icônes ont disparu au profit d'un losange, repris du logo : dans les
+ * écrans livrés, chaque entrée porte un petit losange plein quand elle est
+ * active, en contour sinon. C'est aussi ce qui corrige un défaut de la v2 —
+ * la fonction d'icône contenait un `return` inconditionnel avant les cas
+ * `calendrier` et `parametres`, si bien que Groupes, Calendrier et Paramètres
+ * affichaient tous les trois la même icône « personnes ».
+ */
+const GROUPES_NAV = [
   {
     label: "GESTION",
     items: [
@@ -22,79 +33,6 @@ const navGroups = [
   },
 ];
 
-function Icon({ name }: { name: string }) {
-  const className = "h-4 w-4";
-  if (name === "dashboard")
-    return (
-      <svg
-        className={className}
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-      >
-        <rect x="3" y="3" width="7" height="9" rx="1.5" />
-        <rect x="14" y="3" width="7" height="5" rx="1.5" />
-        <rect x="14" y="12" width="7" height="9" rx="1.5" />
-        <rect x="3" y="16" width="7" height="5" rx="1.5" />
-      </svg>
-    );
-  if (name === "modules")
-    return (
-      <svg
-        className={className}
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-      >
-        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-      </svg>
-    );
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-    >
-      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-      <circle cx="9" cy="7" r="4" />
-      <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-    </svg>
-  );
-  if (name === "calendrier")
-    return (
-      <svg
-        className={className}
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-      >
-        <rect x="3" y="4" width="18" height="17" rx="2" />
-        <path d="M3 10h18M8 2v4M16 2v4" />
-      </svg>
-    );
-  if (name === "parametres")
-    return (
-      <svg
-        className={className}
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-      >
-        <circle cx="12" cy="12" r="3" />
-        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1.08-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1.08 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-      </svg>
-    );
-  return null;
-}
-
 export default function Sidebar({
   email,
   role,
@@ -108,75 +46,81 @@ export default function Sidebar({
 }) {
   const pathname = usePathname();
 
-  const isActive = (href: string) =>
+  const estActif = (href: string) =>
     href === "/dashboard" ? pathname === href : pathname.startsWith(href);
 
   return (
     <aside
-      className={`fixed inset-y-0 left-0 z-40 flex w-[250px] shrink-0 flex-col border-r border-border bg-surface transition-transform duration-200 md:static md:translate-x-0 ${
+      className={`fixed inset-y-0 left-0 z-40 flex w-[264px] shrink-0 flex-col justify-between border-r border-border bg-surface py-[22px] transition-transform duration-200 ease-out md:static md:translate-x-0 ${
         open ? "translate-x-0" : "-translate-x-full"
       }`}
     >
-      <div className="flex items-center gap-2 px-6 py-6">
-        <div className="flex h-8 w-8 items-center justify-center rounded-[8px] bg-forest font-display text-sm font-bold text-white">
-          O
+      <div className="flex flex-col gap-8">
+        <div className="flex items-center gap-[11px] px-6">
+          <MarqueOfppt taille={12} ecart={3} />
+          <span className="flex flex-col gap-px">
+            <span className="font-display text-base font-bold tracking-[-0.01em] text-ink">
+              LMS OFPPT
+            </span>
+            <span className="text-xs text-slate-light">Espace formateur</span>
+          </span>
         </div>
-        <div className="font-display text-lg font-bold text-ink">LMS OFPPT</div>
-      </div>
 
-      <nav className="mt-2 flex-1 px-3">
-        {navGroups.map((group) => (
-          <div key={group.label} className="mt-5">
-            <p className="px-3 text-[11px] font-medium uppercase tracking-wider text-slate">
-              {group.label}
-            </p>
-            <ul className="mt-2 space-y-1">
-              {group.items.map((item) => {
-                const active = isActive(item.href);
+        <nav className="flex flex-col gap-[26px]">
+          {GROUPES_NAV.map((groupe) => (
+            <div key={groupe.label} className="flex flex-col gap-1">
+              <span className="px-6 pb-1.5 font-mono text-[10.5px] tracking-[0.14em] text-muted">
+                {groupe.label}
+              </span>
+              {groupe.items.map((item) => {
+                const actif = estActif(item.href);
                 return (
-                  <li key={item.href}>
-                    <Link
-                      href={item.href}
-                      onClick={onClose}
-                      className={`flex items-center gap-3 rounded-[8px] px-3 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-forest ${
-                        active
-                          ? "bg-mint text-forest"
-                          : "text-slate hover:bg-mint/50 hover:text-forest"
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={onClose}
+                    aria-current={actif ? "page" : undefined}
+                    className={`mx-3 flex items-center gap-3 rounded-[9px] px-3 py-2.5 text-[15px] transition-colors duration-150 ease-out focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_rgba(46,125,158,0.15)] ${
+                      actif
+                        ? "bg-wash font-semibold text-ink"
+                        : "text-slate-2 hover:bg-paper hover:text-ink"
+                    }`}
+                  >
+                    <span
+                      aria-hidden
+                      className={`h-2 w-2 shrink-0 rotate-45 ${
+                        actif ? "bg-ink" : "border-[1.5px] border-muted"
                       }`}
-                    >
-                      <span className="shrink-0 text-forest">
-                        <Icon name={item.href.replace("/", "")} />
-                      </span>
-                      {item.label}
-                    </Link>
-                  </li>
+                    />
+                    {item.label}
+                  </Link>
                 );
               })}
-            </ul>
-          </div>
-        ))}
-      </nav>
+            </div>
+          ))}
+        </nav>
+      </div>
 
-      <div className="border-t border-border px-4 py-4">
+      <div className="mx-3 border-t border-separator px-3 pt-3.5">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border bg-mint text-xs font-semibold text-forest focus-visible:ring-2 focus-visible:ring-mint">
-            {initials(email ?? "F")}
-          </div>
-          <div className="min-w-0">
-            <p className="truncate text-sm font-medium text-ink">
+          <Avatar prenom={email ?? "F"} taille="sm" />
+          <span className="flex min-w-0 flex-col gap-px">
+            <span className="truncate text-[14.5px] font-semibold text-ink">
               {email ?? "Formateur"}
-            </p>
+            </span>
             {role ? (
-              <p className="truncate text-xs capitalize text-slate">{role}</p>
+              <span className="text-[12.5px] capitalize text-slate-light">
+                {role}
+              </span>
             ) : null}
-          </div>
+          </span>
         </div>
         <form action={signOutAction} className="mt-3">
           <button
             type="submit"
-            className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-slate hover:bg-mint/50 hover:text-ink focus:outline-none focus:ring-2 focus:ring-forest"
+            className="flex w-full items-center gap-2 rounded-[9px] px-3 py-2 text-sm font-semibold text-slate-2 transition-colors duration-150 ease-out hover:bg-paper hover:text-ink focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_rgba(46,125,158,0.15)]"
           >
-            <LogOut size={16} />
+            <LogOut size={16} aria-hidden />
             Déconnexion
           </button>
         </form>

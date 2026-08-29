@@ -1,111 +1,85 @@
 "use client";
 
 import {
-  Bar,
-  BarChart,
+  Area,
+  AreaChart,
   CartesianGrid,
-  Line,
-  LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
-import type {
-  EvolutionPoint,
-  GroupeProgression,
-} from "@/app/actions/dashboard";
 import { theme } from "@/lib/theme";
+import type { EvolutionPoint } from "@/app/actions/dashboard";
 
-const gridStroke = `${theme.slate}26`;
-const tickStyle = { fontSize: 12, fill: theme.slate };
-
-function BarTooltip({ active, payload }: { active?: boolean; payload?: { value: number; payload: { nom: string } }[] }) {
-  if (!active || !payload?.length) return null;
-  const item = payload[0];
-  return (
-    <div className="rounded-lg border border-border bg-surface px-3 py-2 shadow-lg">
-      <p className="text-xs font-medium text-slate">{item.payload.nom}</p>
-      <p className="mt-0.5 font-mono text-sm font-semibold text-ink">
-        {item.value}%
-      </p>
-    </div>
-  );
-}
-
+/**
+ * Évolution de la progression, en aire pleine.
+ *
+ * La maquette (`Tableau de bord formateur v2.dc.html`) trace une aire
+ * `#2E3B4E` à 7 % sous une ligne de 2,5 px de la même couleur. Le dégradé
+ * vert de la v2 n'existe plus : les écrans livrés n'emploient aucun dégradé.
+ *
+ * Le graphique en barres « Avancement par groupe » a disparu avec lui — la
+ * carte « Groupes par urgence » porte déjà la même information, chiffrée, et
+ * la maquette ne garde que celle-là.
+ */
 export default function DashboardCharts({
-  groupes,
   evolution,
 }: {
-  groupes: GroupeProgression[];
   evolution: EvolutionPoint[];
 }) {
-  const barData = groupes.map((g) => ({ nom: g.nom, avancement: g.pourcentage }));
-  const lineData = evolution.map((e) => ({ date: e.label, totalFait: e.totalFait }));
+  const donnees = evolution.map((e) => ({
+    date: e.label,
+    totalFait: e.totalFait,
+  }));
 
   return (
-    <>
-      <div className="rounded-xl border border-border bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-4">
-        <h2 className="font-display text-xl font-bold text-ink">
-          Avancement par groupe
-        </h2>
-        <div className="mt-4 h-72">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={barData}>
-              <defs>
-                <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={theme.forest} />
-                  <stop offset="100%" stopColor={theme.forestLight} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} />
-              <XAxis
-                dataKey="nom"
-                tick={tickStyle}
-                tickFormatter={(v: string) =>
-                  v.length > 18 ? `${v.slice(0, 16)}…` : v
-                }
-              />
-              <YAxis domain={[0, 100]} unit="%" tick={tickStyle} />
-              <Tooltip
-                cursor={{ fill: `${theme.forest}14` }}
-                content={<BarTooltip />}
-              />
-              <Bar
-                dataKey="avancement"
-                fill="url(#barGradient)"
-                radius={[4, 4, 0, 0]}
-                activeBar={{ fill: theme.forestLight }}
-              />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      <div className="rounded-xl border border-border bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-4">
-        <h2 className="font-display text-xl font-bold text-ink">
-          Évolution de la progression
-        </h2>
-        <div className="mt-4 h-72">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={lineData}>
-              <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} />
-              <XAxis dataKey="date" tick={tickStyle} />
-              <YAxis allowDecimals={false} tick={tickStyle} />
-              <Tooltip
-                formatter={(value) => [`${value} séance(s)`, "Cumul fait"]}
-              />
-              <Line
-                type="monotone"
-                dataKey="totalFait"
-                stroke={theme.success}
-                strokeWidth={2}
-                dot={{ fill: theme.success, r: 3 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-    </>
+    <div className="h-[260px] w-full">
+      <ResponsiveContainer width="100%" height="100%">
+        <AreaChart
+          data={donnees}
+          margin={{ top: 8, right: 8, bottom: 0, left: -18 }}
+        >
+          <CartesianGrid
+            stroke={theme.separator}
+            strokeDasharray="0"
+            vertical={false}
+          />
+          <XAxis
+            dataKey="date"
+            tick={{ fontSize: 12, fill: theme.slateLight }}
+            axisLine={false}
+            tickLine={false}
+          />
+          <YAxis
+            allowDecimals={false}
+            tick={{ fontSize: 12, fill: theme.slateLight }}
+            axisLine={false}
+            tickLine={false}
+          />
+          <Tooltip
+            cursor={{ stroke: theme.borderStrong, strokeWidth: 1 }}
+            formatter={(value) => [`${value} séance(s)`, "Cumul fait"]}
+            contentStyle={{
+              borderRadius: 10,
+              border: `1px solid ${theme.border}`,
+              boxShadow: "0 10px 28px rgba(46,59,78,.14)",
+              fontSize: 13,
+            }}
+          />
+          <Area
+            type="linear"
+            dataKey="totalFait"
+            stroke={theme.ink}
+            strokeWidth={2.5}
+            strokeLinejoin="round"
+            strokeLinecap="round"
+            fill={theme.ink}
+            fillOpacity={0.07}
+            dot={false}
+          />
+        </AreaChart>
+      </ResponsiveContainer>
+    </div>
   );
 }

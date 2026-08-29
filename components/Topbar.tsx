@@ -1,29 +1,7 @@
 "use client";
 
-import { usePathname } from "next/navigation";
-import { ONGLETS_GROUPE, ongletGroupeActif } from "@/lib/navigation";
-
-const TITLES: Record<string, string> = {
-  "/dashboard": "Tableau de bord",
-  "/modules": "Modules",
-  "/groupes": "Groupes",
-};
-
-function titleFor(pathname: string) {
-  if (TITLES[pathname]) return TITLES[pathname];
-  if (pathname.startsWith("/modules/")) {
-    if (pathname.endsWith("/correction")) return "Assistant de correction";
-    if (pathname.endsWith("/historique")) return "Historique des modifications";
-    if (pathname.includes("/controle")) return "Contrôle";
-    if (pathname.includes("/fiche")) return "Fiche de préparation";
-    return "Module";
-  }
-  if (pathname.startsWith("/groupes/")) {
-    const onglet = ongletGroupeActif(pathname);
-    return onglet.key === ONGLETS_GROUPE[0].key ? "Groupe" : onglet.label;
-  }
-  return "LMS OFPPT";
-}
+import { Menu } from "lucide-react";
+import Avatar from "./ui/Avatar";
 
 export default function Topbar({
   email,
@@ -32,37 +10,27 @@ export default function Topbar({
   email: string | null;
   onMenuClick: () => void;
 }) {
-  const pathname = usePathname();
-
   return (
-    <header className="flex items-center justify-between border-b border-border bg-surface px-4 py-4 md:px-8">
-      <div className="flex items-center gap-3">
+    <header className="flex h-[68px] flex-none items-center justify-between gap-6 border-b border-border bg-surface px-5 md:px-10">
+      <div className="flex min-w-0 items-center gap-3">
         <button
           onClick={onMenuClick}
-          className="rounded-[8px] p-1.5 text-slate hover:bg-mint/50 hover:text-forest focus:outline-none focus:ring-2 focus:ring-forest md:hidden"
+          className="rounded-[9px] p-1.5 text-slate-2 transition-colors duration-150 ease-out hover:bg-paper hover:text-ink focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_rgba(46,125,158,0.15)] md:hidden"
           aria-label="Ouvrir le menu"
         >
-          <svg
-            className="h-5 w-5"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-          >
-            <path d="M3 12h18M3 6h18M3 18h18" />
-          </svg>
+          <Menu size={20} aria-hidden />
         </button>
-        <h1 className="font-display text-[24px] font-bold text-ink">
-          {titleFor(pathname)}
-        </h1>
-      </div>
-      <div className="flex items-center gap-3">
-        <span className="hidden text-xs text-slate sm:block">
-          {email}
+        {/* Le titre de l'application, pas celui de la page : la page porte son
+            propre titre dans son en-tête, comme dans les écrans livrés. */}
+        <span className="truncate font-display text-[15px] font-semibold tracking-[0.02em] text-ink">
+          LMS OFPPT — Gestion pédagogique
         </span>
-        <div className="flex h-8 w-8 items-center justify-center rounded-full border border-border bg-mint text-xs font-semibold text-forest focus-visible:ring-2 focus-visible:ring-mint">
-          {(email ?? "F").slice(0, 1).toUpperCase()}
-        </div>
+      </div>
+
+      <div className="flex items-center gap-2.5">
+        <span className="hidden text-[13px] text-slate sm:block">{email}</span>
+        <span className="mx-1 hidden h-6 w-0.5 bg-separator sm:block" />
+        <Avatar prenom={email ?? "F"} />
       </div>
     </header>
   );
