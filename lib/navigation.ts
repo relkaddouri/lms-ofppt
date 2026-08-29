@@ -12,6 +12,7 @@ export const ONGLETS_GROUPE = [
   { key: "fiches", label: "Fiches", segment: "fiches" },
   { key: "controles", label: "Contrôles", segment: "controles" },
   { key: "devoirs", label: "Devoirs", segment: "devoirs" },
+  { key: "stage", label: "Stage", segment: "stage" },
 ] as const;
 
 export type OngletGroupe = (typeof ONGLETS_GROUPE)[number];

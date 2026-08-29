@@ -136,7 +136,7 @@ contrôles et produire les fiches est le travail manuel que cette application do
   **Test** : marque 2 stagiaires absents sur une séance, vérifie le calcul du taux de présence cumulé.
 - [x] **5.3** — Prompt : *"Ajoute le calendrier des jours fériés/vacances OFPPT (saisie manuelle), l'emploi du temps personnel du formateur, et la déclaration d'absence (maladie) visible dans le calendrier."*
   **Test** : déclare une absence sur une date test, vérifie qu'elle apparaît visuellement dans le calendrier.
-- [ ] **5.4** — Prompt : *"Crée le module stage/soutenance (compétence 16) : suivi du stage (dates, entreprise, tuteur), dépôt des documents (contrat, attestation, note tuteur), les deux grilles de notation (Rapport /20 : présentation /8 + contenu /12 ; Exposé /20 : fond /14 + forme /6) avec noms du jury."*
+- [x] **5.4** — Prompt : *"Crée le module stage/soutenance (compétence 16) : suivi du stage (dates, entreprise, tuteur), dépôt des documents (contrat, attestation, note tuteur), les deux grilles de notation (Rapport /20 : présentation /8 + contenu /12 ; Exposé /20 : fond /14 + forme /6) avec noms du jury."*
   **Test** : saisis un stage test avec ses deux grilles de notation, vérifie l'affichage correct des sous-totaux.
 - [ ] **5.5** — Prompt : *"Crée l'export 'classeur pédagogique' : regroupe les fiches de préparation d'un module/groupe sur une période en un document PDF téléchargeable, dans un format proche du cahier du formateur papier."*
   **Test** : exporte un mois de fiches pour un groupe test, vérifie la lisibilité et la complétude du PDF.
