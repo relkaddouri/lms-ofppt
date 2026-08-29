@@ -3,6 +3,7 @@ import { getGroupeModules } from "@/app/actions/groupes";
 import { getRappelsControle } from "@/app/actions/rappels";
 import ModuleProgression, { type ObjectifBloc } from "./ModuleProgression";
 import PlanifierSeance from "./PlanifierSeance";
+import SuiviSeances from "./SuiviSeances";
 import Card from "@/components/ui/Card";
 import { CalendarDays } from "lucide-react";
 
@@ -69,18 +70,32 @@ export default async function ProgressionPage({
     m.seances.some((s) => s.statut !== "fait"),
   )?.[0];
 
+  const faites = seances.filter((s) => s.statut === "fait").length;
+
   return (
-    <>
-      <div className="mt-6 flex items-center justify-between gap-4">
-        <p className="text-sm text-slate">
-          {seances.length} séance{seances.length > 1 ? "s" : ""} sur{" "}
-          {parModule.size} module{parModule.size > 1 ? "s" : ""}
-        </p>
+    <div className="flex flex-col gap-6 pt-8">
+      <header className="flex flex-wrap items-end justify-between gap-6">
+        <div className="flex flex-col gap-2">
+          <span className="font-mono text-[11.5px] uppercase tracking-[0.12em] text-slate-light">
+            Plan de déroulement
+          </span>
+          <h1 className="font-display text-[28px] font-bold leading-tight tracking-[-0.02em] text-ink">
+            Suivi des séances
+          </h1>
+          <p className="text-[15px] text-slate-2">
+            <span className="font-mono text-body">{seances.length}</span> séance
+            {seances.length > 1 ? "s" : ""} sur{" "}
+            <span className="font-mono text-body">{parModule.size}</span> module
+            {parModule.size > 1 ? "s" : ""} ·{" "}
+            <span className="font-mono text-body">{faites}</span> faite
+            {faites > 1 ? "s" : ""}
+          </p>
+        </div>
         <PlanifierSeance groupeId={id} modules={modules} />
-      </div>
+      </header>
 
       {seances.length === 0 ? (
-        <Card className="mt-6 p-10 text-center" padded={false}>
+        <Card className="p-10 text-center" padded={false}>
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-mint">
             <CalendarDays className="h-6 w-6 text-forest" aria-hidden />
           </div>
@@ -94,8 +109,12 @@ export default async function ProgressionPage({
           </p>
         </Card>
       ) : (
-        <div className="mt-4 space-y-3">
-          {[...parModule.entries()].map(([moduleId, m]) => (
+        <SuiviSeances
+          groupeId={id}
+          seances={seances}
+          enfants={
+            <div className="flex flex-col gap-3">
+              {[...parModule.entries()].map(([moduleId, m]) => (
             <ModuleProgression
               key={moduleId}
               groupeId={id}
@@ -106,11 +125,13 @@ export default async function ProgressionPage({
               controlesCouverts={couverts.get(moduleId) ?? 0}
               objectifs={[...m.objectifs.values()]}
               seances={m.seances}
-              ouvertParDefaut={moduleId === premierEnCours}
-            />
-          ))}
-        </div>
+                  ouvertParDefaut={moduleId === premierEnCours}
+                />
+              ))}
+            </div>
+          }
+        />
       )}
-    </>
+    </div>
   );
 }
