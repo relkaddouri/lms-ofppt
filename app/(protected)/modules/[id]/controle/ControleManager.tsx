@@ -21,6 +21,7 @@ import CopiesManager from "./CopiesManager";
 import ContenuCouvert from "./ContenuCouvert";
 import { Stepper, NavigationEtapes } from "./Stepper";
 import { useToast } from "@/components/ui/Toast";
+import BandeauIa from "@/components/BandeauIa";
 import Breadcrumb from "@/components/Breadcrumb";
 import Badge from "@/components/ui/Badge";
 import Button, { buttonStyles } from "@/components/ui/Button";
@@ -101,7 +102,16 @@ export default function ControleManager({
   const [typeEfm, setTypeEfm] = useState<TypeEfm>("local");
   const [format, setFormat] = useState<FormatControle>("theorique");
   const [datePrevue, setDatePrevue] = useState("");
-  const [questions, setQuestions] = useState<DraftQuestion[]>([]);
+  const [questions, ecrireQuestions] = useState<DraftQuestion[]>([]);
+  // Vrai tant que le sujet sort du modèle sans que le formateur y ait touché.
+  const [issuDuModele, setIssuDuModele] = useState(false);
+
+  // Toute modification vaut relecture : le bandeau tombe à la première retouche
+  // d'un énoncé, d'un barème ou d'un corrigé.
+  const setQuestions: typeof ecrireQuestions = (v) => {
+    setIssuDuModele(false);
+    ecrireQuestions(v);
+  };
   const [genDuree, setGenDuree] = useState(2);
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -134,7 +144,7 @@ export default function ControleManager({
       setTypeEfm(c.type_efm ?? "local");
       setFormat(c.format);
       setDatePrevue(c.date_prevue ?? "");
-      setQuestions(
+      ecrireQuestions(
         c.questions.map((q: Question) => ({
           id: q.id,
           type: q.type ?? "ouverte",
@@ -219,7 +229,7 @@ export default function ControleManager({
       setConsignes(data.consignes ?? "");
       setDuree(genDuree);
       setStatut("brouillon");
-      setQuestions(
+      ecrireQuestions(
         (data.questions ?? []).map((q: Partial<DraftQuestion>) => ({
           id: crypto.randomUUID(),
           type: q.type ?? "ouverte",
@@ -229,6 +239,7 @@ export default function ControleManager({
           corrige: q.corrige ?? "",
         })),
       );
+      setIssuDuModele(true);
       setAvertissements(
         Array.isArray(data.avertissements) ? data.avertissements : [],
       );
@@ -306,6 +317,8 @@ export default function ControleManager({
     setBusy(true);
     try {
       await setControleStatut(activeId, moduleId, "valide");
+      // Valider, c'est assumer le contenu : le bandeau n'a plus lieu d'être.
+      setIssuDuModele(false);
       setStatut("valide");
       setNotice("Contrôle validé.");
       toast("Contrôle validé");
@@ -434,6 +447,15 @@ export default function ControleManager({
           </select>
         </div>
       </div>
+
+      {issuDuModele ? (
+        <div className="mt-4">
+          <BandeauIa>
+            Sujet et corrigé générés par l&apos;IA — relisez-les avant de
+            valider le contrôle.
+          </BandeauIa>
+        </div>
+      ) : null}
 
       {avertissements.length > 0 ? (
         <div className="mt-4 rounded-xl border border-info/30 bg-info/10 px-4 py-3">

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { saveSupport } from "@/app/actions/seance";
 import { useToast } from "@/components/ui/Toast";
+import BandeauIa from "@/components/BandeauIa";
 import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
 import { inputStyles as inputClass } from "@/components/ui/Input";
@@ -40,9 +41,17 @@ export default function SupportSeance({
 }) {
   const router = useRouter();
   const toast = useToast();
-  const [support, setSupport] = useState<Support | null>(
+  const [support, ecrireSupport] = useState<Support | null>(
     (initial as Support | null) ?? null,
   );
+  // Vrai tant que le support sort du modèle sans relecture du formateur.
+  const [issuDuModele, setIssuDuModele] = useState(false);
+
+  // Toute modification vaut relecture : le bandeau tombe au premier caractère.
+  const setSupport: typeof ecrireSupport = (v) => {
+    setIssuDuModele(false);
+    ecrireSupport(v);
+  };
   const [busy, setBusy] = useState(false);
   const [avertissements, setAvertissements] = useState<string[]>([]);
   // Un cours se projette autant qu'il s'édite : les deux vues portent le même
@@ -61,7 +70,8 @@ export default function SupportSeance({
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Erreur de génération");
-      setSupport(data.support);
+      ecrireSupport(data.support);
+      setIssuDuModele(true);
       setAvertissements(data.avertissements ?? []);
       toast("Support généré. Relisez-le avant de le remettre.");
     } catch (e) {
@@ -76,6 +86,8 @@ export default function SupportSeance({
     setBusy(true);
     try {
       const v = await saveSupport(contexte.seanceId, support.type, support);
+      // Enregistrer, c'est valider : le support n'est plus un brouillon.
+      setIssuDuModele(false);
       toast(`Version ${v} enregistrée`);
       router.refresh();
     } catch (e) {
@@ -172,6 +184,16 @@ export default function SupportSeance({
               {libelle}
             </button>
           ))}
+        </div>
+      ) : null}
+
+      {issuDuModele ? (
+        <div className="mt-3">
+          <BandeauIa>
+            {pratique
+              ? "Énoncé généré par l'IA — relisez-le avant de le distribuer."
+              : "Cours généré par l'IA — relisez-le avant de le remettre."}
+          </BandeauIa>
         </div>
       ) : null}
 

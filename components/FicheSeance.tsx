@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { saveFiche } from "@/app/actions/fiches";
 import { useToast } from "@/components/ui/Toast";
+import BandeauIa from "@/components/BandeauIa";
 import Button from "@/components/ui/Button";
 import { inputStyles as inputClass } from "@/components/ui/Input";
 import AutoTextarea from "@/components/ui/AutoTextarea";
@@ -98,7 +99,16 @@ export default function FicheSeance({
 }) {
   const router = useRouter();
   const toast = useToast();
-  const [fiche, setFiche] = useState<Fiche>(() => lireFiche(initial));
+  const [fiche, ecrireFiche] = useState<Fiche>(() => lireFiche(initial));
+  // Vrai tant que la fiche sort du modèle sans que le formateur y ait touché.
+  const [issuDuModele, setIssuDuModele] = useState(false);
+
+  // Toute modification vaut relecture : le bandeau tombe au premier caractère.
+  // Passer par ce setter partout évite d'avoir à y penser champ par champ.
+  const setFiche: typeof ecrireFiche = (v) => {
+    setIssuDuModele(false);
+    ecrireFiche(v);
+  };
   const [busy, setBusy] = useState(false);
   const [avertissements, setAvertissements] = useState<string[]>([]);
   // On consulte une fiche bien plus souvent qu'on ne la modifie : la lecture
@@ -129,7 +139,8 @@ export default function FicheSeance({
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Erreur de génération");
-      setFiche({ ...ficheVide(), ...data.fiche });
+      ecrireFiche({ ...ficheVide(), ...data.fiche });
+      setIssuDuModele(true);
       setAvertissements(data.avertissements ?? []);
       toast("Fiche générée. Relisez-la avant d'enregistrer.");
     } catch (e) {
@@ -147,6 +158,8 @@ export default function FicheSeance({
     setBusy(true);
     try {
       const version = await saveFiche(contexte.seanceId, JSON.stringify(fiche));
+      // Enregistrer, c'est valider : le contenu n'est plus un brouillon de modèle.
+      setIssuDuModele(false);
       toast(`Version ${version} enregistrée`);
       setEdition(false);
       router.refresh();
@@ -286,6 +299,12 @@ export default function FicheSeance({
           {contexte.minutesSeance ? ` / ${contexte.minutesSeance} min` : ""}
         </span>
       </div>
+
+      {issuDuModele ? (
+        <div className="mt-3">
+          <BandeauIa />
+        </div>
+      ) : null}
 
       {avertissements.length > 0 ? (
         <ul className="mt-3 list-disc space-y-0.5 rounded-lg bg-info/10 px-5 py-2 text-sm text-ink">
