@@ -2,15 +2,24 @@ import { createClient, getUser } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { chargerConfigLlm, ErreurLlm } from "@/lib/llm";
 import { noterCopie, questionsAJuger, type QuestionPourNotation } from "@/lib/notation";
+import {
+  verifierQuota,
+  QUOTA_CORRECTION,
+  QUOTA_REMISE,
+} from "@/lib/rate-limit";
 import { NextResponse } from "next/server";
 
 /**
  * Remise d'une copie par un stagiaire connecté.
  *
  * Remplace la passation par lien public : l'identité vient du compte, pas d'un
- * nom saisi au clavier, et la base refuse une seconde copie. La limite de débit
- * qui protégeait le lien public n'a plus lieu d'être — un compte ne peut rendre
- * qu'une fois.
+ * nom saisi au clavier, et la base refuse une seconde copie.
+ *
+ * Cette unicité vaut pour le résultat, pas pour le coût : le contrôle d'unicité
+ * a lieu avant la correction, l'insertion après. Deux requêtes simultanées le
+ * passaient toutes les deux et payaient deux corrections au modèle du
+ * formateur, même si la base n'en gardait qu'une. D'où le verrou par stagiaire
+ * et par contrôle, posé juste avant la dépense.
  */
 export async function POST(request: Request) {
   const { controleId, reponses } = await request.json().catch(() => ({}));
@@ -42,6 +51,9 @@ export async function POST(request: Request) {
       { status: 403 },
     );
   }
+
+  const rythme = verifierQuota(`passation:${user.id}`, QUOTA_REMISE);
+  if (rythme) return rythme;
 
   const service = createServiceClient();
 
@@ -95,6 +107,14 @@ export async function POST(request: Request) {
   // paie et qui a choisi. Inutile de le charger si tout est en QCM.
   let config = null;
   if (questionsAJuger(questions).length > 0) {
+    // Le verrou se pose ici, et pas plus haut : une copie entièrement en QCM ne
+    // coûte rien et n'a aucune raison d'être bridée.
+    const verrou = verifierQuota(
+      `correction:${user.id}:${controleId}`,
+      QUOTA_CORRECTION,
+    );
+    if (verrou) return verrou;
+
     const { data: groupe } = await service
       .from("groupes")
       .select("formateur_id")

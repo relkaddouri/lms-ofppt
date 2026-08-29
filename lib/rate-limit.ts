@@ -76,3 +76,36 @@ export function tooManyRequests(retryAfterSeconds: number) {
     },
   );
 }
+
+/**
+ * Quotas des chemins qui déclenchent un appel facturé au modèle.
+ *
+ * Les endpoints ne sont plus publics depuis l'atome 4.1, mais l'authentification
+ * ne borne pas la dépense : un compte légitime peut lancer autant d'appels qu'il
+ * veut, et chacun est payé par le formateur. Ces quotas laissent passer un usage
+ * normal — générer puis raffiner un contrôle plusieurs fois de suite — et
+ * coupent la boucle ou la rafale.
+ */
+export const QUOTA_GENERATION = { limite: 20, fenetreMs: 10 * 60_000 };
+
+/**
+ * Une copie ne se corrige qu'une fois. Le verrou est posé par stagiaire ET par
+ * contrôle : c'est ce qui empêche N requêtes simultanées de passer toutes le
+ * contrôle d'unicité et de payer N corrections avant que la base n'en refuse
+ * une seule.
+ */
+export const QUOTA_CORRECTION = { limite: 1, fenetreMs: 2 * 60_000 };
+
+/** Garde-fou de rythme sur la remise elle-même, avant toute dépense. */
+export const QUOTA_REMISE = { limite: 10, fenetreMs: 10 * 60_000 };
+
+export type Quota = { limite: number; fenetreMs: number };
+
+/**
+ * Renvoie une réponse 429 prête à retourner, ou `null` si l'appel est autorisé.
+ * Écrit une fois ici pour que les routes n'aient pas chacune leur variante.
+ */
+export function verifierQuota(cle: string, quota: Quota): Response | null {
+  const resultat = rateLimit(cle, quota.limite, quota.fenetreMs);
+  return resultat.allowed ? null : tooManyRequests(resultat.retryAfterSeconds);
+}

@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { appelerLlm, chargerConfigLlm, ErreurLlm } from "@/lib/llm";
+import { verifierQuota, QUOTA_GENERATION } from "@/lib/rate-limit";
 import { NextResponse } from "next/server";
 
 type OptionGeneree = { texte: string; correcte: boolean };
@@ -108,6 +109,10 @@ export async function POST(request: Request) {
   if (!user) {
     return NextResponse.json({ error: "Authentification requise" }, { status: 401 });
   }
+
+  // Chaque appel est facturé sur la clé du formateur : on borne le rythme.
+  const quota = verifierQuota(`generate-controle:${user.id}`, QUOTA_GENERATION);
+  if (quota) return quota;
 
   const { data: module, error } = await supabase
     .from("modules")

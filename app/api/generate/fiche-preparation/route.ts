@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { appelerLlm, chargerConfigLlm, ErreurLlm } from "@/lib/llm";
 import { dureeHeures, formatHeure } from "@/lib/creneaux";
+import { verifierQuota, QUOTA_GENERATION } from "@/lib/rate-limit";
 import { NextResponse } from "next/server";
 
 /**
@@ -66,6 +67,10 @@ export async function POST(request: Request) {
   if (!user) {
     return NextResponse.json({ error: "Authentification requise" }, { status: 401 });
   }
+
+  // Chaque appel est facturé sur la clé du formateur : on borne le rythme.
+  const quota = verifierQuota(`generate-fiche:${user.id}`, QUOTA_GENERATION);
+  if (quota) return quota;
 
   // La séance porte tout le contexte utile : sa durée réelle, son objectif, le
   // groupe concerné et le module dont elle relève.

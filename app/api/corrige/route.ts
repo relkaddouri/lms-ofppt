@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { appelerLlm, chargerConfigLlm, ErreurLlm } from "@/lib/llm";
+import { verifierQuota, QUOTA_GENERATION } from "@/lib/rate-limit";
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
@@ -32,6 +33,10 @@ export async function POST(request: Request) {
   if (!user) {
     return NextResponse.json({ error: "Authentification requise" }, { status: 401 });
   }
+
+  // Chaque appel est facturé sur la clé du formateur : on borne le rythme.
+  const quota = verifierQuota(`corrige:${user.id}`, QUOTA_GENERATION);
+  if (quota) return quota;
 
   const prompt = [
     "Tu es un correcteur expert OFPPT. Évalue la réponse d'un stagiaire à une question d'un contrôle.",
