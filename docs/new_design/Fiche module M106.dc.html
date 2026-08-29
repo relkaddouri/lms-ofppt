@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=Source+Sans+3:ital,wght@0,400;0,500;0,600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  body { margin: 0; background: #F6F7F9; }
+  a { color: #2E7D9E; text-decoration: none; }
+  a:hover { color: #2E3B4E; text-decoration: underline; }
+</style>
+</helmet>
+<div style="min-height:100vh;background:#F6F7F9;font-family:'Source Sans 3',system-ui,sans-serif;color:#2E3B4E;padding:44px 40px 64px;box-sizing:border-box">
+  <div style="max-width:920px;margin:0 auto;display:flex;flex-direction:column;gap:22px">
+
+    <div style="display:flex;align-items:center;gap:8px;font-size:13.5px;color:#8C99A8">
+      <a href="#" style="color:#5B6A7D">Modules</a><span>/</span>
+      <span style="font-family:'IBM Plex Mono',monospace;color:#3F4E62">M106</span>
+    </div>
+
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:24px;flex-wrap:wrap">
+      <div style="display:flex;align-items:flex-start;gap:16px;min-width:0">
+        <span style="font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:15px;color:#FFFFFF;background:#2E3B4E;border-radius:10px;padding:10px 13px;flex:none">M106</span>
+        <div style="display:flex;flex-direction:column;gap:8px;min-width:0">
+          <h1 style="font-family:Sora,sans-serif;font-weight:700;font-size:29px;line-height:1.2;letter-spacing:-.02em;margin:0">Bases de données relationnelles</h1>
+          <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;font-size:14.5px;color:#6B7A8D">
+            <span style="font-family:'IBM Plex Mono',monospace;font-weight:500;color:#3F4E62">90 h</span>
+            <span>TSDI · 1ʳᵉ année</span>
+            <span style="display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:#2C6C46;background:#EAF3EE;border:1px solid #CFE4D8;border-radius:999px;padding:4px 11px"><span style="width:6px;height:6px;border-radius:50%;background:#3C8C5C"></span>Actif</span>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px">
+        <button type="button" style="font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:14px;color:#2E3B4E;background:#FFFFFF;border:1px solid #C9D2DC;border-radius:9px;padding:9px 16px;cursor:pointer;white-space:nowrap" style-hover="background:#FFFFFF;border-color:#2E3B4E">Modifier</button>
+        <button type="button" style="font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:14px;color:#FFFFFF;background:#2E3B4E;border:1px solid #2E3B4E;border-radius:9px;padding:9px 16px;cursor:pointer;white-space:nowrap" style-hover="background:#25303F">Planifier une séance</button>
+      </div>
+    </div>
+
+    <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:14px;box-shadow:0 1px 2px rgba(46,59,78,.05);overflow:hidden">
+      <div style="padding:22px 26px;display:flex;flex-direction:column;gap:16px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:#8C99A8">Référentiel officiel</span>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#A9B4C0">RÉF-TSDI-M106 · rév. 2024</span>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <h2 style="font-family:Sora,sans-serif;font-weight:600;font-size:19px;margin:0">Exploiter une base de données relationnelle</h2>
+          <div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap;font-size:14px;color:#6B7A8D">
+            <span>Compétence particulière</span>
+            <span style="font-family:'IBM Plex Mono',monospace;color:#3F4E62">Code C-07</span>
+            <span style="font-family:'IBM Plex Mono',monospace;color:#3F4E62">90 h · 3 unités</span>
+          </div>
+          <p style="margin:0;font-size:15.5px;line-height:1.6;color:#3F4E62;text-wrap:pretty">À l'issue du module, le stagiaire conçoit un schéma relationnel normalisé et exploite les données au moyen du langage SQL, dans le respect des règles d'intégrité.</p>
+        </div>
+
+        <button type="button" onClick="{{ toggle }}" style="align-self:flex-start;display:flex;align-items:center;gap:9px;font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:14px;color:#2E3B4E;background:#FFFFFF;border:1px solid #C9D2DC;border-radius:9px;padding:9px 16px;cursor:pointer;white-space:nowrap" style-hover="background:#F6F7F9;border-color:#2E3B4E">
+          {{ toggleLabel }}
+          <span style="display:flex;transition:transform .15s ease;transform:{{ chevron }}">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg>
+          </span>
+        </button>
+      </div>
+
+      <sc-if value="{{ open }}" hint-placeholder-val="{{ false }}">
+        <div style="border-top:1px solid #EDF0F3;background:#FAFBFC;padding:24px 26px;display:flex;flex-direction:column;gap:26px">
+
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:#8C99A8">Contexte de réalisation</span>
+            <ul style="margin:0;padding-left:20px;display:flex;flex-direction:column;gap:7px;font-size:15px;line-height:1.55;color:#3F4E62">
+              <li>À partir d'un cahier des charges fonctionnel fourni par le formateur.</li>
+              <li>À l'aide d'un SGBD relationnel et d'un outil de modélisation.</li>
+              <li>En salle informatique, en travail individuel puis en binôme.</li>
+            </ul>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:#8C99A8">Critères généraux de performance</span>
+            <ul style="margin:0;padding-left:20px;display:flex;flex-direction:column;gap:7px;font-size:15px;line-height:1.55;color:#3F4E62">
+              <li>Respect des règles de normalisation jusqu'à la 3ᵉ forme normale.</li>
+              <li>Exactitude des requêtes au regard du besoin exprimé.</li>
+              <li>Utilisation rigoureuse de la terminologie du domaine.</li>
+              <li>Souci constant de l'intégrité et de la cohérence des données.</li>
+            </ul>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:#8C99A8">Éléments de la compétence</span>
+
+            <div style="display:flex;gap:14px">
+              <span style="width:28px;height:28px;border-radius:8px;flex:none;background:#2E3B4E;color:#FFFFFF;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:13px;display:flex;align-items:center;justify-content:center">A</span>
+              <div style="display:flex;flex-direction:column;gap:6px;min-width:0">
+                <span style="font-weight:600;font-size:15.5px">Analyser le besoin de gestion des données</span>
+                <ul style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:5px;font-size:14.5px;line-height:1.5;color:#5B6A7D">
+                  <li>Repérage des entités et de leurs propriétés.</li>
+                  <li>Identification juste des associations et cardinalités.</li>
+                </ul>
+              </div>
+            </div>
+
+            <div style="display:flex;gap:14px">
+              <span style="width:28px;height:28px;border-radius:8px;flex:none;background:#2E3B4E;color:#FFFFFF;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:13px;display:flex;align-items:center;justify-content:center">B</span>
+              <div style="display:flex;flex-direction:column;gap:6px;min-width:0">
+                <span style="font-weight:600;font-size:15.5px">Concevoir le schéma relationnel</span>
+                <ul style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:5px;font-size:14.5px;line-height:1.5;color:#5B6A7D">
+                  <li>Passage correct du modèle conceptuel au modèle logique.</li>
+                  <li>Choix pertinent des clés primaires et étrangères.</li>
+                  <li>Application des trois premières formes normales.</li>
+                </ul>
+              </div>
+            </div>
+
+            <div style="display:flex;gap:14px">
+              <span style="width:28px;height:28px;border-radius:8px;flex:none;background:#2E3B4E;color:#FFFFFF;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:13px;display:flex;align-items:center;justify-content:center">C</span>
+              <div style="display:flex;flex-direction:column;gap:6px;min-width:0">
+                <span style="font-weight:600;font-size:15.5px">Implanter la base et manipuler les données</span>
+                <ul style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:5px;font-size:14.5px;line-height:1.5;color:#5B6A7D">
+                  <li>Création des tables et des contraintes d'intégrité.</li>
+                  <li>Écriture de requêtes de sélection, jointure et agrégation.</li>
+                  <li>Mise en œuvre des vues et des procédures simples.</li>
+                </ul>
+              </div>
+            </div>
+
+            <div style="display:flex;gap:14px">
+              <span style="width:28px;height:28px;border-radius:8px;flex:none;background:#2E3B4E;color:#FFFFFF;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:13px;display:flex;align-items:center;justify-content:center">D</span>
+              <div style="display:flex;flex-direction:column;gap:6px;min-width:0">
+                <span style="font-weight:600;font-size:15.5px">Sécuriser et maintenir la base</span>
+                <ul style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:5px;font-size:14.5px;line-height:1.5;color:#5B6A7D">
+                  <li>Gestion des droits d'accès par profil d'utilisateur.</li>
+                  <li>Réalisation et restauration d'une sauvegarde.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex;align-items:center;gap:12px;padding-top:18px;border-top:1px solid #EDF0F3">
+            <a href="#" style="font-size:14px;font-weight:600">Télécharger le référentiel (PDF)</a>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#A9B4C0">1,4 Mo · rév. 2024</span>
+          </div>
+        </div>
+      </sc-if>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;align-items:start">
+
+      <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:14px;padding:22px;display:flex;flex-direction:column;gap:16px;box-shadow:0 1px 2px rgba(46,59,78,.05)">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+          <h2 style="font-family:Sora,sans-serif;font-weight:600;font-size:17px;margin:0">Fiche de préparation</h2>
+          <span style="display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;color:#2C6C46;background:#EAF3EE;border:1px solid #CFE4D8;border-radius:999px;padding:4px 11px;white-space:nowrap"><span style="width:6px;height:6px;border-radius:50%;background:#3C8C5C"></span>Présente</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px">
+            <span style="font-size:14px;color:#6B7A8D">Dernière révision</span>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:14px;color:#3F4E62">02/09/25</span>
+          </div>
+          <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px">
+            <span style="font-size:14px;color:#6B7A8D">Séances couvertes</span>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:14px;color:#3F4E62">12 / 15</span>
+          </div>
+        </div>
+        <button type="button" style="font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:14px;color:#FFFFFF;background:#2E3B4E;border:1px solid #2E3B4E;border-radius:9px;padding:10px 16px;cursor:pointer" style-hover="background:#25303F">Ouvrir la fiche</button>
+      </div>
+
+      <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:14px;padding:22px;display:flex;flex-direction:column;gap:16px;box-shadow:0 1px 2px rgba(46,59,78,.05)">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+          <h2 style="font-family:Sora,sans-serif;font-weight:600;font-size:17px;margin:0">Contrôles du module</h2>
+          <span style="font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:12.5px;color:#5B6A7D;background:#F2F4F7;border-radius:999px;padding:2px 9px">03</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div style="display:flex;align-items:center;gap:12px;padding-bottom:12px;border-bottom:1px solid #EDF0F3">
+            <div style="display:flex;flex-direction:column;gap:2px;min-width:0">
+              <span style="font-weight:600;font-size:14.5px">CC1 — Modélisation</span>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#8C99A8">16/09 · noté</span>
+            </div>
+            <span style="margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:14px;color:#2C6C46;white-space:nowrap">13,8</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;padding-bottom:12px;border-bottom:1px solid #EDF0F3">
+            <div style="display:flex;flex-direction:column;gap:2px;min-width:0">
+              <span style="font-weight:600;font-size:14.5px">CC2 — Requêtes SQL</span>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#8C99A8">19/09 · estimé</span>
+            </div>
+            <span style="margin-left:auto;font-size:12.5px;font-weight:600;color:#B8433A;background:#FCEDEB;border:1px solid #F3CFCB;border-radius:999px;padding:3px 10px;white-space:nowrap">À confirmer</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px">
+            <div style="display:flex;flex-direction:column;gap:2px;min-width:0">
+              <span style="font-weight:600;font-size:14.5px">EFM — Synthèse</span>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#8C99A8">Décembre · régional</span>
+            </div>
+            <span style="margin-left:auto;font-size:12.5px;font-weight:600;color:#245F79;background:#E8F2F7;border:1px solid #CBE0EA;border-radius:999px;padding:3px 10px;white-space:nowrap">Planifié</span>
+          </div>
+        </div>
+        <a href="#" style="font-size:14px;font-weight:600">Gérer les contrôles</a>
+      </div>
+
+      <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:14px;padding:22px;display:flex;flex-direction:column;gap:16px;box-shadow:0 1px 2px rgba(46,59,78,.05)">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+          <h2 style="font-family:Sora,sans-serif;font-weight:600;font-size:17px;margin:0">Groupes concernés</h2>
+          <span style="font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:12.5px;color:#5B6A7D;background:#F2F4F7;border-radius:999px;padding:2px 9px">02</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;align-items:center;gap:12px">
+            <span style="width:34px;height:34px;border-radius:9px;flex:none;background:#EFF2F5;color:#5B6A7D;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:11.5px;display:flex;align-items:center;justify-content:center">102</span>
+            <div style="display:flex;flex-direction:column;gap:2px;min-width:0">
+              <span style="font-weight:600;font-size:14.5px">TSDI-102</span>
+              <span style="font-size:13px;color:#8C99A8">27 stagiaires · 34 %</span>
+            </div>
+            <a href="#" style="margin-left:auto;font-size:13.5px;font-weight:600;white-space:nowrap">Ouvrir</a>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px">
+            <span style="width:34px;height:34px;border-radius:9px;flex:none;background:#2E7D9E;color:#FFFFFF;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:11.5px;display:flex;align-items:center;justify-content:center">118</span>
+            <div style="display:flex;flex-direction:column;gap:2px;min-width:0">
+              <span style="font-weight:600;font-size:14.5px">GE-118</span>
+              <span style="font-size:13px;color:#8C99A8">18 stagiaires · 61 %</span>
+            </div>
+            <a href="#" style="margin-left:auto;font-size:13.5px;font-weight:600;white-space:nowrap">Ouvrir</a>
+          </div>
+        </div>
+        <button type="button" style="font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:14px;color:#2E3B4E;background:#FFFFFF;border:1px solid #C9D2DC;border-radius:9px;padding:10px 16px;cursor:pointer" style-hover="background:#F6F7F9;border-color:#2E3B4E">Affecter un groupe</button>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1040}}">
+class Component extends DCLogic {
+  state = { open: false };
+  renderVals() {
+    const o = this.state.open;
+    return {
+      open: o,
+      toggle: () => this.setState(s => ({ open: !s.open })),
+      toggleLabel: o ? "Masquer le détail" : "Voir le détail complet",
+      chevron: o ? "rotate(180deg)" : "rotate(0deg)"
+    };
+  }
+}
+</script>
+</body>
+</html>

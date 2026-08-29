@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=Source+Sans+3:ital,wght@0,400;0,500;0,600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  body { margin: 0; background: #F6F7F9; }
+  a { color: #2E7D9E; text-decoration: none; }
+  a:hover { color: #2E3B4E; text-decoration: underline; }
+</style>
+</helmet>
+<div style="min-height:100vh;background:#F6F7F9;font-family:'Source Sans 3',system-ui,sans-serif;color:#2E3B4E;padding:44px 40px 64px;box-sizing:border-box">
+  <div style="max-width:920px;margin:0 auto;display:flex;flex-direction:column;gap:20px">
+
+    <div style="display:flex;align-items:center;gap:8px;font-size:13.5px;color:#8C99A8">
+      <a href="#" style="color:#5B6A7D">Séances</a><span>/</span>
+      <a href="#" style="color:#5B6A7D">TSDI-201 · M104</a><span>/</span>
+      <span style="font-family:'IBM Plex Mono',monospace;color:#3F4E62">M104-TP3</span>
+    </div>
+
+    <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:14px;box-shadow:0 1px 2px rgba(46,59,78,.05);overflow:hidden">
+      <div style="padding:22px 26px;display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex-wrap:wrap">
+        <div style="display:flex;flex-direction:column;gap:8px;min-width:0">
+          <h1 style="font-family:Sora,sans-serif;font-weight:700;font-size:26px;line-height:1.2;letter-spacing:-.02em;margin:0">Intégration continue — TP 3</h1>
+          <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;font-size:14px;color:#6B7A8D">
+            <span style="display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:#245F79;background:#E8F2F7;border:1px solid #CBE0EA;border-radius:999px;padding:4px 11px"><span style="width:6px;height:6px;border-radius:50%;background:#2E7D9E"></span>À faire</span>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:13.5px;color:#3F4E62">18/09 · 08:30</span>
+            <span>Salle B12 · 4 h</span>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="display:flex;align-items:center">
+            <span style="width:32px;height:32px;border-radius:50%;background:#2E3B4E;color:#FFFFFF;font-family:Sora,sans-serif;font-weight:600;font-size:11.5px;display:flex;align-items:center;justify-content:center;border:2px solid #FFFFFF;box-sizing:border-box">SL</span>
+            <span style="width:32px;height:32px;border-radius:50%;background:#3C8C5C;color:#FFFFFF;font-family:Sora,sans-serif;font-weight:600;font-size:11.5px;display:flex;align-items:center;justify-content:center;border:2px solid #FFFFFF;box-sizing:border-box;margin-left:-9px">MB</span>
+            <span style="width:32px;height:32px;border-radius:50%;background:#2E7D9E;color:#FFFFFF;font-family:Sora,sans-serif;font-weight:600;font-size:11.5px;display:flex;align-items:center;justify-content:center;border:2px solid #FFFFFF;box-sizing:border-box;margin-left:-9px">AK</span>
+          </span>
+          <button type="button" style="font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:14px;color:#2E3B4E;background:#FFFFFF;border:1px solid #C9D2DC;border-radius:9px;padding:9px 16px;cursor:pointer;white-space:nowrap" style-hover="background:#F6F7F9;border-color:#2E3B4E">Ouvrir la fiche</button>
+        </div>
+      </div>
+      <div style="padding:0 26px;display:flex;gap:26px;border-top:1px solid #EDF0F3">
+        <a href="#" style="padding:14px 0;font-size:14.5px;color:#5B6A7D;border-bottom:2px solid transparent">Détails</a>
+        <a href="#" style="padding:14px 0;font-size:14.5px;color:#5B6A7D;border-bottom:2px solid transparent">Ressources</a>
+        <a href="#" style="padding:14px 0;font-size:14.5px;font-weight:600;color:#2E3B4E;border-bottom:2px solid #2E3B4E">Commentaires <span style="font-family:'IBM Plex Mono',monospace;font-weight:500;color:#8C99A8">04</span></a>
+      </div>
+    </div>
+
+    <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:14px;box-shadow:0 1px 2px rgba(46,59,78,.05);overflow:hidden">
+      <div style="padding:16px 26px;border-bottom:1px solid #EDF0F3;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
+        <span style="font-family:Sora,sans-serif;font-weight:600;font-size:16px">Discussion interne</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <button type="button" style="display:flex;align-items:center;gap:8px;font-family:'Source Sans 3',sans-serif;font-size:13.5px;font-weight:600;color:#3F4E62;background:#FFFFFF;border:1px solid #C9D2DC;border-radius:8px;padding:7px 12px;cursor:pointer;white-space:nowrap" style-hover="background:#F6F7F9;border-color:#2E3B4E">Toute l'équipe
+            <svg width="12" height="12" style="flex:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg>
+          </button>
+          <button type="button" style="display:flex;align-items:center;gap:8px;font-family:'Source Sans 3',sans-serif;font-size:13.5px;font-weight:600;color:#3F4E62;background:#FFFFFF;border:1px solid #C9D2DC;border-radius:8px;padding:7px 12px;cursor:pointer;white-space:nowrap" style-hover="background:#F6F7F9;border-color:#2E3B4E">Depuis 30 jours
+            <svg width="12" height="12" style="flex:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg>
+          </button>
+        </div>
+      </div>
+
+      <div style="padding:6px 26px 0">
+
+        <div style="display:flex;gap:14px;padding:22px 0;border-bottom:1px solid #EDF0F3">
+          <span style="width:40px;height:40px;border-radius:50%;flex:none;background:#2E3B4E;color:#FFFFFF;font-family:Sora,sans-serif;font-weight:600;font-size:13px;display:flex;align-items:center;justify-content:center">SL</span>
+          <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:8px">
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+              <span style="font-family:Sora,sans-serif;font-weight:600;font-size:15.5px">Samira Lahlou</span>
+              <span style="display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:#B8433A;background:#FCEDEB;border:1px solid #F3CFCB;border-radius:999px;padding:2px 10px">
+                <svg width="11" height="11" style="flex:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="4.5" y="10.5" width="15" height="10" rx="2"></rect><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"></path></svg>Privé
+              </span>
+              <span style="margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#A9B4C0;white-space:nowrap">il y a 2 h</span>
+            </div>
+            <span style="font-size:13px;color:#8C99A8">Formatrice · TSDI</span>
+            <p style="margin:0;font-size:15.5px;line-height:1.6;color:#3F4E62;text-wrap:pretty">Le TP est calibré sur 4 h, mais le groupe a pris du retard sur la partie Git. Je propose de décaler la mise en place du pipeline à la séance suivante et de garder l'évaluation formative telle quelle.</p>
+            <div style="display:flex;align-items:center;gap:8px;padding-top:2px">
+              <span style="display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:#245F79;background:#E8F2F7;border:1px solid #CBE0EA;border-radius:999px;padding:3px 10px">👍 <span style="font-family:'IBM Plex Mono',monospace;font-weight:500">2</span></span>
+              <button type="button" aria-label="Réagir" style="width:30px;height:30px;border-radius:8px;border:1px solid transparent;background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0" style-hover="background:#F6F7F9;border-color:#E3E7EC">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8C99A8" stroke-width="1.9" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"></circle><path d="M9 10h.01"></path><path d="M15 10h.01"></path><path d="M8.5 14.5a4.5 4.5 0 0 0 7 0"></path></svg>
+              </button>
+              <button type="button" aria-label="Marquer comme lu" style="width:30px;height:30px;border-radius:8px;border:1px solid transparent;background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0" style-hover="background:#F6F7F9;border-color:#E3E7EC">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8C99A8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5 10 17.5 19 7"></path></svg>
+              </button>
+              <button type="button" aria-label="Options" style="width:30px;height:30px;border-radius:8px;border:1px solid transparent;background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0" style-hover="background:#F6F7F9;border-color:#E3E7EC">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="#8C99A8" stroke="none"><circle cx="12" cy="6" r="1.6"></circle><circle cx="12" cy="12" r="1.6"></circle><circle cx="12" cy="18" r="1.6"></circle></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:14px;padding:22px 0;border-bottom:1px solid #EDF0F3">
+          <span style="width:40px;height:40px;border-radius:50%;flex:none;background:#3C8C5C;color:#FFFFFF;font-family:Sora,sans-serif;font-weight:600;font-size:13px;display:flex;align-items:center;justify-content:center">MB</span>
+          <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:8px">
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+              <span style="font-family:Sora,sans-serif;font-weight:600;font-size:15.5px">Mohamed Bennani</span>
+              <span style="display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:#245F79;background:#E8F2F7;border:1px solid #CBE0EA;border-radius:999px;padding:2px 10px">
+                <svg width="11" height="11" style="flex:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"></circle><path d="M3.5 19v-.8A4.2 4.2 0 0 1 7.7 14h2.6a4.2 4.2 0 0 1 4.2 4.2V19"></path><path d="M16.5 5.5a3 3 0 0 1 0 5"></path><path d="M20.5 19v-.8a4.2 4.2 0 0 0-3-4"></path></svg>Équipe
+              </span>
+              <span style="margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#A9B4C0;white-space:nowrap">il y a 1 h</span>
+            </div>
+            <span style="font-size:13px;color:#8C99A8">Chef de pôle · Numérique</span>
+            <p style="margin:0;font-size:15.5px;line-height:1.6;color:#3F4E62;text-wrap:pretty">D'accord pour le décalage. Pense à le tracer dans la fiche de séance avant validation, sinon le volume horaire du module ne tombera pas juste au bilan trimestriel. <span style="font-weight:600;color:#245F79;background:#E8F2F7;border-radius:5px;padding:1px 6px">@Samira Lahlou</span></p>
+            <div style="display:flex;align-items:center;gap:8px;padding-top:2px">
+              <span style="display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:#2C6C46;background:#EAF3EE;border:1px solid #CFE4D8;border-radius:999px;padding:3px 10px">✅ <span style="font-family:'IBM Plex Mono',monospace;font-weight:500">1</span></span>
+              <button type="button" aria-label="Réagir" style="width:30px;height:30px;border-radius:8px;border:1px solid transparent;background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0" style-hover="background:#F6F7F9;border-color:#E3E7EC">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8C99A8" stroke-width="1.9" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"></circle><path d="M9 10h.01"></path><path d="M15 10h.01"></path><path d="M8.5 14.5a4.5 4.5 0 0 0 7 0"></path></svg>
+              </button>
+              <button type="button" aria-label="Marquer comme lu" style="width:30px;height:30px;border-radius:8px;border:1px solid transparent;background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0" style-hover="background:#F6F7F9;border-color:#E3E7EC">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8C99A8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5 10 17.5 19 7"></path></svg>
+              </button>
+              <button type="button" aria-label="Options" style="width:30px;height:30px;border-radius:8px;border:1px solid transparent;background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0" style-hover="background:#F6F7F9;border-color:#E3E7EC">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="#8C99A8" stroke="none"><circle cx="12" cy="6" r="1.6"></circle><circle cx="12" cy="12" r="1.6"></circle><circle cx="12" cy="18" r="1.6"></circle></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:14px;padding:22px 0;border-bottom:1px solid #EDF0F3">
+          <span style="width:40px;height:40px;border-radius:50%;flex:none;background:#2E7D9E;color:#FFFFFF;font-family:Sora,sans-serif;font-weight:600;font-size:13px;display:flex;align-items:center;justify-content:center">AK</span>
+          <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:8px">
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+              <span style="font-family:Sora,sans-serif;font-weight:600;font-size:15.5px">Amine Kabbaj</span>
+              <span style="display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:#245F79;background:#E8F2F7;border:1px solid #CBE0EA;border-radius:999px;padding:2px 10px">
+                <svg width="11" height="11" style="flex:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"></circle><path d="M3.5 19v-.8A4.2 4.2 0 0 1 7.7 14h2.6a4.2 4.2 0 0 1 4.2 4.2V19"></path><path d="M16.5 5.5a3 3 0 0 1 0 5"></path><path d="M20.5 19v-.8a4.2 4.2 0 0 0-3-4"></path></svg>Équipe
+              </span>
+              <span style="margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#A9B4C0;white-space:nowrap">il y a 40 min</span>
+            </div>
+            <span style="font-size:13px;color:#8C99A8">Formateur associé · Réseaux</span>
+            <p style="margin:0;font-size:15.5px;line-height:1.6;color:#3F4E62;text-wrap:pretty">Je peux prendre la première heure sur la partie dépôt distant si ça aide — j'ai le même TP avec GE-118 la semaine prochaine.</p>
+            <div style="display:flex;align-items:center;gap:8px;padding-top:2px">
+              <button type="button" aria-label="Réagir" style="width:30px;height:30px;border-radius:8px;border:1px solid transparent;background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0" style-hover="background:#F6F7F9;border-color:#E3E7EC">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8C99A8" stroke-width="1.9" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"></circle><path d="M9 10h.01"></path><path d="M15 10h.01"></path><path d="M8.5 14.5a4.5 4.5 0 0 0 7 0"></path></svg>
+              </button>
+              <button type="button" aria-label="Marquer comme lu" style="width:30px;height:30px;border-radius:8px;border:1px solid transparent;background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0" style-hover="background:#F6F7F9;border-color:#E3E7EC">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8C99A8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5 10 17.5 19 7"></path></svg>
+              </button>
+              <button type="button" aria-label="Options" style="width:30px;height:30px;border-radius:8px;border:1px solid transparent;background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0" style-hover="background:#F6F7F9;border-color:#E3E7EC">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="#8C99A8" stroke="none"><circle cx="12" cy="6" r="1.6"></circle><circle cx="12" cy="12" r="1.6"></circle><circle cx="12" cy="18" r="1.6"></circle></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:14px;padding:22px 0">
+          <span style="width:40px;height:40px;border-radius:50%;flex:none;background:#EFF2F5;color:#5B6A7D;font-family:Sora,sans-serif;font-weight:600;font-size:13px;display:flex;align-items:center;justify-content:center">NF</span>
+          <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:8px">
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+              <span style="font-family:Sora,sans-serif;font-weight:600;font-size:15.5px">Nadia Fassi</span>
+              <span style="display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:#B8433A;background:#FCEDEB;border:1px solid #F3CFCB;border-radius:999px;padding:2px 10px">
+                <svg width="11" height="11" style="flex:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="4.5" y="10.5" width="15" height="10" rx="2"></rect><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"></path></svg>Privé
+              </span>
+              <span style="margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#A9B4C0;white-space:nowrap">il y a 12 min</span>
+            </div>
+            <span style="font-size:13px;color:#8C99A8">Surveillance générale</span>
+            <p style="margin:0;font-size:15.5px;line-height:1.6;color:#3F4E62;text-wrap:pretty">Note pour l'archivage : la salle B12 est indisponible le <span style="font-family:'IBM Plex Mono',monospace;font-weight:500">18/09</span> à partir de 12:00. À reprogrammer avant vendredi.</p>
+            <div style="display:flex;align-items:center;gap:8px;padding-top:2px">
+              <button type="button" aria-label="Réagir" style="width:30px;height:30px;border-radius:8px;border:1px solid transparent;background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0" style-hover="background:#F6F7F9;border-color:#E3E7EC">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8C99A8" stroke-width="1.9" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"></circle><path d="M9 10h.01"></path><path d="M15 10h.01"></path><path d="M8.5 14.5a4.5 4.5 0 0 0 7 0"></path></svg>
+              </button>
+              <button type="button" aria-label="Marquer comme lu" style="width:30px;height:30px;border-radius:8px;border:1px solid transparent;background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0" style-hover="background:#F6F7F9;border-color:#E3E7EC">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8C99A8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5 10 17.5 19 7"></path></svg>
+              </button>
+              <button type="button" aria-label="Options" style="width:30px;height:30px;border-radius:8px;border:1px solid transparent;background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0" style-hover="background:#F6F7F9;border-color:#E3E7EC">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="#8C99A8" stroke="none"><circle cx="12" cy="6" r="1.6"></circle><circle cx="12" cy="12" r="1.6"></circle><circle cx="12" cy="18" r="1.6"></circle></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="padding:18px 26px 24px;border-top:1px solid #EDF0F3;background:#FAFBFC">
+        <div style="display:flex;gap:14px">
+          <span style="width:40px;height:40px;border-radius:50%;flex:none;background:#2E3B4E;color:#FFFFFF;font-family:Sora,sans-serif;font-weight:600;font-size:13px;display:flex;align-items:center;justify-content:center">SL</span>
+          <div style="flex:1;min-width:0;background:#FFFFFF;border:1px solid #C9D2DC;border-radius:11px;display:flex;flex-direction:column;overflow:hidden">
+            <textarea rows="3" placeholder="Ajouter un commentaire sur cette séance…" style="border:none;outline:none;resize:vertical;background:transparent;font-family:'Source Sans 3',sans-serif;font-size:15px;line-height:1.55;color:#2E3B4E;padding:14px 16px 6px"></textarea>
+            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 14px;border-top:1px solid #EDF0F3">
+              <button type="button" aria-label="Ajouter un lien" style="display:flex;align-items:center;gap:7px;font-family:'Source Sans 3',sans-serif;font-size:13.5px;color:#5B6A7D;background:transparent;border:none;padding:5px 6px;border-radius:7px;cursor:pointer" style-hover="background:#F6F7F9;color:#2E3B4E">
+                <svg width="15" height="15" style="flex:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 13.5a4 4 0 0 0 5.7 0l2.8-2.8a4 4 0 0 0-5.7-5.7L11.4 6.4"></path><path d="M14 10.5a4 4 0 0 0-5.7 0L5.5 13.3a4 4 0 0 0 5.7 5.7l1.4-1.4"></path></svg>Lien
+              </button>
+              <button type="button" aria-label="Mentionner" style="display:flex;align-items:center;gap:7px;font-family:'Source Sans 3',sans-serif;font-size:13.5px;color:#5B6A7D;background:transparent;border:none;padding:5px 6px;border-radius:7px;cursor:pointer" style-hover="background:#F6F7F9;color:#2E3B4E">
+                <svg width="15" height="15" style="flex:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"></circle><path d="M16 8v5a3 3 0 0 0 4.5 2.6A9 9 0 1 0 16.5 20"></path></svg>Mentionner
+              </button>
+              <span style="width:1px;height:20px;background:#EDF0F3"></span>
+              <button type="button" onClick="{{ toggleVisibility }}" style="display:flex;align-items:center;gap:9px;background:transparent;border:none;padding:5px 6px;border-radius:7px;cursor:pointer" style-hover="background:#F6F7F9">
+                <span style="width:34px;height:20px;border-radius:999px;flex:none;position:relative;transition:background .15s ease;background:{{ trackBg }}">
+                  <span style="position:absolute;top:2px;left:{{ knobLeft }};width:16px;height:16px;border-radius:50%;background:#FFFFFF;box-shadow:0 1px 2px rgba(46,59,78,.3);transition:left .15s ease"></span>
+                </span>
+                <span style="display:inline-flex;align-items:center;gap:6px;font-family:'Source Sans 3',sans-serif;font-size:13px;font-weight:600;border-radius:999px;padding:2px 10px;white-space:nowrap;color:{{ visInk }};background:{{ visBg }};border:1px solid {{ visLine }}">{{ visLabel }}</span>
+              </button>
+              <span style="font-size:12.5px;color:#A9B4C0">{{ visHint }}</span>
+              <button type="button" style="margin-left:auto;font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:14px;color:#FFFFFF;background:#2E3B4E;border:1px solid #2E3B4E;border-radius:9px;padding:9px 18px;cursor:pointer;white-space:nowrap" style-hover="background:#25303F">Commenter</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1100}}">
+class Component extends DCLogic {
+  state = { private: true };
+  renderVals() {
+    const p = this.state.private;
+    return {
+      toggleVisibility: () => this.setState(s => ({ private: !s.private })),
+      trackBg: p ? "#E2574C" : "#2E7D9E",
+      knobLeft: p ? "16px" : "2px",
+      visLabel: p ? "Privé" : "Équipe",
+      visInk: p ? "#B8433A" : "#245F79",
+      visBg: p ? "#FCEDEB" : "#E8F2F7",
+      visLine: p ? "#F3CFCB" : "#CBE0EA",
+      visHint: p ? "Visible par vous seule" : "Visible par les 3 membres du pôle"
+    };
+  }
+}
+</script>
+</body>
+</html>

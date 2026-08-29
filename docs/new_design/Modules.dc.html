@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=Source+Sans+3:ital,wght@0,400;0,500;0,600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  body { margin: 0; background: #F6F7F9; }
+  a { color: #2E7D9E; text-decoration: none; }
+  a:hover { color: #2E3B4E; text-decoration: underline; }
+</style>
+</helmet>
+<div style="min-height:100vh;background:#F6F7F9;font-family:'Source Sans 3',system-ui,sans-serif;color:#2E3B4E;padding:44px 40px 64px;box-sizing:border-box">
+  <div style="max-width:1080px;margin:0 auto;display:flex;flex-direction:column;gap:22px">
+
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:28px;flex-wrap:wrap">
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:#8C99A8">Référentiel · TSDI</span>
+        <h1 style="font-family:Sora,sans-serif;font-weight:700;font-size:30px;line-height:1.15;letter-spacing:-.02em;margin:0">Modules</h1>
+        <p style="margin:0;font-size:16px;color:#5B6A7D"><span style="font-family:'IBM Plex Mono',monospace;font-weight:500;color:#3F4E62">{{ shownCount }}</span> modules · <span style="font-family:'IBM Plex Mono',monospace;font-weight:500;color:#3F4E62">{{ totalHours }} h</span> de référence cumulées</p>
+      </div>
+    </div>
+
+    <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;box-shadow:0 1px 2px rgba(46,59,78,.05)">
+      <label style="display:flex;align-items:center;gap:9px;flex:1;min-width:220px;background:#F6F7F9;border:1px solid #E3E7EC;border-radius:9px;padding:9px 12px">
+        <svg width="16" height="16" style="flex:none" viewBox="0 0 24 24" fill="none" stroke="#8C99A8" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><line x1="16.5" y1="16.5" x2="21" y2="21"></line></svg>
+        <input type="text" placeholder="Rechercher un code ou un intitulé de module…" value="{{ query }}" onInput="{{ onQuery }}" style="flex:1;min-width:0;border:none;outline:none;background:transparent;font-family:'Source Sans 3',sans-serif;font-size:14.5px;color:#2E3B4E" />
+      </label>
+      <button type="button" style="display:flex;align-items:center;gap:8px;font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:14.5px;color:#FFFFFF;background:#2E3B4E;border:1px solid #2E3B4E;border-radius:9px;padding:10px 18px;cursor:pointer;white-space:nowrap" style-hover="background:#25303F">
+        <svg width="15" height="15" style="flex:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>Créer un module
+      </button>
+    </div>
+
+    <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:14px;box-shadow:0 1px 2px rgba(46,59,78,.05);overflow:hidden">
+      <div style="display:grid;grid-template-columns:minmax(280px,2.4fr) minmax(140px,1fr) minmax(130px,.9fr) 52px;gap:16px;padding:12px 24px;background:#FAFBFC;border-bottom:1px solid #EDF0F3">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#8C99A8">Module</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#8C99A8">Durée de référence</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#8C99A8">Groupes</span>
+        <span></span>
+      </div>
+
+      <sc-for list="{{ rows }}" as="row" hint-placeholder-count="4">
+        <div style="display:grid;grid-template-columns:minmax(280px,2.4fr) minmax(140px,1fr) minmax(130px,.9fr) 52px;gap:16px;align-items:center;padding:16px 24px;border-bottom:1px solid #EDF0F3">
+          <div style="display:flex;align-items:center;gap:14px;min-width:0">
+            <span style="font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:13px;color:{{ row.codeInk }};background:{{ row.codeBg }};border:1px solid {{ row.codeLine }};border-radius:8px;padding:6px 10px;flex:none">{{ row.code }}</span>
+            <div style="display:flex;flex-direction:column;gap:2px;min-width:0">
+              <span style="font-weight:600;font-size:15.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ row.name }}</span>
+              <span style="font-size:13px;color:#8C99A8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ row.meta }}</span>
+            </div>
+          </div>
+          <span style="font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:15px;color:#3F4E62;white-space:nowrap">{{ row.hours }}</span>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:13.5px;color:#5B6A7D;white-space:nowrap">{{ row.groups }}</span>
+          <button type="button" aria-label="Actions" style="justify-self:end;width:32px;height:32px;border-radius:8px;border:1px solid transparent;background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0" style-hover="background:#F6F7F9;border-color:#E3E7EC">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="#8C99A8" stroke="none"><circle cx="12" cy="6" r="1.6"></circle><circle cx="12" cy="12" r="1.6"></circle><circle cx="12" cy="18" r="1.6"></circle></svg>
+          </button>
+        </div>
+      </sc-for>
+
+      <sc-if value="{{ isEmpty }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:52px 24px;display:flex;flex-direction:column;align-items:center;gap:8px">
+          <span style="font-family:Sora,sans-serif;font-weight:600;font-size:16px">Aucun module ne correspond</span>
+          <span style="font-size:14px;color:#8C99A8">Essayez un autre code ou intitulé.</span>
+        </div>
+      </sc-if>
+
+      <div style="padding:16px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;background:#FAFBFC">
+        <span style="font-size:14px;color:#6B7A8D"><span style="font-family:'IBM Plex Mono',monospace;font-weight:500;color:#3F4E62">{{ shownCount }}</span> sur {{ total }} modules</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <button type="button" disabled="disabled" style="font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:13.5px;color:#A9B4C0;background:#F2F4F7;border:1px solid #E3E7EC;border-radius:8px;padding:7px 14px;cursor:not-allowed">Précédent</button>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#8C99A8">Page 1 / 1</span>
+          <button type="button" disabled="disabled" style="font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:13.5px;color:#A9B4C0;background:#F2F4F7;border:1px solid #E3E7EC;border-radius:8px;padding:7px 14px;cursor:not-allowed">Suivant</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1200}}">
+class Component extends DCLogic {
+  state = { query: "" };
+
+  modules() {
+    return [
+      { code: "M104", name: "Développement web front-end", meta: "TSDI · 2ᵉ année · 4 unités", hours: "120 h", groups: "TSDI-201", tone: "dark" },
+      { code: "M106", name: "Bases de données relationnelles", meta: "TSDI · 1ʳᵉ année · 3 unités", hours: "90 h", groups: "TSDI-102", tone: "teal" },
+      { code: "M112", name: "Administration des réseaux", meta: "GE · 2ᵉ année · 5 unités", hours: "150 h", groups: "GE-118", tone: "teal" },
+      { code: "M115", name: "Projet de fin de formation", meta: "TSDI · 2ᵉ année · 2 unités", hours: "80 h", groups: "TSDI-201, TSDI-102", tone: "plain" }
+    ];
+  }
+
+  renderVals() {
+    const q = this.state.query.trim().toLowerCase();
+    const all = this.modules();
+    const filtered = q ? all.filter(m => (m.code + " " + m.name + " " + m.meta).toLowerCase().includes(q)) : all;
+    const tones = {
+      dark: { codeInk: "#FFFFFF", codeBg: "#2E3B4E", codeLine: "#2E3B4E" },
+      teal: { codeInk: "#245F79", codeBg: "#E8F2F7", codeLine: "#CBE0EA" },
+      plain: { codeInk: "#5B6A7D", codeBg: "#F2F4F7", codeLine: "#E3E7EC" }
+    };
+    const totalHours = all.reduce((s, m) => s + parseInt(m.hours, 10), 0);
+    return {
+      rows: filtered.map(m => Object.assign({}, m, tones[m.tone])),
+      total: all.length,
+      shownCount: filtered.length,
+      totalHours,
+      isEmpty: filtered.length === 0,
+      query: this.state.query,
+      onQuery: e => this.setState({ query: e.target.value })
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -9,7 +9,7 @@ import type jsPDF from "jspdf";
  * barème. Le texte est écrit directement dans le PDF : la pagination se décide
  * question par question et le fichier pèse quelques kilo-octets.
  *
- * Police Helvetica, standard du format PDF. Embarquer General Sans alourdirait
+ * Police Helvetica, standard du format PDF. Embarquer Sora alourdirait
  * le bundle client de plusieurs centaines de kilos pour un document imprimé ;
  * les couleurs, elles, sont celles du design system.
  */

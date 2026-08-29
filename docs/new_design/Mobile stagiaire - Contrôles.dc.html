@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=Source+Sans+3:ital,wght@0,400;0,500;0,600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  body { margin: 0; background: #FFFFFF; }
+  a { color: #2E7D9E; text-decoration: none; }
+  a:hover { color: #2E3B4E; }
+</style>
+</helmet>
+<div style="width:375px;margin:0 auto;min-height:100vh;background:#FFFFFF;font-family:'Source Sans 3',system-ui,sans-serif;color:#2E3B4E;position:relative;padding-bottom:{{ bottomPad }};box-sizing:border-box">
+
+  <sc-if value="{{ isList }}" hint-placeholder-val="{{ true }}">
+    <div style="display:flex;flex-direction:column">
+      <div style="position:sticky;top:0;z-index:30;background:#FFFFFF;border-bottom:1px solid #EDF0F3;padding:16px 20px 14px;display:flex;align-items:center;gap:12px">
+        <span style="width:42px;height:42px;border-radius:50%;flex:none;background:#2E3B4E;color:#FFFFFF;font-family:Sora,sans-serif;font-weight:600;font-size:13.5px;display:flex;align-items:center;justify-content:center">YB</span>
+        <div style="display:flex;flex-direction:column;gap:2px;min-width:0">
+          <span style="font-family:Sora,sans-serif;font-weight:600;font-size:16.5px">Youssef Benali</span>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#8C99A8">TSDI-201 · 2ᵉ année</span>
+        </div>
+      </div>
+
+      <div style="padding:22px 20px 16px;display:flex;flex-direction:column;gap:6px">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#A9B4C0">Évaluations</span>
+        <h1 style="font-family:Sora,sans-serif;font-weight:700;font-size:26px;line-height:1.2;letter-spacing:-.02em;margin:0">Contrôles</h1>
+        <span style="font-size:14.5px;color:#8C99A8">Moyenne des contrôles passés <span style="font-family:'IBM Plex Mono',monospace;font-weight:500;color:#2C6C46">14,2 / 20</span></span>
+      </div>
+
+      <sc-for list="{{ exams }}" as="e" hint-placeholder-count="6">
+        <button type="button" onClick="{{ e.open }}" style="width:100%;text-align:left;display:flex;align-items:center;gap:13px;padding:16px 20px;border:none;border-top:1px solid #EDF0F3;background:{{ e.rowBg }};cursor:{{ e.cursor }};font-family:'Source Sans 3',sans-serif;box-sizing:border-box" style-hover="background:#FAFBFC">
+          <span style="width:42px;height:42px;border-radius:11px;flex:none;display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:12px;color:{{ e.markInk }};background:{{ e.markBg }}">{{ e.type }}</span>
+          <span style="display:flex;flex-direction:column;gap:5px;min-width:0;flex:1">
+            <span style="font-weight:600;font-size:15.5px;color:#2E3B4E;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ e.title }}</span>
+            <span style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#8C99A8">{{ e.module }} · {{ e.date }}</span>
+              <span style="display:inline-flex;align-items:center;gap:5px;font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#8C99A8">
+                <svg width="12" height="12" style="flex:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 8v4.5l3 2"></path></svg>{{ e.duration }}
+              </span>
+            </span>
+          </span>
+          <span style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex:none">
+            <span style="font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:16px;color:{{ e.gradeInk }}">{{ e.grade }}</span>
+            <span style="font-size:11px;font-weight:600;border-radius:999px;padding:2px 8px;white-space:nowrap;color:{{ e.badgeInk }};background:{{ e.badgeBg }};border:1px solid {{ e.badgeLine }}">{{ e.status }}</span>
+          </span>
+        </button>
+      </sc-for>
+
+      <div style="padding:24px 20px 8px;border-top:1px solid #EDF0F3;display:flex;justify-content:center">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#C3CBD5">Année 2025 — 2026</span>
+      </div>
+    </div>
+
+    <nav style="position:fixed;bottom:0;left:0;right:0;width:375px;margin:0 auto;background:#FFFFFF;border-top:1px solid #E3E7EC;box-shadow:0 -4px 16px rgba(46,59,78,.06);display:flex;align-items:stretch;padding:8px 4px 12px;box-sizing:border-box;z-index:40">
+      <sc-for list="{{ navItems }}" as="n" hint-placeholder-count="5">
+        <button type="button" onClick="{{ n.pick }}" style="flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:5px;background:transparent;border:none;padding:7px 2px;cursor:pointer;min-height:44px">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="{{ n.ink }}" stroke-width="{{ n.stroke }}" stroke-linecap="round" stroke-linejoin="round"><path d="{{ n.icon }}"></path></svg>
+          <span style="font-family:'Source Sans 3',sans-serif;font-size:10.5px;font-weight:{{ n.weight }};color:{{ n.ink }};white-space:nowrap">{{ n.label }}</span>
+        </button>
+      </sc-for>
+    </nav>
+  </sc-if>
+
+  <sc-if value="{{ isExam }}" hint-placeholder-val="{{ false }}">
+    <div style="display:flex;flex-direction:column">
+      <div style="position:sticky;top:0;z-index:30;background:#FFFFFF;border-bottom:1px solid #EDF0F3;padding:12px 16px 14px;display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <button type="button" aria-label="Quitter" onClick="{{ back }}" style="width:38px;height:38px;border-radius:11px;border:1px solid #E3E7EC;background:#FFFFFF;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;flex:none" style-hover="background:#F6F7F9">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5B6A7D" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12"></path><path d="M18 6L6 18"></path></svg>
+          </button>
+          <div style="display:flex;flex-direction:column;gap:1px;min-width:0">
+            <span style="font-weight:600;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">CC2 — Requêtes SQL</span>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#A9B4C0">M106 · 20 points</span>
+          </div>
+          <span style="margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:13px;color:#B8433A;background:#FCEDEB;border:1px solid #F3CFCB;border-radius:999px;padding:5px 10px;flex:none">
+            <svg width="12" height="12" style="flex:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 8v4.5l3 2"></path></svg>42:15
+          </span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:7px">
+          <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px">
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;font-weight:500;color:#3F4E62">Question {{ current }} sur {{ totalQ }}</span>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#8C99A8">{{ answeredLabel }}</span>
+          </div>
+          <div style="display:flex;gap:4px">
+            <sc-for list="{{ dots }}" as="d" hint-placeholder-count="8">
+              <span style="flex:1;height:5px;border-radius:999px;background:{{ d.bg }}"></span>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+
+      <div style="padding:24px 20px 18px;display:flex;flex-direction:column;gap:18px">
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap">
+            <span style="font-size:11.5px;font-weight:600;border-radius:999px;padding:3px 9px;color:{{ qTagInk }};background:{{ qTagBg }};border:1px solid {{ qTagLine }}">{{ qTypeLabel }}</span>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#8C99A8">{{ qPoints }} pts</span>
+          </div>
+          <p style="margin:0;font-family:Sora,sans-serif;font-weight:600;font-size:20px;line-height:1.4;text-wrap:pretty">{{ qText }}</p>
+        </div>
+
+        <sc-if value="{{ isQcm }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <sc-for list="{{ choices }}" as="c" hint-placeholder-count="4">
+              <button type="button" onClick="{{ c.pick }}" style="width:100%;text-align:left;display:flex;align-items:flex-start;gap:12px;padding:15px 16px;border-radius:13px;cursor:pointer;font-family:'Source Sans 3',sans-serif;box-sizing:border-box;min-height:44px;background:{{ c.bg }};border:1.5px solid {{ c.line }}">
+                <span style="width:22px;height:22px;border-radius:7px;flex:none;display:flex;align-items:center;justify-content:center;margin-top:1px;background:{{ c.boxBg }};border:1.5px solid {{ c.boxLine }}">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="display:{{ c.tick }}"><path d="M5 12.5 10 17.5 19 7"></path></svg>
+                </span>
+                <span style="flex:1;min-width:0;font-size:16px;line-height:1.55;color:{{ c.ink }};text-wrap:pretty">{{ c.label }}</span>
+              </button>
+            </sc-for>
+            <span style="font-size:13.5px;color:#8C99A8">Plusieurs réponses peuvent être justes.</span>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isOpen }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div style="border:1px solid #C9D2DC;border-left:3px solid #2E3B4E;border-radius:13px;background:#FFFFFF;overflow:hidden">
+              <textarea rows="7" value="{{ answerText }}" onInput="{{ onAnswerText }}" placeholder="Rédigez votre réponse…" style="width:100%;box-sizing:border-box;border:none;outline:none;resize:vertical;background:transparent;font-family:'Source Sans 3',sans-serif;font-size:16px;line-height:1.65;color:#3F4E62;padding:14px 15px"></textarea>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+              <span style="font-size:13.5px;color:#8C99A8">Brouillon enregistré automatiquement</span>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#A9B4C0">{{ answerChars }} car.</span>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+
+      <div style="position:fixed;bottom:0;left:0;right:0;width:375px;margin:0 auto;background:#FFFFFF;border-top:1px solid #E3E7EC;box-shadow:0 -4px 16px rgba(46,59,78,.07);padding:12px 16px 16px;box-sizing:border-box;z-index:40;display:flex;flex-direction:column;gap:10px">
+        <sc-if value="{{ confirmOpen }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:12px;background:#FEF6F5;border:1px solid #F0BDB8;border-radius:13px;padding:14px">
+            <div style="display:flex;flex-direction:column;gap:4px">
+              <span style="font-family:Sora,sans-serif;font-weight:600;font-size:15.5px;color:#B8433A">Remettre définitivement ?</span>
+              <span style="font-size:14px;line-height:1.5;color:#B8433A">{{ confirmHint }}</span>
+            </div>
+            <div style="display:flex;gap:10px">
+              <button type="button" onClick="{{ cancelSubmit }}" style="flex:1;font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:14.5px;color:#B8433A;background:#FFFFFF;border:1px solid #F0BDB8;border-radius:11px;padding:13px 14px;cursor:pointer;min-height:44px">Continuer</button>
+              <button type="button" onClick="{{ confirmSubmit }}" style="flex:1;font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:14.5px;color:#FFFFFF;background:#E2574C;border:1px solid #E2574C;border-radius:11px;padding:13px 14px;cursor:pointer;min-height:44px">Remettre</button>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ submitted }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;align-items:center;gap:11px;background:#EAF3EE;border:1px solid #CFE4D8;border-radius:13px;padding:14px">
+            <svg width="17" height="17" style="flex:none" viewBox="0 0 24 24" fill="none" stroke="#3C8C5C" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5 10 17.5 19 7"></path></svg>
+            <span style="font-size:14.5px;line-height:1.45;color:#2C6C46">Copie remise à <span style="font-family:'IBM Plex Mono',monospace;font-weight:500">10:12</span>. Résultat après correction.</span>
+          </div>
+        </sc-if>
+
+        <div style="display:flex;align-items:center;gap:10px">
+          <button type="button" onClick="{{ prev }}" style="width:52px;height:52px;border-radius:13px;flex:none;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;background:{{ prevBg }};border:1px solid {{ prevLine }}">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="{{ prevInk }}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 6l-6 6 6 6"></path></svg>
+          </button>
+          <button type="button" onClick="{{ next }}" style="flex:1;display:flex;align-items:center;justify-content:center;gap:9px;font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:15.5px;color:#FFFFFF;background:{{ nextBg }};border:1px solid {{ nextBg }};border-radius:13px;padding:15px 18px;cursor:pointer;min-height:52px;box-sizing:border-box;box-shadow:0 2px 6px rgba(46,59,78,.2)">
+            {{ nextLabel }}
+            <svg width="17" height="17" style="flex:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="{{ nextIcon }}"></path></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:375,&quot;height&quot;:812}}">
+class Component extends DCLogic {
+  state = {
+    screen: "list", nav: "Contrôles", index: 2, confirm: false, submitted: false,
+    answers: {
+      0: { picked: { 1: true } },
+      1: { text: "Une clé étrangère référence la clé primaire d'une autre table et garantit l'intégrité référentielle." },
+      2: { picked: {} },
+      3: { text: "" }, 4: { picked: {} }, 5: { text: "" }, 6: { picked: {} },
+      7: { text: "" }
+    }
+  };
+
+  questions() {
+    return [
+      { type: "qcm", points: 2, text: "Quelle clause écrit la condition de jointure entre deux tables ?", choices: ["WHERE", "ON", "HAVING", "GROUP BY"] },
+      { type: "open", points: 3, text: "Définissez la notion de clé étrangère et son rôle." },
+      { type: "qcm", points: 2, text: "Quelles affirmations décrivent correctement une jointure interne ?", choices: ["Elle ne garde que les lignes ayant une correspondance dans les deux tables", "Elle conserve toutes les lignes de la table de gauche", "Elle peut s'écrire simplement JOIN", "Elle produit toujours un produit cartésien"] },
+      { type: "open", points: 3, text: "Expliquez la différence entre WHERE et ON dans une jointure externe." },
+      { type: "qcm", points: 2, text: "Quelle contrainte garantit l'unicité d'une valeur dans une colonne ?", choices: ["NOT NULL", "UNIQUE", "DEFAULT", "CHECK"] },
+      { type: "open", points: 4, text: "Écrivez la requête listant les stagiaires inscrits à plus de deux modules." },
+      { type: "qcm", points: 2, text: "Que renvoie une jointure dont la condition a été oubliée ?", choices: ["Une erreur de syntaxe", "Un produit cartésien", "Un résultat vide", "Les seules lignes correspondantes"] },
+      { type: "open", points: 2, text: "Citez deux bonnes pratiques d'écriture des requêtes vues en cours." }
+    ];
+  }
+
+  renderVals() {
+    const st = this.state;
+    const qs = this.questions();
+    const i = st.index;
+    const q = qs[i];
+    const a = st.answers[i] || {};
+    const last = i === qs.length - 1;
+
+    const answeredCount = qs.reduce((n, qq, j) => {
+      const ans = st.answers[j] || {};
+      const filled = qq.type === "qcm" ? Object.keys(ans.picked || {}).length > 0 : !!(ans.text || "").trim();
+      return n + (filled ? 1 : 0);
+    }, 0);
+
+    const nav = [
+      { key: "Fil", label: "Fil", icon: "M4 10v9h16v-9 M2.5 10.5 12 3.5l9.5 7" },
+      { key: "Cours", label: "Cours", icon: "M12 7v13 M12 7a2.5 2.5 0 0 0-2.5-2.5H4v13h5.5A2.5 2.5 0 0 1 12 20 M12 7a2.5 2.5 0 0 1 2.5-2.5H20v13h-5.5A2.5 2.5 0 0 0 12 20" },
+      { key: "Devoirs", label: "Devoirs", icon: "M6 3.5h9L19 8v12.5H6z M9 12h7 M9 16h5" },
+      { key: "Contrôles", label: "Contrôles", icon: "M9 11.5 11.5 14 16 8.5 M4 3.5h16v17H4z" },
+      { key: "Emploi", label: "Emploi du temps", icon: "M3.5 5h17v16h-17z M8 3v4 M16 3v4 M3.5 10h17" }
+    ];
+
+    const examList = [
+      { title: "CC2 — Requêtes SQL", type: "CC", module: "M106", date: "aujourd'hui", duration: "1 h 30", grade: "", status: "En cours", tone: "coral", live: true },
+      { title: "CC1 — Composants réutilisables", type: "CC", module: "M104", date: "23/09", duration: "1 h", grade: "", status: "À venir", tone: "teal", live: false },
+      { title: "CC1 — Modélisation", type: "CC", module: "M106", date: "16/09", duration: "1 h 30", grade: "13,8", status: "Noté", tone: "green", live: false },
+      { title: "CC1 — Adressage IP", type: "CC", module: "M112", date: "09/09", duration: "1 h", grade: "15,5", status: "Noté", tone: "green", live: false },
+      { title: "EFM — Semestre précédent", type: "EFM", module: "M103", date: "12/06", duration: "3 h", grade: "12,0", status: "Noté", tone: "green", live: false },
+      { title: "CC2 — Bases HTML/CSS", type: "CC", module: "M103", date: "28/05", duration: "1 h", grade: "16,0", status: "Noté", tone: "green", live: false }
+    ];
+    const tone = {
+      green: { badgeInk: "#2C6C46", badgeBg: "#EAF3EE", badgeLine: "#CFE4D8" },
+      teal: { badgeInk: "#245F79", badgeBg: "#E8F2F7", badgeLine: "#CBE0EA" },
+      coral: { badgeInk: "#B8433A", badgeBg: "#FCEDEB", badgeLine: "#F3CFCB" }
+    };
+
+    return {
+      navItems: nav.map(n => {
+        const on = n.key === st.nav;
+        return { label: n.label, icon: n.icon, pick: () => this.setState({ nav: n.key }), ink: on ? "#2E3B4E" : "#A9B4C0", stroke: on ? "2.2" : "1.8", weight: on ? "600" : "400" };
+      }),
+
+      isList: st.screen === "list",
+      isExam: st.screen === "exam",
+      bottomPad: st.screen === "exam" ? "150px" : "86px",
+      back: () => this.setState({ screen: "list", confirm: false }),
+
+      exams: examList.map(e => Object.assign({}, e, tone[e.tone], {
+        open: () => this.setState({ screen: e.live ? "exam" : "list" }),
+        cursor: e.live ? "pointer" : "default",
+        rowBg: e.live ? "#FEFAF9" : "#FFFFFF",
+        markInk: e.type === "EFM" ? "#FFFFFF" : "#5B6A7D",
+        markBg: e.type === "EFM" ? "#2E3B4E" : "#EFF2F5",
+        grade: e.grade || "—",
+        gradeInk: e.grade ? (parseFloat(e.grade.replace(",", ".")) >= 10 ? "#2C6C46" : "#B8433A") : "#C3CBD5"
+      })),
+
+      current: String(i + 1).padStart(2, "0"),
+      totalQ: qs.length,
+      answeredLabel: answeredCount + " / " + qs.length + " répondues",
+      dots: qs.map((qq, j) => {
+        const ans = st.answers[j] || {};
+        const filled = qq.type === "qcm" ? Object.keys(ans.picked || {}).length > 0 : !!(ans.text || "").trim();
+        return { bg: j === i ? "#2E3B4E" : (filled ? "#CFE4D8" : "#EFF2F5") };
+      }),
+
+      qText: q.text,
+      qPoints: q.points,
+      qTypeLabel: q.type === "qcm" ? "QCM" : "Réponse rédigée",
+      qTagInk: q.type === "qcm" ? "#245F79" : "#5B6A7D",
+      qTagBg: q.type === "qcm" ? "#E8F2F7" : "#F2F4F7",
+      qTagLine: q.type === "qcm" ? "#CBE0EA" : "#E3E7EC",
+      isQcm: q.type === "qcm",
+      isOpen: q.type === "open",
+
+      choices: (q.choices || []).map((label, k) => {
+        const on = !!(a.picked || {})[k];
+        return {
+          label,
+          pick: () => this.setState(s => {
+            const cur = Object.assign({}, (s.answers[i] || {}).picked || {});
+            if (cur[k]) { delete cur[k]; } else { cur[k] = true; }
+            return { answers: Object.assign({}, s.answers, { [i]: { picked: cur } }) };
+          }),
+          bg: on ? "#F2F6F9" : "#FFFFFF",
+          line: on ? "#2E3B4E" : "#E3E7EC",
+          boxBg: on ? "#2E3B4E" : "#FFFFFF",
+          boxLine: on ? "#2E3B4E" : "#C9D2DC",
+          tick: on ? "block" : "none",
+          ink: on ? "#2E3B4E" : "#3F4E62"
+        };
+      }),
+
+      answerText: a.text || "",
+      answerChars: (a.text || "").length,
+      onAnswerText: e => this.setState(s => ({ answers: Object.assign({}, s.answers, { [i]: { text: e.target.value } }) })),
+
+      prev: () => this.setState(s => ({ index: Math.max(0, s.index - 1), confirm: false })),
+      prevBg: i === 0 ? "#F2F4F7" : "#FFFFFF",
+      prevLine: i === 0 ? "#E3E7EC" : "#C9D2DC",
+      prevInk: i === 0 ? "#C3CBD5" : "#5B6A7D",
+
+      next: () => {
+        if (last) { this.setState({ confirm: true }); } else { this.setState(s => ({ index: Math.min(qs.length - 1, s.index + 1) })); }
+      },
+      nextLabel: st.submitted ? "Copie remise" : (last ? "Remettre ma copie" : "Suivant"),
+      nextBg: st.submitted ? "#3C8C5C" : (last ? "#E2574C" : "#2E3B4E"),
+      nextIcon: last ? "M5 12.5 10 17.5 19 7" : "M10 6l6 6-6 6",
+
+      confirmOpen: st.confirm && !st.submitted,
+      confirmHint: answeredCount === qs.length
+        ? "Les 8 questions sont renseignées. Aucune modification ne sera possible après remise."
+        : (qs.length - answeredCount) + " question(s) sans réponse. Aucune modification ne sera possible après remise.",
+      cancelSubmit: () => this.setState({ confirm: false }),
+      confirmSubmit: () => this.setState({ submitted: true, confirm: false }),
+      submitted: st.submitted
+    };
+  }
+}
+</script>
+</body>
+</html>

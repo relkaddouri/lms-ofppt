@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=Source+Sans+3:ital,wght@0,400;0,500;0,600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  body { margin: 0; background: #F6F7F9; }
+  a { color: #2E7D9E; text-decoration: none; }
+  a:hover { color: #2E3B4E; text-decoration: underline; }
+</style>
+</helmet>
+<div style="min-height:100vh;display:flex;background:#F6F7F9;font-family:'Source Sans 3',system-ui,sans-serif;color:#2E3B4E">
+
+  <aside style="width:264px;flex:none;background:#FFFFFF;border-right:1px solid #E3E7EC;display:flex;flex-direction:column;justify-content:space-between;padding:22px 0">
+    <div style="display:flex;flex-direction:column;gap:32px">
+      <div style="display:flex;align-items:center;gap:11px;padding:0 24px">
+        <div style="display:flex;gap:3px">
+          <div style="width:12px;height:12px;background:#3C8C5C;transform:rotate(45deg)"></div>
+          <div style="width:12px;height:12px;background:#2E7D9E;transform:rotate(45deg)"></div>
+          <div style="width:12px;height:12px;background:#E2574C;transform:rotate(45deg)"></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:1px">
+          <span style="font-family:Sora,sans-serif;font-weight:700;font-size:16px;letter-spacing:-.01em">Pédago</span>
+          <span style="font-size:12px;color:#8C99A8">Espace formateur</span>
+        </div>
+      </div>
+      <nav style="display:flex;flex-direction:column;gap:26px">
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;color:#A9B4C0;padding:0 24px 6px">GESTION</span>
+          <a href="#" style="display:flex;align-items:center;gap:12px;margin:0 12px;padding:10px 12px;border-radius:9px;color:#5B6A7D;font-size:15px" style-hover="background:#F6F7F9;color:#2E3B4E"><span style="width:8px;height:8px;border:1.5px solid #A9B4C0;transform:rotate(45deg);flex:none"></span>Tableau de bord</a>
+          <a href="#" style="display:flex;align-items:center;gap:12px;margin:0 12px;padding:10px 12px;border-radius:9px;background:#EFF2F5;color:#2E3B4E;font-weight:600;font-size:15px"><span style="width:8px;height:8px;background:#2E3B4E;transform:rotate(45deg);flex:none"></span>Séances</a>
+          <a href="#" style="display:flex;align-items:center;gap:12px;margin:0 12px;padding:10px 12px;border-radius:9px;color:#5B6A7D;font-size:15px" style-hover="background:#F6F7F9;color:#2E3B4E"><span style="width:8px;height:8px;border:1.5px solid #A9B4C0;transform:rotate(45deg);flex:none"></span>Modules</a>
+          <a href="#" style="display:flex;align-items:center;gap:12px;margin:0 12px;padding:10px 12px;border-radius:9px;color:#5B6A7D;font-size:15px" style-hover="background:#F6F7F9;color:#2E3B4E"><span style="width:8px;height:8px;border:1.5px solid #A9B4C0;transform:rotate(45deg);flex:none"></span>Groupes</a>
+          <a href="#" style="display:flex;align-items:center;gap:12px;margin:0 12px;padding:10px 12px;border-radius:9px;color:#5B6A7D;font-size:15px" style-hover="background:#F6F7F9;color:#2E3B4E"><span style="width:8px;height:8px;border:1.5px solid #A9B4C0;transform:rotate(45deg);flex:none"></span>Calendrier</a>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;color:#A9B4C0;padding:0 24px 6px">CONFIGURATION</span>
+          <a href="#" style="display:flex;align-items:center;gap:12px;margin:0 12px;padding:10px 12px;border-radius:9px;color:#5B6A7D;font-size:15px" style-hover="background:#F6F7F9;color:#2E3B4E"><span style="width:8px;height:8px;border:1.5px solid #A9B4C0;transform:rotate(45deg);flex:none"></span>Paramètres</a>
+        </div>
+      </nav>
+    </div>
+    <div style="margin:0 12px;padding:14px 12px;border-top:1px solid #EDF0F3;display:flex;align-items:center;gap:12px">
+      <span style="width:38px;height:38px;border-radius:50%;background:#2E3B4E;color:#FFFFFF;font-family:Sora,sans-serif;font-weight:600;font-size:13px;display:flex;align-items:center;justify-content:center;flex:none">SL</span>
+      <div style="display:flex;flex-direction:column;gap:1px;min-width:0">
+        <span style="font-weight:600;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Samira Lahlou</span>
+        <span style="font-size:12.5px;color:#8C99A8">Formatrice · TSDI</span>
+      </div>
+    </div>
+  </aside>
+
+  <div style="flex:1;min-width:0;display:flex;flex-direction:column">
+
+    <header style="height:68px;flex:none;background:#FFFFFF;border-bottom:1px solid #E3E7EC;display:flex;align-items:center;justify-content:space-between;gap:24px;padding:0 40px">
+      <span style="font-family:Sora,sans-serif;font-weight:600;font-size:15px;letter-spacing:.02em">Pédago — Gestion pédagogique</span>
+      <div style="display:flex;align-items:center;gap:10px">
+        <button type="button" aria-label="Rechercher" style="width:40px;height:40px;border-radius:10px;border:1px solid #E3E7EC;background:#FFFFFF;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0" style-hover="background:#F6F7F9">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5B6A7D" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><line x1="16.5" y1="16.5" x2="21" y2="21"></line></svg>
+        </button>
+        <button type="button" aria-label="Notifications" style="width:40px;height:40px;border-radius:10px;border:1px solid #E3E7EC;background:#FFFFFF;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;position:relative" style-hover="background:#F6F7F9">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5B6A7D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 6-3 7-3 7h18s-3-1-3-7"></path><path d="M10.3 20a2 2 0 0 0 3.4 0"></path></svg>
+          <span style="position:absolute;top:-5px;right:-5px;min-width:19px;height:19px;border-radius:999px;background:#E2574C;color:#FFFFFF;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:11px;display:flex;align-items:center;justify-content:center;border:2px solid #FFFFFF;box-sizing:border-box">4</span>
+        </button>
+        <span style="width:2px;height:24px;background:#EDF0F3;margin:0 4px"></span>
+        <span style="width:40px;height:40px;border-radius:50%;background:#2E3B4E;color:#FFFFFF;font-family:Sora,sans-serif;font-weight:600;font-size:14px;display:flex;align-items:center;justify-content:center">SL</span>
+      </div>
+    </header>
+
+    <main style="flex:1;padding:36px 40px 56px;display:flex;flex-direction:column;gap:24px;min-width:0">
+
+      <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:32px;flex-wrap:wrap">
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:#8C99A8">Semestre 1 · 2025 — 2026</span>
+          <h1 style="font-family:Sora,sans-serif;font-weight:700;font-size:34px;line-height:1.15;letter-spacing:-.02em;margin:0">Suivi des séances</h1>
+          <p style="margin:0;font-size:16px;color:#5B6A7D"><span style="font-family:'IBM Plex Mono',monospace;font-weight:500;color:#3F4E62">{{ total }}</span> séances planifiées sur 3 groupes · <span style="font-family:'IBM Plex Mono',monospace;font-weight:500;color:#2C6C46">{{ doneCount }}</span> réalisées</p>
+        </div>
+        <button type="button" style="font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:14.5px;color:#FFFFFF;background:#2E3B4E;border:1px solid #2E3B4E;border-radius:9px;padding:10px 18px;cursor:pointer;white-space:nowrap" style-hover="background:#25303F">Planifier une séance</button>
+      </div>
+
+      <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;box-shadow:0 1px 2px rgba(46,59,78,.05)">
+        <label style="display:flex;align-items:center;gap:9px;flex:1;min-width:220px;background:#F6F7F9;border:1px solid #E3E7EC;border-radius:9px;padding:9px 12px">
+          <svg width="16" height="16" style="flex:none" viewBox="0 0 24 24" fill="none" stroke="#8C99A8" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><line x1="16.5" y1="16.5" x2="21" y2="21"></line></svg>
+          <input type="text" placeholder="Rechercher une séance, un module, un groupe…" value="{{ query }}" onInput="{{ onQuery }}" style="flex:1;min-width:0;border:none;outline:none;background:transparent;font-family:'Source Sans 3',sans-serif;font-size:14.5px;color:#2E3B4E" />
+        </label>
+        <button type="button" style="display:flex;align-items:center;gap:8px;font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:14px;color:#3F4E62;background:#FFFFFF;border:1px solid #C9D2DC;border-radius:9px;padding:9px 14px;cursor:pointer;white-space:nowrap" style-hover="background:#F6F7F9;border-color:#2E3B4E">
+          <svg width="15" height="15" style="flex:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16"></path><path d="M7 12h10"></path><path d="M10 18h4"></path></svg>Filtrer
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#FFFFFF;background:#2E3B4E;border-radius:999px;padding:1px 6px">2</span>
+        </button>
+        <button type="button" style="display:flex;align-items:center;gap:8px;font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:14px;color:#3F4E62;background:#FFFFFF;border:1px solid #C9D2DC;border-radius:9px;padding:9px 14px;cursor:pointer;white-space:nowrap" style-hover="background:#F6F7F9;border-color:#2E3B4E">
+          <svg width="15" height="15" style="flex:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v16"></path><path d="M4 17l3 3 3-3"></path><path d="M13 6h7"></path><path d="M13 11h5"></path><path d="M13 16h3"></path></svg>Trier · date
+        </button>
+        <div style="display:flex;gap:4px;background:#F2F4F7;border:1px solid #E3E7EC;border-radius:10px;padding:3px">
+          <button type="button" aria-label="Vue liste" onClick="{{ setList }}" style="width:36px;height:32px;border-radius:7px;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;background:{{ listBg }};box-shadow:{{ listShadow }}">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="{{ listInk }}" stroke-width="2" stroke-linecap="round"><path d="M4 6h16"></path><path d="M4 12h16"></path><path d="M4 18h16"></path></svg>
+          </button>
+          <button type="button" aria-label="Vue tableau" onClick="{{ setBoard }}" style="width:36px;height:32px;border-radius:7px;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;background:{{ boardBg }};box-shadow:{{ boardShadow }}">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="{{ boardInk }}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4" width="5" height="16" rx="1.5"></rect><rect x="10" y="4" width="5" height="11" rx="1.5"></rect><rect x="16.5" y="4" width="4" height="16" rx="1.5"></rect></svg>
+          </button>
+        </div>
+      </div>
+
+      <sc-if value="{{ isList }}" hint-placeholder-val="{{ true }}">
+        <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:14px;box-shadow:0 1px 2px rgba(46,59,78,.05);overflow:hidden">
+          <div style="display:grid;grid-template-columns:minmax(260px,2.2fr) minmax(150px,1fr) minmax(110px,.7fr) minmax(120px,.8fr);gap:16px;padding:12px 24px;background:#FAFBFC;border-bottom:1px solid #EDF0F3">
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#8C99A8">Séance</span>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#8C99A8">Groupe · module</span>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#8C99A8">Date</span>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#8C99A8">Statut</span>
+          </div>
+          <sc-for list="{{ rows }}" as="row" hint-placeholder-count="12">
+            <div style="display:grid;grid-template-columns:minmax(260px,2.2fr) minmax(150px,1fr) minmax(110px,.7fr) minmax(120px,.8fr);gap:16px;align-items:center;padding:14px 24px;border-bottom:1px solid #EDF0F3">
+              <div style="display:flex;align-items:center;gap:12px;min-width:0">
+                <span style="width:34px;height:34px;border-radius:9px;flex:none;display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:11.5px;color:{{ row.avatarInk }};background:{{ row.avatarBg }}">{{ row.initials }}</span>
+                <div style="display:flex;flex-direction:column;gap:2px;min-width:0">
+                  <span style="font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ row.title }}</span>
+                  <span style="font-size:13px;color:#8C99A8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ row.meta }}</span>
+                </div>
+              </div>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:13.5px;color:#3F4E62;white-space:nowrap">{{ row.group }}</span>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:13.5px;color:{{ row.dateInk }};white-space:nowrap">{{ row.date }}</span>
+              <span style="display:inline-flex;align-items:center;gap:7px;justify-self:start;font-size:13px;font-weight:600;border-radius:999px;padding:4px 11px;white-space:nowrap;color:{{ row.badgeInk }};background:{{ row.badgeBg }};border:1px solid {{ row.badgeLine }}">
+                <span style="width:6px;height:6px;border-radius:50%;flex:none;background:{{ row.dot }}"></span>{{ row.statusLabel }}
+              </span>
+            </div>
+          </sc-for>
+          <div style="padding:16px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;background:#FAFBFC">
+            <span style="font-size:14px;color:#6B7A8D"><span style="font-family:'IBM Plex Mono',monospace;font-weight:500;color:#3F4E62">{{ shownCount }}</span> séances affichées</span>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#8C99A8">Fin de liste</span>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isBoard }}" hint-placeholder-val="{{ false }}">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(288px,1fr));gap:20px;align-items:start">
+          <sc-for list="{{ columns }}" as="col" hint-placeholder-count="3">
+            <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:14px;box-shadow:0 1px 2px rgba(46,59,78,.05);display:flex;flex-direction:column;min-width:0;overflow:hidden">
+              <div style="padding:16px 18px;border-bottom:1px solid #EDF0F3;display:flex;align-items:center;gap:10px">
+                <span style="width:8px;height:8px;border-radius:50%;flex:none;background:{{ col.dot }}"></span>
+                <span style="font-family:Sora,sans-serif;font-weight:600;font-size:15.5px;color:{{ col.ink }}">{{ col.label }}</span>
+                <span style="font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:12.5px;color:#5B6A7D;background:#F2F4F7;border-radius:999px;padding:2px 9px">{{ col.count }}</span>
+                <button type="button" aria-label="Ajouter" style="margin-left:auto;width:26px;height:26px;border-radius:7px;border:1px solid #E3E7EC;background:#FFFFFF;color:#8C99A8;font-size:15px;line-height:1;cursor:pointer;padding:0" style-hover="background:#F6F7F9;color:#2E3B4E">+</button>
+              </div>
+              <div style="padding:14px;display:flex;flex-direction:column;gap:12px;max-height:620px;overflow-y:auto">
+                <sc-for list="{{ col.items }}" as="card" hint-placeholder-count="5">
+                  <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:11px;padding:14px;display:flex;flex-direction:column;gap:12px;min-width:0" style-hover="border-color:#C9D2DC;box-shadow:0 2px 6px rgba(46,59,78,.07)">
+                    <div style="display:flex;align-items:flex-start;gap:11px;min-width:0">
+                      <span style="width:32px;height:32px;border-radius:8px;flex:none;display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:11px;color:{{ card.avatarInk }};background:{{ card.avatarBg }}">{{ card.initials }}</span>
+                      <div style="display:flex;flex-direction:column;gap:3px;min-width:0">
+                        <span style="font-weight:600;font-size:14.5px;line-height:1.3;color:#2E3B4E">{{ card.title }}</span>
+                        <span style="font-size:12.5px;color:#8C99A8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ card.meta }}</span>
+                      </div>
+                    </div>
+                    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+                      <span style="display:inline-flex;align-items:center;gap:6px;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:500;border-radius:6px;padding:3px 8px;white-space:nowrap;color:{{ card.badgeInk }};background:{{ card.badgeBg }}">
+                        <svg width="11" height="11" style="flex:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="3.5" y="5" width="17" height="16" rx="2.5"></rect><path d="M8 3v4"></path><path d="M16 3v4"></path><path d="M3.5 10h17"></path></svg>{{ card.date }}
+                      </span>
+                      <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#A9B4C0">{{ card.duration }}</span>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+    </main>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440}}">
+class Component extends DCLogic {
+  state = { view: "board", query: "" };
+
+  data() {
+    const groups = [
+      { g: "TSDI-201", initials: "201", bg: "#2E3B4E", ink: "#FFFFFF" },
+      { g: "TSDI-102", initials: "102", bg: "#EFF2F5", ink: "#5B6A7D" },
+      { g: "GE-118", initials: "118", bg: "#2E7D9E", ink: "#FFFFFF" }
+    ];
+    const modules = ["M104", "M107", "M112", "M115"];
+    const titles = [
+      "Intégration continue — TP", "Modélisation UML — atelier", "Requêtes SQL avancées",
+      "Composants réutilisables", "Sécurité applicative", "Contrôle continu",
+      "Revue de projet fil rouge", "Tests unitaires — TP", "Déploiement conteneurisé",
+      "Accessibilité des interfaces", "Gestion de versions — Git", "Soutenance intermédiaire"
+    ];
+    const rooms = ["Salle B12", "Salle A04", "Atelier réseau", "Salle informatique 3"];
+    const out = [];
+    for (let i = 0; i < 62; i++) {
+      const gr = groups[i % 3];
+      const mod = modules[i % 4];
+      const status = i % 7 === 5 ? "nodate" : (i % 3 === 0 ? "done" : "todo");
+      const day = 3 + ((i * 5) % 25);
+      const month = 9 + (i % 3);
+      out.push({
+        id: i,
+        title: titles[i % titles.length] + " " + (1 + (i % 6)),
+        meta: mod + " · " + rooms[i % rooms.length] + " · " + (i % 2 ? "08:30" : "13:30"),
+        group: gr.g + " · " + mod,
+        initials: gr.initials,
+        avatarBg: gr.bg,
+        avatarInk: gr.ink,
+        duration: (i % 2 ? "2 h 30" : "4 h"),
+        status,
+        date: status === "nodate" ? "—" : String(day).padStart(2, "0") + "/" + String(month).padStart(2, "0")
+      });
+    }
+    return out;
+  }
+
+  decorate(it) {
+    const s = it.status;
+    const map = {
+      todo: { statusLabel: "À faire", dot: "#2E7D9E", badgeInk: "#245F79", badgeBg: "#E8F2F7", badgeLine: "#CBE0EA", dateInk: "#3F4E62" },
+      done: { statusLabel: "Fait", dot: "#3C8C5C", badgeInk: "#2C6C46", badgeBg: "#EAF3EE", badgeLine: "#CFE4D8", dateInk: "#3F4E62" },
+      nodate: { statusLabel: "Sans date", dot: "#8C99A8", badgeInk: "#5B6A7D", badgeBg: "#F2F4F7", badgeLine: "#E3E7EC", dateInk: "#A9B4C0" }
+    }[s];
+    return Object.assign({}, it, map);
+  }
+
+  renderVals() {
+    const all = this.data();
+    const q = this.state.query.trim().toLowerCase();
+    const filtered = q
+      ? all.filter(it => (it.title + " " + it.meta + " " + it.group).toLowerCase().includes(q))
+      : all;
+    const rows = filtered.map(it => this.decorate(it));
+    const pick = s => rows.filter(r => r.status === s);
+    const active = this.state.view;
+    const sel = "#FFFFFF", selShadow = "0 1px 2px rgba(46,59,78,.12)";
+    return {
+      total: all.length,
+      doneCount: all.filter(i => i.status === "done").length,
+      shownCount: rows.length,
+      rows,
+      columns: [
+        { key: "todo", label: "À faire", dot: "#2E7D9E", ink: "#2E3B4E", items: pick("todo"), count: pick("todo").length },
+        { key: "done", label: "Fait", dot: "#3C8C5C", ink: "#2E3B4E", items: pick("done"), count: pick("done").length },
+        { key: "nodate", label: "Sans date", dot: "#8C99A8", ink: "#5B6A7D", items: pick("nodate"), count: pick("nodate").length }
+      ].map(c => Object.assign(c, {
+        items: c.items.map(it => Object.assign({}, it, {
+          badgeInk: it.status === "nodate" ? "#5B6A7D" : it.badgeInk,
+          badgeBg: it.status === "nodate" ? "#F2F4F7" : it.badgeBg
+        }))
+      })),
+      isList: active === "list",
+      isBoard: active === "board",
+      listBg: active === "list" ? sel : "transparent",
+      listShadow: active === "list" ? selShadow : "none",
+      listInk: active === "list" ? "#2E3B4E" : "#8C99A8",
+      boardBg: active === "board" ? sel : "transparent",
+      boardShadow: active === "board" ? selShadow : "none",
+      boardInk: active === "board" ? "#2E3B4E" : "#8C99A8",
+      query: this.state.query,
+      onQuery: e => this.setState({ query: e.target.value }),
+      setList: () => this.setState({ view: "list" }),
+      setBoard: () => this.setState({ view: "board" })
+    };
+  }
+}
+</script>
+</body>
+</html>

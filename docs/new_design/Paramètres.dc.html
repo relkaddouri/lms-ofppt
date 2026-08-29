@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=Source+Sans+3:ital,wght@0,400;0,500;0,600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  body { margin: 0; background: #F6F7F9; }
+  a { color: #2E7D9E; text-decoration: none; }
+  a:hover { color: #2E3B4E; text-decoration: underline; }
+</style>
+</helmet>
+<div style="min-height:100vh;background:#F6F7F9;font-family:'Source Sans 3',system-ui,sans-serif;color:#2E3B4E;padding:48px 32px 72px;box-sizing:border-box">
+  <div style="max-width:700px;margin:0 auto;display:flex;flex-direction:column;gap:24px">
+
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:#8C99A8">Configuration</span>
+      <h1 style="font-family:Sora,sans-serif;font-weight:700;font-size:30px;line-height:1.15;letter-spacing:-.02em;margin:0">Paramètres</h1>
+      <p style="margin:0;font-size:16px;color:#5B6A7D">Réglages personnels du compte formateur. Les modifications s'appliquent immédiatement.</p>
+    </div>
+
+    <div style="display:flex;gap:4px;background:#F2F4F7;border:1px solid #E3E7EC;border-radius:11px;padding:4px">
+      <button type="button" onClick="{{ showLoad }}" style="flex:1;font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:14.5px;border:none;border-radius:8px;padding:10px 14px;cursor:pointer;white-space:nowrap;color:{{ loadInk }};background:{{ loadBg }};box-shadow:{{ loadShadow }}">Ma charge horaire</button>
+      <button type="button" onClick="{{ showModel }}" style="flex:1;font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:14.5px;border:none;border-radius:8px;padding:10px 14px;cursor:pointer;white-space:nowrap;color:{{ modelInk }};background:{{ modelBg }};box-shadow:{{ modelShadow }}">Modèle de langage</button>
+    </div>
+
+    <sc-if value="{{ isLoad }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex;flex-direction:column;gap:20px">
+
+        <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:14px;padding:26px;display:flex;flex-direction:column;gap:22px;box-shadow:0 1px 2px rgba(46,59,78,.05)">
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <h2 style="font-family:Sora,sans-serif;font-weight:600;font-size:18px;margin:0">Volume horaire</h2>
+            <span style="font-size:14px;color:#8C99A8">Référence utilisée pour le suivi du plafond annuel.</span>
+          </div>
+
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px">
+            <label style="display:flex;flex-direction:column;gap:7px">
+              <span style="font-size:14px;font-weight:600;color:#3F4E62">Heures annuelles dues</span>
+              <div style="display:flex;align-items:center;gap:0;border:1px solid #C9D2DC;border-radius:9px;overflow:hidden;background:#FFFFFF">
+                <input type="text" value="720" style="flex:1;min-width:0;border:none;outline:none;background:transparent;font-family:'IBM Plex Mono',monospace;font-size:15px;color:#2E3B4E;padding:11px 13px" />
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:13.5px;color:#8C99A8;padding:0 13px;border-left:1px solid #E3E7EC;align-self:stretch;display:flex;align-items:center">h / an</span>
+              </div>
+            </label>
+            <label style="display:flex;flex-direction:column;gap:7px">
+              <span style="font-size:14px;font-weight:600;color:#3F4E62">Heures déjà réalisées</span>
+              <div style="display:flex;align-items:center;border:1px solid #C9D2DC;border-radius:9px;overflow:hidden;background:#FFFFFF">
+                <input type="text" value="412" style="flex:1;min-width:0;border:none;outline:none;background:transparent;font-family:'IBM Plex Mono',monospace;font-size:15px;color:#2E3B4E;padding:11px 13px" />
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:13.5px;color:#8C99A8;padding:0 13px;border-left:1px solid #E3E7EC;align-self:stretch;display:flex;align-items:center">h</span>
+              </div>
+            </label>
+          </div>
+
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:20px;padding:16px 18px;background:#FAFBFC;border:1px solid #EDF0F3;border-radius:11px">
+            <div style="display:flex;flex-direction:column;gap:3px;min-width:0">
+              <span style="font-size:15px;font-weight:600">Heures supplémentaires</span>
+              <span style="font-size:13.5px;line-height:1.45;color:#8C99A8">Autoriser la planification de séances au-delà du plafond annuel.</span>
+            </div>
+            <button type="button" role="switch" aria-checked="{{ overtime }}" onClick="{{ toggleOvertime }}" style="width:46px;height:26px;border-radius:999px;border:none;flex:none;position:relative;cursor:pointer;padding:0;transition:background .15s ease;background:{{ overtimeTrack }}">
+              <span style="position:absolute;top:3px;left:{{ overtimeKnob }};width:20px;height:20px;border-radius:50%;background:#FFFFFF;box-shadow:0 1px 3px rgba(46,59,78,.35);transition:left .15s ease"></span>
+            </button>
+          </div>
+
+          <sc-if value="{{ overtime }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;align-items:center;gap:10px;background:#FEF6F5;border:1px solid #F0BDB8;border-radius:10px;padding:12px 14px">
+              <span style="width:7px;height:7px;border-radius:50%;background:#E2574C;flex:none"></span>
+              <span style="font-size:13.5px;line-height:1.45;color:#B8433A">Les heures au-delà de <span style="font-family:'IBM Plex Mono',monospace;font-weight:500">720 h</span> devront être validées par le chef de pôle.</span>
+            </div>
+          </sc-if>
+        </div>
+
+        <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:14px;padding:26px;display:flex;flex-direction:column;gap:20px;box-shadow:0 1px 2px rgba(46,59,78,.05)">
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <h2 style="font-family:Sora,sans-serif;font-weight:600;font-size:18px;margin:0">Rythme hebdomadaire</h2>
+            <span style="font-size:14px;color:#8C99A8">Détermine la répartition proposée lors de la planification.</span>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <sc-for list="{{ paces }}" as="pace" hint-placeholder-count="3">
+              <button type="button" onClick="{{ pace.select }}" style="text-align:left;display:flex;align-items:center;gap:14px;padding:15px 16px;border-radius:11px;cursor:pointer;font-family:'Source Sans 3',sans-serif;background:{{ pace.bg }};border:1px solid {{ pace.line }}">
+                <span style="width:18px;height:18px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;border:2px solid {{ pace.ring }};background:#FFFFFF">
+                  <span style="width:8px;height:8px;border-radius:50%;background:{{ pace.dot }}"></span>
+                </span>
+                <span style="display:flex;flex-direction:column;gap:3px;min-width:0">
+                  <span style="font-size:15px;font-weight:600;color:#2E3B4E">{{ pace.label }}</span>
+                  <span style="font-size:13.5px;color:#8C99A8">{{ pace.detail }}</span>
+                </span>
+                <span style="margin-left:auto;font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:15px;color:{{ pace.hoursInk }};white-space:nowrap">{{ pace.hours }}</span>
+              </button>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:center;justify-content:flex-end;gap:10px">
+          <button type="button" style="font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:14.5px;color:#2E3B4E;background:#FFFFFF;border:1px solid #C9D2DC;border-radius:9px;padding:10px 18px;cursor:pointer" style-hover="background:#FFFFFF;border-color:#2E3B4E">Annuler</button>
+          <button type="button" style="font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:14.5px;color:#FFFFFF;background:#2E3B4E;border:1px solid #2E3B4E;border-radius:9px;padding:10px 18px;cursor:pointer" style-hover="background:#25303F">Enregistrer</button>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isModel }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;gap:20px">
+
+        <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:14px;padding:26px;display:flex;flex-direction:column;gap:20px;box-shadow:0 1px 2px rgba(46,59,78,.05)">
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <h2 style="font-family:Sora,sans-serif;font-weight:600;font-size:18px;margin:0">Fournisseur</h2>
+            <span style="font-size:14px;line-height:1.5;color:#8C99A8">Utilisé pour la génération des fiches de séance et des sujets de contrôle. Une seule connexion active à la fois.</span>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <sc-for list="{{ providers }}" as="p" hint-placeholder-count="3">
+              <button type="button" onClick="{{ p.select }}" style="text-align:left;display:flex;align-items:center;gap:14px;padding:15px 16px;border-radius:11px;cursor:pointer;font-family:'Source Sans 3',sans-serif;background:{{ p.bg }};border:1px solid {{ p.line }}">
+                <span style="width:38px;height:38px;border-radius:10px;flex:none;display:flex;align-items:center;justify-content:center;font-family:Sora,sans-serif;font-weight:700;font-size:14px;color:{{ p.markInk }};background:{{ p.markBg }}">{{ p.mark }}</span>
+                <span style="display:flex;flex-direction:column;gap:3px;min-width:0">
+                  <span style="font-size:15.5px;font-weight:600;color:#2E3B4E">{{ p.name }}</span>
+                  <span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#8C99A8">{{ p.model }}</span>
+                </span>
+                <span style="margin-left:auto;display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;border-radius:999px;padding:4px 11px;white-space:nowrap;color:{{ p.badgeInk }};background:{{ p.badgeBg }};border:1px solid {{ p.badgeLine }}">
+                  <span style="width:6px;height:6px;border-radius:50%;flex:none;background:{{ p.dot }}"></span>{{ p.status }}
+                </span>
+              </button>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:14px;padding:26px;display:flex;flex-direction:column;gap:20px;box-shadow:0 1px 2px rgba(46,59,78,.05)">
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+            <h2 style="font-family:Sora,sans-serif;font-weight:600;font-size:18px;margin:0">Clé API — {{ activeName }}</h2>
+            <span style="display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;border-radius:999px;padding:4px 11px;white-space:nowrap;color:{{ activeBadgeInk }};background:{{ activeBadgeBg }};border:1px solid {{ activeBadgeLine }}">
+              <span style="width:6px;height:6px;border-radius:50%;flex:none;background:{{ activeDot }}"></span>{{ activeStatus }}
+            </span>
+          </div>
+
+          <label style="display:flex;flex-direction:column;gap:7px">
+            <span style="font-size:14px;font-weight:600;color:#3F4E62">Clé secrète</span>
+            <div style="display:flex;align-items:center;border:1px solid #C9D2DC;border-radius:9px;background:#FFFFFF;overflow:hidden">
+              <input type="{{ keyType }}" value="sk-ofppt-7f3a91c25be40d8e" style="flex:1;min-width:0;border:none;outline:none;background:transparent;font-family:'IBM Plex Mono',monospace;font-size:14.5px;letter-spacing:.04em;color:#2E3B4E;padding:11px 13px" />
+              <button type="button" onClick="{{ toggleKey }}" style="font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:13px;color:#5B6A7D;background:#FAFBFC;border:none;border-left:1px solid #E3E7EC;padding:0 14px;align-self:stretch;cursor:pointer;white-space:nowrap" style-hover="background:#F2F4F7;color:#2E3B4E">{{ keyToggleLabel }}</button>
+            </div>
+            <span style="font-size:13px;color:#8C99A8">Stockée chiffrée sur le poste. Jamais transmise à l'établissement.</span>
+          </label>
+
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding-top:18px;border-top:1px solid #EDF0F3">
+            <button type="button" onClick="{{ test }}" style="display:flex;align-items:center;gap:9px;font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:14.5px;color:#2E3B4E;background:#FFFFFF;border:1px solid #C9D2DC;border-radius:9px;padding:10px 18px;cursor:pointer;white-space:nowrap" style-hover="background:#F6F7F9;border-color:#2E3B4E">
+              <svg width="15" height="15" style="flex:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.4-5.7"></path><path d="M20 4v4h-4"></path></svg>Tester la connexion
+            </button>
+            <span style="font-size:13.5px;color:{{ testInk }}">{{ testMessage }}</span>
+            <button type="button" style="margin-left:auto;font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:14.5px;color:#FFFFFF;background:#2E3B4E;border:1px solid #2E3B4E;border-radius:9px;padding:10px 18px;cursor:pointer;white-space:nowrap" style-hover="background:#25303F">Enregistrer la clé</button>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:840}}">
+class Component extends DCLogic {
+  state = { tab: "load", overtime: true, pace: "equilibre", provider: "claude", reveal: false, test: "idle" };
+
+  renderVals() {
+    const st = this.state;
+    const sel = "#FFFFFF", selShadow = "0 1px 2px rgba(46,59,78,.12)";
+    const paceDefs = [
+      { key: "leger", label: "Rythme allégé", detail: "4 demi-journées, pas de samedi", hours: "18 h" },
+      { key: "equilibre", label: "Rythme équilibré", detail: "5 jours, matin et soir alternés", hours: "24 h" },
+      { key: "soutenu", label: "Rythme soutenu", detail: "6 jours dont samedi matin", hours: "30 h" }
+    ];
+    const provDefs = [
+      { key: "claude", name: "Claude", model: "claude-sonnet-4-5", mark: "CL", connected: true },
+      { key: "deepseek", name: "DeepSeek", model: "deepseek-chat", mark: "DS", connected: false },
+      { key: "gpt", name: "GPT", model: "gpt-4.1", mark: "GP", connected: false }
+    ];
+    const badge = c => c
+      ? { status: "Connecté", badgeInk: "#2C6C46", badgeBg: "#EAF3EE", badgeLine: "#CFE4D8", dot: "#3C8C5C" }
+      : { status: "Non configuré", badgeInk: "#5B6A7D", badgeBg: "#F2F4F7", badgeLine: "#E3E7EC", dot: "#A9B4C0" };
+    const activeProv = provDefs.find(p => p.key === st.provider) || provDefs[0];
+    const ab = badge(activeProv.connected);
+    const testMap = {
+      idle: { testMessage: "Dernier test réussi il y a 2 jours.", testInk: "#8C99A8" },
+      ok: { testMessage: "Connexion établie — latence 340 ms.", testInk: "#2C6C46" },
+      ko: { testMessage: "Aucune clé enregistrée pour ce fournisseur.", testInk: "#B8433A" }
+    };
+    const testState = st.test === "idle" ? "idle" : (activeProv.connected ? "ok" : "ko");
+
+    return {
+      isLoad: st.tab === "load",
+      isModel: st.tab === "model",
+      showLoad: () => this.setState({ tab: "load" }),
+      showModel: () => this.setState({ tab: "model" }),
+      loadBg: st.tab === "load" ? sel : "transparent",
+      loadShadow: st.tab === "load" ? selShadow : "none",
+      loadInk: st.tab === "load" ? "#2E3B4E" : "#6B7A8D",
+      modelBg: st.tab === "model" ? sel : "transparent",
+      modelShadow: st.tab === "model" ? selShadow : "none",
+      modelInk: st.tab === "model" ? "#2E3B4E" : "#6B7A8D",
+
+      overtime: st.overtime,
+      toggleOvertime: () => this.setState(s => ({ overtime: !s.overtime })),
+      overtimeTrack: st.overtime ? "#3C8C5C" : "#C9D2DC",
+      overtimeKnob: st.overtime ? "23px" : "3px",
+
+      paces: paceDefs.map(p => {
+        const on = p.key === st.pace;
+        return Object.assign({}, p, {
+          select: () => this.setState({ pace: p.key }),
+          bg: on ? "#FAFBFC" : "#FFFFFF",
+          line: on ? "#2E3B4E" : "#E3E7EC",
+          ring: on ? "#2E3B4E" : "#C9D2DC",
+          dot: on ? "#2E3B4E" : "#FFFFFF",
+          hoursInk: on ? "#2E3B4E" : "#8C99A8"
+        });
+      }),
+
+      providers: provDefs.map(p => {
+        const on = p.key === st.provider;
+        return Object.assign({}, p, badge(p.connected), {
+          select: () => this.setState({ provider: p.key, test: "idle" }),
+          bg: on ? "#FAFBFC" : "#FFFFFF",
+          line: on ? "#2E3B4E" : "#E3E7EC",
+          markBg: on ? "#2E3B4E" : "#F2F4F7",
+          markInk: on ? "#FFFFFF" : "#6B7A8D"
+        });
+      }),
+
+      activeName: activeProv.name,
+      activeStatus: ab.status,
+      activeBadgeInk: ab.badgeInk,
+      activeBadgeBg: ab.badgeBg,
+      activeBadgeLine: ab.badgeLine,
+      activeDot: ab.dot,
+
+      keyType: st.reveal ? "text" : "password",
+      keyToggleLabel: st.reveal ? "Masquer" : "Afficher",
+      toggleKey: () => this.setState(s => ({ reveal: !s.reveal })),
+      test: () => this.setState({ test: "done" }),
+      testMessage: testMap[testState].testMessage,
+      testInk: testMap[testState].testInk
+    };
+  }
+}
+</script>
+</body>
+</html>

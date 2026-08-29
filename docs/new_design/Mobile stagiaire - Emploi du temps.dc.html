@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=Source+Sans+3:ital,wght@0,400;0,500;0,600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  body { margin: 0; background: #FFFFFF; }
+  a { color: #2E7D9E; text-decoration: none; }
+  a:hover { color: #2E3B4E; }
+</style>
+</helmet>
+<div style="width:375px;margin:0 auto;min-height:100vh;background:#FFFFFF;font-family:'Source Sans 3',system-ui,sans-serif;color:#2E3B4E;position:relative;padding-bottom:86px;box-sizing:border-box">
+
+  <div style="position:sticky;top:0;z-index:30;background:#FFFFFF;border-bottom:1px solid #EDF0F3;padding:16px 20px 14px;display:flex;align-items:center;gap:12px">
+    <span style="width:42px;height:42px;border-radius:50%;flex:none;background:#2E3B4E;color:#FFFFFF;font-family:Sora,sans-serif;font-weight:600;font-size:13.5px;display:flex;align-items:center;justify-content:center">YB</span>
+    <div style="display:flex;flex-direction:column;gap:2px;min-width:0">
+      <span style="font-family:Sora,sans-serif;font-weight:600;font-size:16.5px">Youssef Benali</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#8C99A8">TSDI-201 · 2ᵉ année</span>
+    </div>
+    <button type="button" aria-label="Vue calendrier" style="margin-left:auto;width:40px;height:40px;border-radius:12px;border:1px solid #E3E7EC;background:#FFFFFF;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;flex:none" style-hover="background:#F6F7F9">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5B6A7D" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="16" rx="2.5"></rect><path d="M8 3v4"></path><path d="M16 3v4"></path><path d="M3.5 10h17"></path></svg>
+    </button>
+  </div>
+
+  <div style="padding:22px 20px 16px;display:flex;flex-direction:column;gap:6px">
+    <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#A9B4C0">Semaine 38</span>
+    <h1 style="font-family:Sora,sans-serif;font-weight:700;font-size:26px;line-height:1.2;letter-spacing:-.02em;margin:0">Emploi du temps</h1>
+    <span style="font-size:14.5px;color:#8C99A8">À venir en premier · <span style="font-family:'IBM Plex Mono',monospace;color:#3F4E62">{{ upcomingCount }}</span> échéances cette semaine</span>
+  </div>
+
+  <sc-for list="{{ days }}" as="d" hint-placeholder-count="4">
+    <div style="display:flex;flex-direction:column">
+      <div style="position:sticky;top:71px;z-index:20;background:{{ d.headerBg }};border-top:1px solid #EDF0F3;border-bottom:1px solid #EDF0F3;padding:10px 20px;display:flex;align-items:center;gap:10px">
+        <span style="font-family:Sora,sans-serif;font-weight:600;font-size:14px;color:{{ d.labelInk }}">{{ d.label }}</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#8C99A8">{{ d.date }}</span>
+        <span style="margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:12px;color:#A9B4C0">{{ d.summary }}</span>
+      </div>
+
+      <sc-for list="{{ d.items }}" as="it" hint-placeholder-count="3">
+        <div style="border-bottom:1px solid #EDF0F3;padding:16px 20px;display:flex;gap:13px;background:{{ it.rowBg }}">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:8px;width:52px;flex:none">
+            <span style="font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:14px;color:{{ it.timeInk }}">{{ it.start }}</span>
+            <span style="width:1px;flex:1;min-height:14px;background:#EDF0F3"></span>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#C3CBD5">{{ it.end }}</span>
+          </div>
+
+          <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:11px">
+            <div style="display:flex;align-items:flex-start;gap:11px">
+              <span style="width:36px;height:36px;border-radius:10px;flex:none;display:flex;align-items:center;justify-content:center;background:{{ it.iconBg }}">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="{{ it.iconInk }}" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="{{ it.icon }}"></path></svg>
+              </span>
+              <div style="display:flex;flex-direction:column;gap:4px;min-width:0;flex:1">
+                <span style="font-weight:600;font-size:15.5px;line-height:1.3;color:{{ it.titleInk }}">{{ it.title }}</span>
+                <div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap">
+                  <span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#8C99A8">{{ it.module }}</span>
+                  <span style="font-size:11.5px;font-weight:600;border-radius:999px;padding:2px 8px;white-space:nowrap;color:{{ it.natureInk }};background:{{ it.natureBg }};border:1px solid {{ it.natureLine }}">{{ it.nature }}</span>
+                </div>
+                <span style="font-size:13px;color:#A9B4C0">{{ it.room }}</span>
+              </div>
+            </div>
+
+            <sc-if value="{{ it.isExam }}" hint-placeholder-val="{{ false }}">
+              <button type="button" style="width:100%;box-sizing:border-box;display:flex;align-items:center;justify-content:center;gap:9px;font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:14.5px;color:#FFFFFF;background:{{ it.ctaBg }};border:1px solid {{ it.ctaBg }};border-radius:12px;padding:13px 16px;cursor:pointer;min-height:44px">
+                <svg width="16" height="16" style="flex:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="{{ it.ctaIcon }}"></path></svg>{{ it.ctaLabel }}
+              </button>
+            </sc-if>
+
+            <sc-if value="{{ it.hasSupport }}" hint-placeholder-val="{{ true }}">
+              <button type="button" style="align-self:flex-start;display:flex;align-items:center;gap:8px;font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:13.5px;color:#245F79;background:#E8F2F7;border:1px solid #CBE0EA;border-radius:999px;padding:9px 14px;cursor:pointer;min-height:40px;box-sizing:border-box" style-hover="background:#DCEBF3">
+                <svg width="14" height="14" style="flex:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h9L19 8v12.5H6z"></path><path d="M9 12h7"></path><path d="M9 16h5"></path></svg>
+                Support disponible
+                <svg width="13" height="13" style="flex:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10 6l6 6-6 6"></path></svg>
+              </button>
+            </sc-if>
+
+            <sc-if value="{{ it.noSupport }}" hint-placeholder-val="{{ false }}">
+              <span style="align-self:flex-start;display:flex;align-items:center;gap:8px;font-size:13px;color:#A9B4C0;background:#F6F7F9;border:1px solid #EDF0F3;border-radius:999px;padding:8px 13px">
+                <svg width="13" height="13" style="flex:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 8v4.5"></path><path d="M12 16h.01"></path></svg>
+                Support à venir
+              </span>
+            </sc-if>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </sc-for>
+
+  <div style="padding:24px 20px 8px;display:flex;justify-content:center">
+    <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#C3CBD5">Séances passées plus bas dans l'historique</span>
+  </div>
+
+  <nav style="position:fixed;bottom:0;left:0;right:0;width:375px;margin:0 auto;background:#FFFFFF;border-top:1px solid #E3E7EC;box-shadow:0 -4px 16px rgba(46,59,78,.06);display:flex;align-items:stretch;padding:8px 4px 12px;box-sizing:border-box;z-index:40">
+    <sc-for list="{{ navItems }}" as="n" hint-placeholder-count="5">
+      <button type="button" onClick="{{ n.pick }}" style="flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:5px;background:transparent;border:none;padding:7px 2px;cursor:pointer;min-height:44px">
+        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="{{ n.ink }}" stroke-width="{{ n.stroke }}" stroke-linecap="round" stroke-linejoin="round"><path d="{{ n.icon }}"></path></svg>
+        <span style="font-family:'Source Sans 3',sans-serif;font-size:10.5px;font-weight:{{ n.weight }};color:{{ n.ink }};white-space:nowrap">{{ n.label }}</span>
+      </button>
+    </sc-for>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:375,&quot;height&quot;:812}}">
+class Component extends DCLogic {
+  state = { nav: "Emploi" };
+
+  schedule() {
+    return [
+      {
+        label: "Aujourd'hui", date: "jeu. 18/09", today: true,
+        items: [
+          { kind: "exam", title: "CC2 — Requêtes SQL", module: "M106", nature: "Contrôle continu", room: "Salle informatique 3", start: "08:30", end: "10:00", live: true },
+          { kind: "session", title: "Intégration continue — TP 3", module: "M104", nature: "Pratique", room: "Salle B12", start: "10:15", end: "13:30", support: true },
+          { kind: "session", title: "Projet fil rouge — atelier encadré", module: "M115", nature: "Pratique", room: "Salle informatique 3", start: "13:30", end: "16:00", support: false }
+        ]
+      },
+      {
+        label: "Demain", date: "ven. 19/09", today: false,
+        items: [
+          { kind: "session", title: "Administration des réseaux — routage", module: "M112", nature: "Théorique", room: "Atelier réseau", start: "08:30", end: "11:00", support: true },
+          { kind: "exam", title: "EFM — Synthèse M115", module: "M115", nature: "Épreuve de fin de module", room: "Salle A04", start: "16:15", end: "18:15", live: false }
+        ]
+      },
+      {
+        label: "Lundi", date: "lun. 22/09", today: false,
+        items: [
+          { kind: "session", title: "Accessibilité des interfaces", module: "M104", nature: "Théorique", room: "Salle B12", start: "08:30", end: "12:30", support: true },
+          { kind: "session", title: "Normalisation — remédiation", module: "M106", nature: "Pratique", room: "Salle informatique 3", start: "13:30", end: "16:00", support: false }
+        ]
+      },
+      {
+        label: "Mardi", date: "mar. 23/09", today: false,
+        items: [
+          { kind: "exam", title: "CC1 — Composants réutilisables", module: "M104", nature: "Contrôle continu", room: "Salle B12", start: "08:30", end: "09:30", live: false },
+          { kind: "session", title: "Déploiement conteneurisé", module: "M104", nature: "Pratique", room: "Salle B12", start: "09:45", end: "13:30", support: true }
+        ]
+      }
+    ];
+  }
+
+  renderVals() {
+    const st = this.state;
+    const nav = [
+      { key: "Fil", label: "Fil", icon: "M4 10v9h16v-9 M2.5 10.5 12 3.5l9.5 7" },
+      { key: "Cours", label: "Cours", icon: "M12 7v13 M12 7a2.5 2.5 0 0 0-2.5-2.5H4v13h5.5A2.5 2.5 0 0 1 12 20 M12 7a2.5 2.5 0 0 1 2.5-2.5H20v13h-5.5A2.5 2.5 0 0 0 12 20" },
+      { key: "Devoirs", label: "Devoirs", icon: "M6 3.5h9L19 8v12.5H6z M9 12h7 M9 16h5" },
+      { key: "Contrôles", label: "Contrôles", icon: "M9 11.5 11.5 14 16 8.5 M4 3.5h16v17H4z" },
+      { key: "Emploi", label: "Emploi du temps", icon: "M3.5 5h17v16h-17z M8 3v4 M16 3v4 M3.5 10h17" }
+    ];
+
+    const days = this.schedule();
+    const upcoming = days.reduce((n, d) => n + d.items.length, 0);
+
+    return {
+      navItems: nav.map(n => {
+        const on = n.key === st.nav;
+        return { label: n.label, icon: n.icon, pick: () => this.setState({ nav: n.key }), ink: on ? "#2E3B4E" : "#A9B4C0", stroke: on ? "2.2" : "1.8", weight: on ? "600" : "400" };
+      }),
+      upcomingCount: upcoming,
+
+      days: days.map(d => ({
+        label: d.label,
+        date: d.date,
+        headerBg: d.today ? "#EFF2F5" : "#FAFBFC",
+        labelInk: d.today ? "#2E3B4E" : "#3F4E62",
+        summary: d.items.length + (d.items.length > 1 ? " créneaux" : " créneau"),
+        items: d.items.map(it => {
+          const exam = it.kind === "exam";
+          return {
+            title: it.title,
+            module: it.module,
+            nature: it.nature,
+            room: it.room,
+            start: it.start,
+            end: it.end,
+            isExam: exam,
+            hasSupport: !exam && it.support,
+            noSupport: !exam && !it.support,
+            rowBg: exam ? "#FEFAF9" : "#FFFFFF",
+            titleInk: "#2E3B4E",
+            timeInk: exam ? "#B8433A" : "#3F4E62",
+            icon: exam ? "M9 11.5 11.5 14 16 8.5 M4 3.5h16v17H4z" : "M12 7v13 M12 7a2.5 2.5 0 0 0-2.5-2.5H4v13h5.5A2.5 2.5 0 0 1 12 20 M12 7a2.5 2.5 0 0 1 2.5-2.5H20v13h-5.5A2.5 2.5 0 0 0 12 20",
+            iconBg: exam ? "#FCEDEB" : "#E8F2F7",
+            iconInk: exam ? "#E2574C" : "#2E7D9E",
+            natureInk: exam ? "#B8433A" : (it.nature === "Pratique" ? "#2C6C46" : "#5B6A7D"),
+            natureBg: exam ? "#FCEDEB" : (it.nature === "Pratique" ? "#EAF3EE" : "#F2F4F7"),
+            natureLine: exam ? "#F3CFCB" : (it.nature === "Pratique" ? "#CFE4D8" : "#E3E7EC"),
+            ctaLabel: it.live ? "Commencer le contrôle" : "Voir le contrôle",
+            ctaBg: it.live ? "#E2574C" : "#2E3B4E",
+            ctaIcon: it.live ? "M6 4l14 8-14 8z" : "M10 6l6 6-6 6"
+          };
+        })
+      }))
+    };
+  }
+}
+</script>
+</body>
+</html>

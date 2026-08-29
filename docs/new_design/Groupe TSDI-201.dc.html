@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=Source+Sans+3:ital,wght@0,400;0,500;0,600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  body { margin: 0; background: #F6F7F9; }
+  a { color: #2E7D9E; text-decoration: none; }
+  a:hover { color: #2E3B4E; text-decoration: underline; }
+</style>
+</helmet>
+<div style="min-height:100vh;background:#F6F7F9;font-family:'Source Sans 3',system-ui,sans-serif;color:#2E3B4E;padding:40px 40px 72px;box-sizing:border-box">
+  <div style="max-width:1240px;margin:0 auto;display:flex;flex-direction:column;gap:20px">
+
+    <div style="display:flex;align-items:center;gap:8px;font-size:13.5px;color:#8C99A8">
+      <a href="#" style="color:#5B6A7D">Groupes</a><span>/</span>
+      <span style="font-family:'IBM Plex Mono',monospace;color:#3F4E62">TSDI-201</span>
+    </div>
+
+    <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:14px;box-shadow:0 1px 2px rgba(46,59,78,.05)">
+      <div style="padding:24px 26px;display:flex;align-items:flex-start;justify-content:space-between;gap:24px;flex-wrap:wrap">
+        <div style="display:flex;align-items:flex-start;gap:16px;min-width:0">
+          <span style="width:50px;height:50px;border-radius:12px;flex:none;background:#2E3B4E;color:#FFFFFF;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:14px;display:flex;align-items:center;justify-content:center">201</span>
+          <div style="display:flex;flex-direction:column;gap:9px;min-width:0">
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+              <h1 style="font-family:Sora,sans-serif;font-weight:700;font-size:28px;line-height:1.15;letter-spacing:-.02em;margin:0">TSDI-201</h1>
+              <span style="font-size:12.5px;font-weight:600;color:#245F79;background:#E8F2F7;border:1px solid #CBE0EA;border-radius:999px;padding:3px 10px;white-space:nowrap">2ᵉ année</span>
+              <span style="font-size:12.5px;font-weight:600;color:#5B6A7D;background:#F2F4F7;border:1px solid #E3E7EC;border-radius:999px;padding:3px 10px;white-space:nowrap">Développement digital · web full stack</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+              <span style="display:inline-flex;align-items:center;gap:7px;font-family:'IBM Plex Mono',monospace;font-size:13.5px;color:#3F4E62">
+                <svg width="14" height="14" style="flex:none" viewBox="0 0 24 24" fill="none" stroke="#8C99A8" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="16" rx="2.5"></rect><path d="M8 3v4"></path><path d="M16 3v4"></path><path d="M3.5 10h17"></path></svg>05/09/25 — 30/09/26
+              </span>
+              <span style="display:inline-flex;align-items:center;gap:7px;font-family:'IBM Plex Mono',monospace;font-size:13.5px;color:#3F4E62">
+                <svg width="14" height="14" style="flex:none" viewBox="0 0 24 24" fill="none" stroke="#8C99A8" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M17 20v-1.5a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4V20"></path><circle cx="10" cy="7" r="3.5"></circle></svg>24 stagiaires
+              </span>
+              <span style="display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:#2C6C46;background:#EAF3EE;border:1px solid #CFE4D8;border-radius:999px;padding:4px 11px"><span style="width:6px;height:6px;border-radius:50%;background:#3C8C5C"></span>88 % du référentiel</span>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px">
+          <button type="button" style="font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:14px;color:#2E3B4E;background:#FFFFFF;border:1px solid #C9D2DC;border-radius:9px;padding:9px 16px;cursor:pointer;white-space:nowrap" style-hover="background:#F6F7F9;border-color:#2E3B4E">Exporter</button>
+          <button type="button" style="font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:14px;color:#FFFFFF;background:#2E3B4E;border:1px solid #2E3B4E;border-radius:9px;padding:9px 16px;cursor:pointer;white-space:nowrap" style-hover="background:#25303F">Planifier une séance</button>
+        </div>
+      </div>
+
+      <div style="padding:0 26px;border-top:1px solid #EDF0F3;display:flex;align-items:stretch;gap:4px;position:relative">
+        <sc-for list="{{ mainTabs }}" as="t" hint-placeholder-count="7">
+          <button type="button" onClick="{{ t.pick }}" style="display:flex;align-items:center;gap:8px;background:transparent;border:none;border-bottom:2px solid {{ t.line }};padding:14px 10px;margin-bottom:-1px;cursor:pointer;font-family:'Source Sans 3',sans-serif;font-size:14.5px;font-weight:{{ t.weight }};color:{{ t.ink }};white-space:nowrap" style-hover="color:#2E3B4E">
+            {{ t.label }}
+            <span style="font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:12px;color:{{ t.countInk }};background:{{ t.countBg }};border-radius:999px;padding:2px 7px;display:{{ t.countShow }}">{{ t.count }}</span>
+          </button>
+        </sc-for>
+        <div style="margin-left:auto;display:flex;align-items:center;position:relative">
+          <button type="button" onClick="{{ togglePlus }}" style="display:flex;align-items:center;gap:8px;background:transparent;border:none;border-bottom:2px solid {{ plusLine }};padding:14px 10px;margin-bottom:-1px;cursor:pointer;font-family:'Source Sans 3',sans-serif;font-size:14.5px;font-weight:600;color:{{ plusInk }};white-space:nowrap" style-hover="color:#2E3B4E">
+            Plus
+            <span style="font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:12px;color:#5B6A7D;background:#F2F4F7;border-radius:999px;padding:2px 7px">02</span>
+            <span style="display:flex;transform:{{ plusChevron }};transition:transform .15s ease">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg>
+            </span>
+          </button>
+          <sc-if value="{{ plusOpen }}" hint-placeholder-val="{{ false }}">
+            <div style="position:absolute;top:100%;right:0;margin-top:6px;min-width:210px;background:#FFFFFF;border:1px solid #E3E7EC;border-radius:11px;box-shadow:0 10px 28px rgba(46,59,78,.14);padding:6px;display:flex;flex-direction:column;gap:2px;z-index:20">
+              <sc-for list="{{ overflowTabs }}" as="o" hint-placeholder-count="2">
+                <button type="button" onClick="{{ o.pick }}" style="text-align:left;display:flex;align-items:center;gap:10px;background:{{ o.bg }};border:none;border-radius:8px;padding:10px 12px;cursor:pointer;font-family:'Source Sans 3',sans-serif;font-size:14.5px;font-weight:{{ o.weight }};color:{{ o.ink }}" style-hover="background:#F6F7F9">
+                  {{ o.label }}
+                  <span style="margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#A9B4C0">{{ o.hint }}</span>
+                </button>
+              </sc-for>
+            </div>
+          </sc-if>
+        </div>
+      </div>
+    </div>
+
+    <sc-if value="{{ isStagiaires }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;box-shadow:0 1px 2px rgba(46,59,78,.05)">
+          <label style="display:flex;align-items:center;gap:9px;flex:1;min-width:220px;background:#F6F7F9;border:1px solid #E3E7EC;border-radius:9px;padding:9px 12px">
+            <svg width="16" height="16" style="flex:none" viewBox="0 0 24 24" fill="none" stroke="#8C99A8" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><line x1="16.5" y1="16.5" x2="21" y2="21"></line></svg>
+            <input type="text" placeholder="Rechercher un stagiaire, un matricule…" value="{{ query }}" onInput="{{ onQuery }}" style="flex:1;min-width:0;border:none;outline:none;background:transparent;font-family:'Source Sans 3',sans-serif;font-size:14.5px;color:#2E3B4E" />
+          </label>
+          <button type="button" style="display:flex;align-items:center;gap:8px;font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:14px;color:#2E3B4E;background:#FFFFFF;border:1px solid #C9D2DC;border-radius:9px;padding:10px 16px;cursor:pointer;white-space:nowrap" style-hover="background:#F6F7F9;border-color:#2E3B4E">
+            <svg width="15" height="15" style="flex:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"></path><path d="M8 11l4 4 4-4"></path><path d="M4 19h16"></path></svg>Importer un CSV
+          </button>
+          <button type="button" style="display:flex;align-items:center;gap:8px;font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:14px;color:#FFFFFF;background:#2E3B4E;border:1px solid #2E3B4E;border-radius:9px;padding:10px 16px;cursor:pointer;white-space:nowrap" style-hover="background:#25303F">
+            <svg width="15" height="15" style="flex:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>Ajouter un stagiaire
+          </button>
+        </div>
+
+        <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:14px;box-shadow:0 1px 2px rgba(46,59,78,.05);overflow:hidden">
+          <div style="display:grid;grid-template-columns:minmax(260px,2.2fr) minmax(120px,1fr) minmax(110px,.8fr) minmax(120px,.9fr) 52px;gap:16px;padding:12px 24px;background:#FAFBFC;border-bottom:1px solid #EDF0F3">
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#8C99A8">Stagiaire</span>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#8C99A8">Matricule</span>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#8C99A8">Moyenne</span>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#8C99A8">Situation</span>
+            <span></span>
+          </div>
+          <sc-for list="{{ trainees }}" as="s" hint-placeholder-count="8">
+            <div style="display:grid;grid-template-columns:minmax(260px,2.2fr) minmax(120px,1fr) minmax(110px,.8fr) minmax(120px,.9fr) 52px;gap:16px;align-items:center;padding:14px 24px;border-bottom:1px solid #EDF0F3">
+              <div style="display:flex;align-items:center;gap:12px;min-width:0">
+                <span style="width:38px;height:38px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-family:Sora,sans-serif;font-weight:600;font-size:12.5px;color:{{ s.avatarInk }};background:{{ s.avatarBg }}">{{ s.initials }}</span>
+                <div style="display:flex;flex-direction:column;gap:2px;min-width:0">
+                  <span style="font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ s.name }}</span>
+                  <span style="font-size:13px;color:#8C99A8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ s.email }}</span>
+                </div>
+              </div>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:13.5px;color:#3F4E62;white-space:nowrap">{{ s.matricule }}</span>
+              <span style="font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:14.5px;color:{{ s.avgInk }};white-space:nowrap">{{ s.avg }}</span>
+              <span style="display:inline-flex;align-items:center;gap:7px;justify-self:start;font-size:12.5px;font-weight:600;border-radius:999px;padding:4px 11px;white-space:nowrap;color:{{ s.badgeInk }};background:{{ s.badgeBg }};border:1px solid {{ s.badgeLine }}">
+                <span style="width:6px;height:6px;border-radius:50%;flex:none;background:{{ s.dot }}"></span>{{ s.status }}
+              </span>
+              <button type="button" aria-label="Actions" style="justify-self:end;width:32px;height:32px;border-radius:8px;border:1px solid transparent;background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0" style-hover="background:#F6F7F9;border-color:#E3E7EC">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="#8C99A8" stroke="none"><circle cx="12" cy="6" r="1.6"></circle><circle cx="12" cy="12" r="1.6"></circle><circle cx="12" cy="18" r="1.6"></circle></svg>
+              </button>
+            </div>
+          </sc-for>
+          <div style="padding:16px 24px;background:#FAFBFC;display:flex;align-items:center;justify-content:space-between;gap:16px">
+            <span style="font-size:14px;color:#6B7A8D"><span style="font-family:'IBM Plex Mono',monospace;font-weight:500;color:#3F4E62">{{ traineeCount }}</span> stagiaires · moyenne du groupe <span style="font-family:'IBM Plex Mono',monospace;font-weight:500;color:#3F4E62">13,4</span></span>
+            <a href="#" style="font-size:14px;font-weight:600">Exporter la liste</a>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isModules }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:12px;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;box-shadow:0 1px 2px rgba(46,59,78,.05)">
+          <span style="font-size:14.5px;color:#5B6A7D">Masse horaire allouée : <span style="font-family:'IBM Plex Mono',monospace;font-weight:500;color:{{ hoursInk }}">{{ hoursTotal }} h</span> <span style="font-family:'IBM Plex Mono',monospace;color:#A9B4C0">/ 440 h référentiel</span></span>
+          <button type="button" style="display:flex;align-items:center;gap:8px;font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:14px;color:#FFFFFF;background:#2E3B4E;border:1px solid #2E3B4E;border-radius:9px;padding:10px 16px;cursor:pointer;white-space:nowrap" style-hover="background:#25303F">
+            <svg width="15" height="15" style="flex:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>Assigner un module
+          </button>
+        </div>
+
+        <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:14px;box-shadow:0 1px 2px rgba(46,59,78,.05);overflow:hidden">
+          <sc-for list="{{ groupModules }}" as="m" hint-placeholder-count="4">
+            <div style="padding:16px 24px;border-bottom:1px solid #EDF0F3;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+              <span style="font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:13px;color:{{ m.codeInk }};background:{{ m.codeBg }};border:1px solid {{ m.codeLine }};border-radius:8px;padding:6px 10px;flex:none">{{ m.code }}</span>
+              <div style="display:flex;flex-direction:column;gap:2px;min-width:180px;flex:1">
+                <span style="font-weight:600;font-size:15.5px">{{ m.name }}</span>
+                <span style="font-size:13px;color:#8C99A8">{{ m.meta }}</span>
+              </div>
+              <label style="display:flex;align-items:center;gap:8px">
+                <span style="font-size:13px;color:#6B7A8D">Alloué</span>
+                <span style="display:flex;align-items:center;border:1px solid #C9D2DC;border-radius:8px;overflow:hidden;background:#FFFFFF">
+                  <input type="text" value="{{ m.hours }}" onInput="{{ m.onHours }}" style="width:56px;border:none;outline:none;background:transparent;font-family:'IBM Plex Mono',monospace;font-size:14.5px;text-align:right;color:#2E3B4E;padding:8px 9px" />
+                  <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#8C99A8;padding:0 10px;border-left:1px solid #E3E7EC;align-self:stretch;display:flex;align-items:center">h</span>
+                </span>
+              </label>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:{{ m.refInk }};white-space:nowrap">réf. {{ m.ref }} h</span>
+              <a href="#" style="font-size:13.5px;font-weight:600;white-space:nowrap">Voir la planification</a>
+              <button type="button" aria-label="Actions" style="width:32px;height:32px;border-radius:8px;border:1px solid transparent;background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;flex:none" style-hover="background:#F6F7F9;border-color:#E3E7EC">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="#8C99A8" stroke="none"><circle cx="12" cy="6" r="1.6"></circle><circle cx="12" cy="12" r="1.6"></circle><circle cx="12" cy="18" r="1.6"></circle></svg>
+              </button>
+            </div>
+          </sc-for>
+          <div style="padding:14px 24px;background:#FAFBFC;display:flex;align-items:center;gap:10px">
+            <span style="width:7px;height:7px;border-radius:50%;flex:none;background:{{ hoursDot }}"></span>
+            <span style="font-size:13.5px;color:{{ hoursInk }}">{{ hoursHint }}</span>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isProgression }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;box-shadow:0 1px 2px rgba(46,59,78,.05)">
+          <label style="display:flex;align-items:center;gap:9px;flex:1;min-width:220px;background:#F6F7F9;border:1px solid #E3E7EC;border-radius:9px;padding:9px 12px">
+            <svg width="16" height="16" style="flex:none" viewBox="0 0 24 24" fill="none" stroke="#8C99A8" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><line x1="16.5" y1="16.5" x2="21" y2="21"></line></svg>
+            <input type="text" placeholder="Rechercher une séance, un module…" value="{{ sessionQuery }}" onInput="{{ onSessionQuery }}" style="flex:1;min-width:0;border:none;outline:none;background:transparent;font-family:'Source Sans 3',sans-serif;font-size:14.5px;color:#2E3B4E" />
+          </label>
+          <button type="button" style="display:flex;align-items:center;gap:8px;font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:14px;color:#FFFFFF;background:#2E3B4E;border:1px solid #2E3B4E;border-radius:9px;padding:10px 16px;cursor:pointer;white-space:nowrap" style-hover="background:#25303F">
+            <svg width="15" height="15" style="flex:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>Créer une séance
+          </button>
+          <div style="display:flex;gap:4px;background:#F2F4F7;border:1px solid #E3E7EC;border-radius:10px;padding:3px">
+            <button type="button" aria-label="Vue liste" onClick="{{ setList }}" style="width:36px;height:32px;border-radius:7px;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;background:{{ listBg }};box-shadow:{{ listShadow }}">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="{{ listInk }}" stroke-width="2" stroke-linecap="round"><path d="M4 6h16"></path><path d="M4 12h16"></path><path d="M4 18h16"></path></svg>
+            </button>
+            <button type="button" aria-label="Vue tableau" onClick="{{ setBoard }}" style="width:36px;height:32px;border-radius:7px;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;background:{{ boardBg }};box-shadow:{{ boardShadow }}">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="{{ boardInk }}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4" width="5" height="16" rx="1.5"></rect><rect x="10" y="4" width="5" height="11" rx="1.5"></rect><rect x="16.5" y="4" width="4" height="16" rx="1.5"></rect></svg>
+            </button>
+          </div>
+        </div>
+
+        <sc-if value="{{ isSessionList }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;flex-direction:column;gap:16px">
+            <sc-for list="{{ sessionGroups }}" as="g" hint-placeholder-count="3">
+              <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:14px;box-shadow:0 1px 2px rgba(46,59,78,.05);overflow:hidden">
+                <div style="padding:14px 24px;background:#FAFBFC;border-bottom:1px solid #EDF0F3;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+                  <span style="font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:12.5px;color:#FFFFFF;background:#2E3B4E;border-radius:7px;padding:5px 9px">{{ g.code }}</span>
+                  <span style="font-family:Sora,sans-serif;font-weight:600;font-size:15.5px">{{ g.name }}</span>
+                  <span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#8C99A8">{{ g.done }} / {{ g.total }} séances</span>
+                  <span style="margin-left:auto;display:flex;align-items:center;gap:10px;min-width:160px">
+                    <span style="flex:1;height:6px;border-radius:999px;background:#EFF2F5;overflow:hidden"><span style="display:block;height:100%;border-radius:999px;background:#3C8C5C;width:{{ g.pctWidth }}"></span></span>
+                    <span style="font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:13.5px;color:#3F4E62">{{ g.pct }} %</span>
+                  </span>
+                </div>
+                <sc-for list="{{ g.items }}" as="s" hint-placeholder-count="4">
+                  <div style="padding:14px 24px;border-bottom:1px solid #EDF0F3;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+                    <span style="font-family:'IBM Plex Mono',monospace;font-size:13.5px;color:#3F4E62;width:58px;flex:none">{{ s.date }}</span>
+                    <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#8C99A8;width:112px;flex:none">{{ s.slot }}</span>
+                    <div style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:180px">
+                      <span style="font-weight:600;font-size:15px">{{ s.title }}</span>
+                      <span style="font-size:13px;color:#8C99A8">{{ s.summary }}</span>
+                    </div>
+                    <span style="display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;border-radius:999px;padding:4px 11px;white-space:nowrap;color:{{ s.badgeInk }};background:{{ s.badgeBg }};border:1px solid {{ s.badgeLine }}">
+                      <span style="width:6px;height:6px;border-radius:50%;flex:none;background:{{ s.dot }}"></span>{{ s.status }}
+                    </span>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isSessionBoard }}" hint-placeholder-val="{{ false }}">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(288px,1fr));gap:20px;align-items:start">
+            <sc-for list="{{ sessionColumns }}" as="col" hint-placeholder-count="3">
+              <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:14px;box-shadow:0 1px 2px rgba(46,59,78,.05);display:flex;flex-direction:column;min-width:0;overflow:hidden">
+                <div style="padding:16px 18px;border-bottom:1px solid #EDF0F3;display:flex;align-items:center;gap:10px">
+                  <span style="width:8px;height:8px;border-radius:50%;flex:none;background:{{ col.dot }}"></span>
+                  <span style="font-family:Sora,sans-serif;font-weight:600;font-size:15.5px;color:{{ col.ink }}">{{ col.label }}</span>
+                  <span style="font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:12.5px;color:#5B6A7D;background:#F2F4F7;border-radius:999px;padding:2px 9px">{{ col.count }}</span>
+                  <button type="button" aria-label="Ajouter" style="margin-left:auto;width:26px;height:26px;border-radius:7px;border:1px solid #E3E7EC;background:#FFFFFF;color:#8C99A8;font-size:15px;line-height:1;cursor:pointer;padding:0" style-hover="background:#F6F7F9;color:#2E3B4E">+</button>
+                </div>
+                <div style="padding:14px;display:flex;flex-direction:column;gap:12px;max-height:640px;overflow-y:auto">
+                  <sc-for list="{{ col.items }}" as="c" hint-placeholder-count="5">
+                    <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:11px;padding:14px;display:flex;flex-direction:column;gap:12px;min-width:0" style-hover="border-color:#C9D2DC;box-shadow:0 2px 6px rgba(46,59,78,.07)">
+                      <div style="display:flex;align-items:flex-start;gap:11px;min-width:0">
+                        <span style="width:32px;height:32px;border-radius:8px;flex:none;display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:11px;color:#FFFFFF;background:#2E3B4E">{{ c.code }}</span>
+                        <div style="display:flex;flex-direction:column;gap:3px;min-width:0">
+                          <span style="font-weight:600;font-size:14.5px;line-height:1.3">{{ c.title }}</span>
+                          <span style="font-size:12.5px;color:#8C99A8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ c.summary }}</span>
+                        </div>
+                      </div>
+                      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+                        <span style="display:inline-flex;align-items:center;gap:6px;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:500;border-radius:6px;padding:3px 8px;white-space:nowrap;color:{{ c.dateInk }};background:{{ c.dateBg }}">
+                          <svg width="11" height="11" style="flex:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="3.5" y="5" width="17" height="16" rx="2.5"></rect><path d="M8 3v4"></path><path d="M16 3v4"></path><path d="M3.5 10h17"></path></svg>{{ c.date }}
+                        </span>
+                        <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#A9B4C0">{{ c.duration }}</span>
+                      </div>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isPresences }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;box-shadow:0 1px 2px rgba(46,59,78,.05)">
+          <span style="font-size:13.5px;color:#6B7A8D">Filtrer par module</span>
+          <div style="display:flex;gap:4px;background:#F2F4F7;border:1px solid #E3E7EC;border-radius:10px;padding:3px;flex-wrap:wrap">
+            <sc-for list="{{ presenceFilters }}" as="f" hint-placeholder-count="5">
+              <button type="button" onClick="{{ f.pick }}" style="font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:13.5px;border:none;border-radius:7px;padding:8px 13px;cursor:pointer;white-space:nowrap;color:{{ f.ink }};background:{{ f.bg }};box-shadow:{{ f.shadow }}">{{ f.label }}</button>
+            </sc-for>
+          </div>
+          <span style="margin-left:auto;font-size:13.5px;color:#6B7A8D">Taux moyen <span style="font-family:'IBM Plex Mono',monospace;font-weight:500;color:#2C6C46">{{ presenceAvg }} %</span></span>
+        </div>
+
+        <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:14px;box-shadow:0 1px 2px rgba(46,59,78,.05);overflow:hidden">
+          <div style="display:grid;grid-template-columns:minmax(260px,2.4fr) minmax(120px,1fr) minmax(110px,.7fr) 130px;gap:16px;padding:12px 24px;background:#FAFBFC;border-bottom:1px solid #EDF0F3">
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#8C99A8">Stagiaire</span>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#8C99A8">Absences</span>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#8C99A8;text-align:right">Présence</span>
+            <span></span>
+          </div>
+          <sc-for list="{{ presences }}" as="p" hint-placeholder-count="6">
+            <div style="border-bottom:1px solid #EDF0F3;background:{{ p.rowBg }}">
+              <div style="display:grid;grid-template-columns:minmax(260px,2.4fr) minmax(120px,1fr) minmax(110px,.7fr) 130px;gap:16px;align-items:center;padding:14px 24px">
+                <div style="display:flex;align-items:center;gap:12px;min-width:0">
+                  <span style="width:38px;height:38px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-family:Sora,sans-serif;font-weight:600;font-size:12.5px;color:{{ p.avatarInk }};background:{{ p.avatarBg }}">{{ p.initials }}</span>
+                  <div style="display:flex;flex-direction:column;gap:2px;min-width:0">
+                    <span style="font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ p.name }}</span>
+                    <span style="font-size:13px;color:#8C99A8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ p.email }}</span>
+                  </div>
+                </div>
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:13.5px;color:{{ p.absInk }};white-space:nowrap">{{ p.absLabel }}</span>
+                <span style="font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:15px;text-align:right;color:{{ p.rateInk }}">{{ p.rate }} %</span>
+                <button type="button" onClick="{{ p.toggle }}" style="justify-self:end;display:flex;align-items:center;gap:7px;background:transparent;border:none;padding:6px 0;cursor:pointer;font-family:'Source Sans 3',sans-serif;font-size:13.5px;font-weight:600;color:#2E7D9E;white-space:nowrap" style-hover="color:#2E3B4E">
+                  {{ p.toggleLabel }}
+                  <span style="display:flex;transform:{{ p.chevron }};transition:transform .15s ease">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg>
+                  </span>
+                </button>
+              </div>
+              <sc-if value="{{ p.open }}" hint-placeholder-val="{{ false }}">
+                <div style="padding:0 24px 18px 74px;display:flex;flex-direction:column;gap:8px">
+                  <sc-for list="{{ p.absences }}" as="a" hint-placeholder-count="2">
+                    <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;background:#FAFBFC;border:1px solid #E3E7EC;border-radius:9px;padding:10px 14px">
+                      <span style="font-family:'IBM Plex Mono',monospace;font-size:13.5px;color:#3F4E62;width:58px;flex:none">{{ a.date }}</span>
+                      <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#8C99A8;width:104px;flex:none">{{ a.slot }}</span>
+                      <span style="font-size:14px;color:#3F4E62;flex:1;min-width:120px">{{ a.module }}</span>
+                      <span style="font-size:12.5px;font-weight:600;border-radius:999px;padding:3px 10px;white-space:nowrap;color:{{ a.tagInk }};background:{{ a.tagBg }};border:1px solid {{ a.tagLine }}">{{ a.kind }}</span>
+                    </div>
+                  </sc-for>
+                  <sc-if value="{{ p.none }}" hint-placeholder-val="{{ false }}">
+                    <span style="font-size:14px;color:#8C99A8">Aucune absence enregistrée sur la période.</span>
+                  </sc-if>
+                </div>
+              </sc-if>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isAnnonces }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:14px;box-shadow:0 1px 2px rgba(46,59,78,.05);overflow:hidden">
+          <div style="padding:18px 22px;border-bottom:1px solid #EDF0F3;display:flex;align-items:center;gap:12px">
+            <span style="width:38px;height:38px;border-radius:50%;flex:none;background:#2E3B4E;color:#FFFFFF;font-family:Sora,sans-serif;font-weight:600;font-size:12.5px;display:flex;align-items:center;justify-content:center">SL</span>
+            <span style="font-family:Sora,sans-serif;font-weight:600;font-size:16px">Publier une annonce au groupe</span>
+          </div>
+          <div style="padding:20px 22px;display:flex;flex-direction:column;gap:14px">
+            <label style="display:flex;flex-direction:column;gap:7px">
+              <span style="font-size:14px;font-weight:600;color:#3F4E62">Titre</span>
+              <input type="text" placeholder="Ex. Report du TP 3 au 23/09" style="border:1px solid #C9D2DC;border-radius:9px;outline:none;background:#FFFFFF;font-family:'Source Sans 3',sans-serif;font-size:15px;color:#2E3B4E;padding:11px 13px" />
+            </label>
+            <label style="display:flex;flex-direction:column;gap:7px">
+              <span style="font-size:14px;font-weight:600;color:#3F4E62">Contenu</span>
+              <div style="border:1px solid #C9D2DC;border-radius:10px;background:#FFFFFF;overflow:hidden">
+                <textarea rows="4" placeholder="Message visible par les 24 stagiaires du groupe…" style="width:100%;box-sizing:border-box;border:none;outline:none;resize:vertical;background:transparent;font-family:'Source Sans 3',sans-serif;font-size:15px;line-height:1.6;color:#3F4E62;padding:12px 14px"></textarea>
+              </div>
+            </label>
+            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+              <button type="button" style="display:flex;align-items:center;gap:7px;font-family:'Source Sans 3',sans-serif;font-size:13.5px;color:#5B6A7D;background:transparent;border:none;padding:6px;border-radius:7px;cursor:pointer" style-hover="background:#F6F7F9;color:#2E3B4E">
+                <svg width="15" height="15" style="flex:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 13.5a4 4 0 0 0 5.7 0l2.8-2.8a4 4 0 0 0-5.7-5.7L11.4 6.4"></path><path d="M14 10.5a4 4 0 0 0-5.7 0L5.5 13.3a4 4 0 0 0 5.7 5.7l1.4-1.4"></path></svg>Joindre un fichier
+              </button>
+              <span style="margin-left:auto;display:flex;gap:10px">
+                <button type="button" style="font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:14px;color:#2E3B4E;background:#FFFFFF;border:1px solid #C9D2DC;border-radius:9px;padding:10px 16px;cursor:pointer;white-space:nowrap" style-hover="background:#F6F7F9;border-color:#2E3B4E">Brouillon</button>
+                <button type="button" style="font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:14px;color:#FFFFFF;background:#2E3B4E;border:1px solid #2E3B4E;border-radius:9px;padding:10px 18px;cursor:pointer;white-space:nowrap" style-hover="background:#25303F">Publier</button>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <sc-for list="{{ announcements }}" as="a" hint-placeholder-count="3">
+          <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:14px;box-shadow:0 1px 2px rgba(46,59,78,.05);overflow:hidden">
+            <div style="padding:20px 22px;display:flex;flex-direction:column;gap:10px">
+              <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+                <span style="width:36px;height:36px;border-radius:50%;flex:none;background:#2E3B4E;color:#FFFFFF;font-family:Sora,sans-serif;font-weight:600;font-size:12px;display:flex;align-items:center;justify-content:center">SL</span>
+                <div style="display:flex;flex-direction:column;gap:2px;min-width:0">
+                  <span style="font-family:Sora,sans-serif;font-weight:600;font-size:17px">{{ a.title }}</span>
+                  <span style="font-size:13px;color:#8C99A8">Samira Lahlou · <span style="font-family:'IBM Plex Mono',monospace">{{ a.date }}</span></span>
+                </div>
+                <span style="margin-left:auto;font-size:12.5px;font-weight:600;border-radius:999px;padding:4px 11px;white-space:nowrap;color:{{ a.tagInk }};background:{{ a.tagBg }};border:1px solid {{ a.tagLine }}">{{ a.tag }}</span>
+              </div>
+              <p style="margin:0;font-size:15.5px;line-height:1.6;color:#3F4E62;text-wrap:pretty">{{ a.body }}</p>
+            </div>
+            <div style="padding:12px 22px;border-top:1px solid #EDF0F3;background:#FAFBFC;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+              <span style="display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:#245F79;background:#E8F2F7;border:1px solid #CBE0EA;border-radius:999px;padding:3px 10px">👍 <span style="font-family:'IBM Plex Mono',monospace;font-weight:500">{{ a.reactions }}</span></span>
+              <span style="display:inline-flex;align-items:center;gap:7px;font-size:13.5px;color:#5B6A7D">
+                <svg width="15" height="15" style="flex:none" viewBox="0 0 24 24" fill="none" stroke="#8C99A8" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 0 1-8 8H7l-3 2v-4.5A8 8 0 1 1 20 12z"></path></svg>
+                <span style="font-family:'IBM Plex Mono',monospace;font-weight:500">{{ a.comments }}</span> commentaires
+              </span>
+              <span style="margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#A9B4C0">{{ a.reach }}</span>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isFiches }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;gap:20px">
+        <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:14px;box-shadow:0 1px 2px rgba(46,59,78,.05);overflow:hidden">
+          <div style="padding:18px 24px;border-bottom:1px solid #EDF0F3;background:#FAFBFC;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
+            <span style="font-family:Sora,sans-serif;font-weight:600;font-size:16px">Fiches de préparation par module</span>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#8C99A8">{{ fichesReady }} / 4 modules couverts</span>
+          </div>
+          <sc-for list="{{ fiches }}" as="f" hint-placeholder-count="4">
+            <div style="padding:16px 24px;border-bottom:1px solid #EDF0F3;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+              <span style="font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:13px;color:{{ f.codeInk }};background:{{ f.codeBg }};border:1px solid {{ f.codeLine }};border-radius:8px;padding:6px 10px;flex:none">{{ f.code }}</span>
+              <div style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:180px">
+                <span style="font-weight:600;font-size:15.5px">{{ f.name }}</span>
+                <span style="font-size:13px;color:#8C99A8">{{ f.meta }}</span>
+              </div>
+              <span style="display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;border-radius:999px;padding:4px 11px;white-space:nowrap;color:{{ f.badgeInk }};background:{{ f.badgeBg }};border:1px solid {{ f.badgeLine }}">
+                <span style="width:6px;height:6px;border-radius:50%;flex:none;background:{{ f.dot }}"></span>{{ f.status }}
+              </span>
+              <button type="button" style="font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:13.5px;color:{{ f.actionInk }};background:{{ f.actionBg }};border:1px solid {{ f.actionLine }};border-radius:8px;padding:8px 14px;cursor:pointer;white-space:nowrap">{{ f.action }}</button>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:14px;padding:24px;display:flex;flex-direction:column;gap:18px;box-shadow:0 1px 2px rgba(46,59,78,.05)">
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <h2 style="font-family:Sora,sans-serif;font-weight:600;font-size:18px;margin:0">Exporter le classeur pédagogique</h2>
+            <span style="font-size:14px;color:#8C99A8">Assemble les fiches, le déroulé des séances et les contrôles dans un document unique.</span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px">
+            <label style="display:flex;flex-direction:column;gap:7px">
+              <span style="font-size:14px;font-weight:600;color:#3F4E62">Module</span>
+              <select style="border:1px solid #C9D2DC;border-radius:9px;outline:none;background:#FFFFFF;font-family:'Source Sans 3',sans-serif;font-size:15px;color:#2E3B4E;padding:11px 13px;appearance:none">
+                <option>Tous les modules</option>
+                <option>M104 — Développement web front-end</option>
+                <option>M106 — Bases de données relationnelles</option>
+                <option>M112 — Administration des réseaux</option>
+                <option>M115 — Projet de fin de formation</option>
+              </select>
+            </label>
+            <label style="display:flex;flex-direction:column;gap:7px">
+              <span style="font-size:14px;font-weight:600;color:#3F4E62">Période</span>
+              <select style="border:1px solid #C9D2DC;border-radius:9px;outline:none;background:#FFFFFF;font-family:'Source Sans 3',sans-serif;font-size:15px;color:#2E3B4E;padding:11px 13px;appearance:none">
+                <option>Semestre 1 · sept. — janv.</option>
+                <option>Semestre 2 · févr. — juin</option>
+                <option>Année complète</option>
+                <option>Période personnalisée…</option>
+              </select>
+            </label>
+            <label style="display:flex;flex-direction:column;gap:7px">
+              <span style="font-size:14px;font-weight:600;color:#3F4E62">Contenu inclus</span>
+              <select style="border:1px solid #C9D2DC;border-radius:9px;outline:none;background:#FFFFFF;font-family:'Source Sans 3',sans-serif;font-size:15px;color:#2E3B4E;padding:11px 13px;appearance:none">
+                <option>Fiches + séances + contrôles</option>
+                <option>Fiches seules</option>
+                <option>Contrôles seuls</option>
+              </select>
+            </label>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding-top:18px;border-top:1px solid #EDF0F3">
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#A9B4C0">Estimation : 34 pages · A4 portrait</span>
+            <button type="button" style="margin-left:auto;display:flex;align-items:center;gap:8px;font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:14.5px;color:#FFFFFF;background:#2E3B4E;border:1px solid #2E3B4E;border-radius:9px;padding:11px 18px;cursor:pointer;white-space:nowrap" style-hover="background:#25303F">
+              <svg width="15" height="15" style="flex:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V4"></path><path d="M8 11l4 4 4-4"></path><path d="M4 19h16"></path></svg>Exporter en PDF
+            </button>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isControles }}" hint-placeholder-val="{{ false }}">
+      <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:14px;box-shadow:0 1px 2px rgba(46,59,78,.05);overflow:hidden">
+        <div style="padding:18px 24px;border-bottom:1px solid #EDF0F3;background:#FAFBFC;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
+          <span style="font-family:Sora,sans-serif;font-weight:600;font-size:16px">Contrôles du groupe</span>
+          <button type="button" style="font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:14px;color:#FFFFFF;background:#2E3B4E;border:1px solid #2E3B4E;border-radius:9px;padding:9px 16px;cursor:pointer;white-space:nowrap" style-hover="background:#25303F">Préparer un contrôle</button>
+        </div>
+        <sc-for list="{{ controles }}" as="c" hint-placeholder-count="4">
+          <div style="padding:16px 24px;border-bottom:1px solid #EDF0F3;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+            <span style="font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:12.5px;color:#5B6A7D;background:#F2F4F7;border:1px solid #E3E7EC;border-radius:8px;padding:6px 10px;flex:none">{{ c.code }}</span>
+            <div style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:180px">
+              <span style="font-weight:600;font-size:15.5px">{{ c.title }}</span>
+              <span style="font-size:13px;color:#8C99A8">{{ c.meta }}</span>
+            </div>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:13.5px;color:#3F4E62;white-space:nowrap">{{ c.date }}</span>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:13.5px;color:{{ c.avgInk }};white-space:nowrap">{{ c.avg }}</span>
+            <span style="display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;border-radius:999px;padding:4px 11px;white-space:nowrap;color:{{ c.badgeInk }};background:{{ c.badgeBg }};border:1px solid {{ c.badgeLine }}">
+              <span style="width:6px;height:6px;border-radius:50%;flex:none;background:{{ c.dot }}"></span>{{ c.status }}
+            </span>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isDevoirs }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:12px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;box-shadow:0 1px 2px rgba(46,59,78,.05)">
+          <span style="font-size:14.5px;color:#5B6A7D"><span style="font-family:'IBM Plex Mono',monospace;font-weight:500;color:#3F4E62">{{ devoirCount }}</span> devoirs donnés · <span style="font-family:'IBM Plex Mono',monospace;font-weight:500;color:#B8433A">2</span> échéances cette semaine</span>
+          <button type="button" onClick="{{ toggleDevoirForm }}" style="display:flex;align-items:center;gap:8px;font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:14px;color:#FFFFFF;background:#2E3B4E;border:1px solid #2E3B4E;border-radius:9px;padding:10px 16px;cursor:pointer;white-space:nowrap" style-hover="background:#25303F">
+            <svg width="15" height="15" style="flex:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>{{ devoirFormLabel }}
+          </button>
+        </div>
+
+        <sc-if value="{{ devoirFormOpen }}" hint-placeholder-val="{{ false }}">
+          <div style="background:#FFFFFF;border:1px solid #C9D2DC;border-radius:14px;box-shadow:0 1px 2px rgba(46,59,78,.05);overflow:hidden">
+            <div style="padding:18px 22px;border-bottom:1px solid #EDF0F3;display:flex;align-items:center;gap:12px">
+              <span style="font-family:Sora,sans-serif;font-weight:600;font-size:16px">Nouveau devoir</span>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#A9B4C0">TSDI-201 · 24 stagiaires</span>
+            </div>
+            <div style="padding:20px 22px;display:flex;flex-direction:column;gap:16px">
+              <label style="display:flex;flex-direction:column;gap:7px">
+                <span style="font-size:14px;font-weight:600;color:#3F4E62">Titre</span>
+                <input type="text" placeholder="Ex. Exercices 4 à 7 — jointures" style="border:1px solid #C9D2DC;border-radius:9px;outline:none;background:#FFFFFF;font-family:'Source Sans 3',sans-serif;font-size:15px;color:#2E3B4E;padding:11px 13px" />
+              </label>
+              <label style="display:flex;flex-direction:column;gap:7px">
+                <span style="font-size:14px;font-weight:600;color:#3F4E62">Consignes</span>
+                <div style="border:1px solid #C9D2DC;border-radius:10px;background:#FFFFFF;overflow:hidden">
+                  <textarea rows="4" placeholder="Travail attendu, ressources autorisées, format du rendu…" style="width:100%;box-sizing:border-box;border:none;outline:none;resize:vertical;background:transparent;font-family:'Source Sans 3',sans-serif;font-size:15px;line-height:1.6;color:#3F4E62;padding:12px 14px"></textarea>
+                </div>
+              </label>
+              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px">
+                <label style="display:flex;flex-direction:column;gap:7px">
+                  <span style="font-size:14px;font-weight:600;color:#3F4E62">Module</span>
+                  <select style="border:1px solid #C9D2DC;border-radius:9px;outline:none;background:#FFFFFF;font-family:'Source Sans 3',sans-serif;font-size:15px;color:#2E3B4E;padding:11px 13px;appearance:none">
+                    <option>M104 — Développement web front-end</option>
+                    <option>M106 — Bases de données relationnelles</option>
+                    <option>M112 — Administration des réseaux</option>
+                  </select>
+                </label>
+                <label style="display:flex;flex-direction:column;gap:7px">
+                  <span style="font-size:14px;font-weight:600;color:#3F4E62">Échéance</span>
+                  <input type="text" value="23/09/25 · 23:59" style="border:1px solid #C9D2DC;border-radius:9px;outline:none;background:#FFFFFF;font-family:'IBM Plex Mono',monospace;font-size:14.5px;color:#2E3B4E;padding:11px 13px" />
+                </label>
+                <label style="display:flex;flex-direction:column;gap:7px">
+                  <span style="font-size:14px;font-weight:600;color:#3F4E62">Type de rendu</span>
+                  <select style="border:1px solid #C9D2DC;border-radius:9px;outline:none;background:#FFFFFF;font-family:'Source Sans 3',sans-serif;font-size:15px;color:#2E3B4E;padding:11px 13px;appearance:none">
+                    <option>Fichier déposé en ligne</option>
+                    <option>Rendu papier en séance</option>
+                    <option>Dépôt de code (archive)</option>
+                    <option>Exposé oral</option>
+                  </select>
+                </label>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding-top:16px;border-top:1px solid #EDF0F3">
+                <span style="font-size:13.5px;color:#8C99A8">Les stagiaires reçoivent une notification à la publication.</span>
+                <span style="margin-left:auto;display:flex;gap:10px">
+                  <button type="button" onClick="{{ toggleDevoirForm }}" style="font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:14px;color:#2E3B4E;background:#FFFFFF;border:1px solid #C9D2DC;border-radius:9px;padding:10px 16px;cursor:pointer;white-space:nowrap" style-hover="background:#F6F7F9;border-color:#2E3B4E">Annuler</button>
+                  <button type="button" style="font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:14px;color:#FFFFFF;background:#2E3B4E;border:1px solid #2E3B4E;border-radius:9px;padding:10px 18px;cursor:pointer;white-space:nowrap" style-hover="background:#25303F">Publier le devoir</button>
+                </span>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:20px;align-items:start">
+          <sc-for list="{{ devoirs }}" as="d" hint-placeholder-count="4">
+            <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:16px;box-shadow:0 1px 2px rgba(46,59,78,.05);min-width:0" style-hover="border-color:#C9D2DC;box-shadow:0 3px 10px rgba(46,59,78,.08)">
+              <div style="display:flex;align-items:flex-start;gap:12px;min-width:0">
+                <span style="font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:12px;color:#FFFFFF;background:#2E3B4E;border-radius:7px;padding:6px 9px;flex:none">{{ d.code }}</span>
+                <div style="display:flex;flex-direction:column;gap:3px;min-width:0">
+                  <span style="font-family:Sora,sans-serif;font-weight:600;font-size:16px;line-height:1.3">{{ d.title }}</span>
+                  <span style="font-size:13px;color:#8C99A8">{{ d.module }}</span>
+                </div>
+                <button type="button" aria-label="Actions" style="margin-left:auto;width:30px;height:30px;border-radius:8px;border:1px solid transparent;background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;flex:none" style-hover="background:#F6F7F9;border-color:#E3E7EC">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="#8C99A8" stroke="none"><circle cx="12" cy="6" r="1.6"></circle><circle cx="12" cy="12" r="1.6"></circle><circle cx="12" cy="18" r="1.6"></circle></svg>
+                </button>
+              </div>
+              <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+                <span style="display:inline-flex;align-items:center;gap:7px;font-family:'IBM Plex Mono',monospace;font-size:13px;color:{{ d.dueInk }}">
+                  <svg width="14" height="14" style="flex:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 8v4.5l3 2"></path></svg>{{ d.due }}
+                </span>
+                <span style="font-size:12.5px;font-weight:600;border-radius:999px;padding:3px 10px;white-space:nowrap;color:{{ d.tagInk }};background:{{ d.tagBg }};border:1px solid {{ d.tagLine }}">{{ d.type }}</span>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:8px;padding-top:14px;border-top:1px solid #EDF0F3">
+                <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px">
+                  <span style="font-size:13.5px;color:#6B7A8D">Rendus reçus</span>
+                  <span style="font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:14.5px;color:{{ d.countInk }}">{{ d.received }} / {{ d.total }}</span>
+                </div>
+                <div style="height:7px;border-radius:999px;background:#EFF2F5;overflow:hidden"><div style="height:100%;border-radius:999px;width:{{ d.pctWidth }};background:{{ d.barColor }}"></div></div>
+                <a href="#" style="font-size:13.5px;font-weight:600">Voir les rendus</a>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isStage }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;box-shadow:0 1px 2px rgba(46,59,78,.05)">
+          <span style="font-size:14.5px;color:#5B6A7D">Stage de fin de formation · soutenances <span style="font-family:'IBM Plex Mono',monospace;font-weight:500;color:#3F4E62">juin 2026</span></span>
+          <span style="display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;color:#2C6C46;background:#EAF3EE;border:1px solid #CFE4D8;border-radius:999px;padding:4px 11px"><span style="width:6px;height:6px;border-radius:50%;background:#3C8C5C"></span>{{ stageDone }} soutenus</span>
+          <span style="display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;color:#245F79;background:#E8F2F7;border:1px solid #CBE0EA;border-radius:999px;padding:4px 11px"><span style="width:6px;height:6px;border-radius:50%;background:#2E7D9E"></span>{{ stageRunning }} en cours</span>
+          <span style="display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;color:#B8433A;background:#FCEDEB;border:1px solid #F3CFCB;border-radius:999px;padding:4px 11px"><span style="width:6px;height:6px;border-radius:50%;background:#E2574C"></span>{{ stageTodo }} à démarrer</span>
+        </div>
+
+        <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:14px;box-shadow:0 1px 2px rgba(46,59,78,.05);overflow:hidden">
+          <sc-for list="{{ stages }}" as="s" hint-placeholder-count="5">
+            <div style="border-bottom:1px solid #EDF0F3;background:{{ s.rowBg }}">
+              <button type="button" onClick="{{ s.toggle }}" style="width:100%;text-align:left;display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:15px 24px;border:none;background:transparent;cursor:pointer;font-family:'Source Sans 3',sans-serif">
+                <span style="display:flex;align-items:center;gap:12px;min-width:220px;flex:1">
+                  <span style="width:38px;height:38px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-family:Sora,sans-serif;font-weight:600;font-size:12.5px;color:{{ s.avatarInk }};background:{{ s.avatarBg }}">{{ s.initials }}</span>
+                  <span style="display:flex;flex-direction:column;gap:2px;min-width:0">
+                    <span style="font-weight:600;font-size:15px;color:#2E3B4E">{{ s.name }}</span>
+                    <span style="font-size:13px;color:#8C99A8">{{ s.email }}</span>
+                  </span>
+                </span>
+                <span style="font-size:14px;color:#3F4E62;min-width:150px">{{ s.company }}</span>
+                <span style="display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;border-radius:999px;padding:4px 11px;white-space:nowrap;color:{{ s.badgeInk }};background:{{ s.badgeBg }};border:1px solid {{ s.badgeLine }}">
+                  <span style="width:6px;height:6px;border-radius:50%;flex:none;background:{{ s.dot }}"></span>{{ s.status }}
+                </span>
+                <span style="font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:14.5px;color:{{ s.finalInk }};width:74px;text-align:right">{{ s.final }}</span>
+                <span style="display:flex;transform:{{ s.chevron }};transition:transform .15s ease;color:#8C99A8">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg>
+                </span>
+              </button>
+
+              <sc-if value="{{ s.open }}" hint-placeholder-val="{{ true }}">
+                <div style="padding:4px 24px 22px 74px;display:flex;flex-direction:column;gap:18px">
+
+                  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;background:#FAFBFC;border:1px solid #E3E7EC;border-radius:11px;padding:16px 18px">
+                    <div style="display:flex;flex-direction:column;gap:4px">
+                      <span style="font-size:12.5px;color:#8C99A8">Entreprise</span>
+                      <span style="font-weight:600;font-size:14.5px">{{ s.company }}</span>
+                      <span style="font-size:13px;color:#8C99A8">{{ s.city }}</span>
+                    </div>
+                    <div style="display:flex;flex-direction:column;gap:4px">
+                      <span style="font-size:12.5px;color:#8C99A8">Tuteur entreprise</span>
+                      <span style="font-weight:600;font-size:14.5px">{{ s.tutor }}</span>
+                      <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#8C99A8">{{ s.tutorContact }}</span>
+                    </div>
+                    <div style="display:flex;flex-direction:column;gap:4px">
+                      <span style="font-size:12.5px;color:#8C99A8">Dates de stage</span>
+                      <span style="font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:14.5px">{{ s.dates }}</span>
+                      <span style="font-size:13px;color:#8C99A8">{{ s.duration }}</span>
+                    </div>
+                    <div style="display:flex;flex-direction:column;gap:4px">
+                      <span style="font-size:12.5px;color:#8C99A8">Jury de soutenance</span>
+                      <span style="font-weight:600;font-size:14.5px">{{ s.jury }}</span>
+                      <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#8C99A8">{{ s.juryDate }}</span>
+                    </div>
+                  </div>
+
+                  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px">
+                    <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:11px;padding:18px;display:flex;flex-direction:column;gap:14px">
+                      <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px">
+                        <span style="font-family:Sora,sans-serif;font-weight:600;font-size:15.5px">Rapport de stage</span>
+                        <span style="font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:18px;color:{{ s.reportInk }}">{{ s.reportTotal }} <span style="font-size:13px;color:#A9B4C0">/ 20</span></span>
+                      </div>
+                      <label style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+                        <span style="font-size:14px;color:#3F4E62">Présentation</span>
+                        <span style="display:flex;align-items:center;border:1px solid #C9D2DC;border-radius:8px;overflow:hidden;background:#FFFFFF">
+                          <input type="text" value="{{ s.reportPres }}" onInput="{{ s.onReportPres }}" style="width:48px;border:none;outline:none;background:transparent;font-family:'IBM Plex Mono',monospace;font-size:14px;text-align:right;color:#2E3B4E;padding:7px 8px" />
+                          <span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#8C99A8;padding:0 9px;border-left:1px solid #E3E7EC;align-self:stretch;display:flex;align-items:center">/ 8</span>
+                        </span>
+                      </label>
+                      <label style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+                        <span style="font-size:14px;color:#3F4E62">Contenu</span>
+                        <span style="display:flex;align-items:center;border:1px solid #C9D2DC;border-radius:8px;overflow:hidden;background:#FFFFFF">
+                          <input type="text" value="{{ s.reportCont }}" onInput="{{ s.onReportCont }}" style="width:48px;border:none;outline:none;background:transparent;font-family:'IBM Plex Mono',monospace;font-size:14px;text-align:right;color:#2E3B4E;padding:7px 8px" />
+                          <span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#8C99A8;padding:0 9px;border-left:1px solid #E3E7EC;align-self:stretch;display:flex;align-items:center">/ 12</span>
+                        </span>
+                      </label>
+                    </div>
+
+                    <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:11px;padding:18px;display:flex;flex-direction:column;gap:14px">
+                      <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px">
+                        <span style="font-family:Sora,sans-serif;font-weight:600;font-size:15.5px">Exposé oral</span>
+                        <span style="font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:18px;color:{{ s.oralInk }}">{{ s.oralTotal }} <span style="font-size:13px;color:#A9B4C0">/ 20</span></span>
+                      </div>
+                      <label style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+                        <span style="font-size:14px;color:#3F4E62">Fond</span>
+                        <span style="display:flex;align-items:center;border:1px solid #C9D2DC;border-radius:8px;overflow:hidden;background:#FFFFFF">
+                          <input type="text" value="{{ s.oralFond }}" onInput="{{ s.onOralFond }}" style="width:48px;border:none;outline:none;background:transparent;font-family:'IBM Plex Mono',monospace;font-size:14px;text-align:right;color:#2E3B4E;padding:7px 8px" />
+                          <span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#8C99A8;padding:0 9px;border-left:1px solid #E3E7EC;align-self:stretch;display:flex;align-items:center">/ 14</span>
+                        </span>
+                      </label>
+                      <label style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+                        <span style="font-size:14px;color:#3F4E62">Forme</span>
+                        <span style="display:flex;align-items:center;border:1px solid #C9D2DC;border-radius:8px;overflow:hidden;background:#FFFFFF">
+                          <input type="text" value="{{ s.oralForme }}" onInput="{{ s.onOralForme }}" style="width:48px;border:none;outline:none;background:transparent;font-family:'IBM Plex Mono',monospace;font-size:14px;text-align:right;color:#2E3B4E;padding:7px 8px" />
+                          <span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#8C99A8;padding:0 9px;border-left:1px solid #E3E7EC;align-self:stretch;display:flex;align-items:center">/ 6</span>
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:11px;padding:18px;display:flex;flex-direction:column;gap:14px">
+                    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+                      <span style="font-family:Sora,sans-serif;font-weight:600;font-size:15.5px">Pièces du dossier</span>
+                      <span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#8C99A8">{{ s.piecesLabel }}</span>
+                    </div>
+                    <sc-for list="{{ s.pieces }}" as="p" hint-placeholder-count="3">
+                      <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;border:1px {{ p.borderStyle }} {{ p.borderColor }};border-radius:10px;padding:12px 14px;background:{{ p.bg }}">
+                        <svg width="16" height="16" style="flex:none" viewBox="0 0 24 24" fill="none" stroke="{{ p.iconInk }}" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h9L19 8v12.5H6z"></path><path d="M14.5 3.5V8H19"></path></svg>
+                        <div style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:140px">
+                          <span style="font-weight:600;font-size:14.5px;color:#2E3B4E">{{ p.name }}</span>
+                          <span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#8C99A8">{{ p.meta }}</span>
+                        </div>
+                        <span style="display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;border-radius:999px;padding:4px 11px;white-space:nowrap;color:{{ p.badgeInk }};background:{{ p.badgeBg }};border:1px solid {{ p.badgeLine }}">
+                          <span style="width:6px;height:6px;border-radius:50%;flex:none;background:{{ p.dot }}"></span>{{ p.status }}
+                        </span>
+                        <button type="button" style="font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:13.5px;color:{{ p.actionInk }};background:#FFFFFF;border:1px solid {{ p.actionLine }};border-radius:8px;padding:8px 14px;cursor:pointer;white-space:nowrap">{{ p.action }}</button>
+                      </div>
+                    </sc-for>
+                  </div>
+
+                  <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+                    <span style="font-size:14px;color:#6B7A8D">Note finale de stage <span style="font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:16px;color:{{ s.finalInk }}">{{ s.final }}</span> <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#A9B4C0">(rapport 50 % · exposé 50 %)</span></span>
+                    <span style="margin-left:auto;display:flex;gap:10px">
+                      <button type="button" style="font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:14px;color:#2E3B4E;background:#FFFFFF;border:1px solid #C9D2DC;border-radius:9px;padding:10px 16px;cursor:pointer;white-space:nowrap" style-hover="background:#F6F7F9;border-color:#2E3B4E">Procès-verbal PDF</button>
+                      <button type="button" style="font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:14px;color:#FFFFFF;background:#2E3B4E;border:1px solid #2E3B4E;border-radius:9px;padding:10px 18px;cursor:pointer;white-space:nowrap" style-hover="background:#25303F">Valider la soutenance</button>
+                    </span>
+                  </div>
+                </div>
+              </sc-if>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1360}}">
+class Component extends DCLogic {
+  state = {
+    tab: "Stagiaires", plusOpen: false, query: "", sessionQuery: "", sessionView: "list",
+    presenceFilter: "Tous", presenceOpen: { 0: false }, devoirForm: false, stageOpen: { 0: true },
+    hours: { M104: "120", M106: "90", M112: "150", M115: "80" },
+    marks: { rp: "6", rc: "10", of: "11", ofo: "5" }
+  };
+
+  num(v) { const n = parseFloat(String(v).replace(",", ".").replace(/[^0-9.]/g, "")); return isNaN(n) ? 0 : n; }
+  fr(n) { return String(Math.round(n * 100) / 100).replace(".", ","); }
+
+  tabDefs() {
+    return [
+      { key: "Stagiaires", count: "24", hint: "24 fiches" },
+      { key: "Modules", count: "4", hint: "4 actifs" },
+      { key: "Progression", count: "", hint: "88 %" },
+      { key: "Présences", count: "3", hint: "3 absences" },
+      { key: "Annonces", count: "2", hint: "2 non lues" },
+      { key: "Fiches", count: "", hint: "12 fiches" },
+      { key: "Contrôles", count: "2", hint: "2 à valider" },
+      { key: "Devoirs", count: "", hint: "5 rendus" },
+      { key: "Stage", count: "", hint: "Juin 2026" }
+    ];
+  }
+
+  traineeData() {
+    return [
+      { name: "Youssef Benali", email: "y.benali@ofppt-stagiaire.ma", matricule: "MAT-4417", avg: "14,75", status: "Assidu", tone: "green", initials: "YB", avatarBg: "#2E3B4E", avatarInk: "#FFFFFF" },
+      { name: "Salma Idrissi", email: "s.idrissi@ofppt-stagiaire.ma", matricule: "MAT-4418", avg: "16,20", status: "Assidu", tone: "green", initials: "SI", avatarBg: "#3C8C5C", avatarInk: "#FFFFFF" },
+      { name: "Amine Kabbaj", email: "a.kabbaj@ofppt-stagiaire.ma", matricule: "MAT-4421", avg: "11,40", status: "À suivre", tone: "coral", initials: "AK", avatarBg: "#2E7D9E", avatarInk: "#FFFFFF" },
+      { name: "Hajar Ouazzani", email: "h.ouazzani@ofppt-stagiaire.ma", matricule: "MAT-4425", avg: "13,10", status: "Assidu", tone: "green", initials: "HO", avatarBg: "#EFF2F5", avatarInk: "#5B6A7D" },
+      { name: "Mehdi Tazi", email: "m.tazi@ofppt-stagiaire.ma", matricule: "MAT-4429", avg: "9,80", status: "En difficulté", tone: "coral", initials: "MT", avatarBg: "#EFF2F5", avatarInk: "#5B6A7D" },
+      { name: "Imane Chraibi", email: "i.chraibi@ofppt-stagiaire.ma", matricule: "MAT-4432", avg: "15,05", status: "Assidu", tone: "green", initials: "IC", avatarBg: "#2E3B4E", avatarInk: "#FFFFFF" },
+      { name: "Karim Alaoui", email: "k.alaoui@ofppt-stagiaire.ma", matricule: "MAT-4436", avg: "12,60", status: "Assidu", tone: "green", initials: "KA", avatarBg: "#2E7D9E", avatarInk: "#FFFFFF" },
+      { name: "Nada Berrada", email: "n.berrada@ofppt-stagiaire.ma", matricule: "MAT-4440", avg: "13,90", status: "Congé", tone: "plain", initials: "NB", avatarBg: "#EFF2F5", avatarInk: "#5B6A7D" }
+    ];
+  }
+
+  badgeTone(t) {
+    return {
+      green: { badgeInk: "#2C6C46", badgeBg: "#EAF3EE", badgeLine: "#CFE4D8", dot: "#3C8C5C" },
+      teal: { badgeInk: "#245F79", badgeBg: "#E8F2F7", badgeLine: "#CBE0EA", dot: "#2E7D9E" },
+      coral: { badgeInk: "#B8433A", badgeBg: "#FCEDEB", badgeLine: "#F3CFCB", dot: "#E2574C" },
+      plain: { badgeInk: "#5B6A7D", badgeBg: "#F2F4F7", badgeLine: "#E3E7EC", dot: "#A9B4C0" }
+    }[t];
+  }
+
+  sessionData() {
+    const titles = ["Rappels et mise en situation", "Atelier guidé", "Live coding", "Évaluation formative", "Correction collective", "Travaux pratiques", "Étude de cas", "Synthèse du chapitre"];
+    const summaries = ["Objectifs annoncés, quiz d'entrée", "5 exercices en binôme", "Démonstration au vidéoprojecteur", "Quiz de 10 questions", "Reprise des erreurs fréquentes", "Livrable déposé en ligne", "Cahier des charges réel", "Carte mentale collective"];
+    const mods = [
+      { code: "M104", name: "Développement web front-end" },
+      { code: "M106", name: "Bases de données relationnelles" },
+      { code: "M112", name: "Administration des réseaux" }
+    ];
+    const out = [];
+    for (let i = 0; i < 63; i++) {
+      const m = mods[i % 3];
+      const status = i % 7 === 5 ? "nodate" : (i % 3 === 0 ? "done" : "todo");
+      const day = 3 + ((i * 5) % 25), month = 9 + (i % 3);
+      out.push({
+        code: m.code, module: m.name,
+        title: titles[i % titles.length] + " " + (1 + (i % 6)),
+        summary: summaries[i % summaries.length],
+        slot: (i % 2 ? "08:30 — 11:00" : "13:30 — 16:00"),
+        duration: (i % 2 ? "2 h 30" : "4 h"),
+        status,
+        date: status === "nodate" ? "—" : String(day).padStart(2, "0") + "/" + String(month).padStart(2, "0")
+      });
+    }
+    return out;
+  }
+
+  presenceData() {
+    return [
+      { initials: "YB", name: "Youssef Benali", email: "y.benali@ofppt-stagiaire.ma", rate: 96, avatarBg: "#2E3B4E", avatarInk: "#FFFFFF",
+        absences: [{ date: "12/09", slot: "08:30 — 11:00", module: "M104 · TP 2", kind: "Justifiée" }] },
+      { initials: "SI", name: "Salma Idrissi", email: "s.idrissi@ofppt-stagiaire.ma", rate: 100, avatarBg: "#3C8C5C", avatarInk: "#FFFFFF", absences: [] },
+      { initials: "AK", name: "Amine Kabbaj", email: "a.kabbaj@ofppt-stagiaire.ma", rate: 82, avatarBg: "#2E7D9E", avatarInk: "#FFFFFF",
+        absences: [
+          { date: "05/09", slot: "13:30 — 16:00", module: "M106 · Modélisation", kind: "Non justifiée" },
+          { date: "09/09", slot: "08:30 — 11:00", module: "M106 · Normalisation", kind: "Non justifiée" },
+          { date: "16/09", slot: "13:30 — 16:00", module: "M104 · TP 3", kind: "Justifiée" }
+        ] },
+      { initials: "HO", name: "Hajar Ouazzani", email: "h.ouazzani@ofppt-stagiaire.ma", rate: 94, avatarBg: "#EFF2F5", avatarInk: "#5B6A7D",
+        absences: [{ date: "02/09", slot: "08:30 — 11:00", module: "M112 · Adressage", kind: "Justifiée" }] },
+      { initials: "MT", name: "Mehdi Tazi", email: "m.tazi@ofppt-stagiaire.ma", rate: 71, avatarBg: "#EFF2F5", avatarInk: "#5B6A7D",
+        absences: [
+          { date: "02/09", slot: "13:30 — 16:00", module: "M104 · Composants", kind: "Non justifiée" },
+          { date: "12/09", slot: "08:30 — 11:00", module: "M104 · TP 2", kind: "Non justifiée" },
+          { date: "16/09", slot: "08:30 — 11:00", module: "M106 · Requêtes", kind: "Non justifiée" },
+          { date: "19/09", slot: "13:30 — 16:00", module: "M112 · Routage", kind: "Justifiée" }
+        ] },
+      { initials: "IC", name: "Imane Chraibi", email: "i.chraibi@ofppt-stagiaire.ma", rate: 98, avatarBg: "#2E3B4E", avatarInk: "#FFFFFF", absences: [] }
+    ];
+  }
+
+  stageData() {
+    return [
+      { initials: "YB", name: "Youssef Benali", email: "y.benali@ofppt-stagiaire.ma", avatarBg: "#2E3B4E", avatarInk: "#FFFFFF",
+        company: "Atlas Digital Services", city: "Casablanca · Sidi Maârouf", tutor: "Rachid El Amrani", tutorContact: "+212 6 12 34 56 78",
+        dates: "02/03/26 — 29/05/26", duration: "12 semaines", jury: "S. Lahlou · M. Bennani", juryDate: "11/06/26 · 09:00",
+        status: "En cours", tone: "teal", marks: true,
+        pieces: [
+          { name: "Convention de stage", meta: "PDF · 320 Ko · déposé le 20/02/26", ok: true },
+          { name: "Attestation de fin de stage", meta: "Attendue après le 29/05/26", ok: false },
+          { name: "Note du tuteur entreprise", meta: "Grille à renseigner par le tuteur", ok: false }
+        ] },
+      { initials: "SI", name: "Salma Idrissi", email: "s.idrissi@ofppt-stagiaire.ma", avatarBg: "#3C8C5C", avatarInk: "#FFFFFF",
+        company: "Maroc Telecom · DSI", city: "Rabat · Agdal", tutor: "Leila Sefrioui", tutorContact: "+212 6 61 22 09 14",
+        dates: "02/03/26 — 29/05/26", duration: "12 semaines", jury: "S. Lahlou · N. Fassi", juryDate: "09/06/26 · 14:00",
+        status: "Soutenu", tone: "green", marks: false, finalFixed: "17,50",
+        pieces: [
+          { name: "Convention de stage", meta: "PDF · 298 Ko · déposé le 18/02/26", ok: true },
+          { name: "Attestation de fin de stage", meta: "PDF · 180 Ko · déposé le 01/06/26", ok: true },
+          { name: "Note du tuteur entreprise", meta: "16,5 / 20 · reçu le 02/06/26", ok: true }
+        ] },
+      { initials: "AK", name: "Amine Kabbaj", email: "a.kabbaj@ofppt-stagiaire.ma", avatarBg: "#2E7D9E", avatarInk: "#FFFFFF",
+        company: "Non affecté", city: "Recherche en cours", tutor: "—", tutorContact: "—",
+        dates: "—", duration: "12 semaines à planifier", jury: "À constituer", juryDate: "—",
+        status: "À démarrer", tone: "coral", marks: false, finalFixed: "—",
+        pieces: [
+          { name: "Convention de stage", meta: "Aucun document déposé", ok: false },
+          { name: "Attestation de fin de stage", meta: "Aucun document déposé", ok: false },
+          { name: "Note du tuteur entreprise", meta: "Aucun document déposé", ok: false }
+        ] },
+      { initials: "HO", name: "Hajar Ouazzani", email: "h.ouazzani@ofppt-stagiaire.ma", avatarBg: "#EFF2F5", avatarInk: "#5B6A7D",
+        company: "Cegedim Maroc", city: "Casablanca · Anfa", tutor: "Omar Sabri", tutorContact: "+212 6 45 78 12 03",
+        dates: "02/03/26 — 29/05/26", duration: "12 semaines", jury: "S. Lahlou · M. Bennani", juryDate: "11/06/26 · 11:00",
+        status: "En cours", tone: "teal", marks: false, finalFixed: "—",
+        pieces: [
+          { name: "Convention de stage", meta: "PDF · 305 Ko · déposé le 21/02/26", ok: true },
+          { name: "Attestation de fin de stage", meta: "Attendue après le 29/05/26", ok: false },
+          { name: "Note du tuteur entreprise", meta: "Grille envoyée le 15/05/26", ok: false }
+        ] },
+      { initials: "MT", name: "Mehdi Tazi", email: "m.tazi@ofppt-stagiaire.ma", avatarBg: "#EFF2F5", avatarInk: "#5B6A7D",
+        company: "Non affecté", city: "Deux pistes en attente", tutor: "—", tutorContact: "—",
+        dates: "—", duration: "12 semaines à planifier", jury: "À constituer", juryDate: "—",
+        status: "À démarrer", tone: "coral", marks: false, finalFixed: "—",
+        pieces: [
+          { name: "Convention de stage", meta: "Aucun document déposé", ok: false },
+          { name: "Attestation de fin de stage", meta: "Aucun document déposé", ok: false },
+          { name: "Note du tuteur entreprise", meta: "Aucun document déposé", ok: false }
+        ] }
+    ];
+  }
+
+  renderVals() {
+    const st = this.state;
+    const defs = this.tabDefs();
+    const main = defs.slice(0, 7);
+    const overflow = defs.slice(7);
+    const overflowActive = overflow.some(t => t.key === st.tab);
+
+    // Stagiaires
+    const q = st.query.trim().toLowerCase();
+    const trainees = this.traineeData().filter(t => !q || (t.name + " " + t.email + " " + t.matricule).toLowerCase().includes(q));
+
+    // Modules
+    const modDefs = [
+      { code: "M104", name: "Développement web front-end", meta: "4 unités · 15 séances planifiées", ref: 120, tone: "dark" },
+      { code: "M106", name: "Bases de données relationnelles", meta: "3 unités · 12 séances planifiées", ref: 90, tone: "teal" },
+      { code: "M112", name: "Administration des réseaux", meta: "5 unités · 18 séances planifiées", ref: 150, tone: "teal" },
+      { code: "M115", name: "Projet de fin de formation", meta: "2 unités · 8 séances planifiées", ref: 80, tone: "plain" }
+    ];
+    const codeTone = {
+      dark: { codeInk: "#FFFFFF", codeBg: "#2E3B4E", codeLine: "#2E3B4E" },
+      teal: { codeInk: "#245F79", codeBg: "#E8F2F7", codeLine: "#CBE0EA" },
+      plain: { codeInk: "#5B6A7D", codeBg: "#F2F4F7", codeLine: "#E3E7EC" }
+    };
+    const hoursTotal = modDefs.reduce((a, m) => a + this.num(st.hours[m.code]), 0);
+
+    // Progression
+    const sq = st.sessionQuery.trim().toLowerCase();
+    const sessions = this.sessionData().filter(s => !sq || (s.title + " " + s.summary + " " + s.code + " " + s.module).toLowerCase().includes(sq));
+    const statusTone = {
+      todo: Object.assign({ status: "À faire" }, this.badgeTone("teal")),
+      done: Object.assign({ status: "Fait" }, this.badgeTone("green")),
+      nodate: Object.assign({ status: "Sans date" }, this.badgeTone("plain"))
+    };
+    const byModule = {};
+    sessions.forEach(s => { (byModule[s.code] = byModule[s.code] || []).push(s); });
+    const sessionGroups = Object.keys(byModule).map(code => {
+      const items = byModule[code];
+      const done = items.filter(i => i.status === "done").length;
+      const pct = Math.round((done / items.length) * 100);
+      return {
+        code, name: items[0].module, total: items.length, done, pct, pctWidth: pct + "%",
+        items: items.slice(0, 8).map(s => Object.assign({}, s, statusTone[s.status]))
+      };
+    });
+    const pickCol = k => sessions.filter(s => s.status === k).map(s => Object.assign({}, s, {
+      dateInk: s.status === "nodate" ? "#8C99A8" : "#3F4E62",
+      dateBg: s.status === "nodate" ? "#F2F4F7" : "#F6F7F9"
+    }));
+
+    // Présences
+    const presences = this.presenceData().map((p, i) => {
+      const open = !!st.presenceOpen[i];
+      const abs = st.presenceFilter === "Tous" ? p.absences : p.absences.filter(a => a.module.indexOf(st.presenceFilter) === 0);
+      return Object.assign({}, p, {
+        open,
+        rowBg: open ? "#FBFCFD" : "#FFFFFF",
+        toggle: () => this.setState(s => ({ presenceOpen: Object.assign({}, s.presenceOpen, { [i]: !s.presenceOpen[i] }) })),
+        toggleLabel: open ? "Masquer" : "Détail",
+        chevron: open ? "rotate(180deg)" : "rotate(0deg)",
+        absLabel: abs.length === 0 ? "Aucune" : (abs.length + (abs.length > 1 ? " absences" : " absence")),
+        absInk: abs.length > 2 ? "#B8433A" : (abs.length === 0 ? "#8C99A8" : "#3F4E62"),
+        rateInk: p.rate >= 90 ? "#2C6C46" : (p.rate >= 80 ? "#3F4E62" : "#B8433A"),
+        none: abs.length === 0,
+        absences: abs.map(a => Object.assign({}, a, a.kind === "Justifiée"
+          ? { tagInk: "#5B6A7D", tagBg: "#F2F4F7", tagLine: "#E3E7EC" }
+          : { tagInk: "#B8433A", tagBg: "#FCEDEB", tagLine: "#F3CFCB" }))
+      });
+    });
+
+    // Stage
+    const m = st.marks;
+    const reportTotal = this.num(m.rp) + this.num(m.rc);
+    const oralTotal = this.num(m.of) + this.num(m.ofo);
+    const finalMark = (reportTotal + oralTotal) / 2;
+    const stages = this.stageData().map((s, i) => {
+      const open = !!st.stageOpen[i];
+      const live = s.marks;
+      return Object.assign({}, s, this.badgeTone(s.tone), {
+        open,
+        rowBg: open ? "#FBFCFD" : "#FFFFFF",
+        toggle: () => this.setState(x => ({ stageOpen: Object.assign({}, x.stageOpen, { [i]: !x.stageOpen[i] }) })),
+        chevron: open ? "rotate(180deg)" : "rotate(0deg)",
+        reportPres: live ? m.rp : "—", reportCont: live ? m.rc : "—",
+        oralFond: live ? m.of : "—", oralForme: live ? m.ofo : "—",
+        reportTotal: live ? this.fr(reportTotal) : "—",
+        oralTotal: live ? this.fr(oralTotal) : "—",
+        reportInk: live ? (reportTotal >= 10 ? "#2C6C46" : "#B8433A") : "#A9B4C0",
+        oralInk: live ? (oralTotal >= 10 ? "#2C6C46" : "#B8433A") : "#A9B4C0",
+        final: live ? this.fr(finalMark) : s.finalFixed,
+        finalInk: live ? (finalMark >= 10 ? "#2C6C46" : "#B8433A") : (s.finalFixed === "—" ? "#A9B4C0" : "#2C6C46"),
+        onReportPres: e => this.setState(x => ({ marks: Object.assign({}, x.marks, { rp: e.target.value }) })),
+        onReportCont: e => this.setState(x => ({ marks: Object.assign({}, x.marks, { rc: e.target.value }) })),
+        onOralFond: e => this.setState(x => ({ marks: Object.assign({}, x.marks, { of: e.target.value }) })),
+        onOralForme: e => this.setState(x => ({ marks: Object.assign({}, x.marks, { ofo: e.target.value }) })),
+        piecesLabel: s.pieces.filter(p => p.ok).length + " / " + s.pieces.length + " déposées",
+        pieces: s.pieces.map(p => Object.assign({}, p, p.ok
+          ? { status: "Déposée", badgeInk: "#2C6C46", badgeBg: "#EAF3EE", badgeLine: "#CFE4D8", dot: "#3C8C5C", borderStyle: "solid", borderColor: "#E3E7EC", bg: "#FFFFFF", iconInk: "#3C8C5C", action: "Consulter", actionInk: "#2E3B4E", actionLine: "#C9D2DC" }
+          : { status: "Manquante", badgeInk: "#B8433A", badgeBg: "#FCEDEB", badgeLine: "#F3CFCB", dot: "#E2574C", borderStyle: "dashed", borderColor: "#F0BDB8", bg: "#FEFAF9", iconInk: "#C98A84", action: "Déposer", actionInk: "#B8433A", actionLine: "#F0BDB8" }))
+      });
+    });
+    const stageStat = k => this.stageData().filter(s => s.status === k).length;
+
+    return {
+      mainTabs: main.map(t => {
+        const on = t.key === st.tab;
+        return {
+          label: t.key,
+          pick: () => this.setState({ tab: t.key, plusOpen: false }),
+          line: on ? "#2E3B4E" : "transparent",
+          ink: on ? "#2E3B4E" : "#5B6A7D",
+          weight: on ? "600" : "400",
+          count: t.count,
+          countShow: t.count ? "inline-flex" : "none",
+          countInk: on ? "#2E3B4E" : "#5B6A7D",
+          countBg: on ? "#EFF2F5" : "#F6F7F9"
+        };
+      }),
+      overflowTabs: overflow.map(t => {
+        const on = t.key === st.tab;
+        return {
+          label: t.key, hint: t.hint,
+          pick: () => this.setState({ tab: t.key, plusOpen: false }),
+          bg: on ? "#F2F4F7" : "transparent",
+          ink: on ? "#2E3B4E" : "#3F4E62",
+          weight: on ? "600" : "400"
+        };
+      }),
+      plusOpen: st.plusOpen,
+      togglePlus: () => this.setState(s => ({ plusOpen: !s.plusOpen })),
+      plusChevron: st.plusOpen ? "rotate(180deg)" : "rotate(0deg)",
+      plusLine: overflowActive ? "#2E3B4E" : "transparent",
+      plusInk: overflowActive || st.plusOpen ? "#2E3B4E" : "#5B6A7D",
+
+      isStagiaires: st.tab === "Stagiaires",
+      isModules: st.tab === "Modules",
+      isProgression: st.tab === "Progression",
+      isPresences: st.tab === "Présences",
+      isAnnonces: st.tab === "Annonces",
+      isFiches: st.tab === "Fiches",
+      isControles: st.tab === "Contrôles",
+      isDevoirs: st.tab === "Devoirs",
+      isStage: st.tab === "Stage",
+
+      query: st.query,
+      onQuery: e => this.setState({ query: e.target.value }),
+      trainees: trainees.map(t => Object.assign({}, t, this.badgeTone(t.tone), {
+        avgInk: this.num(t.avg) >= 12 ? "#3F4E62" : "#B8433A"
+      })),
+      traineeCount: trainees.length,
+
+      groupModules: modDefs.map(mo => Object.assign({}, mo, codeTone[mo.tone], {
+        hours: st.hours[mo.code],
+        onHours: e => this.setState(s => ({ hours: Object.assign({}, s.hours, { [mo.code]: e.target.value }) })),
+        refInk: this.num(st.hours[mo.code]) === mo.ref ? "#A9B4C0" : "#B8433A"
+      })),
+      hoursTotal: this.fr(hoursTotal),
+      hoursInk: hoursTotal === 440 ? "#2C6C46" : "#B8433A",
+      hoursDot: hoursTotal === 440 ? "#3C8C5C" : "#E2574C",
+      hoursHint: hoursTotal === 440 ? "Masse horaire conforme au référentiel du groupe." : "Écart de " + this.fr(Math.abs(440 - hoursTotal)) + " h avec le référentiel (440 h).",
+
+      sessionQuery: st.sessionQuery,
+      onSessionQuery: e => this.setState({ sessionQuery: e.target.value }),
+      setList: () => this.setState({ sessionView: "list" }),
+      setBoard: () => this.setState({ sessionView: "board" }),
+      isSessionList: st.sessionView === "list",
+      isSessionBoard: st.sessionView === "board",
+      listBg: st.sessionView === "list" ? "#FFFFFF" : "transparent",
+      listShadow: st.sessionView === "list" ? "0 1px 2px rgba(46,59,78,.12)" : "none",
+      listInk: st.sessionView === "list" ? "#2E3B4E" : "#8C99A8",
+      boardBg: st.sessionView === "board" ? "#FFFFFF" : "transparent",
+      boardShadow: st.sessionView === "board" ? "0 1px 2px rgba(46,59,78,.12)" : "none",
+      boardInk: st.sessionView === "board" ? "#2E3B4E" : "#8C99A8",
+      sessionGroups,
+      sessionColumns: [
+        { label: "À faire", dot: "#2E7D9E", ink: "#2E3B4E", items: pickCol("todo"), count: pickCol("todo").length },
+        { label: "Fait", dot: "#3C8C5C", ink: "#2E3B4E", items: pickCol("done"), count: pickCol("done").length },
+        { label: "Sans date", dot: "#8C99A8", ink: "#5B6A7D", items: pickCol("nodate"), count: pickCol("nodate").length }
+      ],
+
+      presenceFilters: ["Tous", "M104", "M106", "M112", "M115"].map(l => {
+        const on = l === st.presenceFilter;
+        return {
+          label: l,
+          pick: () => this.setState({ presenceFilter: l }),
+          bg: on ? "#FFFFFF" : "transparent",
+          ink: on ? "#2E3B4E" : "#6B7A8D",
+          shadow: on ? "0 1px 2px rgba(46,59,78,.12)" : "none"
+        };
+      }),
+      presences,
+      presenceAvg: Math.round(presences.reduce((a, p) => a + p.rate, 0) / presences.length),
+
+      announcements: [
+        { title: "Report du TP 3 au 23/09", date: "16/09 · 14:20", body: "Le TP sur l'intégration continue est décalé au 23 septembre, même créneau. Pensez à installer Git avant la séance : la salle B12 sera indisponible pour les installations.", reactions: "14", comments: "3", reach: "24 / 24 vus", tag: "Organisation", tagInk: "#245F79", tagBg: "#E8F2F7", tagLine: "#CBE0EA" },
+        { title: "Sujets de projet fil rouge disponibles", date: "12/09 · 09:05", body: "Les six sujets du projet fil rouge sont déposés dans l'espace ressources. Choix des binômes à remonter avant vendredi 19 septembre.", reactions: "21", comments: "8", reach: "24 / 24 vus", tag: "Ressources", tagInk: "#2C6C46", tagBg: "#EAF3EE", tagLine: "#CFE4D8" },
+        { title: "Rappel : CC1 du module M106 le 19/09", date: "09/09 · 17:40", body: "Contrôle continu d'une heure trente sur la modélisation et les requêtes de base. Documents non autorisés, calculatrice inutile.", reactions: "9", comments: "5", reach: "23 / 24 vus", tag: "Évaluation", tagInk: "#B8433A", tagBg: "#FCEDEB", tagLine: "#F3CFCB" }
+      ],
+
+      fiches: [
+        { code: "M104", name: "Développement web front-end", meta: "12 séances couvertes sur 15", ok: true },
+        { code: "M106", name: "Bases de données relationnelles", meta: "12 séances couvertes sur 12", ok: true },
+        { code: "M112", name: "Administration des réseaux", meta: "Aucune fiche déposée", ok: false },
+        { code: "M115", name: "Projet de fin de formation", meta: "4 séances couvertes sur 8", ok: true }
+      ].map(f => Object.assign({}, f, codeTone[f.ok ? "teal" : "plain"], f.ok
+        ? { status: "Présente", badgeInk: "#2C6C46", badgeBg: "#EAF3EE", badgeLine: "#CFE4D8", dot: "#3C8C5C", action: "Ouvrir", actionInk: "#2E3B4E", actionBg: "#FFFFFF", actionLine: "#C9D2DC" }
+        : { status: "Absente", badgeInk: "#B8433A", badgeBg: "#FCEDEB", badgeLine: "#F3CFCB", dot: "#E2574C", action: "Créer la fiche", actionInk: "#FFFFFF", actionBg: "#2E3B4E", actionLine: "#2E3B4E" })),
+      fichesReady: 3,
+
+      controles: [
+        { code: "CC1", title: "Modélisation entité-association", meta: "M106 · 24 copies corrigées", date: "16/09", avg: "13,8", status: "Noté", tone: "green" },
+        { code: "CC2", title: "Requêtes SQL et jointures", meta: "M106 · 18 copies sur 24 corrigées", date: "19/09", avg: "—", status: "En correction", tone: "teal" },
+        { code: "CC1", title: "Composants réutilisables", meta: "M104 · à valider par le pôle", date: "23/09", avg: "—", status: "À valider", tone: "coral" },
+        { code: "EFM", title: "Épreuve de fin de module", meta: "M104 · sujet régional", date: "Décembre", avg: "—", status: "Planifié", tone: "plain" }
+      ].map(c => Object.assign({}, c, this.badgeTone(c.tone), {
+        avgInk: c.avg === "—" ? "#A9B4C0" : "#2C6C46"
+      })),
+
+      devoirFormOpen: st.devoirForm,
+      toggleDevoirForm: () => this.setState(s => ({ devoirForm: !s.devoirForm })),
+      devoirFormLabel: st.devoirForm ? "Fermer le formulaire" : "Créer un devoir",
+      devoirCount: 5,
+      devoirs: [
+        { code: "M106", title: "Exercices 4 à 7 — jointures", module: "Bases de données relationnelles", due: "23/09 · 23:59", received: 18, total: 24, type: "Dépôt en ligne", urgent: true },
+        { code: "M104", title: "Maquette responsive du fil rouge", module: "Développement web front-end", due: "26/09 · 23:59", received: 9, total: 24, type: "Dépôt de code", urgent: true },
+        { code: "M112", title: "Schéma d'adressage IP", module: "Administration des réseaux", due: "02/10 · 12:00", received: 3, total: 24, type: "Rendu papier", urgent: false },
+        { code: "M115", title: "Note de cadrage du projet", module: "Projet de fin de formation", due: "10/10 · 23:59", received: 24, total: 24, type: "Dépôt en ligne", urgent: false }
+      ].map(d => {
+        const pct = Math.round((d.received / d.total) * 100);
+        return Object.assign({}, d, {
+          pctWidth: pct + "%",
+          barColor: pct === 100 ? "#3C8C5C" : (pct >= 50 ? "#2E7D9E" : "#8C99A8"),
+          countInk: pct === 100 ? "#2C6C46" : "#3F4E62",
+          dueInk: d.urgent ? "#B8433A" : "#3F4E62",
+          tagInk: "#5B6A7D", tagBg: "#F2F4F7", tagLine: "#E3E7EC"
+        });
+      }),
+
+      stages,
+      stageDone: stageStat("Soutenu"),
+      stageRunning: stageStat("En cours"),
+      stageTodo: stageStat("À démarrer")
+    };
+  }
+}
+</script>
+</body>
+</html>

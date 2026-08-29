@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=Source+Sans+3:ital,wght@0,400;0,500;0,600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  body { margin: 0; background: #F6F7F9; }
+  a { color: #2E7D9E; text-decoration: none; }
+  a:hover { color: #2E3B4E; text-decoration: underline; }
+</style>
+</helmet>
+<div style="min-height:100vh;background:#F6F7F9;font-family:'Source Sans 3',system-ui,sans-serif;color:#2E3B4E;padding:40px 40px 72px;box-sizing:border-box">
+  <div style="max-width:1080px;margin:0 auto;display:flex;flex-direction:column;gap:20px">
+
+    <div style="display:flex;align-items:center;gap:8px;font-size:13.5px;color:#8C99A8">
+      <a href="#" style="color:#5B6A7D">Séances</a><span>/</span>
+      <a href="#" style="color:#5B6A7D">TSDI-201 · <span style="font-family:'IBM Plex Mono',monospace">M104</span></a><span>/</span>
+      <span style="color:#3F4E62">Intégration continue — TP 3</span>
+    </div>
+
+    <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:14px;box-shadow:0 1px 2px rgba(46,59,78,.05)">
+      <div style="padding:24px 26px;display:flex;align-items:flex-start;justify-content:space-between;gap:24px;flex-wrap:wrap">
+        <div style="display:flex;flex-direction:column;gap:9px;min-width:0">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <h1 style="font-family:Sora,sans-serif;font-weight:700;font-size:27px;line-height:1.2;letter-spacing:-.02em;margin:0">Intégration continue — TP 3</h1>
+            <span style="display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;border-radius:999px;padding:4px 11px;white-space:nowrap;color:{{ statusInk }};background:{{ statusBg }};border:1px solid {{ statusLine }}">
+              <span style="width:6px;height:6px;border-radius:50%;flex:none;background:{{ statusDot }}"></span>{{ statusLabel }}
+            </span>
+          </div>
+          <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:13.5px;color:#3F4E62">M104 · TSDI-201</span>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:13.5px;color:#3F4E62">18/09 · 08:30 — 13:30</span>
+            <span style="font-size:14px;color:#6B7A8D">Salle B12 · 4 h</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button type="button" style="font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:14px;color:#2E3B4E;background:#FFFFFF;border:1px solid #C9D2DC;border-radius:9px;padding:9px 16px;cursor:pointer;white-space:nowrap" style-hover="background:#F6F7F9;border-color:#2E3B4E">Déplacer</button>
+          <button type="button" style="font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:14px;color:#2E3B4E;background:#FFFFFF;border:1px solid #C9D2DC;border-radius:9px;padding:9px 16px;cursor:pointer;white-space:nowrap" style-hover="background:#F6F7F9;border-color:#2E3B4E">Exporter</button>
+        </div>
+      </div>
+      <div style="padding:0 26px;border-top:1px solid #EDF0F3;display:flex;align-items:stretch;gap:6px">
+        <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="3">
+          <button type="button" onClick="{{ t.pick }}" style="display:flex;align-items:center;gap:8px;background:transparent;border:none;border-bottom:2px solid {{ t.line }};padding:14px 10px;margin-bottom:-1px;cursor:pointer;font-family:'Source Sans 3',sans-serif;font-size:14.5px;font-weight:{{ t.weight }};color:{{ t.ink }};white-space:nowrap" style-hover="color:#2E3B4E">
+            {{ t.label }}
+            <span style="font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:12px;color:{{ t.countInk }};background:{{ t.countBg }};border-radius:999px;padding:2px 7px;display:{{ t.countShow }}">{{ t.count }}</span>
+          </button>
+        </sc-for>
+      </div>
+    </div>
+
+    <sc-if value="{{ isDeroulement }}" hint-placeholder-val="{{ true }}">
+      <div style="display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:20px;align-items:start">
+
+        <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:14px;box-shadow:0 1px 2px rgba(46,59,78,.05);overflow:hidden;min-width:0">
+          <div style="padding:18px 22px;border-bottom:1px solid #EDF0F3;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+            <div style="display:flex;flex-direction:column;gap:3px">
+              <span style="font-family:Sora,sans-serif;font-weight:600;font-size:16px">Appel</span>
+              <span style="font-size:13px;color:#8C99A8"><span style="font-family:'IBM Plex Mono',monospace;font-weight:500;color:{{ presentInk }}">{{ presentCount }}</span> présents · <span style="font-family:'IBM Plex Mono',monospace;font-weight:500;color:{{ absentInk }}">{{ absentCount }}</span> absents sur {{ totalCount }}</span>
+            </div>
+            <button type="button" onClick="{{ allPresent }}" style="margin-left:auto;display:flex;align-items:center;gap:8px;font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:13.5px;color:#2C6C46;background:#FFFFFF;border:1px solid #CFE4D8;border-radius:8px;padding:8px 14px;cursor:pointer;white-space:nowrap" style-hover="background:#EAF3EE">
+              <svg width="14" height="14" style="flex:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5 10 17.5 19 7"></path></svg>Tous présents
+            </button>
+          </div>
+
+          <div style="max-height:520px;overflow-y:auto">
+            <sc-for list="{{ students }}" as="s" hint-placeholder-count="8">
+              <button type="button" onClick="{{ s.toggle }}" style="width:100%;text-align:left;display:flex;align-items:center;gap:12px;padding:12px 22px;border:none;border-bottom:1px solid #EDF0F3;background:{{ s.bg }};cursor:pointer;font-family:'Source Sans 3',sans-serif">
+                <span style="width:20px;height:20px;border-radius:6px;flex:none;display:flex;align-items:center;justify-content:center;background:{{ s.boxBg }};border:1.5px solid {{ s.boxLine }}">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="display:{{ s.tick }}"><path d="M5 12.5 10 17.5 19 7"></path></svg>
+                </span>
+                <span style="width:34px;height:34px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-family:Sora,sans-serif;font-weight:600;font-size:11.5px;color:{{ s.avatarInk }};background:{{ s.avatarBg }}">{{ s.initials }}</span>
+                <span style="display:flex;flex-direction:column;gap:2px;min-width:0">
+                  <span style="font-weight:600;font-size:14.5px;color:{{ s.nameInk }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ s.name }}</span>
+                  <span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#8C99A8">{{ s.matricule }}</span>
+                </span>
+                <span style="margin-left:auto;font-size:12.5px;font-weight:600;border-radius:999px;padding:3px 10px;white-space:nowrap;color:{{ s.badgeInk }};background:{{ s.badgeBg }};border:1px solid {{ s.badgeLine }}">{{ s.badge }}</span>
+              </button>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:20px;min-width:0">
+
+          <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:14px;padding:22px;display:flex;flex-direction:column;gap:12px;box-shadow:0 1px 2px rgba(46,59,78,.05)">
+            <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px">
+              <span style="font-family:Sora,sans-serif;font-weight:600;font-size:16px">Contenu réalisé</span>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#A9B4C0">{{ doneChars }} caractères</span>
+            </div>
+            <div style="border:1px solid #C9D2DC;border-left:3px solid #2E3B4E;border-radius:10px;background:#FFFFFF;overflow:hidden">
+              <textarea rows="5" value="{{ doneText }}" onInput="{{ onDoneText }}" placeholder="Ce qui a effectivement été traité, l'écart avec la préparation, l'état d'avancement du groupe…" style="width:100%;box-sizing:border-box;border:none;outline:none;resize:vertical;background:transparent;font-family:'Source Sans 3',sans-serif;font-size:15px;line-height:1.6;color:#3F4E62;padding:13px 15px"></textarea>
+            </div>
+            <span style="font-size:13px;color:#8C99A8">Repris automatiquement dans le classeur pédagogique et le bilan du module.</span>
+          </div>
+
+          <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:14px;padding:22px;display:flex;flex-direction:column;gap:14px;box-shadow:0 1px 2px rgba(46,59,78,.05)">
+            <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px">
+              <span style="font-family:Sora,sans-serif;font-weight:600;font-size:16px">Remarques</span>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#A9B4C0">{{ remarkCount }}</span>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:9px">
+              <sc-for list="{{ remarks }}" as="r" hint-placeholder-count="3">
+                <div style="display:flex;align-items:flex-start;gap:11px;background:#FAFBFC;border:1px solid #E3E7EC;border-radius:10px;padding:11px 13px">
+                  <span style="width:6px;height:6px;border-radius:50%;flex:none;background:{{ r.dot }};margin-top:7px"></span>
+                  <span style="flex:1;min-width:0;font-size:14.5px;line-height:1.5;color:#3F4E62;text-wrap:pretty">{{ r.text }}</span>
+                  <button type="button" aria-label="Supprimer la remarque" onClick="{{ r.remove }}" style="width:28px;height:28px;border-radius:7px;border:1px solid transparent;background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;flex:none" style-hover="background:#FCEDEB;border-color:#F3CFCB">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#B8433A" stroke-width="2" stroke-linecap="round"><path d="M6 7h12"></path><path d="M9 7V5h6v2"></path><path d="M7 7l1 12h8l1-12"></path></svg>
+                  </button>
+                </div>
+              </sc-for>
+              <sc-if value="{{ noRemarks }}" hint-placeholder-val="{{ false }}">
+                <span style="font-size:14px;color:#8C99A8">Aucune remarque pour cette séance.</span>
+              </sc-if>
+            </div>
+
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+              <input type="text" value="{{ draft }}" onInput="{{ onDraft }}" placeholder="Ajouter une remarque…" style="flex:1;min-width:180px;border:1px solid #C9D2DC;border-radius:9px;outline:none;background:#FFFFFF;font-family:'Source Sans 3',sans-serif;font-size:14.5px;color:#2E3B4E;padding:10px 13px" />
+              <button type="button" onClick="{{ addRemark }}" style="display:flex;align-items:center;gap:7px;font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:14px;color:#2E3B4E;background:#FFFFFF;border:1px solid #C9D2DC;border-radius:9px;padding:10px 15px;cursor:pointer;white-space:nowrap" style-hover="background:#F6F7F9;border-color:#2E3B4E">
+                <svg width="14" height="14" style="flex:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>Ajouter
+              </button>
+            </div>
+          </div>
+
+          <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:14px;padding:20px 22px;display:flex;flex-direction:column;gap:14px;box-shadow:0 1px 2px rgba(46,59,78,.05)">
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="width:7px;height:7px;border-radius:50%;flex:none;background:{{ readyDot }}"></span>
+              <span style="font-size:14px;line-height:1.45;color:{{ readyInk }}">{{ readyMessage }}</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+              <button type="button" style="font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:14px;color:#2E3B4E;background:#FFFFFF;border:1px solid #C9D2DC;border-radius:9px;padding:11px 16px;cursor:pointer;white-space:nowrap" style-hover="background:#F6F7F9;border-color:#2E3B4E">Enregistrer</button>
+              <button type="button" onClick="{{ markDone }}" style="flex:1;min-width:200px;display:flex;align-items:center;justify-content:center;gap:9px;font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:15px;color:#FFFFFF;background:#2E3B4E;border:1px solid #2E3B4E;border-radius:10px;padding:13px 20px;cursor:pointer;white-space:nowrap;box-shadow:0 2px 6px rgba(46,59,78,.22)" style-hover="background:#25303F">
+                <svg width="16" height="16" style="flex:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5 10 17.5 19 7"></path></svg>{{ markLabel }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isPreparation }}" hint-placeholder-val="{{ false }}">
+      <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:14px;box-shadow:0 1px 2px rgba(46,59,78,.05);overflow:hidden">
+        <div style="padding:18px 24px;border-bottom:1px solid #EDF0F3;background:#FAFBFC;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
+          <span style="font-family:Sora,sans-serif;font-weight:600;font-size:16px">Fiche de préparation</span>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;color:#2C6C46;background:#EAF3EE;border:1px solid #CFE4D8;border-radius:999px;padding:4px 11px"><span style="width:6px;height:6px;border-radius:50%;background:#3C8C5C"></span>Relue</span>
+            <button type="button" style="font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:13.5px;color:#2E3B4E;background:#FFFFFF;border:1px solid #C9D2DC;border-radius:8px;padding:8px 14px;cursor:pointer;white-space:nowrap" style-hover="background:#FFFFFF;border-color:#2E3B4E">Ouvrir l'éditeur</button>
+          </div>
+        </div>
+        <div style="padding:22px 24px;display:flex;flex-direction:column;gap:16px">
+          <sc-for list="{{ prepBlocks }}" as="b" hint-placeholder-count="3">
+            <div style="display:flex;gap:14px">
+              <span style="width:26px;height:26px;border-radius:7px;flex:none;background:#2E3B4E;color:#FFFFFF;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:12px;display:flex;align-items:center;justify-content:center;margin-top:2px">{{ b.no }}</span>
+              <div style="display:flex;flex-direction:column;gap:5px;min-width:0;flex:1">
+                <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+                  <span style="font-family:Sora,sans-serif;font-weight:600;font-size:15.5px">{{ b.title }}</span>
+                  <span style="margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:13px;color:#5B6A7D">{{ b.duration }}</span>
+                </div>
+                <span style="font-size:14.5px;line-height:1.55;color:#5B6A7D;text-wrap:pretty">{{ b.summary }}</span>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isSupport }}" hint-placeholder-val="{{ false }}">
+      <div style="display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:20px;align-items:start">
+        <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:14px;box-shadow:0 1px 2px rgba(46,59,78,.05);overflow:hidden;min-width:0">
+          <div style="padding:16px 22px;border-bottom:1px solid #EDF0F3;background:#FAFBFC;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap">
+            <span style="font-family:Sora,sans-serif;font-weight:600;font-size:16px">Support de cours</span>
+            <div style="display:flex;gap:4px;background:#F2F4F7;border:1px solid #E3E7EC;border-radius:9px;padding:3px">
+              <button type="button" onClick="{{ setDoc }}" style="font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:13px;border:none;border-radius:6px;padding:7px 13px;cursor:pointer;white-space:nowrap;color:{{ docInk }};background:{{ docBg }};box-shadow:{{ docShadow }}">Document</button>
+              <button type="button" onClick="{{ setSlides }}" style="font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:13px;border:none;border-radius:6px;padding:7px 13px;cursor:pointer;white-space:nowrap;color:{{ slidesInk }};background:{{ slidesBg }};box-shadow:{{ slidesShadow }}">Diaporama</button>
+            </div>
+          </div>
+          <div style="padding:20px 22px;display:flex;flex-direction:column;gap:14px">
+            <sc-if value="{{ isDoc }}" hint-placeholder-val="{{ true }}">
+              <div style="border:1px solid #C9D2DC;border-radius:10px;background:#FFFFFF;overflow:hidden">
+                <textarea rows="10" style="width:100%;box-sizing:border-box;border:none;outline:none;resize:vertical;background:transparent;font-family:'Source Sans 3',sans-serif;font-size:15px;line-height:1.65;color:#3F4E62;padding:14px 16px">## 1. Rappel : cycle de vie d'un commit
+
+Un dépôt distant ne conserve que ce qui a été poussé. Le pipeline se déclenche sur la branche de travail.
+
+## 2. Pipeline en trois étapes
+
+- installation des dépendances
+- exécution des tests
+- construction de l'artefact
+
+## 3. TP guidé
+
+Créer le fichier de configuration, provoquer un échec volontaire, lire le journal d'exécution.</textarea>
+              </div>
+            </sc-if>
+            <sc-if value="{{ isSlides }}" hint-placeholder-val="{{ false }}">
+              <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px">
+                <sc-for list="{{ slides }}" as="sl" hint-placeholder-count="6">
+                  <div style="border:1px solid #E3E7EC;border-radius:10px;overflow:hidden;background:#FFFFFF">
+                    <div style="aspect-ratio:16/9;background:{{ sl.bg }};display:flex;align-items:center;justify-content:center;padding:10px">
+                      <span style="font-family:Sora,sans-serif;font-weight:600;font-size:12.5px;text-align:center;line-height:1.35;color:{{ sl.ink }}">{{ sl.title }}</span>
+                    </div>
+                    <div style="padding:8px 10px;display:flex;align-items:center;justify-content:space-between;gap:8px">
+                      <span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#A9B4C0">{{ sl.no }}</span>
+                      <span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#A9B4C0">{{ sl.time }}</span>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding-top:14px;border-top:1px solid #EDF0F3">
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#A9B4C0">Version 4 · publiée le 12/09</span>
+              <span style="margin-left:auto;display:flex;gap:10px">
+                <button type="button" style="font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:13.5px;color:#2E3B4E;background:#FFFFFF;border:1px solid #C9D2DC;border-radius:8px;padding:8px 14px;cursor:pointer;white-space:nowrap" style-hover="background:#F6F7F9;border-color:#2E3B4E">Aperçu</button>
+                <button type="button" style="font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:13.5px;color:#FFFFFF;background:#2E3B4E;border:1px solid #2E3B4E;border-radius:8px;padding:8px 16px;cursor:pointer;white-space:nowrap" style-hover="background:#25303F">Publier au groupe</button>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:14px;box-shadow:0 1px 2px rgba(46,59,78,.05);overflow:hidden;min-width:0">
+          <div style="padding:16px 22px;border-bottom:1px solid #EDF0F3;background:#FAFBFC;display:flex;align-items:center;gap:10px">
+            <span style="font-family:Sora,sans-serif;font-weight:600;font-size:16px">Questions des stagiaires</span>
+            <span style="font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:12.5px;color:#B8433A;background:#FCEDEB;border:1px solid #F3CFCB;border-radius:999px;padding:2px 9px">02</span>
+          </div>
+          <sc-for list="{{ questions }}" as="q" hint-placeholder-count="3">
+            <div style="padding:16px 22px;border-bottom:1px solid #EDF0F3;display:flex;gap:12px">
+              <span style="width:34px;height:34px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-family:Sora,sans-serif;font-weight:600;font-size:11.5px;color:{{ q.avatarInk }};background:{{ q.avatarBg }}">{{ q.initials }}</span>
+              <div style="display:flex;flex-direction:column;gap:5px;min-width:0;flex:1">
+                <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+                  <span style="font-weight:600;font-size:14.5px">{{ q.name }}</span>
+                  <span style="margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:12px;color:#A9B4C0">{{ q.when }}</span>
+                </div>
+                <span style="font-size:14.5px;line-height:1.55;color:#3F4E62;text-wrap:pretty">{{ q.text }}</span>
+                <span style="align-self:flex-start;font-size:12px;font-weight:600;border-radius:999px;padding:3px 10px;white-space:nowrap;color:{{ q.tagInk }};background:{{ q.tagBg }};border:1px solid {{ q.tagLine }}">{{ q.tag }}</span>
+              </div>
+            </div>
+          </sc-for>
+          <div style="padding:14px 22px;background:#FAFBFC;display:flex;align-items:center;gap:10px">
+            <input type="text" placeholder="Répondre au groupe…" style="flex:1;min-width:0;border:1px solid #C9D2DC;border-radius:9px;outline:none;background:#FFFFFF;font-family:'Source Sans 3',sans-serif;font-size:14px;color:#2E3B4E;padding:9px 12px" />
+            <button type="button" style="font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:13.5px;color:#FFFFFF;background:#2E3B4E;border:1px solid #2E3B4E;border-radius:8px;padding:9px 15px;cursor:pointer;white-space:nowrap" style-hover="background:#25303F">Envoyer</button>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1200}}">
+class Component extends DCLogic {
+  state = {
+    tab: "Déroulement",
+    support: "doc",
+    done: false,
+    doneText: "Pipeline en trois étapes mis en place et testé sur le dépôt de démonstration. La partie déploiement conteneurisé n'a pas été abordée : reportée à la séance du 23/09.",
+    draft: "",
+    remarks: [
+      { text: "Deux postes hors service en salle B12 — signalé au service technique.", tone: "coral" },
+      { text: "Le groupe maîtrise mal les branches Git : prévoir 30 min de remédiation.", tone: "coral" },
+      { text: "Très bonne participation sur la lecture des journaux d'exécution.", tone: "green" }
+    ],
+    absent: { 2: true, 4: true }
+  };
+
+  roster() {
+    return [
+      { name: "Youssef Benali", matricule: "MAT-4417", initials: "YB", avatarBg: "#2E3B4E", avatarInk: "#FFFFFF" },
+      { name: "Salma Idrissi", matricule: "MAT-4418", initials: "SI", avatarBg: "#3C8C5C", avatarInk: "#FFFFFF" },
+      { name: "Amine Kabbaj", matricule: "MAT-4421", initials: "AK", avatarBg: "#2E7D9E", avatarInk: "#FFFFFF" },
+      { name: "Hajar Ouazzani", matricule: "MAT-4425", initials: "HO", avatarBg: "#EFF2F5", avatarInk: "#5B6A7D" },
+      { name: "Mehdi Tazi", matricule: "MAT-4429", initials: "MT", avatarBg: "#EFF2F5", avatarInk: "#5B6A7D" },
+      { name: "Imane Chraibi", matricule: "MAT-4432", initials: "IC", avatarBg: "#2E3B4E", avatarInk: "#FFFFFF" },
+      { name: "Karim Alaoui", matricule: "MAT-4436", initials: "KA", avatarBg: "#2E7D9E", avatarInk: "#FFFFFF" },
+      { name: "Nada Berrada", matricule: "MAT-4440", initials: "NB", avatarBg: "#EFF2F5", avatarInk: "#5B6A7D" }
+    ];
+  }
+
+  renderVals() {
+    const st = this.state;
+    const roster = this.roster();
+    const absentCount = roster.filter((r, i) => st.absent[i]).length;
+    const presentCount = roster.length - absentCount;
+    const tabDefs = [
+      { key: "Préparation", count: "" },
+      { key: "Support", count: "2" },
+      { key: "Déroulement", count: "" }
+    ];
+
+    return {
+      tabs: tabDefs.map(t => {
+        const on = t.key === st.tab;
+        return {
+          label: t.key,
+          pick: () => this.setState({ tab: t.key }),
+          line: on ? "#2E3B4E" : "transparent",
+          ink: on ? "#2E3B4E" : "#5B6A7D",
+          weight: on ? "600" : "400",
+          count: t.count,
+          countShow: t.count ? "inline-flex" : "none",
+          countInk: on ? "#2E3B4E" : "#B8433A",
+          countBg: on ? "#EFF2F5" : "#FCEDEB"
+        };
+      }),
+      isPreparation: st.tab === "Préparation",
+      isSupport: st.tab === "Support",
+      isDeroulement: st.tab === "Déroulement",
+
+      statusLabel: st.done ? "Faite" : "À faire",
+      statusInk: st.done ? "#2C6C46" : "#245F79",
+      statusBg: st.done ? "#EAF3EE" : "#E8F2F7",
+      statusLine: st.done ? "#CFE4D8" : "#CBE0EA",
+      statusDot: st.done ? "#3C8C5C" : "#2E7D9E",
+
+      students: roster.map((r, i) => {
+        const abs = !!st.absent[i];
+        return Object.assign({}, r, {
+          toggle: () => this.setState(s => {
+            const next = Object.assign({}, s.absent);
+            if (next[i]) { delete next[i]; } else { next[i] = true; }
+            return { absent: next };
+          }),
+          bg: abs ? "#FEFAF9" : "#FFFFFF",
+          boxBg: abs ? "#FFFFFF" : "#2E3B4E",
+          boxLine: abs ? "#C9D2DC" : "#2E3B4E",
+          tick: abs ? "none" : "block",
+          nameInk: abs ? "#8C99A8" : "#2E3B4E",
+          badge: abs ? "Absent" : "Présent",
+          badgeInk: abs ? "#B8433A" : "#2C6C46",
+          badgeBg: abs ? "#FCEDEB" : "#EAF3EE",
+          badgeLine: abs ? "#F3CFCB" : "#CFE4D8"
+        });
+      }),
+      totalCount: roster.length,
+      presentCount,
+      absentCount,
+      presentInk: "#2C6C46",
+      absentInk: absentCount > 0 ? "#B8433A" : "#8C99A8",
+      allPresent: () => this.setState({ absent: {} }),
+
+      doneText: st.doneText,
+      onDoneText: e => this.setState({ doneText: e.target.value }),
+      doneChars: st.doneText.length,
+
+      remarks: st.remarks.map((r, i) => ({
+        text: r.text,
+        dot: r.tone === "green" ? "#3C8C5C" : "#E2574C",
+        remove: () => this.setState(s => ({ remarks: s.remarks.filter((x, j) => j !== i) }))
+      })),
+      remarkCount: String(st.remarks.length).padStart(2, "0"),
+      noRemarks: st.remarks.length === 0,
+      draft: st.draft,
+      onDraft: e => this.setState({ draft: e.target.value }),
+      addRemark: () => this.setState(s => s.draft.trim()
+        ? { remarks: s.remarks.concat([{ text: s.draft.trim(), tone: "plain" }]), draft: "" }
+        : {}),
+
+      markDone: () => this.setState({ done: true }),
+      markLabel: st.done ? "Séance marquée faite" : "Marquer la séance faite",
+      readyMessage: st.done
+        ? "Séance clôturée : appel enregistré et contenu réalisé versé au classeur."
+        : "Appel saisi pour " + roster.length + " stagiaires · contenu réalisé renseigné. La séance peut être clôturée.",
+      readyInk: st.done ? "#2C6C46" : "#3F4E62",
+      readyDot: st.done ? "#3C8C5C" : "#2E7D9E",
+
+      prepBlocks: [
+        { no: "1", title: "Introduction", duration: "15 min", summary: "Rappel clé primaire / clé étrangère · question déclencheuse · objectif annoncé au tableau." },
+        { no: "2", title: "Développement", duration: "105 min", summary: "Pipeline en trois étapes, live coding, TP guidé en binôme. Vigilance : produit cartésien, postes de secours." },
+        { no: "3", title: "Conclusion", duration: "15 min", summary: "Récapitulatif au tableau, quiz éclair, travail à faire pour le 23/09." }
+      ],
+
+      setDoc: () => this.setState({ support: "doc" }),
+      setSlides: () => this.setState({ support: "slides" }),
+      isDoc: st.support === "doc",
+      isSlides: st.support === "slides",
+      docBg: st.support === "doc" ? "#FFFFFF" : "transparent",
+      docInk: st.support === "doc" ? "#2E3B4E" : "#6B7A8D",
+      docShadow: st.support === "doc" ? "0 1px 2px rgba(46,59,78,.12)" : "none",
+      slidesBg: st.support === "slides" ? "#FFFFFF" : "transparent",
+      slidesInk: st.support === "slides" ? "#2E3B4E" : "#6B7A8D",
+      slidesShadow: st.support === "slides" ? "0 1px 2px rgba(46,59,78,.12)" : "none",
+      slides: [
+        { no: "01", title: "Intégration continue — TP 3", time: "2 min", bg: "#2E3B4E", ink: "#FFFFFF" },
+        { no: "02", title: "Cycle de vie d'un commit", time: "6 min", bg: "#F6F7F9", ink: "#2E3B4E" },
+        { no: "03", title: "Anatomie d'un pipeline", time: "8 min", bg: "#F6F7F9", ink: "#2E3B4E" },
+        { no: "04", title: "Démonstration live", time: "15 min", bg: "#E8F2F7", ink: "#245F79" },
+        { no: "05", title: "TP guidé — consignes", time: "40 min", bg: "#F6F7F9", ink: "#2E3B4E" },
+        { no: "06", title: "Erreurs fréquentes", time: "10 min", bg: "#FCEDEB", ink: "#B8433A" }
+      ],
+      questions: [
+        { initials: "AK", name: "Amine Kabbaj", when: "il y a 1 h", text: "La partie sur les journaux d'exécution est-elle au programme du CC1 ?", tag: "Sans réponse", tagInk: "#B8433A", tagBg: "#FCEDEB", tagLine: "#F3CFCB", avatarBg: "#2E7D9E", avatarInk: "#FFFFFF" },
+        { initials: "MT", name: "Mehdi Tazi", when: "il y a 3 h", text: "Le fichier de configuration doit-il être poussé sur la branche principale ?", tag: "Sans réponse", tagInk: "#B8433A", tagBg: "#FCEDEB", tagLine: "#F3CFCB", avatarBg: "#EFF2F5", avatarInk: "#5B6A7D" },
+        { initials: "SI", name: "Salma Idrissi", when: "hier", text: "Peut-on utiliser un autre outil que celui vu en cours pour le projet fil rouge ?", tag: "Répondu", tagInk: "#2C6C46", tagBg: "#EAF3EE", tagLine: "#CFE4D8", avatarBg: "#3C8C5C", avatarInk: "#FFFFFF" }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

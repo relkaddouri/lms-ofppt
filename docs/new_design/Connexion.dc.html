@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=Source+Sans+3:ital,wght@0,400;0,500;0,600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  body { margin: 0; background: #F6F7F9; }
+  a { color: #2E7D9E; text-decoration: none; }
+  a:hover { color: #2E3B4E; text-decoration: underline; }
+</style>
+</helmet>
+<div style="min-height:100vh;background:#F6F7F9;font-family:'Source Sans 3',system-ui,sans-serif;color:#2E3B4E;display:flex;align-items:center;justify-content:center;padding:56px 32px;box-sizing:border-box">
+  <div style="width:100%;max-width:396px;display:flex;flex-direction:column;gap:26px">
+
+    <div style="display:flex;flex-direction:column;align-items:center;gap:14px">
+      <div style="display:flex;gap:4px">
+        <div style="width:15px;height:15px;background:#3C8C5C;transform:rotate(45deg)"></div>
+        <div style="width:15px;height:15px;background:#2E7D9E;transform:rotate(45deg)"></div>
+        <div style="width:15px;height:15px;background:#E2574C;transform:rotate(45deg)"></div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:3px">
+        <span style="font-family:Sora,sans-serif;font-weight:700;font-size:23px;letter-spacing:-.01em">Pédago</span>
+        <span style="font-size:14px;color:#8C99A8">Espace formateur · OFPPT</span>
+      </div>
+    </div>
+
+    <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:14px;padding:30px 28px;display:flex;flex-direction:column;gap:20px;box-shadow:0 2px 8px rgba(46,59,78,.06)">
+
+      <sc-if value="{{ isLogin }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div style="display:flex;flex-direction:column;gap:5px">
+            <h1 style="font-family:Sora,sans-serif;font-weight:600;font-size:21px;line-height:1.25;margin:0">Connexion</h1>
+            <span style="font-size:14.5px;color:#8C99A8">Utilisez l'adresse fournie par votre établissement.</span>
+          </div>
+
+          <label style="display:flex;flex-direction:column;gap:7px">
+            <span style="font-size:14px;font-weight:600;color:#3F4E62">Adresse e-mail</span>
+            <input type="email" placeholder="prenom.nom@ofppt.ma" style="border:1px solid #C9D2DC;border-radius:9px;outline:none;background:#FFFFFF;font-family:'Source Sans 3',sans-serif;font-size:15px;color:#2E3B4E;padding:12px 13px" style-focus="border-color:#2E7D9E;box-shadow:0 0 0 3px rgba(46,125,158,.15)" />
+          </label>
+
+          <label style="display:flex;flex-direction:column;gap:7px">
+            <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px">
+              <span style="font-size:14px;font-weight:600;color:#3F4E62">Mot de passe</span>
+              <a href="#" style="font-size:13px;font-weight:600">Oublié ?</a>
+            </div>
+            <div style="display:flex;align-items:center;border:1px solid #C9D2DC;border-radius:9px;background:#FFFFFF;overflow:hidden">
+              <input type="{{ pwType }}" value="ofppt-2026" style="flex:1;min-width:0;border:none;outline:none;background:transparent;font-family:'IBM Plex Mono',monospace;font-size:15px;letter-spacing:.04em;color:#2E3B4E;padding:12px 13px" />
+              <button type="button" onClick="{{ togglePw }}" style="font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:13px;color:#5B6A7D;background:#FAFBFC;border:none;border-left:1px solid #E3E7EC;padding:0 14px;align-self:stretch;cursor:pointer;white-space:nowrap" style-hover="background:#F2F4F7;color:#2E3B4E">{{ pwToggleLabel }}</button>
+            </div>
+          </label>
+
+          <button type="button" style="width:100%;box-sizing:border-box;font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:15px;color:#FFFFFF;background:#2E3B4E;border:1px solid #2E3B4E;border-radius:10px;padding:14px 20px;cursor:pointer" style-hover="background:#25303F">Se connecter</button>
+
+          <div style="display:flex;align-items:center;gap:12px">
+            <span style="flex:1;height:1px;background:#EDF0F3"></span>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:#A9B4C0">ou</span>
+            <span style="flex:1;height:1px;background:#EDF0F3"></span>
+          </div>
+
+          <button type="button" style="width:100%;box-sizing:border-box;font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:14.5px;color:#2E3B4E;background:#FFFFFF;border:1px solid #C9D2DC;border-radius:10px;padding:13px 20px;cursor:pointer" style-hover="background:#F6F7F9;border-color:#2E3B4E">Accès par identifiant établissement</button>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isInvite }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div style="display:flex;flex-direction:column;gap:5px">
+            <h1 style="font-family:Sora,sans-serif;font-weight:600;font-size:21px;line-height:1.25;margin:0">Définir votre mot de passe</h1>
+            <span style="font-size:14.5px;color:#8C99A8">Invitation reçue pour <span style="font-family:'IBM Plex Mono',monospace;color:#3F4E62">s.lahlou@ofppt.ma</span></span>
+          </div>
+
+          <label style="display:flex;flex-direction:column;gap:7px">
+            <span style="font-size:14px;font-weight:600;color:#3F4E62">Nouveau mot de passe</span>
+            <div style="display:flex;align-items:center;border:1px solid #C9D2DC;border-radius:9px;background:#FFFFFF;overflow:hidden">
+              <input type="{{ pwType }}" value="{{ newPw }}" onInput="{{ onNewPw }}" style="flex:1;min-width:0;border:none;outline:none;background:transparent;font-family:'IBM Plex Mono',monospace;font-size:15px;letter-spacing:.04em;color:#2E3B4E;padding:12px 13px" />
+              <button type="button" onClick="{{ togglePw }}" style="font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:13px;color:#5B6A7D;background:#FAFBFC;border:none;border-left:1px solid #E3E7EC;padding:0 14px;align-self:stretch;cursor:pointer;white-space:nowrap" style-hover="background:#F2F4F7;color:#2E3B4E">{{ pwToggleLabel }}</button>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="flex:1;height:5px;border-radius:999px;background:#EFF2F5;overflow:hidden"><span style="display:block;height:100%;border-radius:999px;width:{{ strengthWidth }};background:{{ strengthColor }}"></span></span>
+              <span style="font-size:12.5px;font-weight:600;color:{{ strengthColor }};white-space:nowrap">{{ strengthLabel }}</span>
+            </div>
+          </label>
+
+          <label style="display:flex;flex-direction:column;gap:7px">
+            <span style="font-size:14px;font-weight:600;color:#3F4E62">Confirmer le mot de passe</span>
+            <input type="{{ pwType }}" value="{{ confirmPw }}" onInput="{{ onConfirmPw }}" style="border:1px solid {{ confirmLine }};border-radius:9px;outline:none;background:#FFFFFF;font-family:'IBM Plex Mono',monospace;font-size:15px;letter-spacing:.04em;color:#2E3B4E;padding:12px 13px" />
+            <span style="font-size:13px;color:{{ confirmInk }}">{{ confirmHint }}</span>
+          </label>
+
+          <div style="display:flex;flex-direction:column;gap:7px;background:#FAFBFC;border:1px solid #EDF0F3;border-radius:10px;padding:14px">
+            <sc-for list="{{ rules }}" as="r" hint-placeholder-count="3">
+              <div style="display:flex;align-items:center;gap:9px">
+                <span style="width:15px;height:15px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;background:{{ r.bg }}">
+                  <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" style="display:{{ r.tick }}"><path d="M5 12.5 10 17.5 19 7"></path></svg>
+                </span>
+                <span style="font-size:13.5px;color:{{ r.ink }}">{{ r.label }}</span>
+              </div>
+            </sc-for>
+          </div>
+
+          <button type="button" style="width:100%;box-sizing:border-box;font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:15px;color:#FFFFFF;background:{{ submitBg }};border:1px solid {{ submitBg }};border-radius:10px;padding:14px 20px;cursor:{{ submitCursor }}">Activer mon compte</button>
+        </div>
+      </sc-if>
+    </div>
+
+    <div style="display:flex;align-items:center;justify-content:center;gap:4px;background:#F2F4F7;border:1px solid #E3E7EC;border-radius:10px;padding:4px">
+      <button type="button" onClick="{{ showLogin }}" style="flex:1;font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:13.5px;border:none;border-radius:7px;padding:9px 12px;cursor:pointer;white-space:nowrap;color:{{ loginInk }};background:{{ loginBg }};box-shadow:{{ loginShadow }}">Connexion</button>
+      <button type="button" onClick="{{ showInvite }}" style="flex:1;font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:13.5px;border:none;border-radius:7px;padding:9px 12px;cursor:pointer;white-space:nowrap;color:{{ inviteInk }};background:{{ inviteBg }};box-shadow:{{ inviteShadow }}">Après invitation</button>
+    </div>
+
+    <span style="text-align:center;font-size:13px;color:#A9B4C0">Office de la Formation Professionnelle et de la Promotion du Travail</span>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:560}}">
+class Component extends DCLogic {
+  state = { view: "login", reveal: false, newPw: "Ofppt-2026!", confirmPw: "Ofppt-2026" };
+
+  renderVals() {
+    const st = this.state;
+    const pw = st.newPw;
+    const long = pw.length >= 10;
+    const mixed = /[A-Z]/.test(pw) && /[a-z]/.test(pw);
+    const special = /[^A-Za-z0-9]/.test(pw);
+    const score = (long ? 1 : 0) + (mixed ? 1 : 0) + (special ? 1 : 0);
+    const strength = [
+      { label: "Trop court", color: "#E2574C", width: "18%" },
+      { label: "Faible", color: "#E2574C", width: "40%" },
+      { label: "Correct", color: "#2E7D9E", width: "70%" },
+      { label: "Robuste", color: "#3C8C5C", width: "100%" }
+    ][score];
+    const match = st.confirmPw.length > 0 && st.confirmPw === pw;
+    const ready = score === 3 && match;
+    const sel = "#FFFFFF", selShadow = "0 1px 2px rgba(46,59,78,.12)";
+
+    return {
+      isLogin: st.view === "login",
+      isInvite: st.view === "invite",
+      showLogin: () => this.setState({ view: "login" }),
+      showInvite: () => this.setState({ view: "invite" }),
+      loginBg: st.view === "login" ? sel : "transparent",
+      loginShadow: st.view === "login" ? selShadow : "none",
+      loginInk: st.view === "login" ? "#2E3B4E" : "#6B7A8D",
+      inviteBg: st.view === "invite" ? sel : "transparent",
+      inviteShadow: st.view === "invite" ? selShadow : "none",
+      inviteInk: st.view === "invite" ? "#2E3B4E" : "#6B7A8D",
+
+      pwType: st.reveal ? "text" : "password",
+      pwToggleLabel: st.reveal ? "Masquer" : "Afficher",
+      togglePw: () => this.setState(s => ({ reveal: !s.reveal })),
+
+      newPw: st.newPw,
+      confirmPw: st.confirmPw,
+      onNewPw: e => this.setState({ newPw: e.target.value }),
+      onConfirmPw: e => this.setState({ confirmPw: e.target.value }),
+
+      strengthLabel: strength.label,
+      strengthColor: strength.color,
+      strengthWidth: strength.width,
+
+      confirmLine: st.confirmPw.length === 0 ? "#C9D2DC" : (match ? "#3C8C5C" : "#E2574C"),
+      confirmInk: st.confirmPw.length === 0 ? "#8C99A8" : (match ? "#2C6C46" : "#B8433A"),
+      confirmHint: st.confirmPw.length === 0 ? "Saisissez à nouveau le mot de passe." : (match ? "Les deux saisies correspondent." : "Les deux saisies ne correspondent pas."),
+
+      rules: [
+        { label: "10 caractères minimum", ok: long },
+        { label: "Majuscules et minuscules", ok: mixed },
+        { label: "Au moins un caractère spécial", ok: special }
+      ].map(r => ({
+        label: r.label,
+        tick: r.ok ? "block" : "none",
+        bg: r.ok ? "#3C8C5C" : "#D6DCE4",
+        ink: r.ok ? "#2C6C46" : "#8C99A8"
+      })),
+
+      submitBg: ready ? "#2E3B4E" : "#A9B4C0",
+      submitCursor: ready ? "pointer" : "not-allowed"
+    };
+  }
+}
+</script>
+</body>
+</html>

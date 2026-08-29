@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=Source+Sans+3:ital,wght@0,400;0,500;0,600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  body { margin: 0; background: #F6F7F9; }
+  a { color: #2E7D9E; text-decoration: none; }
+  a:hover { color: #2E3B4E; text-decoration: underline; }
+</style>
+</helmet>
+<div style="min-height:100vh;background:#F6F7F9;font-family:'Source Sans 3',system-ui,sans-serif;color:#2E3B4E;padding:40px 40px 60px;box-sizing:border-box">
+  <div style="max-width:1240px;margin:0 auto;display:flex;flex-direction:column;gap:22px">
+
+    <div style="display:flex;align-items:center;gap:8px;font-size:13.5px;color:#8C99A8">
+      <a href="#" style="color:#5B6A7D">Contrôles</a><span>/</span>
+      <a href="#" style="color:#5B6A7D"><span style="font-family:'IBM Plex Mono',monospace">M106 · CC2</span></a><span>/</span>
+      <span style="color:#3F4E62">Correction</span>
+    </div>
+
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:24px;flex-wrap:wrap">
+      <div style="display:flex;align-items:flex-start;gap:16px;min-width:0">
+        <span style="width:46px;height:46px;border-radius:50%;flex:none;background:#2E3B4E;color:#FFFFFF;font-family:Sora,sans-serif;font-weight:600;font-size:14px;display:flex;align-items:center;justify-content:center">YB</span>
+        <div style="display:flex;flex-direction:column;gap:6px;min-width:0">
+          <h1 style="font-family:Sora,sans-serif;font-weight:700;font-size:27px;line-height:1.2;letter-spacing:-.02em;margin:0">Youssef Benali</h1>
+          <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;font-size:14.5px;color:#6B7A8D">
+            <span style="font-family:'IBM Plex Mono',monospace;color:#3F4E62">TSDI-102 · MAT-4417</span>
+            <span>Copie 4 sur 27</span>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+        <div style="display:flex;flex-direction:column;gap:3px;align-items:flex-end">
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#8C99A8">Note provisoire</span>
+          <span style="font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:24px;color:{{ scoreInk }}">{{ scoreLabel }} <span style="font-size:15px;color:#A9B4C0">/ 20</span></span>
+        </div>
+        <button type="button" style="font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:14.5px;color:#FFFFFF;background:#2E3B4E;border:1px solid #2E3B4E;border-radius:9px;padding:11px 18px;cursor:pointer;white-space:nowrap" style-hover="background:#25303F">Copie suivante</button>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:320px minmax(0,1fr);gap:20px;align-items:start">
+
+      <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:14px;box-shadow:0 1px 2px rgba(46,59,78,.05);overflow:hidden;min-width:0">
+        <div style="padding:16px 18px;border-bottom:1px solid #EDF0F3;background:#FAFBFC;display:flex;align-items:center;gap:10px">
+          <span style="font-family:Sora,sans-serif;font-weight:600;font-size:15.5px">Questions</span>
+          <span style="font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:12.5px;color:#5B6A7D;background:#F2F4F7;border-radius:999px;padding:2px 9px">{{ doneCount }} / {{ totalCount }}</span>
+        </div>
+        <sc-for list="{{ items }}" as="q" hint-placeholder-count="6">
+          <button type="button" onClick="{{ q.select }}" style="width:100%;text-align:left;display:flex;align-items:flex-start;gap:12px;padding:14px 18px;border:none;border-bottom:1px solid #EDF0F3;border-left:3px solid {{ q.railColor }};background:{{ q.bg }};cursor:pointer;font-family:'Source Sans 3',sans-serif">
+            <span style="font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:12px;color:#8C99A8;flex:none;margin-top:2px">{{ q.no }}</span>
+            <span style="display:flex;flex-direction:column;gap:6px;min-width:0">
+              <span style="font-size:14px;line-height:1.4;color:{{ q.titleInk }};display:block;overflow:hidden">{{ q.short }}</span>
+              <span style="display:inline-flex;align-items:center;gap:6px;align-self:flex-start;font-size:12px;font-weight:600;border-radius:999px;padding:3px 9px;white-space:nowrap;color:{{ q.badgeInk }};background:{{ q.badgeBg }};border:1px solid {{ q.badgeLine }}">
+                <span style="width:5px;height:5px;border-radius:50%;flex:none;background:{{ q.dot }}"></span>{{ q.status }}
+              </span>
+            </span>
+            <span style="margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:13px;color:{{ q.ptsInk }};white-space:nowrap;margin-top:2px">{{ q.ptsLabel }}</span>
+          </button>
+        </sc-for>
+        <div style="padding:14px 18px;background:#FAFBFC;display:flex;align-items:center;justify-content:space-between;gap:12px">
+          <span style="font-size:13.5px;color:#6B7A8D">Progression</span>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:13.5px;color:#3F4E62">{{ progressLabel }}</span>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:18px;min-width:0">
+
+        <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:14px;box-shadow:0 1px 2px rgba(46,59,78,.05);overflow:hidden">
+          <div style="padding:20px 24px;border-bottom:1px solid #EDF0F3;display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:#8C99A8">Question {{ activeNo }}</span>
+              <span style="font-size:12.5px;font-weight:600;color:#245F79;background:#E8F2F7;border:1px solid #CBE0EA;border-radius:999px;padding:3px 10px">{{ activeType }}</span>
+              <span style="margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:13px;color:#8C99A8">Barème {{ activeMax }} pts</span>
+            </div>
+            <p style="margin:0;font-size:16.5px;line-height:1.55;color:#2E3B4E;text-wrap:pretty">{{ activeText }}</p>
+          </div>
+
+          <div style="padding:20px 24px;display:flex;flex-direction:column;gap:10px">
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:#8C99A8">Réponse du stagiaire</span>
+            <div style="background:#FAFBFC;border:1px solid #E3E7EC;border-radius:11px;padding:16px 18px">
+              <p style="margin:0;font-size:15.5px;line-height:1.6;color:#3F4E62;text-wrap:pretty">{{ activeAnswer }}</p>
+            </div>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#A9B4C0">Rendu le 19/09 · 10:12 · saisie numérique</span>
+          </div>
+
+          <div style="padding:0 24px 22px;display:flex;flex-direction:column;gap:16px">
+            <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end">
+              <label style="display:flex;flex-direction:column;gap:7px">
+                <span style="font-size:14px;font-weight:600;color:#3F4E62">Points obtenus</span>
+                <span style="display:flex;align-items:center;border:1px solid #C9D2DC;border-radius:9px;overflow:hidden;background:#FFFFFF">
+                  <input type="text" value="{{ activePoints }}" onInput="{{ onPoints }}" style="width:62px;border:none;outline:none;background:transparent;font-family:'IBM Plex Mono',monospace;font-size:16px;text-align:right;color:#2E3B4E;padding:10px 10px" />
+                  <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#8C99A8;padding:0 12px;border-left:1px solid #E3E7EC;align-self:stretch;display:flex;align-items:center">/ {{ activeMax }}</span>
+                </span>
+              </label>
+              <div style="display:flex;gap:6px;flex-wrap:wrap">
+                <sc-for list="{{ quickMarks }}" as="m" hint-placeholder-count="3">
+                  <button type="button" onClick="{{ m.apply }}" style="font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:13px;color:#3F4E62;background:#FFFFFF;border:1px solid #C9D2DC;border-radius:8px;padding:8px 12px;cursor:pointer;white-space:nowrap" style-hover="background:#F6F7F9;border-color:#2E3B4E">{{ m.label }}</button>
+                </sc-for>
+              </div>
+            </div>
+
+            <label style="display:flex;flex-direction:column;gap:7px">
+              <span style="font-size:14px;font-weight:600;color:#3F4E62">Commentaire au stagiaire</span>
+              <div style="border:1px solid #C9D2DC;border-radius:10px;background:#FFFFFF;overflow:hidden">
+                <textarea rows="3" value="{{ activeComment }}" onInput="{{ onComment }}" placeholder="Remarque courte, visible par le stagiaire…" style="width:100%;box-sizing:border-box;border:none;outline:none;resize:vertical;background:transparent;font-family:'Source Sans 3',sans-serif;font-size:15px;line-height:1.55;color:#3F4E62;padding:12px 14px"></textarea>
+              </div>
+            </label>
+
+            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+              <button type="button" onClick="{{ suggest }}" style="display:flex;align-items:center;gap:9px;font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:14px;color:#2E3B4E;background:#FFFFFF;border:1px solid #C9D2DC;border-radius:9px;padding:10px 16px;cursor:pointer;white-space:nowrap" style-hover="background:#F6F7F9;border-color:#2E3B4E">
+                <svg width="15" height="15" style="flex:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3 5.5 13.5H11l-1 7.5L18.5 10H13z"></path></svg>Proposer une correction avec l'IA
+              </button>
+              <span style="margin-left:auto;display:flex;gap:10px">
+                <button type="button" onClick="{{ markTodo }}" style="font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:14px;color:#2E3B4E;background:#FFFFFF;border:1px solid #C9D2DC;border-radius:9px;padding:10px 16px;cursor:pointer;white-space:nowrap" style-hover="background:#F6F7F9;border-color:#2E3B4E">Laisser à corriger</button>
+                <button type="button" onClick="{{ markDone }}" style="font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:14px;color:#FFFFFF;background:#2E3B4E;border:1px solid #2E3B4E;border-radius:9px;padding:10px 18px;cursor:pointer;white-space:nowrap" style-hover="background:#25303F">Valider et continuer</button>
+              </span>
+            </div>
+            <sc-if value="{{ showSuggestion }}" hint-placeholder-val="{{ true }}">
+              <div style="background:#FEFAF9;border:1px solid #F0BDB8;border-radius:14px;overflow:hidden">
+                <div style="padding:14px 20px;border-bottom:1px solid #F5D6D2;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+                  <svg width="16" height="16" style="flex:none" viewBox="0 0 24 24" fill="none" stroke="#E2574C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3 5.5 13.5H11l-1 7.5L18.5 10H13z"></path></svg>
+                  <span style="font-family:Sora,sans-serif;font-weight:600;font-size:15px;color:#B8433A">Suggestion de l'IA — à valider</span>
+                  <span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#C98A84">Claude · non appliquée</span>
+                  <button type="button" aria-label="Ignorer" onClick="{{ dismiss }}" style="margin-left:auto;width:28px;height:28px;border-radius:8px;border:1px solid #F0BDB8;background:#FFFFFF;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0" style-hover="background:#FCEDEB">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#B8433A" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12"></path><path d="M18 6L6 18"></path></svg>
+                  </button>
+                </div>
+                <div style="padding:18px 20px;display:flex;flex-direction:column;gap:16px">
+                  <div style="display:flex;gap:20px;flex-wrap:wrap">
+                    <div style="display:flex;flex-direction:column;gap:4px">
+                      <span style="font-size:13px;color:#8C99A8">Points suggérés</span>
+                      <span style="font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:19px;color:#B8433A">{{ suggestedPoints }} / {{ activeMax }}</span>
+                    </div>
+                    <div style="display:flex;flex-direction:column;gap:4px;min-width:0">
+                      <span style="font-size:13px;color:#8C99A8">Justification</span>
+                      <span style="font-size:14.5px;line-height:1.5;color:#3F4E62;text-wrap:pretty">{{ suggestedReason }}</span>
+                    </div>
+                  </div>
+                  <div style="background:#FFFFFF;border:1px solid #F0BDB8;border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:6px">
+                    <span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:#C98A84">Commentaire proposé</span>
+                    <p style="margin:0;font-size:15px;line-height:1.6;color:#3F4E62;text-wrap:pretty">{{ suggestedComment }}</p>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+                    <span style="font-size:13.5px;color:#B8433A">Rien n'est appliqué avant votre validation.</span>
+                    <span style="margin-left:auto;display:flex;gap:10px">
+                      <button type="button" onClick="{{ dismiss }}" style="font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:14px;color:#B8433A;background:#FFFFFF;border:1px solid #F0BDB8;border-radius:9px;padding:9px 16px;cursor:pointer;white-space:nowrap" style-hover="background:#FCEDEB">Ignorer</button>
+                      <button type="button" onClick="{{ applySuggestion }}" style="font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:14px;color:#FFFFFF;background:#E2574C;border:1px solid #E2574C;border-radius:9px;padding:9px 16px;cursor:pointer;white-space:nowrap" style-hover="background:#CE4B41">Appliquer la suggestion</button>
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1360}}">
+class Component extends DCLogic {
+  state = {
+    active: 2,
+    suggestion: true,
+    questions: [
+      { text: "Définir la notion de clé étrangère et indiquer son rôle dans l'intégrité référentielle.", short: "Clé étrangère et intégrité référentielle", type: "Ouverte", max: 3, points: "3", comment: "Définition exacte, exemple pertinent.", done: true,
+        answer: "Une clé étrangère est une colonne d'une table qui référence la clé primaire d'une autre table. Elle empêche d'insérer une valeur qui n'existe pas dans la table référencée, ce qui garantit la cohérence des données.",
+        sPoints: "3", sReason: "Les deux éléments attendus sont présents.", sComment: "Réponse complète : définition et rôle correctement articulés." },
+      { text: "Parmi les propositions suivantes, laquelle décrit correctement une jointure interne ?", short: "QCM — jointure interne", type: "QCM", max: 2, points: "2", comment: "", done: true,
+        answer: "Réponse B — la jointure interne ne conserve que les lignes ayant une correspondance dans les deux tables.",
+        sPoints: "2", sReason: "Réponse conforme au corrigé.", sComment: "Bonne réponse." },
+      { text: "Normaliser jusqu'à la 3ᵉ forme normale la table « inscriptions » fournie en annexe.", short: "Normalisation jusqu'en 3FN", type: "Exercice", max: 5, points: "", comment: "", done: false,
+        answer: "1FN : suppression du champ « modules » qui contenait plusieurs valeurs, création de la table inscription_module. 2FN : la table est en 2FN car la clé est simple. 3FN : le nom du formateur dépendait du code module, je l'ai déplacé dans la table module.",
+        sPoints: "4", sReason: "Les trois étapes sont traitées, mais la justification de la 2FN est erronée : la clé de inscription_module est composée.", sComment: "Démarche correcte et bien décomposée. Attention : la clé de la table d'association est composée, la justification de la 2FN doit être reprise. Retirer 1 point." },
+      { text: "Écrire la requête SQL listant les stagiaires inscrits à plus de deux modules.", short: "Requête SQL — plus de deux modules", type: "Exercice", max: 5, points: "", comment: "", done: false,
+        answer: "SELECT s.nom FROM stagiaire s JOIN inscription i ON i.id_stagiaire = s.id GROUP BY s.nom HAVING COUNT(*) > 2;",
+        sPoints: "4,5", sReason: "Requête fonctionnelle ; regroupement sur le nom au lieu de l'identifiant.", sComment: "Requête juste. Préférer un GROUP BY sur s.id pour éviter les homonymes." },
+      { text: "Expliquer la différence entre les clauses WHERE et ON dans une jointure.", short: "WHERE vs ON", type: "Ouverte", max: 3, points: "", comment: "", done: false,
+        answer: "ON sert à écrire la condition de jointure entre les deux tables, WHERE filtre les lignes après la jointure. Avec une jointure externe, mettre la condition dans WHERE annule l'effet du LEFT JOIN.",
+        sPoints: "3", sReason: "Distinction correcte, remarque sur la jointure externe valorisée.", sComment: "Très bonne réponse, la précision sur le LEFT JOIN est appréciée." },
+      { text: "Quelle contrainte garantit l'unicité d'une valeur dans une colonne ?", short: "QCM — contrainte d'unicité", type: "QCM", max: 2, points: "", comment: "", done: false,
+        answer: "Réponse C — NOT NULL.",
+        sPoints: "0", sReason: "La réponse attendue est UNIQUE ; NOT NULL interdit seulement l'absence de valeur.", sComment: "Confusion entre NOT NULL et UNIQUE — à revoir." }
+    ]
+  };
+
+  num(v) { const n = parseFloat(String(v).replace(",", ".").replace(/[^0-9.]/g, "")); return isNaN(n) ? 0 : n; }
+  setQ(patch) {
+    const i = this.state.active;
+    this.setState(s => ({ questions: s.questions.map((q, j) => j === i ? Object.assign({}, q, patch) : q) }));
+  }
+
+  renderVals() {
+    const st = this.state;
+    const qs = st.questions;
+    const a = qs[st.active];
+    const done = qs.filter(q => q.done).length;
+    const score = qs.reduce((t, q) => t + this.num(q.points), 0);
+    const max = a.max;
+
+    return {
+      items: qs.map((q, i) => {
+        const on = i === st.active;
+        return {
+          no: String(i + 1).padStart(2, "0"),
+          short: q.short,
+          select: () => this.setState({ active: i, suggestion: false }),
+          bg: on ? "#FAFBFC" : "#FFFFFF",
+          railColor: on ? "#2E3B4E" : "transparent",
+          titleInk: on ? "#2E3B4E" : "#3F4E62",
+          status: q.done ? "Corrigée" : "À corriger",
+          badgeInk: q.done ? "#2C6C46" : "#B8433A",
+          badgeBg: q.done ? "#EAF3EE" : "#FCEDEB",
+          badgeLine: q.done ? "#CFE4D8" : "#F3CFCB",
+          dot: q.done ? "#3C8C5C" : "#E2574C",
+          ptsLabel: q.done ? (String(q.points) + "/" + q.max) : ("—/" + q.max),
+          ptsInk: q.done ? "#3F4E62" : "#A9B4C0"
+        };
+      }),
+      doneCount: done,
+      totalCount: qs.length,
+      progressLabel: Math.round((done / qs.length) * 100) + " %",
+      scoreLabel: String(score).replace(".", ","),
+      scoreInk: done < qs.length ? "#2E3B4E" : (score >= 10 ? "#2C6C46" : "#B8433A"),
+
+      activeNo: String(st.active + 1).padStart(2, "0"),
+      activeText: a.text,
+      activeType: a.type,
+      activeMax: max,
+      activeAnswer: a.answer,
+      activePoints: a.points,
+      activeComment: a.comment,
+      onPoints: e => this.setQ({ points: e.target.value }),
+      onComment: e => this.setQ({ comment: e.target.value }),
+      quickMarks: [
+        { label: "0", apply: () => this.setQ({ points: "0" }) },
+        { label: String(max / 2).replace(".", ","), apply: () => this.setQ({ points: String(max / 2).replace(".", ",") }) },
+        { label: String(max), apply: () => this.setQ({ points: String(max) }) }
+      ],
+      markDone: () => this.setState(s => ({
+        questions: s.questions.map((q, j) => j === s.active ? Object.assign({}, q, { done: true }) : q),
+        active: Math.min(s.questions.length - 1, s.active + 1),
+        suggestion: false
+      })),
+      markTodo: () => this.setQ({ done: false }),
+
+      suggest: () => this.setState({ suggestion: true }),
+      dismiss: () => this.setState({ suggestion: false }),
+      showSuggestion: st.suggestion,
+      suggestedPoints: a.sPoints,
+      suggestedReason: a.sReason,
+      suggestedComment: a.sComment,
+      applySuggestion: () => { this.setQ({ points: a.sPoints, comment: a.sComment }); this.setState({ suggestion: false }); }
+    };
+  }
+}
+</script>
+</body>
+</html>

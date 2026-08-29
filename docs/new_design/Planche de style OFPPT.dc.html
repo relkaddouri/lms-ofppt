@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=Source+Sans+3:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  body { margin: 0; background: #F6F7F9; }
+  a { color: #2E7D9E; text-decoration: none; }
+  a:hover { color: #2E3B4E; text-decoration: underline; }
+</style>
+</helmet>
+<div style="min-height:100%;background:#F6F7F9;font-family:'Source Sans 3',system-ui,sans-serif;color:#2E3B4E;padding:56px 64px 80px;box-sizing:border-box">
+  <div style="max-width:1280px;margin:0 auto;display:flex;flex-direction:column;gap:32px">
+
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:32px;border-bottom:1px solid #E3E7EC;padding-bottom:28px">
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="display:flex;gap:3px">
+            <div style="width:11px;height:11px;background:#3C8C5C;transform:rotate(45deg)"></div>
+            <div style="width:11px;height:11px;background:#2E7D9E;transform:rotate(45deg)"></div>
+            <div style="width:11px;height:11px;background:#E2574C;transform:rotate(45deg)"></div>
+          </div>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#6B7A8D">Planche de style · v1.0</span>
+        </div>
+        <h1 style="font-family:Sora,sans-serif;font-weight:700;font-size:40px;line-height:1.1;letter-spacing:-.02em;margin:0;color:#2E3B4E">Système visuel — Gestion pédagogique</h1>
+        <p style="margin:0;font-size:17px;line-height:1.5;color:#5B6A7D;max-width:62ch;text-wrap:pretty">Référentiel de couleurs, de typographie et de composants pour l'application du formateur OFPPT. Palette institutionnelle dérivée des losanges du logo officiel.</p>
+      </div>
+      <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:12px;padding:16px 20px;display:flex;flex-direction:column;gap:4px;box-shadow:0 1px 2px rgba(46,59,78,.05)">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#8C99A8">Réf. document</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:20px;font-weight:600;color:#2E3B4E">DS-OFPPT-01</span>
+      </div>
+    </div>
+
+    <section style="display:flex;flex-direction:column;gap:16px">
+      <div style="display:flex;align-items:baseline;gap:12px">
+        <h2 style="font-family:Sora,sans-serif;font-weight:600;font-size:15px;letter-spacing:.1em;text-transform:uppercase;margin:0;color:#2E3B4E">Palette</h2>
+        <span style="height:1px;flex:1;background:#E3E7EC"></span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px">
+        <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:14px;overflow:hidden;box-shadow:0 1px 2px rgba(46,59,78,.05)">
+          <div style="height:112px;background:#2E3B4E"></div>
+          <div style="padding:16px 18px;display:flex;flex-direction:column;gap:6px">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px">
+              <span style="font-family:Sora,sans-serif;font-weight:600;font-size:15px">Bleu-ardoise</span>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#5B6A7D">#2E3B4E</span>
+            </div>
+            <span style="font-size:14px;line-height:1.45;color:#6B7A8D">Autorité — navigation, titres, boutons primaires</span>
+          </div>
+        </div>
+        <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:14px;overflow:hidden;box-shadow:0 1px 2px rgba(46,59,78,.05)">
+          <div style="height:112px;background:#E2574C"></div>
+          <div style="padding:16px 18px;display:flex;flex-direction:column;gap:6px">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px">
+              <span style="font-family:Sora,sans-serif;font-weight:600;font-size:15px">Corail</span>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#5B6A7D">#E2574C</span>
+            </div>
+            <span style="font-size:14px;line-height:1.45;color:#6B7A8D">Accent de marque — emphase rare, alertes, retards</span>
+          </div>
+        </div>
+        <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:14px;overflow:hidden;box-shadow:0 1px 2px rgba(46,59,78,.05)">
+          <div style="height:112px;display:flex">
+            <div style="flex:1;background:#3C8C5C"></div>
+            <div style="flex:1;background:#2E7D9E"></div>
+          </div>
+          <div style="padding:16px 18px;display:flex;flex-direction:column;gap:6px">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px">
+              <span style="font-family:Sora,sans-serif;font-weight:600;font-size:15px">Vert / Sarcelle</span>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#5B6A7D">#3C8C5C · #2E7D9E</span>
+            </div>
+            <span style="font-size:14px;line-height:1.45;color:#6B7A8D">Statuts positifs et informatifs</span>
+          </div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:12px">
+        <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px">
+          <div style="height:48px;border-radius:8px;background:#F6F7F9;border:1px solid #E3E7EC"></div>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#5B6A7D">#F6F7F9</span>
+          <span style="font-size:12.5px;color:#8C99A8">Fond de page</span>
+        </div>
+        <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px">
+          <div style="height:48px;border-radius:8px;background:#FFFFFF;border:1px solid #E3E7EC"></div>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#5B6A7D">#FFFFFF</span>
+          <span style="font-size:12.5px;color:#8C99A8">Surface carte</span>
+        </div>
+        <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px">
+          <div style="height:48px;border-radius:8px;background:#E3E7EC"></div>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#5B6A7D">#E3E7EC</span>
+          <span style="font-size:12.5px;color:#8C99A8">Bordure</span>
+        </div>
+        <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px">
+          <div style="height:48px;border-radius:8px;background:#6B7A8D"></div>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#5B6A7D">#6B7A8D</span>
+          <span style="font-size:12.5px;color:#8C99A8">Texte secondaire</span>
+        </div>
+        <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px">
+          <div style="height:48px;border-radius:8px;background:#EAF3EE"></div>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#5B6A7D">#EAF3EE</span>
+          <span style="font-size:12.5px;color:#8C99A8">Fond succès</span>
+        </div>
+        <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px">
+          <div style="height:48px;border-radius:8px;background:#FCEDEB"></div>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#5B6A7D">#FCEDEB</span>
+          <span style="font-size:12.5px;color:#8C99A8">Fond alerte</span>
+        </div>
+      </div>
+    </section>
+
+    <section style="display:flex;flex-direction:column;gap:16px">
+      <div style="display:flex;align-items:baseline;gap:12px">
+        <h2 style="font-family:Sora,sans-serif;font-weight:600;font-size:15px;letter-spacing:.1em;text-transform:uppercase;margin:0;color:#2E3B4E">Typographie</h2>
+        <span style="height:1px;flex:1;background:#E3E7EC"></span>
+      </div>
+      <div style="display:grid;grid-template-columns:1.35fr 1fr;gap:20px">
+        <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:14px;padding:28px 32px;display:flex;flex-direction:column;gap:24px;box-shadow:0 1px 2px rgba(46,59,78,.05)">
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;gap:16px;border-bottom:1px solid #EDF0F3;padding-bottom:8px">
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#8C99A8">Titres · Sora</span>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#8C99A8">700 / 600</span>
+            </div>
+            <span style="font-family:Sora,sans-serif;font-weight:700;font-size:38px;line-height:1.15;letter-spacing:-.02em">Suivi des stagiaires</span>
+            <span style="font-family:Sora,sans-serif;font-weight:600;font-size:22px;line-height:1.25;color:#2E3B4E">Module M104 — Développement web</span>
+            <span style="font-family:Sora,sans-serif;font-weight:600;font-size:15px;letter-spacing:.1em;text-transform:uppercase;color:#6B7A8D">Séance du jour</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;gap:16px;border-bottom:1px solid #EDF0F3;padding-bottom:8px">
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#8C99A8">Corps · Source Sans 3</span>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#8C99A8">400 / 600</span>
+            </div>
+            <p style="margin:0;font-size:17px;line-height:1.6;color:#3F4E62;max-width:60ch;text-wrap:pretty">La fiche de séance regroupe les objectifs pédagogiques, les activités du formateur et du stagiaire, ainsi que les modalités d'évaluation. Chaque élément reste modifiable jusqu'à la validation par le chef de pôle.</p>
+            <p style="margin:0;font-size:14px;line-height:1.55;color:#6B7A8D">Texte secondaire — annotations, aides à la saisie et libellés de champs.</p>
+          </div>
+        </div>
+        <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:14px;padding:28px 32px;display:flex;flex-direction:column;gap:20px;box-shadow:0 1px 2px rgba(46,59,78,.05)">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;gap:16px;border-bottom:1px solid #EDF0F3;padding-bottom:8px">
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#8C99A8">Données · IBM Plex Mono</span>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#8C99A8">500</span>
+          </div>
+          <p style="margin:0;font-size:14px;line-height:1.55;color:#6B7A8D">Réservée aux valeurs précises : codes de module, taux, dates courtes, effectifs.</p>
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:16px;padding-bottom:12px;border-bottom:1px solid #EDF0F3">
+              <span style="font-size:14.5px;color:#3F4E62">Code module</span>
+              <span style="font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:17px;color:#2E3B4E">M104-TSDI</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:16px;padding-bottom:12px;border-bottom:1px solid #EDF0F3">
+              <span style="font-size:14.5px;color:#3F4E62">Taux de réussite</span>
+              <span style="font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:17px;color:#3C8C5C">82,4 %</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:16px;padding-bottom:12px;border-bottom:1px solid #EDF0F3">
+              <span style="font-size:14.5px;color:#3F4E62">Absences non justifiées</span>
+              <span style="font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:17px;color:#E2574C">07</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:16px">
+              <span style="font-size:14.5px;color:#3F4E62">Prochaine séance</span>
+              <span style="font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:17px;color:#2E3B4E">14/09 · 08:30</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section style="display:flex;flex-direction:column;gap:16px">
+      <div style="display:flex;align-items:baseline;gap:12px">
+        <h2 style="font-family:Sora,sans-serif;font-weight:600;font-size:15px;letter-spacing:.1em;text-transform:uppercase;margin:0;color:#2E3B4E">Composants de base</h2>
+        <span style="height:1px;flex:1;background:#E3E7EC"></span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;align-items:start">
+
+        <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:14px;padding:24px;display:flex;flex-direction:column;gap:18px;box-shadow:0 1px 2px rgba(46,59,78,.05)">
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#8C99A8">Boutons</span>
+          <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center">
+            <button type="button" style="font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:15px;color:#FFFFFF;background:#2E3B4E;border:1px solid #2E3B4E;border-radius:9px;padding:11px 20px;cursor:pointer;transition:background .15s ease" style-hover="background:#25303F;border-color:#25303F">Valider la séance</button>
+            <button type="button" style="font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:15px;color:#2E3B4E;background:#FFFFFF;border:1px solid #C9D2DC;border-radius:9px;padding:11px 20px;cursor:pointer;transition:background .15s ease" style-hover="background:#F6F7F9;border-color:#2E3B4E">Enregistrer</button>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center">
+            <button type="button" style="font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:15px;color:#E2574C;background:#FFFFFF;border:1px solid #F0BDB8;border-radius:9px;padding:11px 20px;cursor:pointer;transition:background .15s ease" style-hover="background:#FCEDEB">Signaler un retard</button>
+            <button type="button" disabled="disabled" style="font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:15px;color:#A9B4C0;background:#F2F4F7;border:1px solid #E3E7EC;border-radius:9px;padding:11px 20px;cursor:not-allowed">Archivé</button>
+          </div>
+        </div>
+
+        <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:14px;padding:24px;display:flex;flex-direction:column;gap:18px;box-shadow:0 1px 2px rgba(46,59,78,.05)">
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#8C99A8">Badges de statut</span>
+          <div style="display:flex;flex-wrap:wrap;gap:10px">
+            <span style="display:inline-flex;align-items:center;gap:7px;font-size:13.5px;font-weight:600;color:#2C6C46;background:#EAF3EE;border:1px solid #CFE4D8;border-radius:999px;padding:5px 12px"><span style="width:6px;height:6px;border-radius:50%;background:#3C8C5C"></span>Validé</span>
+            <span style="display:inline-flex;align-items:center;gap:7px;font-size:13.5px;font-weight:600;color:#245F79;background:#E8F2F7;border:1px solid #CBE0EA;border-radius:999px;padding:5px 12px"><span style="width:6px;height:6px;border-radius:50%;background:#2E7D9E"></span>En cours</span>
+            <span style="display:inline-flex;align-items:center;gap:7px;font-size:13.5px;font-weight:600;color:#B8433A;background:#FCEDEB;border:1px solid #F3CFCB;border-radius:999px;padding:5px 12px"><span style="width:6px;height:6px;border-radius:50%;background:#E2574C"></span>Retard</span>
+            <span style="display:inline-flex;align-items:center;gap:7px;font-size:13.5px;font-weight:600;color:#5B6A7D;background:#F2F4F7;border:1px solid #E3E7EC;border-radius:999px;padding:5px 12px"><span style="width:6px;height:6px;border-radius:50%;background:#8C99A8"></span>Brouillon</span>
+          </div>
+          <div style="height:1px;background:#EDF0F3"></div>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#8C99A8">Avatars à initiales</span>
+          <div style="display:flex;align-items:center;gap:12px">
+            <span style="width:44px;height:44px;border-radius:50%;background:#2E3B4E;color:#FFFFFF;font-family:Sora,sans-serif;font-weight:600;font-size:15px;display:flex;align-items:center;justify-content:center">YB</span>
+            <span style="width:44px;height:44px;border-radius:50%;background:#3C8C5C;color:#FFFFFF;font-family:Sora,sans-serif;font-weight:600;font-size:15px;display:flex;align-items:center;justify-content:center">SL</span>
+            <span style="width:44px;height:44px;border-radius:50%;background:#2E7D9E;color:#FFFFFF;font-family:Sora,sans-serif;font-weight:600;font-size:15px;display:flex;align-items:center;justify-content:center">AK</span>
+            <span style="width:44px;height:44px;border-radius:50%;background:#FFFFFF;border:1px solid #C9D2DC;color:#5B6A7D;font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:14px;display:flex;align-items:center;justify-content:center">+12</span>
+          </div>
+        </div>
+
+        <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:14px;padding:24px;display:flex;flex-direction:column;gap:18px;box-shadow:0 1px 2px rgba(46,59,78,.05)">
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#8C99A8">Champs de formulaire</span>
+          <label style="display:flex;flex-direction:column;gap:7px">
+            <span style="font-size:14px;font-weight:600;color:#3F4E62">Intitulé de la séance</span>
+            <input type="text" value="Intégration continue — TP 3" style="font-family:'Source Sans 3',sans-serif;font-size:15px;color:#2E3B4E;background:#FFFFFF;border:1px solid #C9D2DC;border-radius:9px;padding:11px 13px;outline:none" style-focus="border-color:#2E7D9E;box-shadow:0 0 0 3px rgba(46,125,158,.15)" />
+          </label>
+          <label style="display:flex;flex-direction:column;gap:7px">
+            <span style="font-size:14px;font-weight:600;color:#3F4E62">Groupe</span>
+            <select style="font-family:'Source Sans 3',sans-serif;font-size:15px;color:#2E3B4E;background:#FFFFFF;border:1px solid #C9D2DC;border-radius:9px;padding:11px 13px;outline:none;appearance:none" style-focus="border-color:#2E7D9E;box-shadow:0 0 0 3px rgba(46,125,158,.15)">
+              <option>TSDI-201 · 2ᵉ année</option>
+              <option>TSDI-102 · 1ʳᵉ année</option>
+            </select>
+          </label>
+          <label style="display:flex;flex-direction:column;gap:7px">
+            <span style="font-size:14px;font-weight:600;color:#B8433A">Durée (h)</span>
+            <input type="text" value="9,5" style="font-family:'IBM Plex Mono',monospace;font-size:15px;color:#2E3B4E;background:#FFFFFF;border:1px solid #E2574C;border-radius:9px;padding:11px 13px;outline:none" />
+            <span style="font-size:13px;color:#B8433A">Dépasse le volume horaire du module (8 h).</span>
+          </label>
+        </div>
+
+        <div style="grid-column:span 2;background:#FFFFFF;border:1px solid #E3E7EC;border-radius:14px;box-shadow:0 1px 2px rgba(46,59,78,.05);overflow:hidden">
+          <div style="padding:20px 24px;border-bottom:1px solid #EDF0F3;display:flex;align-items:center;justify-content:space-between;gap:20px">
+            <div style="display:flex;align-items:center;gap:14px">
+              <span style="width:44px;height:44px;border-radius:50%;background:#2E3B4E;color:#FFFFFF;font-family:Sora,sans-serif;font-weight:600;font-size:15px;display:flex;align-items:center;justify-content:center">YB</span>
+              <div style="display:flex;flex-direction:column;gap:3px">
+                <span style="font-family:Sora,sans-serif;font-weight:600;font-size:17px;color:#2E3B4E">Youssef Benali</span>
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#6B7A8D">TSDI-201 · MAT-4417</span>
+              </div>
+            </div>
+            <span style="display:inline-flex;align-items:center;gap:7px;font-size:13.5px;font-weight:600;color:#2C6C46;background:#EAF3EE;border:1px solid #CFE4D8;border-radius:999px;padding:5px 12px"><span style="width:6px;height:6px;border-radius:50%;background:#3C8C5C"></span>Validé</span>
+          </div>
+          <div style="padding:20px 24px;display:grid;grid-template-columns:repeat(4,1fr);gap:20px">
+            <div style="display:flex;flex-direction:column;gap:5px">
+              <span style="font-size:13px;color:#8C99A8">Moyenne</span>
+              <span style="font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:19px;color:#2E3B4E">14,75</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:5px">
+              <span style="font-size:13px;color:#8C99A8">Assiduité</span>
+              <span style="font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:19px;color:#3C8C5C">96 %</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:5px">
+              <span style="font-size:13px;color:#8C99A8">EFM</span>
+              <span style="font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:19px;color:#2E3B4E">22/06</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:5px">
+              <span style="font-size:13px;color:#8C99A8">Modules restants</span>
+              <span style="font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:19px;color:#2E3B4E">03</span>
+            </div>
+          </div>
+          <div style="padding:16px 24px;background:#FAFBFC;border-top:1px solid #EDF0F3;display:flex;align-items:center;justify-content:space-between;gap:16px">
+            <span style="font-size:14px;color:#6B7A8D">Dernière mise à jour <span style="font-family:'IBM Plex Mono',monospace;color:#3F4E62">12/09 · 16:04</span></span>
+            <div style="display:flex;gap:10px">
+              <button type="button" style="font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:14px;color:#2E3B4E;background:#FFFFFF;border:1px solid #C9D2DC;border-radius:8px;padding:8px 16px;cursor:pointer" style-hover="background:#F6F7F9;border-color:#2E3B4E">Historique</button>
+              <button type="button" style="font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:14px;color:#FFFFFF;background:#2E3B4E;border:1px solid #2E3B4E;border-radius:8px;padding:8px 16px;cursor:pointer" style-hover="background:#25303F">Fiche complète</button>
+            </div>
+          </div>
+        </div>
+
+        <div style="background:#2E3B4E;border-radius:14px;padding:24px;display:flex;flex-direction:column;gap:16px">
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#9FB0C2">Usage du corail</span>
+          <p style="margin:0;font-size:15px;line-height:1.55;color:#DCE3EB;text-wrap:pretty">Le corail ne porte jamais une surface : il souligne un seul point d'attention par écran — un retard, un dépassement, une action irréversible.</p>
+          <div style="display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.06);border:1px solid rgba(226,87,76,.5);border-radius:10px;padding:14px 16px">
+            <span style="width:8px;height:8px;border-radius:50%;background:#E2574C;flex:none"></span>
+            <span style="font-size:14.5px;color:#FFFFFF">3 fiches de séance non validées</span>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:14px;color:#F0A39C;margin-left:auto">J-2</span>
+          </div>
+        </div>
+
+      </div>
+    </section>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

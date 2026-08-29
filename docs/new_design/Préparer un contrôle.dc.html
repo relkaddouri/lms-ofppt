@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=Source+Sans+3:ital,wght@0,400;0,500;0,600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  body { margin: 0; background: #F6F7F9; }
+  a { color: #2E7D9E; text-decoration: none; }
+  a:hover { color: #2E3B4E; text-decoration: underline; }
+</style>
+</helmet>
+<div style="min-height:100vh;background:#F6F7F9;font-family:'Source Sans 3',system-ui,sans-serif;color:#2E3B4E;padding:44px 40px 64px;box-sizing:border-box">
+  <div style="max-width:880px;margin:0 auto;display:flex;flex-direction:column;gap:22px">
+
+    <div style="display:flex;align-items:center;gap:8px;font-size:13.5px;color:#8C99A8">
+      <a href="#" style="color:#5B6A7D">Modules</a><span>/</span>
+      <a href="#" style="color:#5B6A7D"><span style="font-family:'IBM Plex Mono',monospace">M106</span></a><span>/</span>
+      <span style="color:#3F4E62">Préparer un contrôle</span>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:#8C99A8">Étape {{ stepNo }} sur 4 · {{ stepName }}</span>
+      <h1 style="font-family:Sora,sans-serif;font-weight:700;font-size:29px;line-height:1.2;letter-spacing:-.02em;margin:0">Contrôle — Bases de données relationnelles</h1>
+      <p style="margin:0;font-size:16px;color:#5B6A7D">TSDI-102 · <span style="font-family:'IBM Plex Mono',monospace;font-weight:500;color:#3F4E62">M106</span> · session du <span style="font-family:'IBM Plex Mono',monospace;font-weight:500;color:#3F4E62">19/09</span></p>
+    </div>
+
+    <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:14px;padding:18px 22px;display:flex;flex-direction:column;gap:14px;box-shadow:0 1px 2px rgba(46,59,78,.05)">
+      <div style="display:flex;align-items:center;gap:0">
+        <sc-for list="{{ steps }}" as="s" hint-placeholder-count="4">
+          <div style="display:flex;align-items:center;gap:10px;flex:{{ s.flex }};min-width:0">
+            <button type="button" onClick="{{ s.go }}" style="display:flex;align-items:center;gap:10px;background:transparent;border:none;padding:0;cursor:pointer;min-width:0;text-align:left">
+              <span style="width:28px;height:28px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:12.5px;color:{{ s.ink }};background:{{ s.bg }};border:1.5px solid {{ s.line }}">{{ s.mark }}</span>
+              <span style="font-size:14px;font-weight:600;color:{{ s.labelInk }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ s.label }}</span>
+            </button>
+            <span style="flex:1;height:2px;border-radius:2px;min-width:12px;background:{{ s.barBg }};display:{{ s.barShow }}"></span>
+          </div>
+        </sc-for>
+      </div>
+      <div style="height:5px;border-radius:999px;background:#EFF2F5;overflow:hidden"><div style="height:100%;border-radius:999px;background:#2E3B4E;width:{{ progress }}"></div></div>
+    </div>
+
+    <sc-if value="{{ isStep1 }}" hint-placeholder-val="{{ false }}">
+      <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:14px;box-shadow:0 1px 2px rgba(46,59,78,.05);overflow:hidden">
+        <div style="padding:20px 24px;border-bottom:1px solid #EDF0F3;display:flex;flex-direction:column;gap:4px">
+          <h2 style="font-family:Sora,sans-serif;font-weight:600;font-size:18px;margin:0">Contenu couvert</h2>
+          <span style="font-size:14px;color:#8C99A8">Séances réalisées depuis le dernier contrôle. Décochez ce qui ne doit pas être évalué.</span>
+        </div>
+        <sc-for list="{{ sessions }}" as="se" hint-placeholder-count="5">
+          <button type="button" onClick="{{ se.toggle }}" style="width:100%;text-align:left;display:flex;align-items:center;gap:14px;padding:15px 24px;border:none;border-bottom:1px solid #EDF0F3;background:{{ se.bg }};cursor:pointer;font-family:'Source Sans 3',sans-serif">
+            <span style="width:20px;height:20px;border-radius:6px;flex:none;display:flex;align-items:center;justify-content:center;background:{{ se.boxBg }};border:1.5px solid {{ se.boxLine }}">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="display:{{ se.tick }}"><path d="M5 12.5 10 17.5 19 7"></path></svg>
+            </span>
+            <span style="display:flex;flex-direction:column;gap:2px;min-width:0">
+              <span style="font-weight:600;font-size:15px;color:{{ se.titleInk }}">{{ se.title }}</span>
+              <span style="font-size:13px;color:#8C99A8">{{ se.meta }}</span>
+            </span>
+            <span style="margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:13.5px;color:#5B6A7D;white-space:nowrap">{{ se.date }}</span>
+          </button>
+        </sc-for>
+        <div style="padding:16px 24px;background:#FAFBFC;display:flex;align-items:center;justify-content:space-between;gap:16px">
+          <span style="font-size:14px;color:#6B7A8D"><span style="font-family:'IBM Plex Mono',monospace;font-weight:500;color:#3F4E62">{{ pickedSessions }}</span> séances retenues · <span style="font-family:'IBM Plex Mono',monospace;font-weight:500;color:#3F4E62">{{ pickedHours }} h</span> de contenu</span>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isStep2 }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex;flex-direction:column;gap:20px">
+        <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:14px;padding:24px;display:flex;flex-direction:column;gap:18px;box-shadow:0 1px 2px rgba(46,59,78,.05)">
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <h2 style="font-family:Sora,sans-serif;font-weight:600;font-size:18px;margin:0">Nature du contrôle</h2>
+            <span style="font-size:14px;color:#8C99A8">Détermine le circuit de validation et l'archivage.</span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(228px,1fr));gap:14px">
+            <sc-for list="{{ natures }}" as="n" hint-placeholder-count="3">
+              <button type="button" onClick="{{ n.select }}" style="text-align:left;display:flex;flex-direction:column;gap:8px;padding:16px;border-radius:12px;cursor:pointer;font-family:'Source Sans 3',sans-serif;background:{{ n.bg }};border:1px solid {{ n.line }}">
+                <span style="display:flex;align-items:center;gap:10px">
+                  <span style="width:18px;height:18px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;background:#FFFFFF;border:2px solid {{ n.ring }}"><span style="width:8px;height:8px;border-radius:50%;background:{{ n.dot }}"></span></span>
+                  <span style="font-family:Sora,sans-serif;font-weight:600;font-size:15.5px;color:#2E3B4E">{{ n.label }}</span>
+                </span>
+                <span style="font-size:13.5px;line-height:1.45;color:#6B7A8D">{{ n.detail }}</span>
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:{{ n.metaInk }}">{{ n.meta }}</span>
+              </button>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:14px;padding:24px;display:flex;flex-direction:column;gap:18px;box-shadow:0 1px 2px rgba(46,59,78,.05)">
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <h2 style="font-family:Sora,sans-serif;font-weight:600;font-size:18px;margin:0">Format d'évaluation</h2>
+            <span style="font-size:14px;color:#8C99A8">Oriente la génération des questions à l'étape suivante.</span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(228px,1fr));gap:14px">
+            <sc-for list="{{ formats }}" as="f" hint-placeholder-count="3">
+              <button type="button" onClick="{{ f.select }}" style="text-align:left;display:flex;flex-direction:column;gap:8px;padding:16px;border-radius:12px;cursor:pointer;font-family:'Source Sans 3',sans-serif;background:{{ f.bg }};border:1px solid {{ f.line }}">
+                <span style="display:flex;align-items:center;gap:10px">
+                  <span style="width:18px;height:18px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;background:#FFFFFF;border:2px solid {{ f.ring }}"><span style="width:8px;height:8px;border-radius:50%;background:{{ f.dot }}"></span></span>
+                  <span style="font-family:Sora,sans-serif;font-weight:600;font-size:15.5px;color:#2E3B4E">{{ f.label }}</span>
+                </span>
+                <span style="font-size:13.5px;line-height:1.45;color:#6B7A8D">{{ f.detail }}</span>
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:{{ f.metaInk }}">{{ f.meta }}</span>
+              </button>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isStep3 }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <sc-if value="{{ showAi }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;align-items:center;gap:12px;background:#FEF6F5;border:1px solid #F0BDB8;border-radius:11px;padding:12px 16px;flex-wrap:wrap">
+            <svg width="16" height="16" style="flex:none" viewBox="0 0 24 24" fill="none" stroke="#E2574C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3 5.5 13.5H11l-1 7.5L18.5 10H13z"></path></svg>
+            <span style="font-size:14px;color:#B8433A">Généré par l'IA — à relire avant validation</span>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#C98A84">Claude · 6 questions</span>
+            <button type="button" onClick="{{ validateAi }}" style="margin-left:auto;font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:13.5px;color:#FFFFFF;background:#E2574C;border:1px solid #E2574C;border-radius:8px;padding:7px 14px;cursor:pointer;white-space:nowrap" style-hover="background:#CE4B41">Marquer comme relu</button>
+          </div>
+        </sc-if>
+
+        <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:14px;box-shadow:0 1px 2px rgba(46,59,78,.05);overflow:hidden">
+          <div style="padding:18px 24px;border-bottom:1px solid #EDF0F3;background:#FAFBFC;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
+            <h2 style="font-family:Sora,sans-serif;font-weight:600;font-size:17px;margin:0">Questions <span style="font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:14px;color:#8C99A8">{{ questionCount }}</span></h2>
+            <span style="display:flex;align-items:center;gap:10px">
+              <span style="font-size:13.5px;color:#8C99A8">Barème</span>
+              <span style="font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:15px;color:{{ totalInk }}">{{ totalLabel }}</span>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#A9B4C0">/ 20</span>
+            </span>
+          </div>
+
+          <sc-for list="{{ questions }}" as="q" hint-placeholder-count="4">
+            <div style="padding:18px 24px;border-bottom:1px solid #EDF0F3;display:flex;gap:14px">
+              <span style="width:26px;height:26px;border-radius:7px;flex:none;background:#EFF2F5;color:#5B6A7D;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:12px;display:flex;align-items:center;justify-content:center;margin-top:4px">{{ q.no }}</span>
+              <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:10px">
+                <div style="border:1px solid #C9D2DC;border-radius:10px;background:#FFFFFF;overflow:hidden">
+                  <textarea rows="2" onInput="{{ q.onText }}" value="{{ q.text }}" style="width:100%;box-sizing:border-box;border:none;outline:none;resize:vertical;background:transparent;font-family:'Source Sans 3',sans-serif;font-size:15px;line-height:1.55;color:#3F4E62;padding:11px 13px"></textarea>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+                  <span style="display:flex;gap:3px;background:#F2F4F7;border:1px solid #E3E7EC;border-radius:9px;padding:3px">
+                    <sc-for list="{{ q.types }}" as="t" hint-placeholder-count="3">
+                      <button type="button" onClick="{{ t.pick }}" style="font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:13px;border:none;border-radius:6px;padding:6px 11px;cursor:pointer;white-space:nowrap;color:{{ t.ink }};background:{{ t.bg }};box-shadow:{{ t.shadow }}">{{ t.label }}</button>
+                    </sc-for>
+                  </span>
+                  <label style="display:flex;align-items:center;gap:8px;margin-left:auto">
+                    <span style="font-size:13px;color:#6B7A8D">Barème</span>
+                    <span style="display:flex;align-items:center;border:1px solid #C9D2DC;border-radius:8px;overflow:hidden;background:#FFFFFF">
+                      <input type="text" value="{{ q.points }}" onInput="{{ q.onPoints }}" style="width:44px;border:none;outline:none;background:transparent;font-family:'IBM Plex Mono',monospace;font-size:14px;text-align:right;color:#2E3B4E;padding:7px 8px" />
+                      <span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#8C99A8;padding:0 9px;border-left:1px solid #E3E7EC;align-self:stretch;display:flex;align-items:center">pts</span>
+                    </span>
+                  </label>
+                  <button type="button" aria-label="Supprimer la question" onClick="{{ q.remove }}" style="width:32px;height:32px;border-radius:8px;border:1px solid transparent;background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0" style-hover="background:#FCEDEB;border-color:#F3CFCB">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#B8433A" stroke-width="2" stroke-linecap="round"><path d="M6 7h12"></path><path d="M9 7V5h6v2"></path><path d="M7 7l1 12h8l1-12"></path></svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </sc-for>
+
+          <div style="padding:16px 24px;background:#FAFBFC;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+            <button type="button" onClick="{{ addQuestion }}" style="display:flex;align-items:center;gap:8px;font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:14px;color:#2E3B4E;background:#FFFFFF;border:1px solid #C9D2DC;border-radius:9px;padding:10px 16px;cursor:pointer;white-space:nowrap" style-hover="background:#F6F7F9;border-color:#2E3B4E">
+              <svg width="15" height="15" style="flex:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>Ajouter une question
+            </button>
+            <span style="font-size:13.5px;color:{{ totalHintInk }}">{{ totalHint }}</span>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isStep4 }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;gap:20px">
+        <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:14px;padding:26px;display:flex;flex-direction:column;gap:22px;box-shadow:0 1px 2px rgba(46,59,78,.05)">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:24px;flex-wrap:wrap">
+            <div style="display:flex;flex-direction:column;gap:4px">
+              <h2 style="font-family:Sora,sans-serif;font-weight:600;font-size:18px;margin:0">Relecture finale</h2>
+              <span style="font-size:14px;color:#8C99A8">Vérifiez la cohérence du barème avant validation.</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#8C99A8">Barème total</span>
+              <span style="font-family:Sora,sans-serif;font-weight:700;font-size:40px;line-height:1;letter-spacing:-.03em;color:{{ totalInk }}">{{ totalLabel }}</span>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#8C99A8">sur 20 points</span>
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;padding-top:20px;border-top:1px solid #EDF0F3">
+            <div style="display:flex;flex-direction:column;gap:5px">
+              <span style="font-size:13px;color:#8C99A8">Nature</span>
+              <span style="font-weight:600;font-size:15px">{{ natureLabel }}</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:5px">
+              <span style="font-size:13px;color:#8C99A8">Format</span>
+              <span style="font-weight:600;font-size:15px">{{ formatLabel }}</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:5px">
+              <span style="font-size:13px;color:#8C99A8">Questions</span>
+              <span style="font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:15px">{{ questionCount }}</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:5px">
+              <span style="font-size:13px;color:#8C99A8">Contenu couvert</span>
+              <span style="font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:15px">{{ pickedSessions }} séances</span>
+            </div>
+          </div>
+
+          <div style="display:flex;align-items:center;gap:10px;border-radius:10px;padding:12px 14px;background:{{ reviewBg }};border:1px solid {{ reviewLine }}">
+            <span style="width:7px;height:7px;border-radius:50%;flex:none;background:{{ reviewDot }}"></span>
+            <span style="font-size:13.5px;line-height:1.45;color:{{ reviewInk }}">{{ reviewMessage }}</span>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end">
+          <button type="button" style="display:flex;align-items:center;gap:8px;font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:14.5px;color:#2E3B4E;background:#FFFFFF;border:1px solid #C9D2DC;border-radius:9px;padding:11px 18px;cursor:pointer;white-space:nowrap" style-hover="background:#F6F7F9;border-color:#2E3B4E">
+            <svg width="15" height="15" style="flex:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V4"></path><path d="M8 11l4 4 4-4"></path><path d="M4 19h16"></path></svg>Exporter en PDF
+          </button>
+          <button type="button" style="font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:14.5px;color:#2E3B4E;background:#FFFFFF;border:1px solid #C9D2DC;border-radius:9px;padding:11px 18px;cursor:pointer;white-space:nowrap" style-hover="background:#F6F7F9;border-color:#2E3B4E">Enregistrer</button>
+          <button type="button" style="font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:14.5px;color:#FFFFFF;background:#2E3B4E;border:1px solid #2E3B4E;border-radius:9px;padding:11px 20px;cursor:pointer;white-space:nowrap" style-hover="background:#25303F">Valider le contrôle</button>
+        </div>
+      </div>
+    </sc-if>
+
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
+      <button type="button" onClick="{{ prev }}" style="display:flex;align-items:center;gap:8px;font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:14.5px;padding:11px 18px;border-radius:9px;cursor:pointer;white-space:nowrap;color:{{ prevInk }};background:{{ prevBg }};border:1px solid {{ prevLine }}">
+        <svg width="14" height="14" style="flex:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 6l-6 6 6 6"></path></svg>Précédent
+      </button>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#A9B4C0">Brouillon enregistré automatiquement</span>
+      <button type="button" onClick="{{ next }}" style="display:flex;align-items:center;gap:8px;font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:14.5px;color:#FFFFFF;background:#2E3B4E;border:1px solid #2E3B4E;border-radius:9px;padding:11px 20px;cursor:pointer;white-space:nowrap;display:{{ nextShow }}" style-hover="background:#25303F">
+        {{ nextLabel }}
+        <svg width="14" height="14" style="flex:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 6l6 6-6 6"></path></svg>
+      </button>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1000}}">
+class Component extends DCLogic {
+  state = {
+    step: 2,
+    nature: "cc",
+    format: "mixte",
+    aiValidated: false,
+    sessions: [
+      { title: "Modèle entité-association", meta: "M106 · 4 h", date: "02/09", on: true },
+      { title: "Passage au modèle relationnel", meta: "M106 · 4 h", date: "05/09", on: true },
+      { title: "Normalisation 1FN → 3FN", meta: "M106 · 3 h", date: "09/09", on: true },
+      { title: "Création de tables et contraintes", meta: "M106 · 4 h", date: "12/09", on: true },
+      { title: "Requêtes de sélection et jointures", meta: "M106 · 4 h", date: "16/09", on: false }
+    ],
+    questions: [
+      { text: "Définir la notion de clé étrangère et indiquer son rôle dans l'intégrité référentielle.", type: "ouverte", points: 3 },
+      { text: "Parmi les propositions suivantes, laquelle décrit correctement une jointure interne ?", type: "qcm", points: 2 },
+      { text: "Normaliser jusqu'à la 3ᵉ forme normale la table « inscriptions » fournie en annexe.", type: "exercice", points: 5 },
+      { text: "Écrire la requête SQL listant les stagiaires inscrits à plus de deux modules.", type: "exercice", points: 5 },
+      { text: "Expliquer la différence entre les clauses WHERE et ON dans une jointure.", type: "ouverte", points: 3 },
+      { text: "Quelle contrainte garantit l'unicité d'une valeur dans une colonne ?", type: "qcm", points: 2 }
+    ]
+  };
+
+  num(v) { const n = parseFloat(String(v).replace(",", ".").replace(/[^0-9.]/g, "")); return isNaN(n) ? 0 : n; }
+
+  setQ(i, patch) {
+    this.setState(s => ({ questions: s.questions.map((q, j) => j === i ? Object.assign({}, q, patch) : q) }));
+  }
+
+  renderVals() {
+    const st = this.state;
+    const step = st.step;
+    const stepNames = { 1: "Contenu couvert", 2: "Nature et format", 3: "Questions", 4: "Relecture" };
+    const typeDefs = [{ key: "qcm", label: "QCM" }, { key: "ouverte", label: "Ouverte" }, { key: "exercice", label: "Exercice" }];
+
+    const total = st.questions.reduce((a, q) => a + this.num(q.points), 0);
+    const totalInk = total > 20 ? "#B8433A" : (total === 20 ? "#2C6C46" : "#2E3B4E");
+    const picked = st.sessions.filter(s => s.on);
+
+    const natureDefs = [
+      { key: "cc", label: "CC", detail: "Contrôle continu interne au module.", meta: "Validation formateur" },
+      { key: "efml", label: "EFM local", detail: "Évaluation de fin de module, sujet établissement.", meta: "Validation chef de pôle" },
+      { key: "efmr", label: "EFM régional", detail: "Sujet régional harmonisé entre établissements.", meta: "Dépôt 15 j avant" }
+    ];
+    const formatDefs = [
+      { key: "theorique", label: "Théorique", detail: "Questions de cours et raisonnement écrit.", meta: "Salle de cours" },
+      { key: "pratique", label: "Pratique", detail: "Manipulation sur poste, livrable évalué.", meta: "Salle informatique" },
+      { key: "mixte", label: "Mixte", detail: "Partie écrite puis mise en œuvre sur machine.", meta: "Salle informatique" }
+    ];
+    const cardTone = on => ({
+      bg: on ? "#FAFBFC" : "#FFFFFF",
+      line: on ? "#2E3B4E" : "#E3E7EC",
+      ring: on ? "#2E3B4E" : "#C9D2DC",
+      dot: on ? "#2E3B4E" : "#FFFFFF",
+      metaInk: on ? "#245F79" : "#A9B4C0"
+    });
+
+    const nature = natureDefs.find(n => n.key === st.nature) || natureDefs[0];
+    const format = formatDefs.find(f => f.key === st.format) || formatDefs[0];
+
+    return {
+      stepNo: step,
+      stepName: stepNames[step],
+      progress: (step * 25) + "%",
+      steps: [1, 2, 3, 4].map(i => {
+        const done = i < step, on = i === step;
+        return {
+          label: stepNames[i],
+          mark: done ? "✓" : String(i),
+          go: () => this.setState({ step: i }),
+          bg: on ? "#2E3B4E" : (done ? "#EAF3EE" : "#FFFFFF"),
+          ink: on ? "#FFFFFF" : (done ? "#2C6C46" : "#A9B4C0"),
+          line: on ? "#2E3B4E" : (done ? "#CFE4D8" : "#C9D2DC"),
+          labelInk: on ? "#2E3B4E" : (done ? "#3F4E62" : "#A9B4C0"),
+          barBg: done ? "#CFE4D8" : "#EFF2F5",
+          barShow: i === 4 ? "none" : "block",
+          flex: i === 4 ? "0 1 auto" : "1 1 auto"
+        };
+      }),
+
+      isStep1: step === 1, isStep2: step === 2, isStep3: step === 3, isStep4: step === 4,
+
+      sessions: st.sessions.map((se, i) => Object.assign({}, se, {
+        toggle: () => this.setState(s => ({ sessions: s.sessions.map((x, j) => j === i ? Object.assign({}, x, { on: !x.on }) : x) })),
+        bg: se.on ? "#FBFCFD" : "#FFFFFF",
+        boxBg: se.on ? "#2E3B4E" : "#FFFFFF",
+        boxLine: se.on ? "#2E3B4E" : "#C9D2DC",
+        tick: se.on ? "block" : "none",
+        titleInk: se.on ? "#2E3B4E" : "#8C99A8"
+      })),
+      pickedSessions: picked.length,
+      pickedHours: picked.reduce((a, s) => a + this.num(s.meta.split("·")[1]), 0),
+
+      natures: natureDefs.map(n => Object.assign({}, n, cardTone(n.key === st.nature), { select: () => this.setState({ nature: n.key }) })),
+      formats: formatDefs.map(f => Object.assign({}, f, cardTone(f.key === st.format), { select: () => this.setState({ format: f.key }) })),
+      natureLabel: nature.label,
+      formatLabel: format.label,
+
+      showAi: !st.aiValidated,
+      validateAi: () => this.setState({ aiValidated: true }),
+
+      questions: st.questions.map((q, i) => Object.assign({}, q, {
+        no: String(i + 1).padStart(2, "0"),
+        onText: e => this.setQ(i, { text: e.target.value }),
+        onPoints: e => this.setQ(i, { points: e.target.value }),
+        remove: () => this.setState(s => ({ questions: s.questions.filter((x, j) => j !== i) })),
+        types: typeDefs.map(t => {
+          const on = t.key === q.type;
+          return {
+            label: t.label,
+            pick: () => this.setQ(i, { type: t.key }),
+            bg: on ? "#FFFFFF" : "transparent",
+            ink: on ? "#2E3B4E" : "#6B7A8D",
+            shadow: on ? "0 1px 2px rgba(46,59,78,.12)" : "none"
+          };
+        })
+      })),
+      questionCount: st.questions.length,
+      addQuestion: () => this.setState(s => ({ questions: s.questions.concat([{ text: "", type: "ouverte", points: 2 }]) })),
+
+      totalLabel: String(total).replace(".", ","),
+      totalInk,
+      totalHint: total === 20 ? "Barème complet." : (total > 20 ? "Barème supérieur à 20 points." : "Il reste " + String(20 - total).replace(".", ",") + " points à répartir."),
+      totalHintInk: total === 20 ? "#2C6C46" : (total > 20 ? "#B8433A" : "#8C99A8"),
+
+      reviewMessage: st.aiValidated
+        ? (total === 20 ? "Contenu relu et barème conforme — prêt pour validation." : "Contenu relu, mais le barème ne totalise pas 20 points.")
+        : "Les questions générées par l'IA n'ont pas encore été marquées comme relues.",
+      reviewBg: st.aiValidated && total === 20 ? "#EAF3EE" : "#FEF6F5",
+      reviewLine: st.aiValidated && total === 20 ? "#CFE4D8" : "#F0BDB8",
+      reviewDot: st.aiValidated && total === 20 ? "#3C8C5C" : "#E2574C",
+      reviewInk: st.aiValidated && total === 20 ? "#2C6C46" : "#B8433A",
+
+      prev: () => this.setState(s => ({ step: Math.max(1, s.step - 1) })),
+      next: () => this.setState(s => ({ step: Math.min(4, s.step + 1) })),
+      prevInk: step === 1 ? "#A9B4C0" : "#2E3B4E",
+      prevBg: step === 1 ? "#F2F4F7" : "#FFFFFF",
+      prevLine: step === 1 ? "#E3E7EC" : "#C9D2DC",
+      nextLabel: step === 3 ? "Relire" : "Continuer",
+      nextShow: step === 4 ? "none" : "flex"
+    };
+  }
+}
+</script>
+</body>
+</html>

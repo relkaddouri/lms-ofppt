@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=Source+Sans+3:ital,wght@0,400;0,500;0,600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  body { margin: 0; background: #F6F7F9; }
+  a { color: #2E7D9E; text-decoration: none; }
+  a:hover { color: #2E3B4E; text-decoration: underline; }
+</style>
+</helmet>
+<div style="min-height:100vh;background:#F6F7F9;font-family:'Source Sans 3',system-ui,sans-serif;color:#2E3B4E;padding:44px 40px 64px;box-sizing:border-box">
+  <div style="max-width:900px;margin:0 auto;display:flex;flex-direction:column;gap:20px">
+
+    <div style="display:flex;align-items:center;gap:8px;font-size:13.5px;color:#8C99A8">
+      <a href="#" style="color:#5B6A7D">Paramètres</a><span>/</span>
+      <span style="color:#3F4E62">Journal d'audit</span>
+    </div>
+
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap">
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:#8C99A8">Traçabilité · lecture seule</span>
+        <h1 style="font-family:Sora,sans-serif;font-weight:700;font-size:29px;line-height:1.15;letter-spacing:-.02em;margin:0">Journal d'audit</h1>
+        <p style="margin:0;font-size:16px;color:#5B6A7D">Toutes les modifications portées aux fiches, contrôles et notes. Conservation <span style="font-family:'IBM Plex Mono',monospace;font-weight:500;color:#3F4E62">5 ans</span>.</p>
+      </div>
+      <div style="display:flex;align-items:center;gap:9px;background:#EFF2F5;border:1px solid #E3E7EC;border-radius:999px;padding:7px 14px">
+        <svg width="14" height="14" style="flex:none" viewBox="0 0 24 24" fill="none" stroke="#5B6A7D" stroke-width="2" stroke-linecap="round"><rect x="4.5" y="10.5" width="15" height="10" rx="2"></rect><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"></path></svg>
+        <span style="font-size:13.5px;font-weight:600;color:#5B6A7D">Non modifiable</span>
+      </div>
+    </div>
+
+    <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:14px;box-shadow:0 1px 2px rgba(46,59,78,.05);overflow:hidden">
+      <div style="padding:16px 24px;border-bottom:1px solid #EDF0F3;background:#FAFBFC;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
+        <span style="font-family:Sora,sans-serif;font-weight:600;font-size:16px">7 derniers jours</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#8C99A8">{{ count }} entrées</span>
+      </div>
+
+      <sc-for list="{{ entries }}" as="e" hint-placeholder-count="6">
+        <div style="border-bottom:1px solid #EDF0F3">
+          <div style="padding:18px 24px;display:flex;gap:14px;background:{{ e.rowBg }}">
+            <span style="width:36px;height:36px;border-radius:{{ e.avatarRadius }};flex:none;display:flex;align-items:center;justify-content:center;font-family:Sora,sans-serif;font-weight:600;font-size:12.5px;color:{{ e.avatarInk }};background:{{ e.avatarBg }}">{{ e.avatar }}</span>
+            <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px">
+              <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+                <span style="font-weight:600;font-size:15.5px">{{ e.action }}</span>
+                <span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;border-radius:999px;padding:3px 9px;white-space:nowrap;color:{{ e.tagInk }};background:{{ e.tagBg }};border:1px solid {{ e.tagLine }}">{{ e.scope }}</span>
+                <span style="margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#A9B4C0;white-space:nowrap">{{ e.when }}</span>
+              </div>
+              <span style="font-size:14px;color:#6B7A8D">{{ e.author }} · <span style="font-family:'IBM Plex Mono',monospace;color:#8C99A8">{{ e.target }}</span></span>
+              <button type="button" onClick="{{ e.toggle }}" style="align-self:flex-start;display:flex;align-items:center;gap:7px;background:transparent;border:none;padding:2px 0;cursor:pointer;font-family:'Source Sans 3',sans-serif;font-size:13.5px;font-weight:600;color:#2E7D9E" style-hover="color:#2E3B4E">
+                {{ e.toggleLabel }}
+                <span style="display:flex;transform:{{ e.chevron }};transition:transform .15s ease">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg>
+                </span>
+              </button>
+            </div>
+          </div>
+
+          <sc-if value="{{ e.open }}" hint-placeholder-val="{{ false }}">
+            <div style="padding:0 24px 20px 74px;display:flex;flex-direction:column;gap:12px">
+              <div style="display:grid;grid-template-columns:minmax(120px,.8fr) minmax(140px,1fr) minmax(140px,1fr);gap:12px;padding:9px 0;border-bottom:1px solid #EDF0F3">
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:#8C99A8">Champ</span>
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:#8C99A8">Ancienne valeur</span>
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:#8C99A8">Nouvelle valeur</span>
+              </div>
+              <sc-for list="{{ e.changes }}" as="c" hint-placeholder-count="2">
+                <div style="display:grid;grid-template-columns:minmax(120px,.8fr) minmax(140px,1fr) minmax(140px,1fr);gap:12px;align-items:stretch">
+                  <span style="font-size:14px;color:#3F4E62;align-self:center">{{ c.field }}</span>
+                  <span style="font-size:14px;line-height:1.5;color:#6B7A8D;background:#FAFBFC;border:1px solid #E3E7EC;border-radius:9px;padding:9px 12px;text-wrap:pretty">{{ c.before }}</span>
+                  <span style="font-size:14px;line-height:1.5;color:#2C6C46;background:#EAF3EE;border:1px solid #CFE4D8;border-radius:9px;padding:9px 12px;text-wrap:pretty">{{ c.after }}</span>
+                </div>
+              </sc-for>
+              <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding-top:6px">
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#A9B4C0">{{ e.stamp }}</span>
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#A9B4C0">{{ e.ref }}</span>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+      </sc-for>
+
+      <div style="padding:16px 24px;background:#FAFBFC;display:flex;align-items:center;justify-content:space-between;gap:16px">
+        <span style="font-size:14px;color:#6B7A8D">Entrées antérieures archivées par trimestre</span>
+        <a href="#" style="font-size:14px;font-weight:600">Consulter les archives</a>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1020}}">
+class Component extends DCLogic {
+  state = { open: { 0: true } };
+
+  data() {
+    return [
+      { action: "Contrôle validé", scope: "Contrôle", tone: "green", author: "Mohamed Bennani", role: "MB", target: "M106 · CC2", when: "il y a 25 min",
+        stamp: "16/09/2025 · 14:38 · poste EFP-04", ref: "AUD-2025-0918",
+        changes: [
+          { field: "Statut", before: "En relecture", after: "Validé" },
+          { field: "Barème total", before: "19 pts", after: "20 pts" },
+          { field: "Date de session", before: "Estimée · 19/09", after: "Confirmée · 19/09" }
+        ] },
+      { action: "Note modifiée", scope: "Note", tone: "teal", author: "Samira Lahlou", role: "SL", target: "MAT-4417 · CC1", when: "il y a 2 h",
+        stamp: "16/09/2025 · 12:05 · poste EFP-11", ref: "AUD-2025-0917",
+        changes: [
+          { field: "Points question 03", before: "3,5 / 5", after: "4 / 5" },
+          { field: "Note finale", before: "13,3 / 20", after: "13,8 / 20" }
+        ] },
+      { action: "Fiche de préparation enregistrée", scope: "Fiche", tone: "plain", author: "Samira Lahlou", role: "SL", target: "M106 · Requêtes SQL", when: "il y a 5 h",
+        stamp: "16/09/2025 · 09:12 · poste EFP-11", ref: "AUD-2025-0915",
+        changes: [
+          { field: "Durée développement", before: "90 min", after: "105 min" },
+          { field: "Points de vigilance", before: "Confusion WHERE / ON", after: "Confusion WHERE / ON ; produit cartésien ; poste de secours" }
+        ] },
+      { action: "Séance déplacée", scope: "Séance", tone: "teal", author: "Nadia Fassi", role: "NF", target: "GE-118 · M112", when: "hier · 11:05",
+        stamp: "15/09/2025 · 11:05 · poste ADM-02", ref: "AUD-2025-0908",
+        changes: [
+          { field: "Date", before: "16/09 · 13:30", after: "18/09 · 08:30" },
+          { field: "Salle", before: "Salle B12", after: "Atelier réseau" }
+        ] },
+      { action: "Contenu généré par l'IA relu", scope: "IA", tone: "coral", author: "Samira Lahlou", role: "SL", target: "M106 · CC2", when: "hier · 09:40",
+        stamp: "15/09/2025 · 09:40 · poste EFP-11", ref: "AUD-2025-0904",
+        changes: [
+          { field: "État de relecture", before: "Non relu", after: "Relu par le formateur" },
+          { field: "Questions conservées", before: "6 générées", after: "5 conservées, 1 réécrite" }
+        ] },
+      { action: "Clé API remplacée", scope: "Sécurité", tone: "plain", author: "Samira Lahlou", role: "SL", target: "Fournisseur · Claude", when: "il y a 3 j",
+        stamp: "13/09/2025 · 17:22 · poste EFP-11", ref: "AUD-2025-0871",
+        changes: [
+          { field: "Clé secrète", before: "sk-•••• 4d21", after: "sk-•••• 0d8e" }
+        ] }
+    ];
+  }
+
+  renderVals() {
+    const tones = {
+      green: { tagInk: "#2C6C46", tagBg: "#EAF3EE", tagLine: "#CFE4D8", avatarBg: "#3C8C5C", avatarInk: "#FFFFFF" },
+      teal: { tagInk: "#245F79", tagBg: "#E8F2F7", tagLine: "#CBE0EA", avatarBg: "#2E7D9E", avatarInk: "#FFFFFF" },
+      coral: { tagInk: "#B8433A", tagBg: "#FCEDEB", tagLine: "#F3CFCB", avatarBg: "#FCEDEB", avatarInk: "#B8433A" },
+      plain: { tagInk: "#5B6A7D", tagBg: "#F2F4F7", tagLine: "#E3E7EC", avatarBg: "#EFF2F5", avatarInk: "#5B6A7D" }
+    };
+    const rows = this.data();
+    return {
+      count: rows.length,
+      entries: rows.map((e, i) => {
+        const open = !!this.state.open[i];
+        return Object.assign({}, e, tones[e.tone], {
+          avatar: e.role,
+          avatarRadius: "50%",
+          open,
+          toggle: () => this.setState(s => ({ open: Object.assign({}, s.open, { [i]: !s.open[i] }) })),
+          toggleLabel: open ? "Masquer le détail" : "Voir le détail",
+          chevron: open ? "rotate(180deg)" : "rotate(0deg)",
+          rowBg: open ? "#FBFCFD" : "#FFFFFF"
+        });
+      })
+    };
+  }
+}
+</script>
+</body>
+</html>

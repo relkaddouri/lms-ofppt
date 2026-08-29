@@ -1,21 +1,82 @@
 @import "tailwindcss";
 
+/* ---------------------------------------------------------------------------
+   Palette OFPPT v3 — valeurs relevées dans
+   docs/new_design/Planche de style OFPPT.dc.html (réf. DS-OFPPT-01) et
+   recoupées par fréquence sur les 21 écrans livrés. Aucune valeur estimée.
+
+   Les anciens noms (--forest, --mint, --status-*) sont conservés comme alias
+   pointant vers la nouvelle palette : le reste du code les utilise déjà par
+   centaines, les renommer d'un coup casserait tout avant même le premier
+   écran refait.
+--------------------------------------------------------------------------- */
+
 :root {
-  --forest: #0e3b2e;
-  --mint: #e6f4ee;
+  /* Identité */
+  --ofppt-ink: #2e3b4e;
+  --ofppt-ink-dark: #25303f;
+  --ofppt-coral: #e2574c;
+  --ofppt-coral-dark: #b8433a;
+  --ofppt-green: #3c8c5c;
+  --ofppt-green-dark: #2c6c46;
+  --ofppt-teal: #2e7d9e;
+  --ofppt-teal-dark: #245f79;
+
+  /* Surfaces */
   --paper: #f6f7f9;
+  --paper-alt: #fafbfc;
   --surface: #ffffff;
-  --ink: #16241f;
-  --slate: #6b7280;
-  --border: #e5e7eb;
-  --status-success: #1d9a6c;
-  --status-danger: #e0507a;
-  --status-neutral: #6b7280;
-  --status-info: #3b82f6;
+  --wash: #eff2f5;
+  --wash-strong: #f2f4f7;
+
+  /* Bordures */
+  --border: #e3e7ec;
+  --border-strong: #c9d2dc;
+
+  /* Échelle de texte, du plus soutenu au plus effacé.
+     --body et --slate-2 n'existent pas dans design_system.md alors qu'ils
+     portent 143 et 110 occurrences dans les écrans livrés : divergence
+     signalée, pas arbitrée. */
+  --ink: #2e3b4e;
+  --body: #3f4e62;
+  --slate-2: #5b6a7d;
+  --slate: #6b7a8d;
+  --slate-light: #8c99a8;
+  --muted: #a9b4c0;
+
+  /* Fond des états actifs et du survol */
+  --mint: #edf0f3;
+
+  /* Teintes de statut */
+  --bg-success: #eaf3ee;
+  --bg-alert: #fcedeb;
+  --tint-teal: #e8f2f7;
+  --tint-green: #cfe4d8;
+  --tint-teal-strong: #cbe0ea;
+  --tint-alert-strong: #f3cfcb;
+  --coral-soft: #f0bdb8;
+  --coral-wash: #fef6f5;
+
+  /* Statuts (texte) */
+  --status-success: #3c8c5c;
+  --status-danger: #e2574c;
+  --status-neutral: #6b7a8d;
+  --status-info: #2e7d9e;
+
+  /* Alias de compatibilité : --forest était la couleur primaire de la v2,
+     elle devient le bleu-ardoise sans qu'aucun appelant ait à changer. */
+  --forest: var(--ofppt-ink);
+
+  /* Élévation — toujours teintée --ofppt-ink, jamais du noir pur. */
+  --ombre-repos: 0 1px 2px rgba(46, 59, 78, 0.05);
+  --ombre-flottant: 0 10px 28px rgba(46, 59, 78, 0.14);
+  --ombre-panneau: -18px 0 44px rgba(46, 59, 78, 0.18);
+  --ombre-ancre: 0 -4px 16px rgba(46, 59, 78, 0.06);
 }
 
 @theme inline {
-  --color-forest: var(--forest);
+  /* Noms historiques, remappés sur la nouvelle palette */
+  --color-forest: var(--ofppt-ink);
   --color-mint: var(--mint);
   --color-paper: var(--paper);
   --color-surface: var(--surface);
@@ -26,15 +87,64 @@
   --color-danger: var(--status-danger);
   --color-neutral: var(--status-neutral);
   --color-info: var(--status-info);
-  --font-sans: var(--font-inter);
-  --font-display: var(--font-general-sans);
+
+  /* Nouveaux noms de la v3 */
+  --color-ofppt-ink: var(--ofppt-ink);
+  --color-ofppt-ink-dark: var(--ofppt-ink-dark);
+  --color-coral: var(--ofppt-coral);
+  --color-coral-dark: var(--ofppt-coral-dark);
+  --color-coral-soft: var(--coral-soft);
+  --color-coral-wash: var(--coral-wash);
+  --color-green: var(--ofppt-green);
+  --color-green-dark: var(--ofppt-green-dark);
+  --color-teal: var(--ofppt-teal);
+  --color-teal-dark: var(--ofppt-teal-dark);
+
+  --color-body: var(--body);
+  --color-slate-2: var(--slate-2);
+  --color-slate-light: var(--slate-light);
+  --color-muted: var(--muted);
+
+  --color-paper-alt: var(--paper-alt);
+  --color-wash: var(--wash);
+  --color-wash-strong: var(--wash-strong);
+  --color-border-strong: var(--border-strong);
+
+  /* Nom d'utilitaire volontairement différent du nom de variable :
+     `bg-bg-success` bégayait à l'usage. */
+  --color-success-wash: var(--bg-success);
+  --color-alert-wash: var(--bg-alert);
+  --color-tint-teal: var(--tint-teal);
+  --color-tint-teal-strong: var(--tint-teal-strong);
+  --color-tint-green: var(--tint-green);
+  --color-tint-alert-strong: var(--tint-alert-strong);
+
+  /* Quatre niveaux d'élévation, pas un cinquième */
+  --shadow-repos: var(--ombre-repos);
+  --shadow-flottant: var(--ombre-flottant);
+  --shadow-panneau: var(--ombre-panneau);
+  --shadow-ancre: var(--ombre-ancre);
+
+  --font-sans: var(--font-source-sans);
+  --font-display: var(--font-sora);
   --font-mono: var(--font-plex-mono);
 }
 
 body {
   background: var(--paper);
-  color: var(--ink);
-  font-family: var(--font-inter), system-ui, sans-serif;
+  color: var(--body);
+  font-family: var(--font-source-sans), system-ui, sans-serif;
+}
+
+/* Les liens portent la sarcelle, comme dans la planche de style. */
+a {
+  color: var(--ofppt-teal);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--ofppt-ink);
+  text-decoration: underline;
 }
 
 @keyframes toast-in {
@@ -70,7 +180,7 @@ body {
 }
 
 .pdf-capture .pdf-brand {
-  font-family: var(--font-general-sans), sans-serif;
+  font-family: var(--font-sora), sans-serif;
   font-weight: 700;
   font-size: 24px;
   letter-spacing: 0.04em;
@@ -97,7 +207,7 @@ body {
 
 .pdf-capture .pdf-title {
   margin: 28px 0 4px;
-  font-family: var(--font-general-sans), sans-serif;
+  font-family: var(--font-sora), sans-serif;
   font-size: 26px;
   font-weight: 700;
   text-align: center;
@@ -175,7 +285,7 @@ body {
 .md-view h1,
 .md-view h2,
 .md-view h3 {
-  font-family: var(--font-general-sans), sans-serif;
+  font-family: var(--font-sora), sans-serif;
   color: var(--ink);
 }
 
@@ -313,7 +423,7 @@ body {
 }
 
 .pdf-capture .pdf-q-num {
-  font-family: var(--font-general-sans), sans-serif;
+  font-family: var(--font-sora), sans-serif;
   font-weight: 700;
   font-size: 13px;
   color: var(--ink);

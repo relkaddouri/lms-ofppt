@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=Source+Sans+3:ital,wght@0,400;0,500;0,600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  body { margin: 0; background: #F6F7F9; }
+  a { color: #2E7D9E; text-decoration: none; }
+  a:hover { color: #2E3B4E; text-decoration: underline; }
+</style>
+</helmet>
+<div style="min-height:100vh;background:#F6F7F9;font-family:'Source Sans 3',system-ui,sans-serif;color:#2E3B4E;padding:44px 40px 64px;box-sizing:border-box">
+  <div style="max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:22px">
+
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:28px;flex-wrap:wrap">
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:#8C99A8">Année de formation 2025 — 2026</span>
+        <h1 style="font-family:Sora,sans-serif;font-weight:700;font-size:30px;line-height:1.15;letter-spacing:-.02em;margin:0">Groupes</h1>
+        <p style="margin:0;font-size:16px;color:#5B6A7D"><span style="font-family:'IBM Plex Mono',monospace;font-weight:500;color:#3F4E62">{{ shownCount }}</span> groupes · <span style="font-family:'IBM Plex Mono',monospace;font-weight:500;color:#3F4E62">{{ totalTrainees }}</span> stagiaires suivis</p>
+      </div>
+      <button type="button" style="display:flex;align-items:center;gap:8px;font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:14.5px;color:#FFFFFF;background:#2E3B4E;border:1px solid #2E3B4E;border-radius:9px;padding:10px 18px;cursor:pointer;white-space:nowrap" style-hover="background:#25303F">
+        <svg width="15" height="15" style="flex:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>Créer un groupe
+      </button>
+    </div>
+
+    <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;box-shadow:0 1px 2px rgba(46,59,78,.05)">
+      <label style="display:flex;align-items:center;gap:9px;flex:1;min-width:220px;background:#F6F7F9;border:1px solid #E3E7EC;border-radius:9px;padding:9px 12px">
+        <svg width="16" height="16" style="flex:none" viewBox="0 0 24 24" fill="none" stroke="#8C99A8" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><line x1="16.5" y1="16.5" x2="21" y2="21"></line></svg>
+        <input type="text" placeholder="Rechercher un groupe ou une spécialité…" value="{{ query }}" onInput="{{ onQuery }}" style="flex:1;min-width:0;border:none;outline:none;background:transparent;font-family:'Source Sans 3',sans-serif;font-size:14.5px;color:#2E3B4E" />
+      </label>
+      <div style="display:flex;gap:4px;background:#F2F4F7;border:1px solid #E3E7EC;border-radius:10px;padding:3px">
+        <sc-for list="{{ filters }}" as="f" hint-placeholder-count="3">
+          <button type="button" onClick="{{ f.pick }}" style="font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:13.5px;border:none;border-radius:7px;padding:8px 14px;cursor:pointer;white-space:nowrap;color:{{ f.ink }};background:{{ f.bg }};box-shadow:{{ f.shadow }}">{{ f.label }}</button>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:20px;align-items:start">
+      <sc-for list="{{ groups }}" as="g" hint-placeholder-count="6">
+        <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:18px;box-shadow:0 1px 2px rgba(46,59,78,.05);min-width:0" style-hover="border-color:#C9D2DC;box-shadow:0 3px 10px rgba(46,59,78,.08)">
+          <div style="display:flex;align-items:flex-start;gap:14px;min-width:0">
+            <span style="width:44px;height:44px;border-radius:11px;flex:none;display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:13px;color:{{ g.markInk }};background:{{ g.markBg }}">{{ g.mark }}</span>
+            <div style="display:flex;flex-direction:column;gap:6px;min-width:0">
+              <div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap">
+                <span style="font-family:Sora,sans-serif;font-weight:600;font-size:17px;color:#2E3B4E">{{ g.name }}</span>
+                <span style="display:inline-flex;align-items:center;font-size:12px;font-weight:600;border-radius:999px;padding:3px 9px;white-space:nowrap;color:{{ g.yearInk }};background:{{ g.yearBg }};border:1px solid {{ g.yearLine }}">{{ g.year }}</span>
+              </div>
+              <span style="font-size:13.5px;color:#8C99A8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ g.speciality }}</span>
+            </div>
+            <button type="button" aria-label="Actions" style="margin-left:auto;width:30px;height:30px;border-radius:8px;border:1px solid transparent;background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;flex:none" style-hover="background:#F6F7F9;border-color:#E3E7EC">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="#8C99A8" stroke="none"><circle cx="12" cy="6" r="1.6"></circle><circle cx="12" cy="12" r="1.6"></circle><circle cx="12" cy="18" r="1.6"></circle></svg>
+            </button>
+          </div>
+
+          <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+            <span style="display:inline-flex;align-items:center;gap:7px;font-family:'IBM Plex Mono',monospace;font-size:13px;color:#3F4E62">
+              <svg width="14" height="14" style="flex:none" viewBox="0 0 24 24" fill="none" stroke="#8C99A8" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="16" rx="2.5"></rect><path d="M8 3v4"></path><path d="M16 3v4"></path><path d="M3.5 10h17"></path></svg>{{ g.dates }}
+            </span>
+            <span style="display:inline-flex;align-items:center;gap:7px;font-family:'IBM Plex Mono',monospace;font-size:13px;color:#3F4E62">
+              <svg width="14" height="14" style="flex:none" viewBox="0 0 24 24" fill="none" stroke="#8C99A8" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M17 20v-1.5a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4V20"></path><circle cx="10" cy="7" r="3.5"></circle><path d="M17.5 4.3a3.4 3.4 0 0 1 0 6.4"></path><path d="M21.5 20v-1.2a3.9 3.9 0 0 0-3-3.7"></path></svg>{{ g.trainees }}
+            </span>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:8px;padding-top:16px;border-top:1px solid #EDF0F3">
+            <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px">
+              <span style="font-size:13.5px;color:#6B7A8D">Progression du référentiel</span>
+              <span style="font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:14.5px;color:{{ g.pctInk }}">{{ g.pct }} %</span>
+            </div>
+            <div style="height:7px;border-radius:999px;background:#EFF2F5;overflow:hidden"><div style="height:100%;border-radius:999px;width:{{ g.pctWidth }};background:{{ g.barColor }}"></div></div>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:{{ g.remainInk }}">{{ g.remain }}</span>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+
+    <sc-if value="{{ isEmpty }}" hint-placeholder-val="{{ false }}">
+      <div style="background:#FFFFFF;border:1px solid #E3E7EC;border-radius:14px;padding:52px 24px;display:flex;flex-direction:column;align-items:center;gap:8px;box-shadow:0 1px 2px rgba(46,59,78,.05)">
+        <span style="font-family:Sora,sans-serif;font-weight:600;font-size:16px">Aucun groupe ne correspond</span>
+        <span style="font-size:14px;color:#8C99A8">Essayez un autre nom ou changez de filtre.</span>
+      </div>
+    </sc-if>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280}}">
+class Component extends DCLogic {
+  state = { query: "", filter: "Tous" };
+
+  data() {
+    return [
+      { name: "TSDI-201", mark: "201", year: 2, speciality: "Développement digital · option web full stack", dates: "05/09/25 — 30/09/26", trainees: 24, pct: 88, tone: "dark" },
+      { name: "GE-118", mark: "118", year: 2, speciality: "Gestion des entreprises · option comptabilité", dates: "05/09/25 — 21/11/26", trainees: 18, pct: 61, tone: "teal" },
+      { name: "TSDI-102", mark: "102", year: 1, speciality: "Tronc commun numérique", dates: "12/09/25 — 12/06/27", trainees: 27, pct: 34, tone: "plain" },
+      { name: "TSDI-103", mark: "103", year: 1, speciality: "Tronc commun numérique", dates: "12/09/25 — 12/06/27", trainees: 25, pct: 31, tone: "plain" },
+      { name: "TDI-207", mark: "207", year: 2, speciality: "Infrastructure digitale · réseaux et systèmes", dates: "05/09/25 — 15/10/26", trainees: 21, pct: 72, tone: "teal" },
+      { name: "GE-119", mark: "119", year: 1, speciality: "Tronc commun gestion", dates: "12/09/25 — 20/06/27", trainees: 29, pct: 22, tone: "plain" }
+    ];
+  }
+
+  renderVals() {
+    const st = this.state;
+    const q = st.query.trim().toLowerCase();
+    let rows = this.data();
+    if (st.filter === "1ʳᵉ année") rows = rows.filter(g => g.year === 1);
+    if (st.filter === "2ᵉ année") rows = rows.filter(g => g.year === 2);
+    if (q) rows = rows.filter(g => (g.name + " " + g.speciality).toLowerCase().includes(q));
+
+    const tones = {
+      dark: { markBg: "#2E3B4E", markInk: "#FFFFFF", barColor: "#3C8C5C" },
+      teal: { markBg: "#2E7D9E", markInk: "#FFFFFF", barColor: "#2E7D9E" },
+      plain: { markBg: "#EFF2F5", markInk: "#5B6A7D", barColor: "#8C99A8" }
+    };
+
+    return {
+      filters: ["Tous", "1ʳᵉ année", "2ᵉ année"].map(l => {
+        const on = l === st.filter;
+        return {
+          label: l,
+          pick: () => this.setState({ filter: l }),
+          bg: on ? "#FFFFFF" : "transparent",
+          ink: on ? "#2E3B4E" : "#6B7A8D",
+          shadow: on ? "0 1px 2px rgba(46,59,78,.12)" : "none"
+        };
+      }),
+      groups: rows.map(g => Object.assign({}, g, tones[g.tone], {
+        year: g.year === 1 ? "1ʳᵉ année" : "2ᵉ année",
+        yearInk: g.year === 2 ? "#245F79" : "#5B6A7D",
+        yearBg: g.year === 2 ? "#E8F2F7" : "#F2F4F7",
+        yearLine: g.year === 2 ? "#CBE0EA" : "#E3E7EC",
+        speciality: g.year === 2 ? g.speciality : g.speciality + " · spécialité en 2ᵉ année",
+        trainees: g.trainees + " stagiaires",
+        pctWidth: g.pct + "%",
+        pctInk: g.pct >= 80 ? "#2C6C46" : "#3F4E62",
+        remain: (100 - g.pct) + " % restant · fin " + g.dates.split("— ")[1],
+        remainInk: g.pct >= 80 ? "#B8433A" : "#A9B4C0"
+      })),
+      shownCount: rows.length,
+      totalTrainees: rows.reduce((a, g) => a + g.trainees, 0),
+      isEmpty: rows.length === 0,
+      query: st.query,
+      onQuery: e => this.setState({ query: e.target.value })
+    };
+  }
+}
+</script>
+</body>
+</html>

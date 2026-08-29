@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=Source+Sans+3:ital,wght@0,400;0,500;0,600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  body { margin: 0; background: #FFFFFF; }
+  a { color: #2E7D9E; text-decoration: none; }
+  a:hover { color: #2E3B4E; }
+</style>
+</helmet>
+<div style="width:375px;margin:0 auto;min-height:100vh;background:#FFFFFF;font-family:'Source Sans 3',system-ui,sans-serif;color:#2E3B4E;position:relative;padding-bottom:86px;box-sizing:border-box">
+
+  <sc-if value="{{ isList }}" hint-placeholder-val="{{ true }}">
+    <div style="display:flex;flex-direction:column">
+      <div style="position:sticky;top:0;z-index:30;background:#FFFFFF;border-bottom:1px solid #EDF0F3;padding:16px 20px 14px;display:flex;align-items:center;gap:12px">
+        <span style="width:42px;height:42px;border-radius:50%;flex:none;background:#2E3B4E;color:#FFFFFF;font-family:Sora,sans-serif;font-weight:600;font-size:13.5px;display:flex;align-items:center;justify-content:center">YB</span>
+        <div style="display:flex;flex-direction:column;gap:2px;min-width:0">
+          <span style="font-family:Sora,sans-serif;font-weight:600;font-size:16.5px">Youssef Benali</span>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#8C99A8">TSDI-201 · 2ᵉ année</span>
+        </div>
+        <button type="button" aria-label="Rechercher" style="margin-left:auto;width:40px;height:40px;border-radius:12px;border:1px solid #E3E7EC;background:#FFFFFF;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;flex:none" style-hover="background:#F6F7F9">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5B6A7D" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><line x1="16.5" y1="16.5" x2="21" y2="21"></line></svg>
+        </button>
+      </div>
+
+      <div style="padding:22px 20px 14px;display:flex;flex-direction:column;gap:6px">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#A9B4C0">Espace ressources</span>
+        <h1 style="font-family:Sora,sans-serif;font-weight:700;font-size:26px;line-height:1.2;letter-spacing:-.02em;margin:0">Supports de cours</h1>
+        <span style="font-size:14.5px;color:#8C99A8"><span style="font-family:'IBM Plex Mono',monospace;color:#3F4E62">{{ docCount }}</span> supports · du plus récent au plus ancien</span>
+      </div>
+
+      <div style="padding:0 20px 14px;display:flex;gap:6px;overflow-x:auto">
+        <sc-for list="{{ filters }}" as="f" hint-placeholder-count="4">
+          <button type="button" onClick="{{ f.pick }}" style="font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:13.5px;border-radius:999px;padding:9px 15px;cursor:pointer;white-space:nowrap;min-height:40px;color:{{ f.ink }};background:{{ f.bg }};border:1px solid {{ f.line }}">{{ f.label }}</button>
+        </sc-for>
+      </div>
+
+      <sc-for list="{{ docs }}" as="d" hint-placeholder-count="7">
+        <button type="button" onClick="{{ d.open }}" style="width:100%;text-align:left;display:flex;align-items:center;gap:13px;padding:16px 20px;border:none;border-top:1px solid #EDF0F3;background:#FFFFFF;cursor:pointer;font-family:'Source Sans 3',sans-serif;box-sizing:border-box" style-hover="background:#FAFBFC">
+          <span style="width:42px;height:42px;border-radius:11px;flex:none;display:flex;align-items:center;justify-content:center;background:{{ d.iconBg }}">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="{{ d.iconInk }}" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="{{ d.icon }}"></path></svg>
+          </span>
+          <span style="display:flex;flex-direction:column;gap:5px;min-width:0;flex:1">
+            <span style="display:flex;align-items:center;gap:8px;min-width:0">
+              <span style="font-weight:600;font-size:15.5px;color:#2E3B4E;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ d.title }}</span>
+              <span style="font-size:11px;font-weight:600;border-radius:999px;padding:2px 8px;white-space:nowrap;flex:none;color:{{ d.tagInk }};background:{{ d.tagBg }};border:1px solid {{ d.tagLine }}">{{ d.type }}</span>
+            </span>
+            <span style="display:flex;align-items:center;gap:12px">
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#8C99A8">{{ d.module }} · {{ d.date }}</span>
+              <span style="display:inline-flex;align-items:center;gap:5px;font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:{{ d.qInk }}">
+                <svg width="12" height="12" style="flex:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 0 1-8 8H7l-3 2v-4.5A8 8 0 1 1 20 12z"></path></svg>{{ d.questions }}
+              </span>
+            </span>
+          </span>
+          <svg width="15" height="15" style="flex:none" viewBox="0 0 24 24" fill="none" stroke="#C3CBD5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 6l6 6-6 6"></path></svg>
+        </button>
+      </sc-for>
+
+      <div style="padding:24px 20px 8px;border-top:1px solid #EDF0F3;display:flex;justify-content:center">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#C3CBD5">Supports antérieurs archivés</span>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isReader }}" hint-placeholder-val="{{ false }}">
+    <div style="display:flex;flex-direction:column">
+      <div style="position:sticky;top:0;z-index:30;background:#FFFFFF;border-bottom:1px solid #EDF0F3;padding:12px 14px;display:flex;align-items:center;gap:10px">
+        <button type="button" aria-label="Retour" onClick="{{ back }}" style="width:40px;height:40px;border-radius:12px;border:1px solid #E3E7EC;background:#FFFFFF;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;flex:none" style-hover="background:#F6F7F9">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#5B6A7D" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 6l-6 6 6 6"></path></svg>
+        </button>
+        <div style="display:flex;flex-direction:column;gap:1px;min-width:0">
+          <span style="font-weight:600;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ readerTitle }}</span>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#A9B4C0">{{ readerMeta }}</span>
+        </div>
+        <button type="button" aria-label="Télécharger" style="margin-left:auto;width:40px;height:40px;border-radius:12px;border:1px solid #E3E7EC;background:#FFFFFF;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;flex:none" style-hover="background:#F6F7F9">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#5B6A7D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V4"></path><path d="M8 11l4 4 4-4"></path><path d="M4 19h16"></path></svg>
+        </button>
+      </div>
+
+      <div style="padding:26px 22px 10px;display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap">
+          <span style="font-size:11.5px;font-weight:600;color:#245F79;background:#E8F2F7;border:1px solid #CBE0EA;border-radius:999px;padding:3px 9px">Cours</span>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#8C99A8">M106 · publié le 16/09</span>
+        </div>
+        <h1 style="font-family:Sora,sans-serif;font-weight:700;font-size:27px;line-height:1.22;letter-spacing:-.02em;margin:0">Les jointures SQL</h1>
+        <span style="font-size:14.5px;color:#8C99A8">Samira Lahlou · lecture ≈ 8 min</span>
+      </div>
+
+      <div style="padding:16px 22px 28px;display:flex;flex-direction:column;gap:26px">
+
+        <div style="display:flex;flex-direction:column;gap:9px">
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#A9B4C0">Introduction</span>
+          <p style="margin:0;font-size:16.5px;line-height:1.7;color:#3F4E62;text-wrap:pretty">Une base relationnelle répartit l'information dans plusieurs tables pour éviter la redondance. La jointure est l'opération qui permet de rassembler ces données au moment de l'interrogation, sans jamais les dupliquer physiquement.</p>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#A9B4C0">Notions</span>
+          <div style="display:flex;flex-direction:column;gap:16px">
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <span style="font-family:Sora,sans-serif;font-weight:600;font-size:17px">Jointure interne</span>
+              <p style="margin:0;font-size:16px;line-height:1.65;color:#3F4E62;text-wrap:pretty">Ne conserve que les lignes ayant une correspondance dans les deux tables. C'est le comportement par défaut de <span style="font-family:'IBM Plex Mono',monospace;font-size:14.5px;color:#2E3B4E;background:#F2F4F7;border-radius:5px;padding:1px 6px">JOIN</span>.</p>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <span style="font-family:Sora,sans-serif;font-weight:600;font-size:17px">Jointure externe</span>
+              <p style="margin:0;font-size:16px;line-height:1.65;color:#3F4E62;text-wrap:pretty">Conserve toutes les lignes d'un côté, même sans correspondance : les colonnes de l'autre table prennent alors la valeur nulle.</p>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <span style="font-family:Sora,sans-serif;font-weight:600;font-size:17px">Condition de jointure</span>
+              <p style="margin:0;font-size:16px;line-height:1.65;color:#3F4E62;text-wrap:pretty">Elle s'écrit après <span style="font-family:'IBM Plex Mono',monospace;font-size:14.5px;color:#2E3B4E;background:#F2F4F7;border-radius:5px;padding:1px 6px">ON</span> et met en relation une clé étrangère avec une clé primaire.</p>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#A9B4C0">Exemples</span>
+          <div style="background:#2E3B4E;border-radius:12px;padding:16px 16px;overflow-x:auto">
+            <pre style="margin:0;font-family:'IBM Plex Mono',monospace;font-size:13px;line-height:1.75;color:#E7ECF2">SELECT s.nom, m.libelle
+FROM stagiaire s
+JOIN inscription i
+  ON i.id_stagiaire = s.id
+JOIN module m
+  ON m.id = i.id_module
+WHERE m.code = 'M106';</pre>
+          </div>
+          <p style="margin:0;font-size:15.5px;line-height:1.65;color:#5B6A7D;text-wrap:pretty">Deux jointures successives relient stagiaires et modules par la table d'association. Le filtre porte sur la table de destination, pas sur la condition de jointure.</p>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:11px;background:#FAFBFC;border:1px solid #E3E7EC;border-left:3px solid #2E3B4E;border-radius:12px;padding:18px">
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#8C99A8">À retenir</span>
+          <div style="display:flex;flex-direction:column;gap:9px">
+            <span style="display:flex;gap:10px;font-size:16px;line-height:1.6;color:#3F4E62"><span style="width:5px;height:5px;border-radius:50%;background:#2E3B4E;flex:none;margin-top:9px"></span>Une jointure oubliée produit un produit cartésien.</span>
+            <span style="display:flex;gap:10px;font-size:16px;line-height:1.6;color:#3F4E62"><span style="width:5px;height:5px;border-radius:50%;background:#2E3B4E;flex:none;margin-top:9px"></span><span style="font-family:'IBM Plex Mono',monospace;font-size:14.5px">ON</span> relie, <span style="font-family:'IBM Plex Mono',monospace;font-size:14.5px">WHERE</span> filtre après la jointure.</span>
+            <span style="display:flex;gap:10px;font-size:16px;line-height:1.6;color:#3F4E62"><span style="width:5px;height:5px;border-radius:50%;background:#2E3B4E;flex:none;margin-top:9px"></span>Toujours préfixer les colonnes par l'alias de table.</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="border-top:1px solid #EDF0F3;padding:22px 22px 10px;display:flex;flex-direction:column;gap:18px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-family:Sora,sans-serif;font-weight:600;font-size:18px">Questions</span>
+          <span style="font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:12.5px;color:#5B6A7D;background:#F2F4F7;border-radius:999px;padding:2px 9px">{{ threadCount }}</span>
+        </div>
+
+        <sc-for list="{{ thread }}" as="q" hint-placeholder-count="2">
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <div style="display:flex;gap:11px">
+              <span style="width:34px;height:34px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-family:Sora,sans-serif;font-weight:600;font-size:11.5px;color:{{ q.avatarInk }};background:{{ q.avatarBg }}">{{ q.initials }}</span>
+              <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:5px">
+                <div style="display:flex;align-items:baseline;gap:9px">
+                  <span style="font-weight:600;font-size:14.5px">{{ q.name }}</span>
+                  <span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#A9B4C0">{{ q.when }}</span>
+                  <sc-if value="{{ q.mine }}" hint-placeholder-val="{{ false }}">
+                    <button type="button" aria-label="Supprimer ma question" onClick="{{ q.remove }}" style="margin-left:auto;width:30px;height:30px;border-radius:8px;border:1px solid transparent;background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;flex:none" style-hover="background:#FCEDEB;border-color:#F3CFCB">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#B8433A" stroke-width="2" stroke-linecap="round"><path d="M6 7h12"></path><path d="M9 7V5h6v2"></path><path d="M7 7l1 12h8l1-12"></path></svg>
+                    </button>
+                  </sc-if>
+                </div>
+                <p style="margin:0;font-size:15.5px;line-height:1.6;color:#3F4E62;text-wrap:pretty">{{ q.before }}<span style="font-weight:600;color:#245F79;background:#E8F2F7;border-radius:5px;padding:1px 6px;display:{{ q.mentionShow }}">{{ q.mention }}</span>{{ q.after }}</p>
+              </div>
+            </div>
+            <sc-if value="{{ q.hasAnswer }}" hint-placeholder-val="{{ false }}">
+              <div style="margin-left:45px;display:flex;gap:11px;background:#FAFBFC;border:1px solid #E3E7EC;border-radius:12px;padding:13px 14px">
+                <span style="width:30px;height:30px;border-radius:50%;flex:none;background:#2E3B4E;color:#FFFFFF;font-family:Sora,sans-serif;font-weight:600;font-size:10.5px;display:flex;align-items:center;justify-content:center">SL</span>
+                <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px">
+                  <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
+                    <span style="font-weight:600;font-size:14px">Samira Lahlou</span>
+                    <span style="font-size:11px;font-weight:600;color:#2C6C46;background:#EAF3EE;border:1px solid #CFE4D8;border-radius:999px;padding:2px 8px">Formatrice</span>
+                  </div>
+                  <p style="margin:0;font-size:15px;line-height:1.6;color:#3F4E62;text-wrap:pretty">{{ q.answer }}</p>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+        </sc-for>
+
+        <div style="display:flex;flex-direction:column;gap:10px;padding-top:6px">
+          <div style="border:1px solid #C9D2DC;border-radius:14px;background:#FFFFFF;overflow:hidden">
+            <textarea rows="2" value="{{ draft }}" onInput="{{ onDraft }}" placeholder="Poser une question…" style="width:100%;box-sizing:border-box;border:none;outline:none;resize:vertical;background:transparent;font-family:'Source Sans 3',sans-serif;font-size:15.5px;line-height:1.6;color:#3F4E62;padding:13px 15px"></textarea>
+            <div style="padding:9px 11px;border-top:1px solid #EDF0F3;display:flex;align-items:center;gap:8px">
+              <button type="button" onClick="{{ mention }}" style="display:flex;align-items:center;gap:7px;font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:13.5px;color:#245F79;background:#E8F2F7;border:1px solid #CBE0EA;border-radius:999px;padding:8px 13px;cursor:pointer;min-height:40px;box-sizing:border-box">
+                <svg width="14" height="14" style="flex:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"></circle><path d="M16 8v5a3 3 0 0 0 4.5 2.6A9 9 0 1 0 16.5 20"></path></svg>
+                Mentionner
+              </button>
+              <button type="button" aria-label="Envoyer la question" style="margin-left:auto;width:44px;height:44px;border-radius:50%;flex:none;background:{{ sendBg }};border:1px solid {{ sendBg }};display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l16-8-6 16-3-6z"></path></svg>
+              </button>
+            </div>
+          </div>
+          <sc-if value="{{ suggestOpen }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;gap:2px;border:1px solid #E3E7EC;border-radius:12px;padding:6px;box-shadow:0 6px 18px rgba(46,59,78,.1)">
+              <sc-for list="{{ classmates }}" as="c" hint-placeholder-count="3">
+                <button type="button" onClick="{{ c.pick }}" style="text-align:left;display:flex;align-items:center;gap:10px;background:transparent;border:none;border-radius:9px;padding:10px 10px;cursor:pointer;font-family:'Source Sans 3',sans-serif;min-height:44px" style-hover="background:#F6F7F9">
+                  <span style="width:30px;height:30px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-family:Sora,sans-serif;font-weight:600;font-size:10.5px;color:{{ c.avatarInk }};background:{{ c.avatarBg }}">{{ c.initials }}</span>
+                  <span style="font-size:14.5px;font-weight:600;color:#2E3B4E">{{ c.name }}</span>
+                  <span style="margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:12px;color:#A9B4C0">{{ c.group }}</span>
+                </button>
+              </sc-for>
+            </div>
+          </sc-if>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <nav style="position:fixed;bottom:0;left:0;right:0;width:375px;margin:0 auto;background:#FFFFFF;border-top:1px solid #E3E7EC;box-shadow:0 -4px 16px rgba(46,59,78,.06);display:flex;align-items:stretch;padding:8px 4px 12px;box-sizing:border-box;z-index:40">
+    <sc-for list="{{ navItems }}" as="n" hint-placeholder-count="5">
+      <button type="button" onClick="{{ n.pick }}" style="flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:5px;background:transparent;border:none;padding:7px 2px;cursor:pointer;min-height:44px">
+        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="{{ n.ink }}" stroke-width="{{ n.stroke }}" stroke-linecap="round" stroke-linejoin="round"><path d="{{ n.icon }}"></path></svg>
+        <span style="font-family:'Source Sans 3',sans-serif;font-size:10.5px;font-weight:{{ n.weight }};color:{{ n.ink }};white-space:nowrap">{{ n.label }}</span>
+      </button>
+    </sc-for>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:375,&quot;height&quot;:812}}">
+class Component extends DCLogic {
+  state = { screen: "list", filter: "Tous", draft: "", suggest: false, removed: {}, nav: "Cours" };
+
+  docs() {
+    return [
+      { title: "Les jointures SQL", type: "Cours", module: "M106", date: "16/09", questions: 3, tone: "teal" },
+      { title: "TP 3 — Intégration continue", type: "TP", module: "M104", date: "12/09", questions: 5, tone: "dark" },
+      { title: "Normalisation 1FN → 3FN", type: "Cours", module: "M106", date: "09/09", questions: 1, tone: "teal" },
+      { title: "TP 2 — Composants réutilisables", type: "TP", module: "M104", date: "05/09", questions: 0, tone: "dark" },
+      { title: "Modèle entité-association", type: "Cours", module: "M106", date: "02/09", questions: 2, tone: "teal" },
+      { title: "Adressage IP et sous-réseaux", type: "Cours", module: "M112", date: "29/08", questions: 0, tone: "teal" },
+      { title: "TP 1 — Prise en main de Git", type: "TP", module: "M104", date: "26/08", questions: 4, tone: "dark" }
+    ];
+  }
+
+  renderVals() {
+    const st = this.state;
+    const nav = [
+      { key: "Fil", label: "Fil", icon: "M4 10v9h16v-9 M2.5 10.5 12 3.5l9.5 7" },
+      { key: "Cours", label: "Cours", icon: "M12 7v13 M12 7a2.5 2.5 0 0 0-2.5-2.5H4v13h5.5A2.5 2.5 0 0 1 12 20 M12 7a2.5 2.5 0 0 1 2.5-2.5H20v13h-5.5A2.5 2.5 0 0 0 12 20" },
+      { key: "Devoirs", label: "Devoirs", icon: "M6 3.5h9L19 8v12.5H6z M9 12h7 M9 16h5" },
+      { key: "Contrôles", label: "Contrôles", icon: "M9 11.5 11.5 14 16 8.5 M4 3.5h16v17H4z" },
+      { key: "Emploi", label: "Emploi du temps", icon: "M3.5 5h17v16h-17z M8 3v4 M16 3v4 M3.5 10h17" }
+    ];
+
+    const typeTone = {
+      Cours: { tagInk: "#245F79", tagBg: "#E8F2F7", tagLine: "#CBE0EA", iconBg: "#E8F2F7", iconInk: "#2E7D9E", icon: "M6 3.5h9L19 8v12.5H6z M9 12h7 M9 16h5" },
+      TP: { tagInk: "#5B6A7D", tagBg: "#F2F4F7", tagLine: "#E3E7EC", iconBg: "#EFF2F5", iconInk: "#5B6A7D", icon: "M8 4h8v4l3 12H5L8 8z M9.5 13h5" }
+    };
+
+    let list = this.docs();
+    if (st.filter === "Cours" || st.filter === "TP") list = list.filter(d => d.type === st.filter);
+    if (st.filter === "Sans réponse") list = list.filter(d => d.questions > 0);
+
+    const threadRaw = [
+      { key: "t0", initials: "AK", name: "Amine Kabbaj", when: "il y a 1 h", avatarBg: "#2E7D9E", avatarInk: "#FFFFFF", mine: false,
+        before: "La partie sur les jointures externes est-elle au programme du CC1 ? ", mention: "@Salma Idrissi", after: " avait posé la même question en séance.",
+        answer: "Oui, les jointures externes sont au programme, mais seulement les cas LEFT et RIGHT. Pas de FULL OUTER au CC1." },
+      { key: "t1", initials: "YB", name: "Vous", when: "il y a 25 min", avatarBg: "#2E3B4E", avatarInk: "#FFFFFF", mine: true,
+        before: "Dans l'exemple, pourquoi filtrer sur ", mention: "", after: "m.code plutôt que sur la table d'association ?", answer: "" },
+      { key: "t2", initials: "IC", name: "Imane Chraibi", when: "hier", avatarBg: "#EFF2F5", avatarInk: "#5B6A7D", mine: false,
+        before: "Merci pour le support, l'encadré « à retenir » est très utile. ", mention: "@Mehdi Tazi", after: " regarde le dernier point.", answer: "" }
+    ];
+    const thread = threadRaw.filter(q => !st.removed[q.key]);
+
+    return {
+      navItems: nav.map(n => {
+        const on = n.key === st.nav;
+        return { label: n.label, icon: n.icon, pick: () => this.setState({ nav: n.key }), ink: on ? "#2E3B4E" : "#A9B4C0", stroke: on ? "2.2" : "1.8", weight: on ? "600" : "400" };
+      }),
+
+      isList: st.screen === "list",
+      isReader: st.screen === "reader",
+      back: () => this.setState({ screen: "list" }),
+
+      docCount: this.docs().length,
+      filters: ["Tous", "Cours", "TP", "Sans réponse"].map(l => {
+        const on = l === st.filter;
+        return {
+          label: l,
+          pick: () => this.setState({ filter: l }),
+          ink: on ? "#FFFFFF" : "#5B6A7D",
+          bg: on ? "#2E3B4E" : "#FFFFFF",
+          line: on ? "#2E3B4E" : "#C9D2DC"
+        };
+      }),
+      docs: list.map(d => Object.assign({}, d, typeTone[d.type], {
+        questions: d.questions === 0 ? "—" : String(d.questions),
+        qInk: d.questions > 0 ? "#B8433A" : "#C3CBD5",
+        open: () => this.setState({ screen: "reader" })
+      })),
+
+      readerTitle: "Les jointures SQL",
+      readerMeta: "M106 · 16/09",
+
+      thread: thread.map(q => Object.assign({}, q, {
+        mentionShow: q.mention ? "inline" : "none",
+        hasAnswer: !!q.answer,
+        remove: () => this.setState(s => ({ removed: Object.assign({}, s.removed, { [q.key]: true }) }))
+      })),
+      threadCount: String(thread.length).padStart(2, "0"),
+
+      draft: st.draft,
+      onDraft: e => this.setState({ draft: e.target.value, suggest: false }),
+      mention: () => this.setState(s => ({ suggest: !s.suggest })),
+      suggestOpen: st.suggest,
+      classmates: [
+        { initials: "SI", name: "Salma Idrissi", group: "TSDI-201", avatarBg: "#3C8C5C", avatarInk: "#FFFFFF" },
+        { initials: "AK", name: "Amine Kabbaj", group: "TSDI-201", avatarBg: "#2E7D9E", avatarInk: "#FFFFFF" },
+        { initials: "IC", name: "Imane Chraibi", group: "TSDI-201", avatarBg: "#EFF2F5", avatarInk: "#5B6A7D" }
+      ].map(c => Object.assign({}, c, {
+        pick: () => this.setState(s => ({ draft: (s.draft ? s.draft.replace(/\s*$/, " ") : "") + "@" + c.name + " ", suggest: false }))
+      })),
+      sendBg: st.draft.trim() ? "#2E3B4E" : "#A9B4C0"
+    };
+  }
+}
+</script>
+</body>
+</html>
