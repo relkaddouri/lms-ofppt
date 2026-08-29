@@ -35,13 +35,13 @@ export type FichePdf = {
   prochaine: BlocFichePdf;
 };
 
-const X = 14;
-const LARGEUR = 182;
-const HAUT = 16;
-const BAS = 282;
+export const X = 14;
+export const LARGEUR = 182;
+export const HAUT = 16;
+export const BAS = 282;
 
-const ENCRE: [number, number, number] = [17, 24, 39];
-const TRAIT: [number, number, number] = [80, 80, 80];
+export const ENCRE: [number, number, number] = [17, 24, 39];
+export const TRAIT: [number, number, number] = [80, 80, 80];
 const FOND: [number, number, number] = [238, 240, 243];
 
 function minutes(n: number): string {
@@ -51,7 +51,20 @@ function minutes(n: number): string {
 export async function construireFichePdf(f: FichePdf): Promise<jsPDF> {
   const { default: JsPDF } = await import("jspdf");
   const doc = new JsPDF({ unit: "mm", format: "a4" });
+  dessinerFiche(doc, f);
+  return doc;
+}
 
+/**
+ * Dessine une fiche sur la page courante, à partir du haut, et ajoute autant
+ * de pages que nécessaire.
+ *
+ * Séparé de `construireFichePdf` pour que le classeur pédagogique puisse
+ * enchaîner les fiches dans un seul document au lieu d'en produire un par
+ * séance : la mise en page officielle n'existe qu'ici, elle n'est pas
+ * réécrite ailleurs (conventions.md).
+ */
+export function dessinerFiche(doc: jsPDF, f: FichePdf): void {
   let y = HAUT;
 
   function saut(hauteur: number) {
@@ -198,8 +211,6 @@ export async function construireFichePdf(f: FichePdf): Promise<jsPDF> {
     { texte: f.prochaine.contenu, largeur: lContenu },
     { texte: minutes(f.prochaine.minutes), largeur: lDuree },
   ]);
-
-  return doc;
 }
 
 export async function telechargerFichePdf(f: FichePdf, nomFichier: string) {
