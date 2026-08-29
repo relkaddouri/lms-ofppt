@@ -18,7 +18,8 @@ export async function createClient() {
               cookieStore.set(name, value, options),
             );
           } catch {
-            // Le middleware rafraîchit la session côté serveur.
+            // Un composant serveur ne peut pas poser de cookie pendant son
+            // rendu : c'est `proxy.ts` qui rafraîchit la session en amont.
           }
         },
       },
