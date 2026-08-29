@@ -27,47 +27,56 @@ export default async function ModuleDetailPage({
   const { module, competence, controles, hasFiche, groupes } = detail;
 
   return (
-    <div className="p-8">
+    <div className="flex flex-col gap-6 px-6 py-10 md:px-10 md:pb-14">
       <Breadcrumb
-        items={[{ label: "Modules", href: "/modules" }, { label: module.nom }]}
+        items={[
+          { label: "Modules", href: "/modules" },
+          { label: competence?.code_operationnel ?? module.nom },
+        ]}
       />
 
-      <div className="mt-2 flex flex-wrap items-baseline gap-2">
-        {competence?.code_operationnel ? (
-          <span className="font-mono text-lg font-medium text-forest">
-            {competence.code_operationnel}
-          </span>
-        ) : null}
-        <h1 className="font-display text-[24px] font-bold text-ink">
-          {module.nom}
-        </h1>
-      </div>
-
-      <DureeReferenceEditor
-        moduleId={id}
-        dureeReference={module.duree_reference}
-        competence={competence}
-      />
-      {module.description ? (
-        <p className="mt-1 max-w-[640px] text-sm text-slate">
-          {module.description}
-        </p>
-      ) : null}
-
-      {referentiel ? (
-        <div className="mt-6">
-          <ReferentielCompetence referentiel={referentiel} />
+      <header className="flex flex-wrap items-end justify-between gap-6">
+        <div className="flex min-w-0 flex-col gap-2">
+          {competence?.code_operationnel ? (
+            <span className="w-fit rounded-[9px] bg-wash px-2.5 py-1 font-mono text-xs font-semibold text-slate-2">
+              {competence.code_operationnel}
+            </span>
+          ) : null}
+          <h1 className="font-display text-[34px] font-bold leading-tight tracking-[-0.02em] text-ink">
+            {module.nom}
+          </h1>
+          <p className="flex flex-wrap items-center gap-2 text-base text-slate-2">
+            <span className="font-mono text-body">
+              {module.duree_reference} h
+            </span>
+            {module.description ? (
+              <>
+                <span className="text-border-strong" aria-hidden>
+                  ·
+                </span>
+                <span>{module.description}</span>
+              </>
+            ) : null}
+          </p>
         </div>
-      ) : null}
 
-      <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <section className="rounded-xl border border-border bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-5">
+        <DureeReferenceEditor
+          moduleId={id}
+          dureeReference={module.duree_reference}
+          competence={competence}
+        />
+      </header>
+
+      {referentiel ? <ReferentielCompetence referentiel={referentiel} /> : null}
+
+      <div className="grid gap-5 [grid-template-columns:repeat(auto-fit,minmax(280px,1fr))]">
+        <section className="flex flex-col gap-4 rounded-[14px] border border-border bg-surface p-6 shadow-repos">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-mint text-forest">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[9px] bg-wash text-slate-2">
               <FileText size={16} />
             </div>
             <div>
-              <h2 className="font-display text-lg font-bold text-ink">
+              <h2 className="font-display text-[17px] font-semibold text-ink">
                 Fiche de préparation
               </h2>
               {hasFiche ? (
@@ -86,13 +95,13 @@ export default async function ModuleDetailPage({
           </Link>
         </section>
 
-        <section className="rounded-xl border border-border bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-5">
+        <section className="flex flex-col gap-4 rounded-[14px] border border-border bg-surface p-6 shadow-repos">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-mint text-forest">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[9px] bg-wash text-slate-2">
               <ListChecks size={16} />
             </div>
             <div>
-              <h2 className="font-display text-lg font-bold text-ink">
+              <h2 className="font-display text-[17px] font-semibold text-ink">
                 Contrôles
               </h2>
               <p className="text-xs text-slate">
@@ -122,13 +131,13 @@ export default async function ModuleDetailPage({
           )}
         </section>
 
-        <section className="rounded-xl border border-border bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-5">
+        <section className="flex flex-col gap-4 rounded-[14px] border border-border bg-surface p-6 shadow-repos">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-mint text-forest">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[9px] bg-wash text-slate-2">
               <Users size={16} />
             </div>
             <div>
-              <h2 className="font-display text-lg font-bold text-ink">Groupes</h2>
+              <h2 className="font-display text-[17px] font-semibold text-ink">Groupes</h2>
               <p className="text-xs text-slate">
                 {groupes.length} groupe{groupes.length > 1 ? "s" : ""}
               </p>
@@ -158,7 +167,7 @@ export default async function ModuleDetailPage({
 
       {controles.length > 0 ? (
         <section className="mt-8">
-          <h2 className="font-display text-xl font-bold text-ink">Contrôles du module</h2>
+          <h2 className="font-display text-[17px] font-semibold text-ink">Contrôles du module</h2>
           <div className="mt-4 overflow-hidden rounded-xl border border-border bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
             <table className="w-full text-left text-sm">
               <thead>

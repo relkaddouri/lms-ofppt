@@ -8,18 +8,44 @@ export type Groupe = {
   nom: string;
   date_debut: string | null;
   date_fin: string | null;
+  annee: number | null;
+  /** Nom de la spécialité du groupe, tel qu'affiché sur sa carte. */
+  specialite: string | null;
   stagiaires?: { count: number }[];
 };
 
 export async function getGroupes(): Promise<Groupe[]> {
   const supabase = await createClient();
+  // Colonnes explicites plutôt que `*` (conventions.md).
   const { data, error } = await supabase
     .from("groupes")
-    .select("*, stagiaires(count)")
+    .select(
+      "id, nom, date_debut, date_fin, annee, specialites(nom), stagiaires(count)",
+    )
     .order("date_debut", { ascending: true, nullsFirst: true });
 
   if (error) throw new Error(error.message);
-  return data as Groupe[];
+
+  return (data ?? []).map((g) => {
+    const r = g as unknown as {
+      id: string;
+      nom: string;
+      date_debut: string | null;
+      date_fin: string | null;
+      annee: number | null;
+      specialites: { nom: string } | null;
+      stagiaires?: { count: number }[];
+    };
+    return {
+      id: r.id,
+      nom: r.nom,
+      date_debut: r.date_debut,
+      date_fin: r.date_fin,
+      annee: r.annee,
+      specialite: r.specialites?.nom ?? null,
+      stagiaires: r.stagiaires,
+    };
+  });
 }
 
 export async function getGroupeById(id: string): Promise<Groupe | null> {

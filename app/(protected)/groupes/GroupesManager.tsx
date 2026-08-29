@@ -7,11 +7,25 @@ import { createGroupe, type Groupe } from "@/app/actions/groupes";
 import type { Module } from "@/app/actions/modules";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
-import Card from "@/components/ui/Card";
 import Modal from "@/components/ui/Modal";
 import { useToast } from "@/components/ui/Toast";
 import { formatDate } from "@/lib/format";
-import { Plus, X } from "lucide-react";
+import { Plus, Search, X } from "lucide-react";
+
+/** Année de formation : septembre ouvre l'année suivante, comme en base. */
+function anneeDeFormation(): string {
+  const maintenant = new Date();
+  const debut =
+    maintenant.getMonth() >= 8
+      ? maintenant.getFullYear()
+      : maintenant.getFullYear() - 1;
+  return `${debut} — ${debut + 1}`;
+}
+
+/** Numéro court d'un groupe : les chiffres de fin de son nom. */
+function numeroDe(nom: string): string {
+  return nom.match(/(\d{2,4})$/)?.[1] ?? nom.slice(0, 2).toUpperCase();
+}
 
 export default function GroupesManager({
   groupes,
@@ -23,6 +37,8 @@ export default function GroupesManager({
   const router = useRouter();
   const toast = useToast();
   const [open, setOpen] = useState(false);
+  const [filtre, setFiltre] = useState("");
+  const [annee, setAnnee] = useState("tous");
   const [busy, setBusy] = useState(false);
   const [form, setForm] = useState({
     nom: "",
@@ -59,48 +75,153 @@ export default function GroupesManager({
     }
   }
 
+  const recherche = filtre.trim().toLowerCase();
+  const visibles = groupes.filter((g) => {
+    const parAnnee = annee === "tous" || String(g.annee ?? "") === annee;
+    const parTexte =
+      !recherche ||
+      [g.nom, g.specialite]
+        .filter(Boolean)
+        .some((v) => v!.toLowerCase().includes(recherche));
+    return parAnnee && parTexte;
+  });
+
+  const totalStagiaires = visibles.reduce(
+    (t, g) => t + (g.stagiaires?.[0]?.count ?? 0),
+    0,
+  );
+
+  // Les années présentes dans les données, pour ne pas proposer un filtre vide.
+  const annees = [
+    ...new Set(groupes.map((g) => g.annee).filter((a): a is number => a !== null)),
+  ].sort();
+
   return (
-    <div className="p-8">
-      <div className="flex items-center justify-end">
+    <div className="flex flex-col gap-6 px-6 py-10 md:px-10 md:pb-14">
+      <header className="flex flex-wrap items-end justify-between gap-6">
+        <div className="flex flex-col gap-2">
+          <span className="font-mono text-[11.5px] uppercase tracking-[0.12em] text-slate-light">
+            Année de formation {anneeDeFormation()}
+          </span>
+          <h1 className="font-display text-[34px] font-bold leading-tight tracking-[-0.02em] text-ink">
+            Groupes
+          </h1>
+          <p className="text-base text-slate-2">
+            <span className="font-mono text-body">{visibles.length}</span> groupe
+            {visibles.length > 1 ? "s" : ""} ·{" "}
+            <span className="font-mono text-body">{totalStagiaires}</span>{" "}
+            stagiaire{totalStagiaires > 1 ? "s" : ""}
+          </p>
+        </div>
         <Button icon={Plus} onClick={() => setOpen(true)}>
           Créer un groupe
         </Button>
+      </header>
+
+      <div className="flex flex-wrap items-center gap-3">
+        <label className="relative block min-w-[280px] flex-1 md:max-w-[420px]">
+          <span className="sr-only">Rechercher un groupe</span>
+          <Search
+            size={17}
+            strokeWidth={2}
+            aria-hidden
+            className="pointer-events-none absolute left-[13px] top-1/2 -translate-y-1/2 text-slate-light"
+          />
+          <input
+            type="search"
+            value={filtre}
+            onChange={(e) => setFiltre(e.target.value)}
+            placeholder="Rechercher un groupe ou une spécialité…"
+            className="w-full rounded-[9px] border border-border-strong bg-surface py-[11px] pl-10 pr-[13px] text-[15px] text-ink outline-none transition-colors duration-150 ease-out placeholder:text-slate-light focus:border-teal focus:shadow-[0_0_0_3px_rgba(46,125,158,0.15)]"
+          />
+        </label>
+
+        {annees.length > 1 ? (
+          <div className="flex gap-1 rounded-[11px] border border-border bg-wash-strong p-1">
+            {[
+              { valeur: "tous", libelle: "Tous" },
+              ...annees.map((a) => ({
+                valeur: String(a),
+                libelle: a === 1 ? "1ʳᵉ année" : `${a}ᵉ année`,
+              })),
+            ].map((o) => (
+              <button
+                key={o.valeur}
+                type="button"
+                onClick={() => setAnnee(o.valeur)}
+                className={`whitespace-nowrap rounded-lg px-3.5 py-2 text-sm font-semibold transition-colors duration-150 ease-out ${
+                  annee === o.valeur
+                    ? "bg-surface text-ink shadow-[0_1px_2px_rgba(46,59,78,0.12)]"
+                    : "text-slate hover:text-ink"
+                }`}
+              >
+                {o.libelle}
+              </button>
+            ))}
+          </div>
+        ) : null}
       </div>
 
-      <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {groupes.length === 0 ? (
-          <p className="col-span-full text-center text-sm text-slate">
-            Aucun groupe. Cliquez sur « Créer un groupe ».
-          </p>
+      <div className="grid gap-5 [grid-template-columns:repeat(auto-fill,minmax(320px,1fr))]">
+        {visibles.length === 0 ? (
+          <div className="col-span-full flex flex-col items-center gap-1 rounded-[14px] border border-border bg-surface px-6 py-14 text-center shadow-repos">
+            <span className="text-[15px] font-semibold text-ink">
+              {groupes.length === 0
+                ? "Aucun groupe"
+                : "Aucun groupe ne correspond"}
+            </span>
+            <span className="text-[13.5px] text-slate-light">
+              {groupes.length === 0
+                ? "Créez le premier groupe pour commencer."
+                : "Essayez un autre nom ou changez de filtre."}
+            </span>
+          </div>
         ) : (
-          groupes.map((g) => (
-            <Card key={g.id} padded={false} className="transition-colors hover:border-forest/50">
+          visibles.map((g) => {
+            const effectif = g.stagiaires?.[0]?.count ?? 0;
+            return (
               <Link
+                key={g.id}
                 href={`/groupes/${g.id}`}
-                className="block rounded-xl p-4 focus:outline-none focus:ring-2 focus:ring-forest"
+                className="flex min-w-0 flex-col gap-[18px] rounded-[14px] border border-border bg-surface p-5 no-underline shadow-repos transition-colors duration-150 ease-out hover:border-border-strong hover:no-underline"
               >
-                <h2 className="font-display text-xl font-bold text-ink">
-                  {g.nom}
-                </h2>
-                <dl className="mt-3 space-y-1 text-sm">
-                  <div className="flex justify-between">
-                    <dt className="text-slate">Début</dt>
-                    <dd className="font-mono text-ink">{formatDate(g.date_debut)}</dd>
+                <div className="flex min-w-0 items-start gap-3.5">
+                  <span className="flex h-9 shrink-0 items-center justify-center rounded-[9px] bg-ink px-2.5 font-mono text-xs font-semibold text-white">
+                    {numeroDe(g.nom)}
+                  </span>
+                  <div className="flex min-w-0 flex-col gap-1.5">
+                    <span className="truncate text-[17px] font-semibold text-ink">
+                      {g.nom}
+                    </span>
+                    <span className="text-[13.5px] text-slate">
+                      {g.annee
+                        ? `${g.annee === 1 ? "1ʳᵉ" : `${g.annee}ᵉ`} année`
+                        : "Année non précisée"}
+                      {" · "}
+                      {effectif} stagiaire{effectif > 1 ? "s" : ""}
+                    </span>
+                    {g.specialite ? (
+                      <span className="truncate text-[13px] text-slate-light">
+                        {g.specialite}
+                      </span>
+                    ) : null}
                   </div>
-                  <div className="flex justify-between">
-                    <dt className="text-slate">Fin</dt>
-                    <dd className="font-mono text-ink">{formatDate(g.date_fin)}</dd>
+                </div>
+
+                <div className="flex flex-col gap-2 border-t border-separator pt-[18px]">
+                  <div className="flex items-baseline justify-between gap-3">
+                    <span className="text-[13.5px] text-slate">
+                      Période de formation
+                    </span>
+                    <span className="font-mono text-[13px] text-body">
+                      {formatDate(g.date_debut, "—")} →{" "}
+                      {formatDate(g.date_fin, "—")}
+                    </span>
                   </div>
-                  <div className="flex justify-between">
-                    <dt className="text-slate">Stagiaires</dt>
-                    <dd className="font-mono text-ink">
-                      {g.stagiaires?.[0]?.count ?? 0}
-                    </dd>
-                  </div>
-                </dl>
+                </div>
               </Link>
-            </Card>
-          ))
+            );
+          })
         )}
       </div>
 
