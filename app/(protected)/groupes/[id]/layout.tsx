@@ -1,4 +1,4 @@
-import { getGroupeById } from "@/app/actions/groupes";
+import { getGroupeById, getCompteursGroupe } from "@/app/actions/groupes";
 import { getStagiairesCount } from "@/app/actions/stagiaires";
 import { redirect } from "next/navigation";
 import GroupeHeader from "@/components/GroupeHeader";
@@ -19,13 +19,18 @@ export default async function GroupeLayout({
   const groupe = await getGroupeById(id);
   if (!groupe) redirect("/groupes");
 
-  const stagiairesCount = await getStagiairesCount(id);
+  const [stagiairesCount, compteurs] = await Promise.all([
+    getStagiairesCount(id),
+    getCompteursGroupe(id),
+  ]);
 
   return (
-    <div className="p-8">
-      <GroupeHeader groupe={groupe} stagiairesCount={stagiairesCount} />
-      <GroupeTabs />
-      {children}
+    <div className="flex flex-col">
+      <div className="flex flex-col gap-5 bg-surface px-6 pt-8 md:px-10">
+        <GroupeHeader groupe={groupe} stagiairesCount={stagiairesCount} />
+        <GroupeTabs compteurs={compteurs} />
+      </div>
+      <div className="px-6 pb-14 md:px-10">{children}</div>
     </div>
   );
 }

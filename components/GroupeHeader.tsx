@@ -26,20 +26,54 @@ export default function GroupeHeader({
   const onglet = ongletGroupeActif(pathname);
   if (onglet.key !== ONGLETS_GROUPE[0].key) items.push({ label: onglet.label });
 
+  const numero =
+    groupe.nom.match(/(\d{2,4})$/)?.[1] ?? groupe.nom.slice(0, 2).toUpperCase();
+
   return (
-    <div>
+    <div className="flex flex-col gap-5">
       <Breadcrumb items={items} />
-      <div className="mt-2 flex flex-wrap items-center gap-3">
-        <h1 className="font-display text-[24px] font-bold text-ink">
-          {groupe.nom}
-        </h1>
-        <span className="rounded-full border border-border bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.06)] px-3 py-1 text-xs font-medium text-slate">
-          {stagiairesCount} stagiaire{stagiairesCount > 1 ? "s" : ""}
-        </span>
+
+      <div className="flex flex-wrap items-start justify-between gap-6">
+        <div className="flex min-w-0 items-start gap-4">
+          <span className="flex h-[50px] w-[50px] shrink-0 items-center justify-center rounded-xl bg-ink font-mono text-base font-semibold text-white">
+            {numero}
+          </span>
+          <div className="flex min-w-0 flex-col gap-2">
+            <h1 className="font-display text-[28px] font-bold leading-tight tracking-[-0.02em] text-ink">
+              {groupe.nom}
+            </h1>
+            <div className="flex flex-wrap items-center gap-2">
+              {groupe.annee ? (
+                <span className="rounded-full border border-tint-teal-strong bg-tint-teal px-2.5 py-1 text-[12.5px] font-semibold text-teal-dark">
+                  {groupe.annee === 1 ? "1ʳᵉ" : `${groupe.annee}ᵉ`} année
+                </span>
+              ) : null}
+              {groupe.specialite ? (
+                <span className="rounded-full border border-border bg-wash-strong px-2.5 py-1 text-[12.5px] font-semibold text-slate-2">
+                  {groupe.specialite}
+                </span>
+              ) : null}
+              <span className="rounded-full border border-border bg-wash-strong px-2.5 py-1 text-[12.5px] font-semibold text-slate-2">
+                {stagiairesCount} stagiaire{stagiairesCount > 1 ? "s" : ""}
+              </span>
+              <span className="font-mono text-[13px] text-slate-light">
+                {formatDate(groupe.date_debut)} → {formatDate(groupe.date_fin)}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex gap-2.5">
+          {/* Présents parce que la maquette les montre ; l'export du classeur
+              vit dans l'onglet Fiches et la planification dans un module. */}
+          <Button variant="secondary" disabled title="L'export vit dans l'onglet Fiches">
+            Exporter
+          </Button>
+          <Button disabled title="La planification se fait depuis un module du groupe">
+            Planifier une séance
+          </Button>
+        </div>
       </div>
-      <p className="mt-1 text-sm text-slate">
-        {formatDate(groupe.date_debut)} → {formatDate(groupe.date_fin)}
-      </p>
     </div>
   );
 }

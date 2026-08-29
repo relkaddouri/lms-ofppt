@@ -52,12 +52,28 @@ export async function getGroupeById(id: string): Promise<Groupe | null> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("groupes")
-    .select("*")
+    .select("id, nom, date_debut, date_fin, annee, specialites(nom)")
     .eq("id", id)
     .single();
 
-  if (error) return null;
-  return data as Groupe;
+  if (error || !data) return null;
+
+  const r = data as unknown as {
+    id: string;
+    nom: string;
+    date_debut: string | null;
+    date_fin: string | null;
+    annee: number | null;
+    specialites: { nom: string } | null;
+  };
+  return {
+    id: r.id,
+    nom: r.nom,
+    date_debut: r.date_debut,
+    date_fin: r.date_fin,
+    annee: r.annee,
+    specialite: r.specialites?.nom ?? null,
+  };
 }
 
 export async function createGroupe(input: {
@@ -285,4 +301,58 @@ export async function getGroupeModules(
         (controleStatut.get(r.module_id) as "brouillon" | "valide") ?? null,
     };
   });
+}
+
+export type CompteursGroupe = Partial<Record<string, number>>;
+
+/**
+ * Compteurs affichés sur les onglets d'un groupe.
+ *
+ * Les maquettes portent un nombre sur chaque onglet — c'est ce qui permet de
+ * voir depuis n'importe quel onglet qu'il reste deux contrôles à valider. Six
+ * comptes exacts en parallèle, sans rapatrier une seule ligne.
+ */
+export async function getCompteursGroupe(
+  groupeId: string,
+): Promise<CompteursGroupe> {
+  const supabase = await createClient();
+
+  const [stagiaires, modules, seances, annonces, controles, devoirs] =
+    await Promise.all([
+      supabase
+        .from("stagiaires")
+        .select("id", { count: "exact", head: true })
+        .eq("groupe_id", groupeId),
+      supabase
+        .from("groupe_modules")
+        .select("module_id", { count: "exact", head: true })
+        .eq("groupe_id", groupeId),
+      supabase
+        .from("seances")
+        .select("id", { count: "exact", head: true })
+        .eq("groupe_id", groupeId)
+        .eq("statut", "a_faire"),
+      supabase
+        .from("annonces")
+        .select("id", { count: "exact", head: true })
+        .eq("groupe_id", groupeId),
+      supabase
+        .from("controles")
+        .select("id", { count: "exact", head: true })
+        .eq("groupe_id", groupeId)
+        .eq("statut", "brouillon"),
+      supabase
+        .from("devoirs")
+        .select("id", { count: "exact", head: true })
+        .eq("groupe_id", groupeId),
+    ]);
+
+  return {
+    stagiaires: stagiaires.count ?? 0,
+    modules: modules.count ?? 0,
+    progression: seances.count ?? 0,
+    annonces: annonces.count ?? 0,
+    controles: controles.count ?? 0,
+    devoirs: devoirs.count ?? 0,
+  };
 }
