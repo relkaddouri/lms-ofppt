@@ -1,6 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { LogIn } from "lucide-react";
+import MarqueOfppt from "@/components/MarqueOfppt";
+import ChampMotDePasse from "@/components/ui/ChampMotDePasse";
+
+export const metadata = { title: "Connexion" };
 
 export default async function LoginPage({
   searchParams,
@@ -30,65 +33,81 @@ export default async function LoginPage({
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-paper p-8">
-      <div className="w-full max-w-md rounded-xl border border-border bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-8">
-        <h1 className="font-display text-[28px] font-bold text-ink">
-          Connexion
-        </h1>
-        <p className="mt-1 text-sm text-slate">LMS OFPPT</p>
-
-        {params.error ? (
-          <div
-            className="mt-4 rounded-xl border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger"
-            role="alert"
-          >
-            {params.error}
+    <main className="flex min-h-screen items-center justify-center bg-paper px-8 py-14">
+      <div className="flex w-full max-w-[396px] flex-col gap-[26px]">
+        <div className="flex flex-col items-center gap-3.5">
+          <MarqueOfppt />
+          <div className="flex flex-col items-center gap-[3px]">
+            <span className="font-display text-[23px] font-bold tracking-[-0.01em] text-ink">
+              LMS OFPPT
+            </span>
+            <span className="text-sm text-slate-light">
+              Espace formateur · OFPPT
+            </span>
           </div>
-        ) : null}
+        </div>
 
-        <form action={signIn} className="mt-6 space-y-4">
-          <div>
-            <label
-              htmlFor="email"
-              className="block text-sm font-medium text-ink"
+        {/* Ombre propre à cet écran, relevée dans Connexion.dc.html : la carte
+            de connexion flotte un peu plus qu'une carte de tableau de bord. */}
+        <div className="flex flex-col gap-5 rounded-[14px] border border-border bg-surface px-7 py-[30px] shadow-[0_2px_8px_rgba(46,59,78,0.06)]">
+          <div className="flex flex-col gap-[5px]">
+            <h1 className="font-display text-[21px] font-semibold leading-tight text-ink">
+              Connexion
+            </h1>
+            <span className="text-[14.5px] text-slate-light">
+              Utilisez l&apos;adresse fournie par votre établissement.
+            </span>
+          </div>
+
+          {params.error ? (
+            <p
+              role="alert"
+              className="rounded-[10px] border border-tint-alert-strong bg-alert-wash px-4 py-3 text-sm text-coral-dark"
             >
-              Email
-            </label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              required
-              autoComplete="email"
-              className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm text-ink focus:border-forest focus:outline-none focus:ring-2 focus:ring-forest"
-            />
-          </div>
+              {params.error}
+            </p>
+          ) : null}
 
-          <div>
-            <label
-              htmlFor="password"
-              className="block text-sm font-medium text-ink"
+          <form action={signIn} className="flex flex-col gap-5">
+            <label htmlFor="email" className="flex flex-col gap-[7px]">
+              <span className="text-sm font-semibold text-body">
+                Adresse e-mail
+              </span>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                required
+                autoComplete="email"
+                placeholder="prenom.nom@ofppt.ma"
+                className="rounded-[9px] border border-border-strong bg-surface px-[13px] py-3 text-[15px] text-ink outline-none transition-colors duration-150 ease-out placeholder:text-slate-light focus:border-teal focus:shadow-[0_0_0_3px_rgba(46,125,158,0.15)]"
+              />
+            </label>
+
+            <label htmlFor="password" className="flex flex-col gap-[7px]">
+              <span className="text-sm font-semibold text-body">
+                Mot de passe
+              </span>
+              <ChampMotDePasse
+                id="password"
+                name="password"
+                required
+                autoComplete="current-password"
+              />
+            </label>
+
+            <button
+              type="submit"
+              className="w-full rounded-[10px] border border-ink bg-ink px-5 py-3.5 text-[15px] font-semibold text-white transition-colors duration-150 ease-out hover:border-ofppt-ink-dark hover:bg-ofppt-ink-dark focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_rgba(46,125,158,0.15)]"
             >
-              Mot de passe
-            </label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              required
-              autoComplete="current-password"
-              className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm text-ink focus:border-forest focus:outline-none focus:ring-2 focus:ring-forest"
-            />
-          </div>
+              Se connecter
+            </button>
+          </form>
+        </div>
 
-          <button
-            type="submit"
-            className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-forest px-4 py-2.5 text-sm font-medium text-white hover:bg-forest/90 focus:outline-none focus:ring-2 focus:ring-forest"
-          >
-            <LogIn size={16} />
-            Se connecter
-          </button>
-        </form>
+        <span className="text-center text-[13px] text-muted">
+          Office de la Formation Professionnelle et de la Promotion du Travail
+        </span>
       </div>
     </main>
   );

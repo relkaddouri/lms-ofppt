@@ -30,6 +30,7 @@ Identité "tableau de pilotage clair" inspirée d'un dashboard SaaS professionne
 | `--mint` | #EDF0F3 | Fond des états actifs/survol (nav active) |
 | `--wash` | #EFF2F5 | Survol de ligne de tableau, zébrures — distinct de `--mint`, plus neutre |
 | `--wash-strong` | #F2F4F7 | États désactivés, fond de badge "Brouillon" |
+| `--separator` | #EDF0F3 | Filet interne de carte (même valeur que `--mint`, rôle distinct : séparation, pas état actif) |
 
 ### Échelle de texte — six niveaux, confirmée par fréquence réelle sur 21 écrans
 
@@ -62,11 +63,13 @@ Identité "tableau de pilotage clair" inspirée d'un dashboard SaaS professionne
 | `--status-neutral` | #6B7A8D | Expiré, Archivé, Brouillon |
 | `--status-info` | #2E7D9E | En cours, En attente |
 
-### Règle d'usage du corail — citée directement de la planche de style, non négociable
+### Règle d'usage du corail — citée de la planche de style, affinée par l'usage réel sur 21 écrans
 
 > *"Le corail ne porte jamais une surface : il souligne un seul point d'attention par écran — un retard, un dépassement, une action irréversible."*
 
-Concrètement : `--ofppt-coral` n'est **jamais** un fond plein en dehors d'un bouton d'action destructive ou d'un badge d'alerte ponctuel. Un écran ne doit jamais avoir plus d'**un seul** élément corail à la fois — si un composant l'utilise déjà pour signaler un retard, aucun autre élément de ce même écran ne doit être corail en même temps, même pour une raison différente.
+**Précision apportée après vérification sur les écrans livrés (23 boutons corail pleins recensés : `confirmSubmit`, `applySuggestion`, `validateAi`)** : "ne porte jamais une surface" vise les fonds décoratifs (panneaux, cartes, zones de mise en avant), pas les boutons d'action. **Un bouton `destructive` en corail plein est autorisé** — c'est précisément lui, l'unique action engageante d'un écran, qui incarne "le seul point d'attention". La règle reste stricte sur le nombre : un écran ne doit jamais afficher **plus d'un** élément corail en même temps (qu'il s'agisse d'un bouton plein, d'une bordure `danger`, d'un badge d'alerte ou d'un avatar) — si un bouton `destructive` est présent, rien d'autre sur cet écran ne doit être corail.
+
+**Implication pour toute liste de personnes (avatars)** : le corail est exclu de la palette de couleurs d'avatar, précisément parce qu'une liste de plusieurs personnes ferait mécaniquement apparaître plusieurs avatars corail, ce qui violerait la règle du "un seul à la fois". Palette d'avatar : `--ofppt-ink`, `--ofppt-green`, `--ofppt-teal` uniquement, couleur stable et non permutée par personne.
 
 ## 2. Typographie
 
@@ -164,16 +167,19 @@ Une fiche prescrite ou un tableau de suggestions pédagogiques contient beaucoup
 
 **Spécifications confirmées par les 21 écrans livrés** — remplacent les descriptions génériques précédentes.
 
-- **Bouton** : rayon 9px, padding 11×20px, 4 variantes —
+- **Bouton** : rayon 9px, padding 11×20px, 5 variantes —
   - *Primaire* : fond `--ofppt-ink`, texte blanc
   - *Secondaire* : fond `--surface`, bordure 1px `--border-strong` (#C9D2DC), texte `--body`
-  - *Corail* (action destructive/irréversible uniquement — voir règle du corail en §1) : bordure `#F0BDB8`, texte `--ofppt-coral`
+  - *Ghost* : pas de bordure (réservé aux actions d'icône) — pas de bordure, contrairement aux autres variantes
+  - *Danger* (signal, pas engagement définitif — ex. "Signaler un retard") : contour corail, bordure `#F0BDB8`, texte `--ofppt-coral`
+  - *Destructive* (l'action la plus engageante de l'écran — ex. confirmer une suppression, valider une proposition IA) : fond `--ofppt-coral` plein, texte blanc — devient alors l'unique élément corail autorisé sur cet écran (voir règle du corail en §1)
   - *Désactivé* : fond `--wash-strong` (#F2F4F7), texte `--muted` (#A9B4C0)
-- **Badge de statut** : forme pilule (999px), point 6px + texte, **fond ET bordure teintés par la couleur du statut** (changement réel par rapport à la version précédente qui n'avait pas de bordure) — jamais une couleur seule comme unique signal
-- **Badge de type** (ex. type de séance, type de module) : même forme pilule, point coloré + texte, fond transparent, bordure fine — distinct du badge de statut par l'absence de fond teinté
-- **Avatar** : 44px, **fond plein coloré avec initiales blanches** en `Sora` (changement par rapport à l'ancien fond `--mint` avec texte foncé), anneau `--ofppt-ink` 2px au focus clavier
+- **Badge de statut** : forme pilule (999px), point 6px + texte, fond ET bordure teintés par la couleur du statut — jamais une couleur seule comme unique signal
+- **Badge de type** (ex. type de séance, type de module) : même forme pilule, point coloré + texte, fond `--surface` avec bordure fine — distinct du badge de statut par l'absence de fond teinté
+- **Avatar** : 44px, fond plein coloré (palette : `--ofppt-ink`, `--ofppt-green`, `--ofppt-teal` — **jamais corail**, voir §1) avec initiales blanches en `Sora` 600, pas de bordure, anneau `--ofppt-ink` 2px au focus clavier
 - **Icônes d'action** : chaque bouton d'action (Modifier, Supprimer, Ajouter, etc.) porte une icône (lucide-react, 16px) avant le texte, espacement 6px
-- **Champ de formulaire** : rayon 9px, bordure 1px `--border-strong`, label 14px/600 au-dessus du champ, focus en halo sarcelle 3px (`--ofppt-teal` à faible opacité), pas juste un changement de couleur de bordure
+- **Champ de formulaire** : rayon 9px, **bordure 1px `--border-strong`** (pas `--border`, qui est trop pâle et disparaît sur fond blanc — réservée aux cartes et séparateurs), label 14px/600 au-dessus du champ, focus en halo sarcelle 3px (`--ofppt-teal` à faible opacité)
+- **Carte** : padding 24px (pas 16px), filet interne éventuel en `--separator`
 
 ## 11. Règles UX
 
