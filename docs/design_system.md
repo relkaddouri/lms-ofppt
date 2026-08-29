@@ -10,26 +10,39 @@ Identité "tableau de pilotage clair" inspirée d'un dashboard SaaS professionne
 
 ## 1. Palette — identité OFPPT
 
-**Confirmé par la Planche de style OFPPT produite dans Claude Design** (`docs/new_design/Planche de style OFPPT.dc.html`, réf. document DS-OFPPT-01) — ces valeurs remplacent les estimations précédentes, extraites directement du code du document livré, pas approximées.
+**Confirmé par la Planche de style OFPPT produite dans Claude Design** (`docs/new_design/Planche de style OFPPT.dc.html`, réf. document DS-OFPPT-01), puis **affiné par analyse de fréquence sur les 21 écrans livrés** — deux niveaux de texte et deux fonds neutres manquaient à la première extraction, corrigés ci-dessous.
 
 | Nom | Hex | Usage |
 |---|---|---|
-| `--ofppt-ink` | #2E3B4E | Bleu-ardoise — autorité : navigation, titres, texte principal, boutons primaires |
+| `--ofppt-ink` | #2E3B4E | Bleu-ardoise — titres, navigation, boutons primaires. **Pas le texte courant** (voir `--body` ci-dessous) |
 | `--ofppt-ink-dark` | #25303F | Variante foncée (hover/pressed sur boutons primaires) |
 | `--ofppt-coral` | #E2574C | Corail — accent de marque, emphase rare, alertes, retards |
 | `--ofppt-coral-dark` | #B8433A | Variante foncée du corail (hover/pressed) |
 | `--ofppt-green` | #3C8C5C | Vert — statuts positifs |
 | `--ofppt-green-dark` | #2C6C46 | Variante foncée du vert |
-| `--ofppt-teal` | #2E7D9E | Sarcelle — statuts informatifs, liens |
+| `--ofppt-teal` | #2E7D9E | Sarcelle — statuts informatifs, liens, focus de champ (halo 3px) |
 | `--ofppt-teal-dark` | #245F79 | Variante foncée de la sarcelle |
 | `--paper` | #F6F7F9 | Fond de page |
 | `--paper-alt` | #FAFBFC | Variante de fond (légèrement plus claire) |
 | `--surface` | #FFFFFF | Cartes, tableaux, barre latérale |
 | `--border` | #E3E7EC | Bordures fines |
-| `--border-strong` | #C9D2DC | Bordures plus marquées (séparateurs de section) |
-| `--slate` | #6B7A8D | Texte secondaire, métadonnées |
-| `--slate-light` | #8C99A8 | Texte tertiaire, placeholders |
-| `--mint` | #EDF0F3 | Fond des états actifs/survol (nav active, ligne de tableau survolée) — teinte neutre bleu-gris la plus utilisée dans les écrans livrés pour ce rôle, pas explicitement nommée dans la planche de style mais confirmée par l'usage répété (9 occurrences dans le seul fichier de planche) |
+| `--border-strong` | #C9D2DC | Bordures plus marquées (séparateurs de section, contour bouton secondaire) |
+| `--mint` | #EDF0F3 | Fond des états actifs/survol (nav active) |
+| `--wash` | #EFF2F5 | Survol de ligne de tableau, zébrures — distinct de `--mint`, plus neutre |
+| `--wash-strong` | #F2F4F7 | États désactivés, fond de badge "Brouillon" |
+
+### Échelle de texte — six niveaux, confirmée par fréquence réelle sur 21 écrans
+
+**Correction du fichier précédent** : le texte courant du corps n'utilise **pas** `--ofppt-ink` mais un ton plus doux. `body { color: var(--body) }` par défaut.
+
+| Nom | Hex | Fréquence mesurée | Usage |
+|---|---|---|---|
+| `--ofppt-ink` | #2E3B4E | — | Titres uniquement |
+| `--body` | #3F4E62 | 143 occurrences | **Texte courant** — le défaut de tout corps de texte |
+| `--slate-2` | #5B6A7D | 110 occurrences | Texte secondaire (descriptions, sous-titres de carte) |
+| `--slate` | #6B7A8D | — | Métadonnées (dates, auteurs) |
+| `--slate-light` | #8C99A8 | — | Labels de champ, placeholders |
+| `--muted` | #A9B4C0 | — | Texte désactivé |
 
 ### Fonds de statut (teintes, distincts des fonds neutres)
 
@@ -149,13 +162,18 @@ Une fiche prescrite ou un tableau de suggestions pédagogiques contient beaucoup
 
 ## 10. Composants de base
 
-- **Bouton primaire** : fond `--ofppt-ink`, texte blanc, coins 8px, pas d'ombre
-- **Bouton secondaire** : fond `--surface`, bordure 1px `--border`, texte `--ofppt-ink`
-- **Badge de type** (ex. type de séance, type de module) : forme pilule, petit point coloré + texte, fond transparent, bordure fine — comme "Full time / Part time" dans le modèle de référence
-- **Statut** : point plein 8px de la couleur du statut + texte, sur un fond pastel (10% d'opacité de la couleur) — jamais une couleur seule comme unique signal, toujours accompagnée du mot explicite
-- **Avatar** : cercle avec initiales sur fond `--mint`, bordure fine `--border` en permanence, anneau `--ofppt-ink` 2px au focus clavier
+**Spécifications confirmées par les 21 écrans livrés** — remplacent les descriptions génériques précédentes.
+
+- **Bouton** : rayon 9px, padding 11×20px, 4 variantes —
+  - *Primaire* : fond `--ofppt-ink`, texte blanc
+  - *Secondaire* : fond `--surface`, bordure 1px `--border-strong` (#C9D2DC), texte `--body`
+  - *Corail* (action destructive/irréversible uniquement — voir règle du corail en §1) : bordure `#F0BDB8`, texte `--ofppt-coral`
+  - *Désactivé* : fond `--wash-strong` (#F2F4F7), texte `--muted` (#A9B4C0)
+- **Badge de statut** : forme pilule (999px), point 6px + texte, **fond ET bordure teintés par la couleur du statut** (changement réel par rapport à la version précédente qui n'avait pas de bordure) — jamais une couleur seule comme unique signal
+- **Badge de type** (ex. type de séance, type de module) : même forme pilule, point coloré + texte, fond transparent, bordure fine — distinct du badge de statut par l'absence de fond teinté
+- **Avatar** : 44px, **fond plein coloré avec initiales blanches** en `Sora` (changement par rapport à l'ancien fond `--mint` avec texte foncé), anneau `--ofppt-ink` 2px au focus clavier
 - **Icônes d'action** : chaque bouton d'action (Modifier, Supprimer, Ajouter, etc.) porte une icône (lucide-react, 16px) avant le texte, espacement 6px
-- **Champ de formulaire** : bordure 1px `--border`, fond `--surface`, focus en bordure `--ofppt-ink` 2px
+- **Champ de formulaire** : rayon 9px, bordure 1px `--border-strong`, label 14px/600 au-dessus du champ, focus en halo sarcelle 3px (`--ofppt-teal` à faible opacité), pas juste un changement de couleur de bordure
 
 ## 11. Règles UX
 

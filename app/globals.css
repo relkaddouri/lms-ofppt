@@ -46,6 +46,10 @@
 
   /* Fond des états actifs et du survol */
   --mint: #edf0f3;
+  /* Même valeur que --mint, nom distinct : dans les écrans livrés #EDF0F3
+     sert aussi de filet interne aux cartes (71 occurrences), un rôle que
+     « mint » ne dit pas. */
+  --separator: #edf0f3;
 
   /* Teintes de statut */
   --bg-success: #eaf3ee;
@@ -78,6 +82,7 @@
   /* Noms historiques, remappés sur la nouvelle palette */
   --color-forest: var(--ofppt-ink);
   --color-mint: var(--mint);
+  --color-separator: var(--separator);
   --color-paper: var(--paper);
   --color-surface: var(--surface);
   --color-ink: var(--ink);

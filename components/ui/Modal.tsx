@@ -6,7 +6,8 @@ import { X } from "lucide-react";
 import Button from "./Button";
 
 /**
- * Modale du design system. Ferme sur Échap et sur clic hors panneau,
+ * Modale du système visuel v3 : coins 14 px, ombre flottante (le panneau se
+ * détache du fond, il n'est pas posé dessus). Ferme sur Échap et sur clic hors panneau,
  * verrouille le défilement du fond, et place le focus à l'ouverture.
  */
 export default function Modal({
@@ -60,22 +61,26 @@ export default function Modal({
         aria-modal="true"
         aria-label={title}
         tabIndex={-1}
-        className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-xl border border-border bg-surface p-6 shadow-[0_1px_3px_rgba(0,0,0,0.06)] focus:outline-none"
+        className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-[14px] border border-border bg-surface p-6 shadow-flottant focus:outline-none"
       >
         <div className="flex items-start justify-between gap-4">
-          <h2 className="font-display text-xl font-bold text-ink">{title}</h2>
+          <h2 className="font-display text-[22px] font-semibold leading-tight text-ink">
+            {title}
+          </h2>
           <button
             type="button"
             onClick={onClose}
             aria-label="Fermer"
-            className="rounded-lg p-1 text-slate hover:bg-paper hover:text-ink focus:outline-none focus:ring-2 focus:ring-forest"
+            className="rounded-lg p-1 text-slate transition-colors duration-150 ease-out hover:bg-paper hover:text-ink focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_rgba(46,125,158,0.15)]"
           >
             <X size={16} aria-hidden />
           </button>
         </div>
 
         {description ? (
-          <div className="mt-1 text-sm text-slate">{description}</div>
+          <div className="mt-2 text-[15px] leading-relaxed text-slate-2">
+            {description}
+          </div>
         ) : null}
 
         {children ? <div className="mt-4">{children}</div> : null}
@@ -124,7 +129,7 @@ export function ConfirmModal({
             {cancelLabel}
           </Button>
           <Button
-            variant="danger"
+            variant="destructive"
             onClick={onConfirm}
             loading={busy}
             loadingLabel="…"

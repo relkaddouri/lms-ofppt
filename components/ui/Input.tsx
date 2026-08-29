@@ -1,14 +1,22 @@
 import type { InputHTMLAttributes, TextareaHTMLAttributes, ReactNode } from "react";
 import { useId } from "react";
 
-// Design system : bordure 1px --border, fond --surface, focus bordure --forest 2px.
+/**
+ * Champ du système visuel v3.
+ *
+ * Relevé dans la planche de style : bordure `--border-strong` (et non
+ * `--border`, plus pâle et réservée aux séparateurs), rayon 9 px, padding
+ * 11×13, texte 15 px. Le focus pose la sarcelle et un halo de 3 px — c'est le
+ * seul traitement de focus que les écrans livrés définissent.
+ */
 const champ =
-  "mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-ink " +
-  "placeholder:text-slate/60 focus:border-forest focus:outline-none focus:ring-2 " +
-  "focus:ring-forest disabled:cursor-not-allowed disabled:opacity-50";
+  "mt-[7px] w-full rounded-[9px] border border-border-strong bg-surface " +
+  "px-[13px] py-[11px] text-[15px] text-ink placeholder:text-slate-light " +
+  "transition-colors duration-150 ease-out focus:border-teal focus:outline-none " +
+  "focus:shadow-[0_0_0_3px_rgba(46,125,158,0.15)] " +
+  "disabled:cursor-not-allowed disabled:bg-wash-strong disabled:text-muted";
 
-const champEnErreur =
-  "border-danger focus:border-danger focus:ring-danger";
+const champEnErreur = "border-coral focus:border-coral";
 
 function Enveloppe({
   id,
@@ -26,18 +34,27 @@ function Enveloppe({
   return (
     <div>
       {label ? (
-        <label htmlFor={id} className="block text-sm font-medium text-ink">
+        <label
+          htmlFor={id}
+          className={`block text-sm font-semibold ${
+            error ? "text-coral-dark" : "text-body"
+          }`}
+        >
           {label}
         </label>
       ) : null}
       {children}
       {/* Validation en ligne : le message s'affiche sous le champ, pas seulement à la soumission. */}
       {error ? (
-        <p id={`${id}-erreur`} role="alert" className="mt-1 text-xs text-danger">
+        <p
+          id={`${id}-erreur`}
+          role="alert"
+          className="mt-[7px] text-[13px] text-coral-dark"
+        >
           {error}
         </p>
       ) : hint ? (
-        <p className="mt-1 text-xs text-slate">{hint}</p>
+        <p className="mt-[7px] text-[13px] text-slate">{hint}</p>
       ) : null}
     </div>
   );

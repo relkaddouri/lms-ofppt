@@ -1,8 +1,11 @@
 import type { ReactNode } from "react";
 
 /**
- * Carte du design system : bordure 1px --border, ombre légère, coins 12px.
- * `highlight` ajoute la bordure gauche --forest 3px réservée à l'élément
+ * Carte du système visuel v3 : bordure 1px `--border`, ombre de repos, coins
+ * 14 px (valeur dominante des écrans livrés : 70 occurrences contre 10 pour
+ * 12 px), padding 24 px.
+ *
+ * `highlight` ajoute la bordure gauche `--ofppt-ink` 3px réservée à l'élément
  * le plus important d'un groupe de cartes.
  */
 export default function Card({
@@ -19,10 +22,9 @@ export default function Card({
   return (
     <div
       className={[
-        "rounded-xl border border-border bg-surface",
-        "shadow-[0_1px_3px_rgba(0,0,0,0.06)]",
-        padded ? "p-4" : "",
-        highlight ? "border-l-[3px] border-l-forest" : "",
+        "rounded-[14px] border border-border bg-surface shadow-repos",
+        padded ? "p-6" : "",
+        highlight ? "border-l-[3px] border-l-ink" : "",
         className,
       ]
         .filter(Boolean)
