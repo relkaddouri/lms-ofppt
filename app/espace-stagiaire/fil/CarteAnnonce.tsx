@@ -35,6 +35,8 @@ export default function CarteAnnonce({
   const [enCours, startTransition] = useTransition();
   const [aime, setAime] = useState(annonce.jaimePersonnel);
   const [total, setTotal] = useState(annonce.jaime);
+  // Identifiant du commentaire dont la suppression attend confirmation.
+  const [aSupprimer, setASupprimer] = useState<string | null>(null);
   const [commentairesOuverts, setCommentairesOuverts] = useState(
     annonce.commentaires.length > 0,
   );
@@ -51,6 +53,22 @@ export default function CarteAnnonce({
         setAime(!cible);
         setTotal((t) => t + (cible ? -1 : 1));
         toast("Réaction non enregistrée.", "error");
+      }
+    });
+  }
+
+  function supprimer(id: string) {
+    startTransition(async () => {
+      try {
+        await supprimerCommentaire(id);
+        toast("Commentaire supprimé");
+        setASupprimer(null);
+        router.refresh();
+      } catch (e) {
+        toast(
+          e instanceof Error ? e.message : "Suppression impossible.",
+          "error",
+        );
       }
     });
   }
@@ -129,19 +147,38 @@ export default function CarteAnnonce({
               </div>
 
               {c.estMien ? (
-                <button
-                  type="button"
-                  aria-label="Supprimer mon commentaire"
-                  onClick={() =>
-                    startTransition(async () => {
-                      await supprimerCommentaire(c.id);
-                      router.refresh();
-                    })
-                  }
-                  className="flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-lg text-slate hover:text-danger"
-                >
-                  <Trash2 className="h-4 w-4" aria-hidden />
-                </button>
+                aSupprimer === c.id ? (
+                  // Confirmation en ligne plutôt qu'en modale : sur un
+                  // téléphone, une boîte de dialogue pour effacer une ligne de
+                  // texte est disproportionnée (design_system.md, espace
+                  // stagiaire).
+                  <span className="flex shrink-0 items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => supprimer(c.id)}
+                      disabled={enCours}
+                      className="flex min-h-[44px] items-center rounded-lg px-2 text-sm font-medium text-danger disabled:opacity-50"
+                    >
+                      Supprimer
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setASupprimer(null)}
+                      className="flex min-h-[44px] items-center rounded-lg px-2 text-sm text-slate"
+                    >
+                      Annuler
+                    </button>
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    aria-label="Supprimer mon commentaire"
+                    onClick={() => setASupprimer(c.id)}
+                    className="flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-lg text-slate hover:text-danger"
+                  >
+                    <Trash2 className="h-4 w-4" aria-hidden />
+                  </button>
+                )
               ) : null}
             </div>
           ))}

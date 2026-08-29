@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Breadcrumb from "@/components/Breadcrumb";
 import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
+import { ConfirmModal } from "@/components/ui/Modal";
 import { inputStyles as inputClass } from "@/components/ui/Input";
 import { useToast } from "@/components/ui/Toast";
 import FicheSeance from "@/components/FicheSeance";
@@ -19,6 +20,7 @@ import {
   supprimerRemarque,
   majSeance,
   type SeanceDetail,
+  type RemarqueSeance,
 } from "@/app/actions/seance";
 import { Check, CheckCheck, Plus, Trash2, X } from "lucide-react";
 
@@ -29,6 +31,9 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
 
   const [presences, setPresences] = useState(seance.presences);
   const [nouvelleRemarque, setNouvelleRemarque] = useState("");
+  // Une remarque d'observation ne se retape pas : on confirme avant d'effacer.
+  const [remarqueASupprimer, setRemarqueASupprimer] =
+    useState<RemarqueSeance | null>(null);
   const [contenuRealise, setContenuRealise] = useState(
     seance.contenu_realise ?? "",
   );
@@ -45,6 +50,24 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
   const presents = presences.filter((p) => p.present === true).length;
   const absents = presences.filter((p) => p.present === false).length;
   const nonPointes = presences.filter((p) => p.present === null).length;
+
+  function supprimerLaRemarque() {
+    const cible = remarqueASupprimer;
+    if (!cible) return;
+    startTransition(async () => {
+      try {
+        await supprimerRemarque(cible.id);
+        toast("Remarque supprimée");
+        setRemarqueASupprimer(null);
+        router.refresh();
+      } catch (e) {
+        toast(
+          e instanceof Error ? e.message : "Suppression impossible.",
+          "error",
+        );
+      }
+    });
+  }
 
   function pointer(stagiaireId: string, present: boolean) {
     // L'état local part en premier : pointer un appel doit répondre au clic,
@@ -447,12 +470,7 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
                         size="sm"
                         icon={Trash2}
                         aria-label="Supprimer la remarque"
-                        onClick={() =>
-                          startTransition(async () => {
-                            await supprimerRemarque(r.id);
-                            router.refresh();
-                          })
-                        }
+                        onClick={() => setRemarqueASupprimer(r)}
                       >
                         {""}
                       </Button>
@@ -464,6 +482,24 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
           </div>
         )}
       </div>
+
+      <ConfirmModal
+        open={remarqueASupprimer !== null}
+        onClose={() => setRemarqueASupprimer(null)}
+        onConfirm={supprimerLaRemarque}
+        busy={enCours}
+        title="Supprimer cette remarque ?"
+        message={
+          remarqueASupprimer ? (
+            <>
+              «&nbsp;{remarqueASupprimer.texte}&nbsp;» sera définitivement
+              effacée du cahier de séance.
+            </>
+          ) : (
+            ""
+          )
+        }
+      />
     </div>
   );
 }
