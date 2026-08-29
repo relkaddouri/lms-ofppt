@@ -14,7 +14,7 @@ import Button from "@/components/ui/Button";
 import Input, { Textarea } from "@/components/ui/Input";
 import Modal, { ConfirmModal } from "@/components/ui/Modal";
 import { useToast } from "@/components/ui/Toast";
-import { Pencil, Plus, Save, Trash2, X } from "lucide-react";
+import { Pencil, Plus, Save, Search, Trash2, X } from "lucide-react";
 
 export default function ModulesManager({ modules }: { modules: Module[] }) {
   const router = useRouter();
@@ -23,6 +23,7 @@ export default function ModulesManager({ modules }: { modules: Module[] }) {
   const [editing, setEditing] = useState<Module | null>(null);
   const [aSupprimer, setASupprimer] = useState<Module | null>(null);
   const [busy, setBusy] = useState(false);
+  const [filtre, setFiltre] = useState("");
   const [form, setForm] = useState({
     nom: "",
     description: "",
@@ -85,67 +86,134 @@ export default function ModulesManager({ modules }: { modules: Module[] }) {
     }
   }
 
+  // Recherche côté client : la liste tient en mémoire, et le design system
+  // exige un champ visible dès huit éléments (§11).
+  const recherche = filtre.trim().toLowerCase();
+  const visibles = recherche
+    ? modules.filter((m) =>
+        [m.nom, m.code, m.description]
+          .filter(Boolean)
+          .some((v) => v!.toLowerCase().includes(recherche)),
+      )
+    : modules;
+
+  const heuresTotales = visibles.reduce((t, m) => t + m.duree_reference, 0);
+
   return (
-    <div className="p-8">
-      <div className="flex items-center justify-end">
+    <div className="flex flex-col gap-6 px-6 py-10 md:px-10 md:pb-14">
+      <header className="flex flex-wrap items-end justify-between gap-6">
+        <div className="flex flex-col gap-2">
+          <span className="font-mono text-[11.5px] uppercase tracking-[0.12em] text-slate-light">
+            Référentiel
+          </span>
+          <h1 className="font-display text-[34px] font-bold leading-tight tracking-[-0.02em] text-ink">
+            Modules
+          </h1>
+          <p className="text-base text-slate-2">
+            <span className="font-mono text-body">{visibles.length}</span> module
+            {visibles.length > 1 ? "s" : ""} ·{" "}
+            <span className="font-mono text-body">{heuresTotales} h</span> de
+            durée de référence
+          </p>
+        </div>
         <Button icon={Plus} onClick={openCreate}>
           Ajouter un module
         </Button>
-      </div>
+      </header>
 
-      <div className="mt-6 overflow-hidden rounded-xl border border-border bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
-        <table className="w-full text-left text-sm">
-          <thead>
-            <tr className="border-b border-border text-xs uppercase tracking-wide text-slate">
-              <th className="px-4 py-3 font-medium">Nom</th>
-              <th className="px-4 py-3 font-medium">Description</th>
-              <th className="px-4 py-3 font-medium">Durée (h)</th>
-              <th className="px-4 py-3 text-right font-medium">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {modules.length === 0 ? (
-              <tr>
-                <td
-                  colSpan={4}
-                  className="px-4 py-6 text-center text-sm text-slate"
-                >
-                  Aucun module. Cliquez sur « Ajouter un module ».
-                </td>
-              </tr>
-            ) : (
-              modules.map((m) => (
-                <tr key={m.id} className="border-t border-border transition-colors hover:bg-mint/50">
-                  <td className="px-4 py-3">
-                    <Link
-                      href={`/modules/${m.id}`}
-                      className="font-medium text-ink hover:text-forest focus:outline-none focus:ring-2 focus:ring-forest"
-                    >
-                      {m.nom}
-                    </Link>
-                  </td>
-                  <td className="px-4 py-3 text-slate">{m.description ?? "—"}</td>
-                  <td className="px-4 py-3 font-mono text-slate">
-                    {m.duree_reference}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <KebabMenu
-                      items={[
-                        { label: "Modifier", onClick: () => openEdit(m), icon: Pencil },
-                        {
-                          label: "Supprimer",
-                          onClick: () => setASupprimer(m),
-                          danger: true,
-                          icon: Trash2,
-                        },
-                      ]}
-                    />
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+      <label className="relative block max-w-[420px]">
+        <span className="sr-only">Rechercher un module</span>
+        <Search
+          size={17}
+          strokeWidth={2}
+          aria-hidden
+          className="pointer-events-none absolute left-[13px] top-1/2 -translate-y-1/2 text-slate-light"
+        />
+        <input
+          type="search"
+          value={filtre}
+          onChange={(e) => setFiltre(e.target.value)}
+          placeholder="Rechercher un code ou un intitulé de module…"
+          className="w-full rounded-[9px] border border-border-strong bg-surface py-[11px] pl-10 pr-[13px] text-[15px] text-ink outline-none transition-colors duration-150 ease-out placeholder:text-slate-light focus:border-teal focus:shadow-[0_0_0_3px_rgba(46,125,158,0.15)]"
+        />
+      </label>
+
+      <div className="overflow-hidden rounded-[14px] border border-border bg-surface shadow-repos">
+        <div className="grid grid-cols-[minmax(0,2.4fr)_minmax(120px,1fr)_minmax(96px,0.9fr)_52px] items-center gap-4 border-b border-border bg-paper-alt px-6 py-3.5">
+          {["Module", "Durée de référence", "Groupes", ""].map((c, i) => (
+            <span
+              key={c || i}
+              className="font-mono text-[11px] uppercase tracking-[0.1em] text-slate-light"
+            >
+              {c}
+            </span>
+          ))}
+        </div>
+
+        {visibles.length === 0 ? (
+          <div className="flex flex-col items-center gap-1 px-6 py-14 text-center">
+            <span className="text-[15px] font-semibold text-ink">
+              {modules.length === 0
+                ? "Aucun module"
+                : "Aucun module ne correspond"}
+            </span>
+            <span className="text-[13.5px] text-slate-light">
+              {modules.length === 0
+                ? "Ajoutez le premier module du référentiel."
+                : "Essayez un autre code ou intitulé."}
+            </span>
+          </div>
+        ) : (
+          visibles.map((m) => (
+            <div
+              key={m.id}
+              className="grid grid-cols-[minmax(0,2.4fr)_minmax(120px,1fr)_minmax(96px,0.9fr)_52px] items-center gap-4 border-b border-separator px-6 py-4 transition-colors duration-150 ease-out last:border-0 hover:bg-paper"
+            >
+              <span className="flex min-w-0 items-center gap-3.5">
+                <span className="flex h-9 shrink-0 items-center justify-center rounded-[9px] bg-wash px-2.5 font-mono text-xs font-semibold text-slate-2">
+                  {m.code ?? "—"}
+                </span>
+                <span className="flex min-w-0 flex-col gap-0.5">
+                  <Link
+                    href={`/modules/${m.id}`}
+                    className="truncate text-[15.5px] font-semibold text-ink no-underline hover:no-underline"
+                  >
+                    {m.nom}
+                  </Link>
+                  {m.description ? (
+                    <span className="truncate text-[13px] text-slate-light">
+                      {m.description}
+                    </span>
+                  ) : null}
+                </span>
+              </span>
+
+              <span className="font-mono text-[14.5px] text-body">
+                {m.duree_reference} h
+              </span>
+
+              <span className="text-[14.5px] text-slate-2">
+                {m.groupes === 0
+                  ? "—"
+                  : `${m.groupes} groupe${m.groupes > 1 ? "s" : ""}`}
+              </span>
+
+              <span className="flex justify-end">
+                <KebabMenu
+                  items={[
+                    { label: "Modifier", onClick: () => openEdit(m), icon: Pencil },
+                    {
+                      label: "Supprimer",
+                      onClick: () => setASupprimer(m),
+                      danger: true,
+                      icon: Trash2,
+                    },
+                  ]}
+                />
+              </span>
+            </div>
+          ))
+        )}
       </div>
 
       <Modal

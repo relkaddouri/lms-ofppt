@@ -8,17 +8,53 @@ export type Module = {
   nom: string;
   description: string | null;
   duree_reference: number;
+  /** Code court de la compétence, celui avec lequel le formateur pense. */
+  code: string | null;
+  /** Nombre de groupes auxquels le module est assigné. */
+  groupes: number;
 };
 
 export async function getModules(): Promise<Module[]> {
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("modules")
-    .select("*")
-    .order("nom");
 
-  if (error) throw new Error(error.message);
-  return data as Module[];
+  // Colonnes explicites plutôt que `*` (conventions.md), et le code
+  // opérationnel de la compétence, qui est ce que le formateur lit en premier.
+  const [modulesRes, assignationsRes] = await Promise.all([
+    supabase
+      .from("modules")
+      .select(
+        "id, nom, description, duree_reference, competences(code_operationnel)",
+      )
+      .order("nom"),
+    supabase.from("groupe_modules").select("module_id"),
+  ]);
+
+  if (modulesRes.error) throw new Error(modulesRes.error.message);
+  if (assignationsRes.error) throw new Error(assignationsRes.error.message);
+
+  const parModule = new Map<string, number>();
+  for (const a of assignationsRes.data ?? []) {
+    const id = a.module_id as string;
+    parModule.set(id, (parModule.get(id) ?? 0) + 1);
+  }
+
+  return (modulesRes.data ?? []).map((m) => {
+    const r = m as unknown as {
+      id: string;
+      nom: string;
+      description: string | null;
+      duree_reference: number;
+      competences: { code_operationnel: string | null } | null;
+    };
+    return {
+      id: r.id,
+      nom: r.nom,
+      description: r.description,
+      duree_reference: r.duree_reference,
+      code: r.competences?.code_operationnel ?? null,
+      groupes: parModule.get(r.id) ?? 0,
+    };
+  });
 }
 
 export type ModuleControleInfo = {

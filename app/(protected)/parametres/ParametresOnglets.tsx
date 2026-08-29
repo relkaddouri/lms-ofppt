@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Segments from "@/components/ui/Segments";
 import ParametresLlmForm from "./ParametresLlmForm";
 import ParametresHeuresForm from "./ParametresHeuresForm";
 import type { ParametresLlm } from "@/app/actions/parametres-llm";
@@ -28,43 +29,19 @@ export default function ParametresOnglets({
   const [onglet, setOnglet] = useState<Onglet>("heures");
 
   return (
-    <>
-      <div
-        role="tablist"
-        aria-label="Sections des paramètres"
-        className="mt-5 flex gap-1 border-b border-border"
-      >
-        {ONGLETS.map((o) => (
-          <button
-            key={o.cle}
-            type="button"
-            role="tab"
-            aria-selected={onglet === o.cle}
-            onClick={() => setOnglet(o.cle)}
-            className={`-mb-px border-b-2 px-4 py-2 text-sm ${
-              onglet === o.cle
-                ? "border-forest font-medium text-forest"
-                : "border-transparent text-slate hover:text-ink"
-            }`}
-          >
-            {o.libelle}
-          </button>
-        ))}
-      </div>
+    <div className="flex flex-col gap-6">
+      <Segments
+        ariaLabel="Sections des paramètres"
+        valeur={onglet}
+        onChange={setOnglet}
+        options={ONGLETS.map((o) => ({ valeur: o.cle, libelle: o.libelle }))}
+      />
 
-      <div className="mt-5">
-        {onglet === "heures" ? (
-          <ParametresHeuresForm initial={heures} />
-        ) : (
-          <>
-            <p className="mb-4 text-sm text-slate">
-              Le modèle utilisé pour générer les contrôles, les fiches de
-              préparation et les corrigés.
-            </p>
-            <ParametresLlmForm initial={llm} />
-          </>
-        )}
-      </div>
-    </>
+      {onglet === "heures" ? (
+        <ParametresHeuresForm initial={heures} />
+      ) : (
+        <ParametresLlmForm initial={llm} />
+      )}
+    </div>
   );
 }
