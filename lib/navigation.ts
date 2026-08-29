@@ -7,6 +7,7 @@ export const ONGLETS_GROUPE = [
   { key: "stagiaires", label: "Stagiaires", segment: "" },
   { key: "modules", label: "Modules", segment: "modules" },
   { key: "progression", label: "Progression", segment: "progression" },
+  { key: "presences", label: "Présences", segment: "presences" },
   { key: "annonces", label: "Annonces", segment: "annonces" },
   { key: "fiches", label: "Fiches", segment: "fiches" },
   { key: "controles", label: "Contrôles", segment: "controles" },
