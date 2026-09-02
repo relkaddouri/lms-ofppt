@@ -42,3 +42,6 @@ next-env.d.ts
 
 # Sauvegardes locales de données (peuvent contenir des données personnelles)
 .backups/
+
+# Exports de données réelles : noms de stagiaires, jamais dans Git.
+sauvegardes/
