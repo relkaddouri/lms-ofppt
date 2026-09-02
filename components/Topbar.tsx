@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { Bell, Menu, Search } from "lucide-react";
 import Avatar from "./ui/Avatar";
+import PanneauNotifications from "./PanneauNotifications";
 
 export default function Topbar({
   email,
@@ -13,7 +15,10 @@ export default function Topbar({
   notifications?: number;
   onMenuClick: () => void;
 }) {
+  const [panneau, setPanneau] = useState(false);
+
   return (
+    <>
     <header className="flex h-[68px] flex-none items-center justify-between gap-6 border-b border-border bg-surface px-5 md:px-10">
       <div className="flex min-w-0 items-center gap-3">
         <button
@@ -31,10 +36,8 @@ export default function Topbar({
       </div>
 
       <div className="flex items-center gap-2.5">
-        {/* Recherche et notifications sont dans la maquette : elles restent
-            visibles. Leur fonction viendra avec son propre atome — la
-            recherche au lot 3 de la revue, le panneau de notifications avec
-            son écran dédié. En attendant elles sont inertes, pas absentes. */}
+        {/* La recherche est dans la maquette : elle reste visible, inerte,
+            jusqu'à son atome (lot 3 de la revue). */}
         <button
           type="button"
           disabled
@@ -47,10 +50,10 @@ export default function Topbar({
 
         <button
           type="button"
-          disabled
+          onClick={() => setPanneau(true)}
           aria-label={`Notifications (${notifications})`}
-          title="Notifications — disponible prochainement"
-          className="relative flex h-10 w-10 items-center justify-center rounded-[10px] border border-border bg-surface text-slate-2 disabled:cursor-not-allowed disabled:text-muted"
+          aria-haspopup="dialog"
+          className="relative flex h-10 w-10 items-center justify-center rounded-[10px] border border-border bg-surface text-slate-2 transition-colors duration-150 ease-out hover:bg-paper hover:text-ink"
         >
           <Bell size={18} strokeWidth={2} aria-hidden />
           {notifications > 0 ? (
@@ -65,5 +68,11 @@ export default function Topbar({
         <Avatar prenom={email ?? "F"} />
       </div>
     </header>
+
+    <PanneauNotifications
+      ouvert={panneau}
+      onFermer={() => setPanneau(false)}
+    />
+    </>
   );
 }
