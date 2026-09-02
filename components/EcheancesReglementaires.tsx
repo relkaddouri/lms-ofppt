@@ -26,7 +26,7 @@ export default function EcheancesReglementaires({
   if (visibles.length === 0) return null;
 
   return (
-    <section className="rounded-xl border border-border bg-surface p-4">
+    <section className="rounded-[14px] border border-border bg-surface p-4">
       <h2 className="flex items-center gap-1.5 text-sm font-medium text-ink">
         <CalendarClock className="h-4 w-4 text-slate" aria-hidden />
         Échéances réglementaires
@@ -42,19 +42,19 @@ export default function EcheancesReglementaires({
                 href={controleHref(e.controleId)}
                 className={`block rounded-lg px-2.5 py-2 transition-colors ${
                   retard
-                    ? "bg-danger/10 hover:bg-danger/15"
+                    ? "bg-alert-wash hover:bg-coral/15"
                     : presse
-                      ? "bg-info/10 hover:bg-info/15"
-                      : "border border-border hover:border-forest/50"
+                      ? "bg-tint-teal hover:bg-teal/15"
+                      : "border border-border hover:border-ink/50"
                 }`}
               >
                 <span className="flex items-baseline justify-between gap-2">
                   <span
                     className={`text-xs font-medium ${
                       retard
-                        ? "text-danger"
+                        ? "text-coral-dark"
                         : presse
-                          ? "text-info"
+                          ? "text-teal-dark"
                           : "text-ink"
                     }`}
                   >
@@ -80,7 +80,7 @@ export default function EcheancesReglementaires({
                 {e.jours !== null ? (
                   <span
                     className={`mt-0.5 block text-[11px] ${
-                      retard ? "text-danger" : "text-slate"
+                      retard ? "text-coral-dark" : "text-slate"
                     }`}
                   >
                     {e.jours < 0

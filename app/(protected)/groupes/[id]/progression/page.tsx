@@ -96,8 +96,8 @@ export default async function ProgressionPage({
 
       {seances.length === 0 ? (
         <Card className="p-10 text-center" padded={false}>
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-mint">
-            <CalendarDays className="h-6 w-6 text-forest" aria-hidden />
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-wash">
+            <CalendarDays className="h-6 w-6 text-ink" aria-hidden />
           </div>
           <p className="mt-4 text-sm font-medium text-ink">
             Aucune séance planifiée

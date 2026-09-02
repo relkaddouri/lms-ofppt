@@ -66,7 +66,7 @@ export default function CarteDevoir({ devoir }: { devoir: DevoirStagiaire }) {
 
       {devoir.date_echeance ? (
         <p
-          className={`mt-2 text-sm ${enRetard ? "text-danger" : "text-slate"}`}
+          className={`mt-2 text-sm ${enRetard ? "text-coral-dark" : "text-slate"}`}
         >
           À rendre le {formatDate(devoir.date_echeance)}
           {jours !== null && !rendu ? (
@@ -89,8 +89,8 @@ export default function CarteDevoir({ devoir }: { devoir: DevoirStagiaire }) {
       ) : null}
 
       {rendu ? (
-        <div className="mt-3 rounded-lg bg-mint px-3 py-2">
-          <p className="text-xs text-forest">
+        <div className="mt-3 rounded-lg bg-wash px-3 py-2">
+          <p className="text-xs text-ink">
             Remis le {formatDateTime(devoir.monRendu!.date_rendu!)}
           </p>
           {devoir.monRendu?.contenu ? (

@@ -100,19 +100,19 @@ export default function CopiesManager({
   return (
     <div>
       {error ? (
-        <p className="rounded-xl border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger">
+        <p className="rounded-xl border border-tint-alert-strong bg-alert-wash px-3 py-2 text-sm text-coral-dark">
           {error}
         </p>
       ) : loading ? (
         <p className="text-sm text-slate">Chargement des copies…</p>
       ) : passations.length === 0 ? (
-        <p className="rounded-xl border border-border bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-4 text-sm text-slate">
+        <p className="rounded-[14px] border border-border bg-surface shadow-repos p-4 text-sm text-slate">
           Aucune copie rendue pour l&apos;instant. Les stagiaires composent depuis
           leur espace, une fois le contrôle validé.
         </p>
       ) : (
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-[340px_1fr]">
-          <div className="rounded-xl border border-border bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-3">
+          <div className="rounded-[14px] border border-border bg-surface shadow-repos p-3">
             <h2 className="px-1 text-sm font-medium text-ink">
               Copies ({passations.length})
             </h2>
@@ -121,8 +121,8 @@ export default function CopiesManager({
                 <li key={p.id}>
                   <button
                     onClick={() => setSelectedId(p.id)}
-                    className={`w-full rounded-lg px-3 py-2 text-left hover:bg-slate/5 focus:outline-none focus:ring-2 focus:ring-forest ${
-                      p.id === selectedId ? "bg-mint text-forest" : ""
+                    className={`w-full rounded-lg px-3 py-2 text-left hover:bg-slate/5 focus:outline-none focus:ring-2 focus:ring-ink ${
+                      p.id === selectedId ? "bg-wash text-ink" : ""
                     }`}
                   >
                     <div className="flex items-center justify-between gap-2">
@@ -143,7 +143,7 @@ export default function CopiesManager({
           </div>
 
           {selected ? (
-            <div className="rounded-xl border border-border bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-4">
+            <div className="rounded-[14px] border border-border bg-surface shadow-repos p-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <h2 className="font-display text-lg font-bold text-ink">
@@ -212,13 +212,13 @@ export default function CopiesManager({
                       {d.reponse || "(vide)"}
                     </p>
                     {d.commentaire ? (
-                      <p className="mt-2 text-sm text-forest">
+                      <p className="mt-2 text-sm text-ink">
                         <span className="font-medium">Commentaire :</span>{" "}
                         {d.commentaire}
                       </p>
                     ) : null}
                     <details className="mt-2">
-                      <summary className="cursor-pointer text-sm font-medium text-forest">
+                      <summary className="cursor-pointer text-sm font-medium text-ink">
                         Voir le corrigé
                       </summary>
                       <p className="mt-1 whitespace-pre-line text-sm text-slate">

@@ -27,7 +27,7 @@ export default async function ControlesPage() {
     <Link
       key={c.id}
       href={`/espace-stagiaire/controles/${c.id}`}
-      className="block border-b border-border p-4 last:border-0 hover:bg-mint"
+      className="block border-b border-border p-4 last:border-0 hover:bg-wash"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
@@ -63,7 +63,7 @@ export default async function ControlesPage() {
   return (
     <div className="space-y-4">
       {aPasser.length > 0 ? (
-        <section className="overflow-hidden rounded-xl border border-border bg-surface">
+        <section className="overflow-hidden rounded-[14px] border border-border bg-surface">
           {aPasser.map(carte)}
         </section>
       ) : null}
@@ -73,7 +73,7 @@ export default async function ControlesPage() {
           <h2 className="px-1 text-sm font-medium text-slate">
             Copies rendues ({rendus.length})
           </h2>
-          <div className="mt-2 overflow-hidden rounded-xl border border-border bg-surface">
+          <div className="mt-2 overflow-hidden rounded-[14px] border border-border bg-surface">
             {rendus.map(carte)}
           </div>
         </section>

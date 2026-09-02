@@ -291,7 +291,7 @@ export default function FicheSeance({
         <span
           className={`ml-auto text-sm ${
             contexte.minutesSeance && totalMinutes !== contexte.minutesSeance
-              ? "text-danger"
+              ? "text-coral-dark"
               : "text-slate"
           }`}
         >
@@ -307,7 +307,7 @@ export default function FicheSeance({
       ) : null}
 
       {avertissements.length > 0 ? (
-        <ul className="mt-3 list-disc space-y-0.5 rounded-lg bg-info/10 px-5 py-2 text-sm text-ink">
+        <ul className="mt-3 list-disc space-y-0.5 rounded-lg bg-tint-teal px-5 py-2 text-sm text-ink">
           {avertissements.map((a, i) => (
             <li key={i}>{a}</li>
           ))}
@@ -332,7 +332,7 @@ export default function FicheSeance({
           </dl>
 
           {fiche.objectifs ? (
-            <p className="mt-4 rounded-lg bg-mint px-3 py-2 text-sm text-ink">
+            <p className="mt-4 rounded-lg bg-wash px-3 py-2 text-sm text-ink">
               <span className="text-slate">Objectifs : </span>
               {fiche.objectifs}
             </p>

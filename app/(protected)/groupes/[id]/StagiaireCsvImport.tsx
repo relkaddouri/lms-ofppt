@@ -148,13 +148,13 @@ export default function StagiaireCsvImport({
       </div>
 
       {notice ? (
-        <p className="mt-3 rounded-xl border border-success/30 bg-success/10 px-3 py-2 text-sm text-success">
+        <p className="mt-3 rounded-xl border border-tint-green bg-success-wash px-3 py-2 text-sm text-green-dark">
           {notice}
         </p>
       ) : null}
 
       {parseError ? (
-        <p className="mt-3 rounded-xl border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger">
+        <p className="mt-3 rounded-xl border border-tint-alert-strong bg-alert-wash px-3 py-2 text-sm text-coral-dark">
           {parseError}
         </p>
       ) : null}
@@ -194,10 +194,10 @@ export default function StagiaireCsvImport({
               </thead>
               <tbody>
                 {rows.map((r, i) => (
-                  <tr key={i} className="border-t border-border transition-colors hover:bg-mint/50">
+                  <tr key={i} className="border-t border-border transition-colors hover:bg-wash/50">
                     <td className="px-4 py-2">
                       <div className="flex items-center gap-3">
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border bg-mint text-xs font-semibold text-forest focus-visible:ring-2 focus-visible:ring-mint">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border bg-wash text-xs font-semibold text-ink focus-visible:ring-2 focus-visible:ring-mint">
                           {initials(r.prenom, r.nom)}
                         </div>
                         <div className="min-w-0">

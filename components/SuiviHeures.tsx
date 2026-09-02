@@ -6,10 +6,10 @@ function Jauge({ p }: { p: Plafond }) {
   const pct = Math.min(100, Math.round(p.taux * 100));
   const couleur =
     p.niveau === "depasse"
-      ? "bg-danger"
+      ? "bg-coral"
       : p.niveau === "proche"
-        ? "bg-info"
-        : "bg-forest";
+        ? "bg-teal"
+        : "bg-ink";
 
   return (
     <div>
@@ -17,7 +17,7 @@ function Jauge({ p }: { p: Plafond }) {
         <span className="min-w-0 text-xs text-slate">{p.libelle}</span>
         <span
           className={`shrink-0 whitespace-nowrap text-xs tabular-nums ${
-            p.niveau === "depasse" ? "font-semibold text-danger" : "text-ink"
+            p.niveau === "depasse" ? "font-semibold text-coral-dark" : "text-ink"
           }`}
         >
           {formatHeures(p.valeur)} / {p.plafond} h
@@ -66,7 +66,7 @@ export default function SuiviHeures({
           </span>
         </span>
         {bilan.heuresSupActives && s && s.supplementaires > 0 ? (
-          <span className="font-medium text-info">
+          <span className="font-medium text-teal-dark">
             +{formatHeures(s.supplementaires)} sup.
           </span>
         ) : null}
@@ -76,10 +76,10 @@ export default function SuiviHeures({
               <span
                 className={`block h-full rounded-full ${
                   annuel.niveau === "depasse"
-                    ? "bg-danger"
+                    ? "bg-coral"
                     : annuel.niveau === "proche"
-                      ? "bg-info"
-                      : "bg-forest"
+                      ? "bg-teal"
+                      : "bg-ink"
                 }`}
                 style={{ width: `${Math.min(100, Math.round(annuel.taux * 100))}%` }}
               />
@@ -92,10 +92,10 @@ export default function SuiviHeures({
         {alertes.map((p) => (
           <span
             key={p.libelle}
-            className={`rounded-md px-2 py-0.5 text-xs ${
+            className={`rounded-lg px-2 py-0.5 text-xs ${
               p.niveau === "depasse"
-                ? "bg-danger/10 text-danger"
-                : "bg-info/10 text-info"
+                ? "bg-alert-wash text-coral-dark"
+                : "bg-tint-teal text-teal-dark"
             }`}
           >
             {p.message}
@@ -106,7 +106,7 @@ export default function SuiviHeures({
   }
 
   return (
-    <section className="rounded-xl border border-border bg-surface p-4">
+    <section className="rounded-[14px] border border-border bg-surface p-4">
       <h2 className="text-sm font-medium text-ink">Mes heures</h2>
 
       <div className="mt-3 flex flex-wrap gap-x-6 gap-y-2">
@@ -119,7 +119,7 @@ export default function SuiviHeures({
           </span>
         </span>
         {bilan.heuresSupActives && s && s.supplementaires > 0 ? (
-          <span className="text-sm font-medium text-info">
+          <span className="text-sm font-medium text-teal-dark">
             +{formatHeures(s.supplementaires)} supplémentaires
           </span>
         ) : null}
@@ -138,8 +138,8 @@ export default function SuiviHeures({
               key={p.libelle}
               className={`flex items-start gap-1.5 rounded-lg px-2.5 py-1.5 text-xs ${
                 p.niveau === "depasse"
-                  ? "bg-danger/10 text-danger"
-                  : "bg-info/10 text-info"
+                  ? "bg-alert-wash text-coral-dark"
+                  : "bg-tint-teal text-teal-dark"
               }`}
             >
               {p.niveau === "depasse" ? (

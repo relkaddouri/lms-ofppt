@@ -37,7 +37,7 @@ export default function RappelControle({
   const contenu = (
     <span
       className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium ${
-        retard ? "bg-danger/10 text-danger" : "bg-info/10 text-info"
+        retard ? "bg-alert-wash text-coral-dark" : "bg-tint-teal text-teal-dark"
       }`}
     >
       <Icone className="h-3.5 w-3.5 shrink-0" aria-hidden />
@@ -46,7 +46,7 @@ export default function RappelControle({
   );
 
   return href ? (
-    <Link href={href} className="focus:outline-none focus:ring-2 focus:ring-forest">
+    <Link href={href} className="focus:outline-none focus:ring-2 focus:ring-ink">
       {contenu}
     </Link>
   ) : (

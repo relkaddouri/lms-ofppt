@@ -24,7 +24,7 @@ export default async function EspaceStagiaireLayout({
       <header className="sticky top-0 z-10 border-b border-border bg-surface">
         <div className="mx-auto flex max-w-lg items-center justify-between gap-3 px-4 py-3 md:max-w-4xl md:gap-6 md:px-6">
           <span className="flex min-w-0 items-center gap-3">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-mint text-sm font-medium text-forest">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-wash text-sm font-medium text-ink">
               {initials(`${identite.prenom} ${identite.nom}`)}
             </span>
             <span className="min-w-0">
@@ -48,7 +48,7 @@ export default async function EspaceStagiaireLayout({
                 type="submit"
                 aria-label="Se déconnecter"
                 title="Se déconnecter"
-                className="flex min-h-[44px] min-w-[44px] items-center justify-center gap-2 rounded-lg text-slate transition-colors hover:bg-mint hover:text-ink md:px-3"
+                className="flex min-h-[44px] min-w-[44px] items-center justify-center gap-2 rounded-lg text-slate transition-colors hover:bg-wash hover:text-ink md:px-3"
               >
                 <LogOut className="h-5 w-5 shrink-0" aria-hidden />
                 <span className="hidden text-sm md:inline">Déconnexion</span>

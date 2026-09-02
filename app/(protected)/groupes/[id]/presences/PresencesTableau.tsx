@@ -75,7 +75,7 @@ export default function PresencesTableau({ bilan }: { bilan: BilanPresences }) {
           id="module"
           value={moduleId}
           onChange={(e) => setModuleId(e.target.value)}
-          className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-ink focus:border-forest focus:outline-none focus:ring-2 focus:ring-forest/20"
+          className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-ink focus:border-ink focus:outline-none focus:ring-2 focus:ring-ink/20"
         >
           <option value="tous">Tous les modules</option>
           {bilan.modules.map((m) => (
@@ -98,8 +98,8 @@ export default function PresencesTableau({ bilan }: { bilan: BilanPresences }) {
 
       {totalPointees === 0 ? (
         <Card className="px-4 py-10 text-center">
-          <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-mint">
-            <UserCheck className="h-6 w-6 text-forest" aria-hidden />
+          <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-wash">
+            <UserCheck className="h-6 w-6 text-ink" aria-hidden />
           </span>
           <p className="mt-4 text-base font-semibold text-ink">
             Aucun appel pointé
@@ -131,7 +131,7 @@ export default function PresencesTableau({ bilan }: { bilan: BilanPresences }) {
                     >
                       <td className="px-4 py-3">
                         <div className="flex items-start gap-3">
-                          <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border bg-mint text-xs font-medium text-forest">
+                          <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border bg-wash text-xs font-medium text-ink">
                             {initials(l.prenom, l.nom)}
                           </span>
                           <div className="min-w-0">

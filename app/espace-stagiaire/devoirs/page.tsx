@@ -25,7 +25,7 @@ export default async function DevoirsPage() {
   return (
     <div className="space-y-4">
       {aFaire.length > 0 ? (
-        <section className="overflow-hidden rounded-xl border border-border bg-surface">
+        <section className="overflow-hidden rounded-[14px] border border-border bg-surface">
           {aFaire.map((d) => (
             <CarteDevoir key={d.id} devoir={d} />
           ))}
@@ -37,7 +37,7 @@ export default async function DevoirsPage() {
           <h2 className="px-1 text-sm font-medium text-slate">
             Devoirs remis ({remis.length})
           </h2>
-          <div className="mt-2 overflow-hidden rounded-xl border border-border bg-surface">
+          <div className="mt-2 overflow-hidden rounded-[14px] border border-border bg-surface">
             {remis.map((d) => (
               <CarteDevoir key={d.id} devoir={d} />
             ))}

@@ -83,7 +83,7 @@ export default function Passation({
         {sujet.map((q, i) => (
           <li
             key={q.id}
-            className="rounded-xl border border-border bg-surface p-4"
+            className="rounded-[14px] border border-border bg-surface p-4"
           >
             <div className="flex items-baseline justify-between gap-3">
               <span className="text-xs font-medium uppercase tracking-wide text-slate">
@@ -125,7 +125,7 @@ export default function Passation({
                               ).join("\n"),
                             }));
                           }}
-                          className="h-5 w-5 shrink-0 accent-forest"
+                          className="h-5 w-5 shrink-0 accent-ink"
                         />
                         <span className="text-sm text-ink">{opt.texte}</span>
                       </label>
@@ -149,7 +149,7 @@ export default function Passation({
         ))}
       </ol>
 
-      <div className="sticky bottom-24 mt-5 rounded-xl border border-border bg-surface p-3 shadow-[0_-2px_12px_rgba(0,0,0,0.06)]">
+      <div className="sticky bottom-24 mt-5 rounded-[14px] border border-border bg-surface p-3 shadow-ancre">
         <p className="text-xs text-slate">
           {repondues} question{repondues > 1 ? "s" : ""} sur {sujet.length}{" "}
           répondue{repondues > 1 ? "s" : ""}

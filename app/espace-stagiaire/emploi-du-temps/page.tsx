@@ -30,8 +30,8 @@ function Evenement({ ev }: { ev: EvenementStagiaire }) {
     <>
       <div className="w-14 shrink-0 text-center">
         {ev.genre === "controle" ? (
-          <span className="mx-auto flex h-9 w-9 items-center justify-center rounded-full bg-danger/10">
-            <FileCheck2 className="h-4 w-4 text-danger" aria-hidden />
+          <span className="mx-auto flex h-9 w-9 items-center justify-center rounded-full bg-alert-wash">
+            <FileCheck2 className="h-4 w-4 text-coral-dark" aria-hidden />
           </span>
         ) : (
           <>
@@ -92,7 +92,7 @@ function Evenement({ ev }: { ev: EvenementStagiaire }) {
   return ev.genre === "controle" ? (
     <Link
       href={`/espace-stagiaire/controles/${ev.id}`}
-      className={`${classes} hover:bg-mint`}
+      className={`${classes} hover:bg-wash`}
     >
       {contenu}
     </Link>
@@ -118,7 +118,7 @@ function Journee({
         {libelleJour(date, anneeCourante)}
         {date === aujourdhui ? <Badge tone="success">aujourd&apos;hui</Badge> : null}
       </h2>
-      <div className="overflow-hidden rounded-xl border border-border bg-surface">
+      <div className="overflow-hidden rounded-[14px] border border-border bg-surface">
         {evenements.map((ev) => (
           <Evenement key={`${ev.genre}-${ev.id}`} ev={ev} />
         ))}
@@ -173,7 +173,7 @@ export default async function EmploiDuTempsPage() {
           ))}
         </div>
       ) : (
-        <section className="rounded-xl border border-border bg-surface px-4 py-8 text-center">
+        <section className="rounded-[14px] border border-border bg-surface px-4 py-8 text-center">
           <p className="text-sm text-slate">
             Aucune séance à venir n&apos;est planifiée pour le moment.
           </p>
@@ -182,7 +182,7 @@ export default async function EmploiDuTempsPage() {
 
       {passe.length > 0 ? (
         <details className="group">
-          <summary className="flex min-h-[44px] cursor-pointer list-none items-center justify-center rounded-xl border border-border bg-surface px-4 text-sm font-medium text-slate hover:bg-mint">
+          <summary className="flex min-h-[44px] cursor-pointer list-none items-center justify-center rounded-[14px] border border-border bg-surface px-4 text-sm font-medium text-slate hover:bg-wash">
             Séances passées ({passe.reduce((n, [, l]) => n + l.length, 0)})
             <ChevronDown
               className="ml-2 h-4 w-4 transition-transform group-open:rotate-180"

@@ -161,7 +161,7 @@ export default function GroupeDetail({
 
         <StagiaireCsvImport groupeId={groupeId} />
 
-        <div className="mt-4 overflow-hidden rounded-xl border border-border bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
+        <div className="mt-4 overflow-hidden rounded-[14px] border border-border bg-surface shadow-repos">
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="border-b border-border bg-paper text-xs uppercase tracking-wide text-slate">
@@ -227,11 +227,11 @@ export default function GroupeDetail({
                   ) : (
                     <tr
                       key={s.id}
-                      className="border-t border-border transition-colors hover:bg-mint/50"
+                      className="border-t border-border transition-colors hover:bg-wash/50"
                     >
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
-                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border bg-mint text-xs font-semibold text-forest focus-visible:ring-2 focus-visible:ring-mint">
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border bg-wash text-xs font-semibold text-ink focus-visible:ring-2 focus-visible:ring-mint">
                             {initials(s.prenom, s.nom)}
                           </div>
                           <div className="min-w-0">
@@ -241,7 +241,7 @@ export default function GroupeDetail({
                             <p className="truncate text-xs text-slate">
                               {s.email ?? "—"}
                               {s.user_id ? (
-                                <span className="ml-1.5 text-success">
+                                <span className="ml-1.5 text-green-dark">
                                   · compte actif
                                 </span>
                               ) : null}

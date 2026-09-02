@@ -55,7 +55,7 @@ export default function MaCopieVue({
           {copie.details.map((d, i) => (
             <li
               key={d.question_id}
-              className="rounded-xl border border-border bg-surface p-4"
+              className="rounded-[14px] border border-border bg-surface p-4"
             >
               <div className="flex items-baseline justify-between gap-3">
                 <span className="text-xs font-medium uppercase tracking-wide text-slate">

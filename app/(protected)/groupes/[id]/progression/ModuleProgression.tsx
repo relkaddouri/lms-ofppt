@@ -68,12 +68,12 @@ export default function ModuleProgression({
   let numero = 0;
 
   return (
-    <section className="overflow-hidden rounded-xl border border-border bg-surface">
+    <section className="overflow-hidden rounded-[14px] border border-border bg-surface">
       <button
         type="button"
         onClick={() => setOuvert((o) => !o)}
         aria-expanded={ouvert}
-        className="flex w-full items-start gap-3 px-4 py-3 text-left hover:bg-mint"
+        className="flex w-full items-start gap-3 px-4 py-3 text-left hover:bg-wash"
       >
         {ouvert ? (
           <ChevronDown className="mt-0.5 h-4 w-4 shrink-0 text-slate" aria-hidden />
@@ -84,7 +84,7 @@ export default function ModuleProgression({
         <span className="min-w-0 flex-1">
           <span className="flex flex-wrap items-baseline gap-2">
             {code ? (
-              <span className="font-mono text-sm font-medium text-forest">
+              <span className="font-mono text-sm font-medium text-ink">
                 {code}
               </span>
             ) : null}
@@ -107,7 +107,7 @@ export default function ModuleProgression({
               aria-label={`Avancement de ${nom}`}
             >
               <span
-                className="block h-full rounded-full bg-forest"
+                className="block h-full rounded-full bg-ink"
                 style={{ width: `${pct}%` }}
               />
             </span>
@@ -133,7 +133,7 @@ export default function ModuleProgression({
         <Link
           href={`/groupes/${groupeId}/modules/${moduleId}`}
           onClick={(e) => e.stopPropagation()}
-          className="shrink-0 text-xs font-medium text-forest underline"
+          className="shrink-0 text-xs font-medium text-ink underline"
         >
           plan de déroulement
         </Link>
@@ -153,7 +153,7 @@ export default function ModuleProgression({
                 className="overflow-hidden rounded-lg border border-border bg-surface"
               >
                 <div className="flex flex-wrap items-center gap-2 border-b border-border bg-paper px-3 py-2">
-                  <span className="font-mono text-xs font-medium text-forest">
+                  <span className="font-mono text-xs font-medium text-ink">
                     {o.code}
                   </span>
                   <span className="min-w-0 flex-1 truncate text-sm font-medium text-ink">

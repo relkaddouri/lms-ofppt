@@ -59,8 +59,8 @@ export default function GroupeModulesManager({
   if (modules.length === 0) {
     return (
       <Card className="mt-6 p-10 text-center" padded={false}>
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-mint">
-          <BookOpen className="h-6 w-6 text-forest" aria-hidden />
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-wash">
+          <BookOpen className="h-6 w-6 text-ink" aria-hidden />
         </div>
         <p className="mt-4 text-sm font-medium text-ink">
           Aucun module assigné à ce groupe
@@ -106,7 +106,7 @@ export default function GroupeModulesManager({
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-baseline gap-2">
                     {m.code_operationnel ? (
-                      <span className="font-mono text-sm font-medium text-forest">
+                      <span className="font-mono text-sm font-medium text-ink">
                         {m.code_operationnel}
                       </span>
                     ) : null}
@@ -130,7 +130,7 @@ export default function GroupeModulesManager({
                   </p>
                   <Link
                     href={`/groupes/${groupeId}/modules/${m.module_id}`}
-                    className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-forest underline"
+                    className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-ink underline"
                   >
                     Plan de déroulement
                     <ArrowRight className="h-3 w-3" />
@@ -177,7 +177,7 @@ export default function GroupeModulesManager({
                   </div>
                 ) : (
                   <div className="flex shrink-0 items-center gap-3">
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-mint px-3 py-1 font-mono text-sm font-medium text-forest">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-wash px-3 py-1 font-mono text-sm font-medium text-ink">
                       <Clock size={16} aria-hidden />
                       {m.masse_horaire_allouee} h
                     </span>

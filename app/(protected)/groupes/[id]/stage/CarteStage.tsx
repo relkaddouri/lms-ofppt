@@ -192,7 +192,7 @@ export default function CarteStage({ stage }: { stage: StageStagiaire }) {
         type="button"
         onClick={() => setOuvert((o) => !o)}
         aria-expanded={ouvert}
-        className="flex w-full items-center gap-3 p-4 text-left hover:bg-mint"
+        className="flex w-full items-center gap-3 p-4 text-left hover:bg-wash"
       >
         <ChevronRight
           className={`h-4 w-4 shrink-0 text-slate transition-transform ${
@@ -200,7 +200,7 @@ export default function CarteStage({ stage }: { stage: StageStagiaire }) {
           }`}
           aria-hidden
         />
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border bg-mint text-xs font-medium text-forest">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border bg-wash text-xs font-medium text-ink">
           {initials(stage.prenom, stage.nom)}
         </span>
 
@@ -299,7 +299,7 @@ export default function CarteStage({ stage }: { stage: StageStagiaire }) {
           </section>
 
           <section className="grid gap-4 lg:grid-cols-2">
-            <div className="rounded-xl border border-border bg-surface p-3">
+            <div className="rounded-[14px] border border-border bg-surface p-3">
               <div className="flex items-baseline justify-between gap-2">
                 <h3 className="text-sm font-medium text-ink">Rapport</h3>
                 <span className="font-mono text-sm tabular-nums text-slate">
@@ -326,7 +326,7 @@ export default function CarteStage({ stage }: { stage: StageStagiaire }) {
               </div>
             </div>
 
-            <div className="rounded-xl border border-border bg-surface p-3">
+            <div className="rounded-[14px] border border-border bg-surface p-3">
               <div className="flex items-baseline justify-between gap-2">
                 <h3 className="text-sm font-medium text-ink">Exposé</h3>
                 <span className="font-mono text-sm tabular-nums text-slate">

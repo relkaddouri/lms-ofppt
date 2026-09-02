@@ -412,7 +412,7 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
                       >
                         <span
                           aria-hidden
-                          className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-[1.5px] ${
+                          className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-lg border-[1.5px] ${
                             p.present === true
                               ? "border-ink bg-ink"
                               : "border-border-strong bg-surface"

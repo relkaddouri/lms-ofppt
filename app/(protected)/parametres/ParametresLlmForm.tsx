@@ -126,7 +126,7 @@ export default function ParametresLlmForm({
                 aria-pressed={actif}
                 className={`rounded-lg border px-3 py-2.5 text-left transition-colors ${
                   actif
-                    ? "border-forest bg-forest/5"
+                    ? "border-ink bg-wash"
                     : "border-border hover:border-slate/40"
                 }`}
               >
@@ -140,7 +140,7 @@ export default function ParametresLlmForm({
         </div>
 
         {description.remarque ? (
-          <p className="mt-3 rounded-lg bg-info/10 px-3 py-2 text-xs text-ink">
+          <p className="mt-3 rounded-lg bg-tint-teal px-3 py-2 text-xs text-ink">
             {description.remarque}
           </p>
         ) : null}
@@ -189,7 +189,7 @@ export default function ParametresLlmForm({
             ) : null}
           </div>
           {cleObsolete ? (
-            <p className="mt-1.5 text-xs text-danger">
+            <p className="mt-1.5 text-xs text-coral-dark">
               La clé enregistrée est une clé {decrire(initial!.fournisseur)?.nom}.
               Saisissez une clé {description.nom} pour utiliser ce fournisseur.
             </p>
@@ -204,7 +204,7 @@ export default function ParametresLlmForm({
               href={description.docCle}
               target="_blank"
               rel="noreferrer noopener"
-              className="mt-1 inline-flex items-center gap-1 text-xs text-forest underline"
+              className="mt-1 inline-flex items-center gap-1 text-xs text-ink underline"
             >
               Obtenir une clé {description.nom}
               <ExternalLink className="h-3 w-3" />
@@ -261,7 +261,7 @@ export default function ParametresLlmForm({
             />
           ) : null}
           {modelesDetectes.length > 0 ? (
-            <p className="mt-1.5 text-xs text-success">
+            <p className="mt-1.5 text-xs text-green-dark">
               {modelesDetectes.length} modèles détectés sur votre compte.
             </p>
           ) : null}

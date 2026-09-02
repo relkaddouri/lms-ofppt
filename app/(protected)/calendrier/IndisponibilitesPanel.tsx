@@ -94,7 +94,7 @@ export default function IndisponibilitesPanel({
   }
 
   return (
-    <section className="rounded-xl border border-border bg-surface p-4">
+    <section className="rounded-[14px] border border-border bg-surface p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="flex items-center gap-1.5 text-sm font-medium text-ink">
           <CalendarOff className="h-4 w-4 text-slate" aria-hidden />

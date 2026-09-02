@@ -242,7 +242,7 @@ export default function CalendrierSemaine({
             date estimée
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="inline-block h-3 w-6 rounded border-2 border-solid border-forest" />
+            <span className="inline-block h-3 w-6 rounded border-2 border-solid border-ink" />
             date arrêtée
           </span>
         </div>
@@ -252,7 +252,7 @@ export default function CalendrierSemaine({
         <div className="overflow-x-auto">
           {/* `table-fixed` donne aux six jours la même largeur : sans lui, le
               seul jour occupé écrasait les cinq autres. */}
-          <table className="w-full min-w-[680px] table-fixed border-collapse overflow-hidden rounded-xl border border-border bg-surface">
+          <table className="w-full min-w-[680px] table-fixed border-collapse overflow-hidden rounded-[14px] border border-border bg-surface">
             <colgroup>
               <col className="w-[124px]" />
               {jours.map((j) => (
@@ -274,34 +274,34 @@ export default function CalendrierSemaine({
                       indispoJour.length > 0
                         ? "bg-paper"
                         : j.estAujourdhui
-                          ? "bg-mint"
+                          ? "bg-wash"
                           : "bg-paper"
                     }`}
                   >
                     <span className="flex items-baseline gap-1.5">
                       <span
                         className={`text-sm font-semibold ${
-                          j.estAujourdhui ? "text-forest" : "text-ink"
+                          j.estAujourdhui ? "text-ink" : "text-ink"
                         }`}
                       >
                         {j.nom}
                       </span>
                       <span
                         className={`text-xs ${
-                          j.estAujourdhui ? "text-forest/70" : "text-slate"
+                          j.estAujourdhui ? "text-ink/70" : "text-slate"
                         }`}
                       >
                         {j.date.slice(8, 10)}/{j.date.slice(5, 7)}
                       </span>
                       {j.estAujourdhui ? (
                         <span
-                          className="ml-auto h-1.5 w-1.5 rounded-full bg-forest"
+                          className="ml-auto h-1.5 w-1.5 rounded-full bg-ink"
                           aria-label="aujourd'hui"
                         />
                       ) : null}
                     </span>
                     {indispoJour.length > 0 ? (
-                      <span className="mt-1 inline-block self-start whitespace-nowrap rounded-[5px] border border-border bg-wash px-[7px] py-px text-[11.5px] font-semibold text-slate-2">
+                      <span className="mt-1 inline-block self-start whitespace-nowrap rounded-[7px] border border-border bg-wash px-[7px] py-px text-[11.5px] font-semibold text-slate-2">
                         {indispoJour.map(libelleIndispo).join(" · ")}
                       </span>
                     ) : null}
@@ -343,7 +343,7 @@ export default function CalendrierSemaine({
                             indispos.length > 0
                               ? "bg-[repeating-linear-gradient(135deg,var(--paper)_0px,var(--paper)_7px,var(--surface)_7px,var(--surface)_14px)]"
                               : j.estAujourdhui
-                                ? "bg-mint/20"
+                                ? "bg-wash/20"
                                 : ""
                           }`}
                         >
@@ -356,7 +356,7 @@ export default function CalendrierSemaine({
                               .map((i) => (
                                 <p
                                   key={i.id}
-                                  className="rounded-[5px] border border-border bg-wash px-[7px] py-px text-[11.5px] font-semibold text-slate-2"
+                                  className="rounded-[7px] border border-border bg-wash px-[7px] py-px text-[11.5px] font-semibold text-slate-2"
                                 >
                                   {libelleIndispo(i)} (
                                   {i.demi_journee === "matin" ? "matin" : "après-midi"})
@@ -370,11 +370,11 @@ export default function CalendrierSemaine({
                                 title={`${c.groupeNom} — ${c.titre ?? c.moduleNom}`}
                                 className={`block rounded-lg px-2 py-1.5 transition-colors ${
                                   c.confirmee
-                                    ? "border-2 border-solid border-forest bg-mint hover:bg-mint/70"
-                                    : "border border-dashed border-slate/60 bg-surface hover:border-forest/60"
+                                    ? "border-2 border-solid border-ink bg-wash hover:bg-wash-strong"
+                                    : "border border-dashed border-slate/60 bg-surface hover:border-ink/60"
                                 }`}
                               >
-                                <span className="block text-[10px] font-semibold uppercase tracking-wide text-forest">
+                                <span className="block text-[10px] font-semibold uppercase tracking-wide text-ink">
                                   {c.type === "EFM"
                                     ? c.type_efm === "regional"
                                       ? "EFM régional"
@@ -554,7 +554,7 @@ export default function CalendrierSemaine({
           {/* « Sans date » est une seule idée : séances et contrôles la
               partagent, ils tiennent dans le même bloc. */}
           {seancesSansDate > 0 || controlesSansDate.length > 0 ? (
-            <section className="rounded-xl border border-border bg-surface p-4">
+            <section className="rounded-[14px] border border-border bg-surface p-4">
               <h2 className="flex items-center gap-1.5 text-sm font-medium text-ink">
                 <CalendarPlus className="h-4 w-4 text-slate" aria-hidden />
                 Reste à poser dans le calendrier
@@ -571,12 +571,12 @@ export default function CalendrierSemaine({
                       <li key={`${p.groupe_id}|${p.module_id}`}>
                         <Link
                           href={`/groupes/${p.groupe_id}/progression`}
-                          className="flex items-baseline justify-between gap-2 rounded-lg border border-border px-2.5 py-1.5 hover:border-forest/50"
+                          className="flex items-baseline justify-between gap-2 rounded-lg border border-border px-2.5 py-1.5 hover:border-ink/50"
                         >
                           <span className="min-w-0 truncate text-sm text-ink">
                             {p.groupeNom}
                             {p.codeOperationnel ? (
-                              <span className="ml-1 text-xs text-forest">
+                              <span className="ml-1 text-xs text-ink">
                                 {p.codeOperationnel}
                               </span>
                             ) : null}
@@ -603,7 +603,7 @@ export default function CalendrierSemaine({
                         <Link
                           href={`/modules/${c.module_id}/controle`}
                           title={`${c.groupeNom} — ${c.titre ?? c.moduleNom}`}
-                          className="flex max-w-[220px] items-center gap-1.5 rounded-lg border border-dashed border-slate/50 px-2 py-1 hover:border-forest"
+                          className="flex max-w-[220px] items-center gap-1.5 rounded-lg border border-dashed border-slate/50 px-2 py-1 hover:border-ink"
                         >
                           <Badge tone={c.type === "EFM" ? "danger" : "info"}>
                             {c.type}

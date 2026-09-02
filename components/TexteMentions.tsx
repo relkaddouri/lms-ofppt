@@ -49,7 +49,7 @@ export default function TexteMentions({
         typeof m === "string" ? (
           <span key={i}>{m}</span>
         ) : (
-          <span key={i} className="font-medium text-forest">
+          <span key={i} className="font-medium text-ink">
             @{m.mention}
           </span>
         ),

@@ -33,7 +33,7 @@ export default async function CoursDetailPage({
         Tous les cours
       </Link>
 
-      <article className="rounded-xl border border-border bg-surface p-4 md:p-6">
+      <article className="rounded-[14px] border border-border bg-surface p-4 md:p-6">
         <h1 className="text-lg font-semibold leading-snug text-ink">
           {support.contenu.titre}
         </h1>

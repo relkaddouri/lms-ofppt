@@ -47,12 +47,12 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           <div
             key={t.id}
             role="status"
-            className="flex items-center gap-3 rounded-xl border border-border bg-surface px-4 py-3 shadow-lg"
+            className="flex items-center gap-3 rounded-[14px] border border-border bg-surface px-4 py-3 shadow-lg"
             style={{ animation: "toast-in 0.2s ease-out" }}
           >
             <span
               className={`h-2 w-2 shrink-0 rounded-full ${
-                t.type === "success" ? "bg-success" : "bg-danger"
+                t.type === "success" ? "bg-green" : "bg-coral"
               }`}
             />
             <p className="text-sm text-ink">{t.message}</p>

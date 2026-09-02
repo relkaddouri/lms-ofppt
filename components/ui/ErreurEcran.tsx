@@ -30,8 +30,8 @@ export default function ErreurEcran({
   return (
     <div className="flex min-h-[60vh] items-center justify-center p-8">
       <Card className="w-full max-w-md p-8 text-center" padded={false}>
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-danger/10">
-          <TriangleAlert className="h-6 w-6 text-danger" aria-hidden />
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-alert-wash">
+          <TriangleAlert className="h-6 w-6 text-coral-dark" aria-hidden />
         </div>
         <h1 className="mt-4 font-display text-xl font-bold text-ink">{titre}</h1>
         <p className="mt-2 text-sm text-slate">{message}</p>

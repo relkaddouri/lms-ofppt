@@ -104,11 +104,11 @@ export default function CarteAnnonce({
           aria-pressed={aime}
           aria-label={aime ? "Retirer j'aime" : "J'aime"}
           className={`flex min-h-[44px] min-w-[44px] items-center gap-1.5 rounded-lg px-3 text-sm transition-colors ${
-            aime ? "text-forest" : "text-slate hover:text-ink"
+            aime ? "text-ink" : "text-slate hover:text-ink"
           }`}
         >
           <Heart
-            className={`h-5 w-5 ${aime ? "fill-forest" : ""}`}
+            className={`h-5 w-5 ${aime ? "fill-ink" : ""}`}
             aria-hidden
           />
           {total > 0 ? total : null}
@@ -135,7 +135,7 @@ export default function CarteAnnonce({
                     {c.auteurNom}
                   </span>
                   {c.auteurFormateur ? (
-                    <span className="text-[11px] text-forest">formateur</span>
+                    <span className="text-[11px] text-ink">formateur</span>
                   ) : null}
                   <span className="text-[11px] text-slate">
                     {formatDateTime(c.created_at)}
@@ -157,7 +157,7 @@ export default function CarteAnnonce({
                       type="button"
                       onClick={() => supprimer(c.id)}
                       disabled={enCours}
-                      className="flex min-h-[44px] items-center rounded-lg px-2 text-sm font-medium text-danger disabled:opacity-50"
+                      className="flex min-h-[44px] items-center rounded-lg px-2 text-sm font-medium text-coral-dark disabled:opacity-50"
                     >
                       Supprimer
                     </button>
@@ -174,7 +174,7 @@ export default function CarteAnnonce({
                     type="button"
                     aria-label="Supprimer mon commentaire"
                     onClick={() => setASupprimer(c.id)}
-                    className="flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-lg text-slate hover:text-danger"
+                    className="flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-lg text-slate hover:text-coral-dark"
                   >
                     <Trash2 className="h-4 w-4" aria-hidden />
                   </button>

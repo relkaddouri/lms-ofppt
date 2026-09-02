@@ -81,7 +81,7 @@ function ChangesList({
             {formatValue(c.avant)}
           </span>{" "}
           →{" "}
-          <span className="text-forest">{formatValue(c.apres)}</span>
+          <span className="text-ink">{formatValue(c.apres)}</span>
         </li>
       ))}
     </ul>
@@ -140,14 +140,14 @@ export default function HistoriqueManager({
       </div>
 
       {filtered.length === 0 ? (
-        <div className="mt-6 rounded-xl border border-dashed border-border bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-10 text-center">
+        <div className="mt-6 rounded-[14px] border border-dashed border-border bg-surface shadow-repos p-10 text-center">
           <p className="text-sm text-slate">
             Aucune modification enregistrée pour l&apos;instant. Les changements
             sur un contrôle validé apparaîtront ici.
           </p>
         </div>
       ) : (
-        <div className="mt-6 overflow-hidden rounded-xl border border-border bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
+        <div className="mt-6 overflow-hidden rounded-[14px] border border-border bg-surface shadow-repos">
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="border-b border-border bg-paper text-xs uppercase tracking-wide text-slate">
@@ -161,7 +161,7 @@ export default function HistoriqueManager({
               {filtered.map((e) => (
                 <tr
                   key={e.id}
-                  className="border-t border-border transition-colors hover:bg-mint/50"
+                  className="border-t border-border transition-colors hover:bg-wash/50"
                 >
                   <td className="px-4 py-3 font-mono text-xs text-slate">
                     {formatDateTime(e.date)}

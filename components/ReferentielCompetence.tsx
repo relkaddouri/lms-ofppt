@@ -24,7 +24,7 @@ export default function ReferentielCompetence({
   const nbCriteres = r.elements.reduce((t, e) => t + e.criteres.length, 0);
 
   return (
-    <section className="rounded-xl border border-border bg-surface p-5 shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
+    <section className="rounded-[14px] border border-border bg-surface p-5 shadow-repos">
       <div className="flex flex-wrap items-baseline justify-between gap-3">
         <div className="min-w-0">
           <h2 className="font-display text-lg font-bold text-ink">
@@ -45,7 +45,7 @@ export default function ReferentielCompetence({
 
       {/* Le résumé, toujours visible : de quoi s'agit-il, en une phrase. */}
       {r.enonce ? (
-        <p className="mt-3 rounded-lg bg-mint px-3 py-2 text-sm text-ink">
+        <p className="mt-3 rounded-lg bg-wash px-3 py-2 text-sm text-ink">
           {r.enonce}
         </p>
       ) : null}
@@ -118,7 +118,7 @@ export default function ReferentielCompetence({
                     className="rounded-lg border border-border p-3"
                   >
                     <p className="text-sm font-medium text-ink">
-                      <span className="font-mono text-forest">{el.lettre}.</span>{" "}
+                      <span className="font-mono text-ink">{el.lettre}.</span>{" "}
                       {el.intitule}
                     </p>
 
@@ -134,7 +134,7 @@ export default function ReferentielCompetence({
                       <ul className="mt-3 space-y-1.5 border-t border-border pt-2">
                         {objectifs.map((o) => (
                           <li key={o.code} className="text-sm">
-                            <span className="font-mono text-xs text-forest">
+                            <span className="font-mono text-xs text-ink">
                               {o.code}
                             </span>{" "}
                             <span className="text-ink">{o.intitule}</span>

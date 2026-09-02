@@ -73,7 +73,7 @@ export default function QuestionsSupport({
           {questions.map((q) => (
             <li
               key={q.id}
-              className="rounded-xl border border-border bg-surface p-4"
+              className="rounded-[14px] border border-border bg-surface p-4"
             >
               <Entete message={q} />
               <p className="mt-1 text-sm leading-relaxed text-ink">
@@ -111,7 +111,7 @@ export default function QuestionsSupport({
                 <button
                   type="button"
                   onClick={() => setRepondA(q.id)}
-                  className="mt-3 flex min-h-[44px] items-center gap-1.5 text-sm font-medium text-forest"
+                  className="mt-3 flex min-h-[44px] items-center gap-1.5 text-sm font-medium text-ink"
                 >
                   <Reply className="h-4 w-4" aria-hidden />
                   Répondre
@@ -143,7 +143,7 @@ function Entete({ message }: { message: QuestionSupport | QuestionSupport["repon
         {message.estMien ? "Vous" : message.auteurNom}
       </span>
       {message.auteurFormateur ? (
-        <span className="ml-1.5 rounded-full bg-mint px-1.5 py-0.5 text-[10px] font-medium text-forest">
+        <span className="ml-1.5 rounded-full bg-wash px-1.5 py-0.5 text-[10px] font-medium text-ink">
           formateur
         </span>
       ) : null}

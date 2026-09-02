@@ -89,8 +89,8 @@ export default function DevoirsManager({
 
       {devoirs.length === 0 ? (
         <Card className="mt-6 p-10 text-center" padded={false}>
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-mint">
-            <ClipboardList className="h-6 w-6 text-forest" aria-hidden />
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-wash">
+            <ClipboardList className="h-6 w-6 text-ink" aria-hidden />
           </div>
           <p className="mt-4 text-sm font-medium text-ink">Aucun devoir</p>
           <p className="mt-1 text-sm text-slate">
@@ -105,7 +105,7 @@ export default function DevoirsManager({
           {devoirs.map((d) => (
             <div
               key={d.id}
-              className="rounded-xl border border-border bg-surface p-4"
+              className="rounded-[14px] border border-border bg-surface p-4"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">

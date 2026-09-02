@@ -14,7 +14,7 @@ export default function GroupModulesList({
 }) {
   if (modules.length === 0) {
     return (
-      <div className="mt-6 rounded-xl border border-dashed border-border bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-10 text-center">
+      <div className="mt-6 rounded-[14px] border border-dashed border-border bg-surface shadow-repos p-10 text-center">
         <p className="text-sm text-slate">
           Aucun module assigné à ce groupe.
         </p>
@@ -48,7 +48,7 @@ export default function GroupModulesList({
         return (
           <div
             key={m.module_id}
-            className="flex items-center justify-between gap-4 rounded-xl border border-border bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-4"
+            className="flex items-center justify-between gap-4 rounded-[14px] border border-border bg-surface shadow-repos p-4"
           >
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold text-ink">{m.nom}</p>
@@ -58,7 +58,7 @@ export default function GroupModulesList({
               {status}
               <Link
                 href={href}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-ink hover:bg-paper focus:outline-none focus:ring-2 focus:ring-forest"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-ink hover:bg-paper focus:outline-none focus:ring-2 focus:ring-ink"
               >
                 {kind === "fiches" ? (
                   <FileText size={16} />

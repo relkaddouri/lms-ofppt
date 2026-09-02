@@ -265,13 +265,13 @@ export default function GroupesManager({
                 {modules.map((m) => (
                   <label
                     key={m.id}
-                    className="flex cursor-pointer items-center gap-3 rounded-lg border border-border px-3 py-2 text-sm hover:border-forest/50"
+                    className="flex cursor-pointer items-center gap-3 rounded-lg border border-border px-3 py-2 text-sm hover:border-ink/50"
                   >
                     <input
                       type="checkbox"
                       checked={selectedModules.includes(m.id)}
                       onChange={() => toggleModule(m.id)}
-                      className="h-4 w-4 accent-forest"
+                      className="h-4 w-4 accent-ink"
                     />
                     <span className="text-ink">{m.nom}</span>
                     <span className="ml-auto font-mono text-xs text-slate">

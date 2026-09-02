@@ -63,7 +63,7 @@ export default function KebabMenu({ items }: { items: KebabItem[] }) {
       <button
         ref={btnRef}
         onClick={toggle}
-        className="rounded-lg border border-border px-2 py-1.5 text-slate hover:bg-paper focus:outline-none focus:ring-2 focus:ring-forest"
+        className="rounded-lg border border-border px-2 py-1.5 text-slate hover:bg-paper focus:outline-none focus:ring-2 focus:ring-ink"
         aria-label="Actions"
         aria-haspopup="menu"
         aria-expanded={open}
@@ -103,7 +103,7 @@ export default function KebabMenu({ items }: { items: KebabItem[] }) {
                     role="menuitem"
                     onClick={() => setOpen(false)}
                     className={`flex items-center gap-1.5 px-4 py-2 text-sm hover:bg-paper focus:bg-paper focus:outline-none ${
-                      item.danger ? "text-danger" : "text-ink"
+                      item.danger ? "text-coral-dark" : "text-ink"
                     }`}
                   >
                     {inner}
@@ -117,7 +117,7 @@ export default function KebabMenu({ items }: { items: KebabItem[] }) {
                       item.onClick();
                     }}
                     className={`flex w-full items-center gap-1.5 px-4 py-2 text-left text-sm hover:bg-paper focus:bg-paper focus:outline-none ${
-                      item.danger ? "text-danger" : "text-ink"
+                      item.danger ? "text-coral-dark" : "text-ink"
                     }`}
                   >
                     {inner}

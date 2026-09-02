@@ -9,7 +9,7 @@ import DureeReferenceEditor from "./DureeReferenceEditor";
 import { FileText, FolderKanban, ListChecks, Plus, Users } from "lucide-react";
 
 const linkBtn =
-  "inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-ink hover:bg-paper focus:outline-none focus:ring-2 focus:ring-forest";
+  "inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-ink hover:bg-paper focus:outline-none focus:ring-2 focus:ring-ink";
 
 export default async function ModuleDetailPage({
   params,
@@ -153,7 +153,7 @@ export default async function ModuleDetailPage({
                 <li key={g.id}>
                   <Link
                     href={`/groupes/${g.id}`}
-                    className="inline-flex items-center gap-1.5 rounded-lg px-1 py-1 text-sm text-ink hover:text-forest focus:outline-none focus:ring-2 focus:ring-forest"
+                    className="inline-flex items-center gap-1.5 rounded-lg px-1 py-1 text-sm text-ink hover:text-ink focus:outline-none focus:ring-2 focus:ring-ink"
                   >
                     <FolderKanban size={16} />
                     {g.nom}
@@ -168,7 +168,7 @@ export default async function ModuleDetailPage({
       {controles.length > 0 ? (
         <section className="mt-8">
           <h2 className="font-display text-[17px] font-semibold text-ink">Contrôles du module</h2>
-          <div className="mt-4 overflow-hidden rounded-xl border border-border bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
+          <div className="mt-4 overflow-hidden rounded-[14px] border border-border bg-surface shadow-repos">
             <table className="w-full text-left text-sm">
               <thead>
                 <tr className="border-b border-border bg-paper text-xs uppercase tracking-wide text-slate">
@@ -181,7 +181,7 @@ export default async function ModuleDetailPage({
                 {controles.map((c) => (
                   <tr
                     key={c.id}
-                    className="border-t border-border transition-colors hover:bg-mint/50"
+                    className="border-t border-border transition-colors hover:bg-wash/50"
                   >
                     <td className="px-4 py-3 font-medium text-ink">
                       {c.titre ?? "Sans titre"}

@@ -24,7 +24,7 @@ export default function SupportLecture({ support }: { support: Support }) {
           <ol className="space-y-2">
             {support.consignes.map((c, i) => (
               <li key={i} className="flex gap-3 text-sm leading-relaxed text-ink">
-                <span className="shrink-0 font-semibold text-forest">
+                <span className="shrink-0 font-semibold text-ink">
                   {i + 1}.
                 </span>
                 <span>{c}</span>
@@ -62,7 +62,7 @@ export default function SupportLecture({ support }: { support: Support }) {
           <ul className="space-y-2">
             {sec.notions.map((n, k) => (
               <li key={k} className="flex gap-2 text-sm leading-relaxed text-ink">
-                <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-forest" />
+                <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-ink" />
                 <span>{n}</span>
               </li>
             ))}
@@ -77,12 +77,12 @@ export default function SupportLecture({ support }: { support: Support }) {
       ))}
 
       {support.aRetenir.length > 0 ? (
-        <section className="rounded-xl border border-border bg-mint/40 p-4">
-          <h2 className="text-sm font-semibold text-forest">À retenir</h2>
+        <section className="rounded-xl border border-border bg-wash/40 p-4">
+          <h2 className="text-sm font-semibold text-ink">À retenir</h2>
           <ul className="mt-2 space-y-2">
             {support.aRetenir.map((r, i) => (
               <li key={i} className="flex gap-2 text-sm leading-relaxed text-ink">
-                <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-forest" />
+                <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-ink" />
                 <span>{r}</span>
               </li>
             ))}

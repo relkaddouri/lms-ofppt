@@ -21,15 +21,15 @@ export default async function CoursPage() {
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-surface">
+    <div className="overflow-hidden rounded-[14px] border border-border bg-surface">
       {supports.map((s) => (
         <Link
           key={s.id}
           href={`/espace-stagiaire/cours/${s.id}`}
-          className="flex min-h-[64px] items-start gap-3 border-b border-border p-4 last:border-0 hover:bg-mint"
+          className="flex min-h-[64px] items-start gap-3 border-b border-border p-4 last:border-0 hover:bg-wash"
         >
-          <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-mint">
-            <BookOpen className="h-4 w-4 text-forest" aria-hidden />
+          <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-wash">
+            <BookOpen className="h-4 w-4 text-ink" aria-hidden />
           </span>
 
           <div className="min-w-0 flex-1">

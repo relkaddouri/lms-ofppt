@@ -14,9 +14,9 @@ export default async function StagePage({
 
   if (stages.length === 0) {
     return (
-      <section className="mt-6 rounded-xl border border-border bg-surface px-4 py-10 text-center">
-        <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-mint">
-          <GraduationCap className="h-6 w-6 text-forest" aria-hidden />
+      <section className="mt-6 rounded-[14px] border border-border bg-surface px-4 py-10 text-center">
+        <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-wash">
+          <GraduationCap className="h-6 w-6 text-ink" aria-hidden />
         </span>
         <p className="mt-4 text-base font-semibold text-ink">
           Aucun stagiaire dans ce groupe
@@ -30,7 +30,7 @@ export default async function StagePage({
   }
 
   return (
-    <div className="mt-6 overflow-hidden rounded-xl border border-border bg-surface">
+    <div className="mt-6 overflow-hidden rounded-[14px] border border-border bg-surface">
       {stages.map((s) => (
         <CarteStage key={s.stagiaireId} stage={s} />
       ))}

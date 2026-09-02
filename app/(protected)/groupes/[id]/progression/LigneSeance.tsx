@@ -58,7 +58,7 @@ export default function LigneSeance({
   return (
     <li
       className={`flex items-center gap-3 border-b border-border px-3 py-2 last:border-0 ${
-        prochaine ? "bg-mint/40" : ""
+        prochaine ? "bg-wash/40" : ""
       } ${fait ? "opacity-60" : ""}`}
     >
       <button
@@ -67,10 +67,10 @@ export default function LigneSeance({
         disabled={busy}
         aria-pressed={fait}
         aria-label={`Séance ${numero} ${fait ? "faite" : "à faire"}`}
-        className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md border transition-colors ${
+        className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border transition-colors ${
           fait
-            ? "border-forest bg-forest text-white"
-            : "border-border text-transparent hover:border-forest"
+            ? "border-ink bg-ink text-white"
+            : "border-border text-transparent hover:border-ink"
         }`}
       >
         <Check className="h-3.5 w-3.5" />
@@ -82,7 +82,7 @@ export default function LigneSeance({
 
       <span
         className={`w-20 shrink-0 text-xs ${
-          seance.nature === "pratique" ? "text-info" : "text-slate"
+          seance.nature === "pratique" ? "text-teal-dark" : "text-slate"
         }`}
       >
         {seance.nature === "pratique"
@@ -115,7 +115,7 @@ export default function LigneSeance({
 
       <Link
         href={`/groupes/${seance.groupe_id}/seances/${seance.id}`}
-        className="flex shrink-0 items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-forest hover:bg-mint"
+        className="flex shrink-0 items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-ink hover:bg-wash"
       >
         Ouvrir
         <ChevronRight className="h-3 w-3" />

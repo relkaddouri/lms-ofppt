@@ -129,7 +129,7 @@ export default function DiaporamaCours({
 
       <div
         ref={cadre}
-        className="mt-3 bg-forest"
+        className="mt-3 bg-ink"
         // En plein écran le cadre occupe l'écran ; sinon il garde le 16:9.
         style={
           pleinEcran
@@ -147,7 +147,7 @@ export default function DiaporamaCours({
           }}
         >
           {d.type === "titre" ? (
-            <div className="flex h-full flex-col justify-center bg-forest px-[7cqw] text-white">
+            <div className="flex h-full flex-col justify-center bg-ink px-[7cqw] text-white">
               <p
                 className="font-mono uppercase tracking-widest text-mint/70"
                 style={{ fontSize: "1.6cqw" }}
@@ -171,7 +171,7 @@ export default function DiaporamaCours({
             <div className="flex h-full flex-col bg-surface px-[6cqw] py-[6cqh]">
               <div className="flex items-baseline gap-[1.5cqw]">
                 <span
-                  className="font-mono font-bold text-forest/40"
+                  className="font-mono font-bold text-ink/40"
                   style={{ fontSize: "3.4cqw" }}
                 >
                   {String(d.numero).padStart(2, "0")}
@@ -184,7 +184,7 @@ export default function DiaporamaCours({
                 </h2>
               </div>
               <div
-                className="mt-[1cqh] h-[0.4cqh] w-[10cqw] rounded-full bg-forest"
+                className="mt-[1cqh] h-[0.4cqh] w-[10cqw] rounded-full bg-ink"
                 aria-hidden
               />
 
@@ -192,7 +192,7 @@ export default function DiaporamaCours({
                 {d.notions.map((n, i) => (
                   <li key={i} className="flex gap-[1.6cqw]">
                     <span
-                      className="mt-[0.9cqh] h-[1cqh] w-[1cqh] shrink-0 rounded-full bg-forest"
+                      className="mt-[0.9cqh] h-[1cqh] w-[1cqh] shrink-0 rounded-full bg-ink"
                       aria-hidden
                     />
                     <span
@@ -206,9 +206,9 @@ export default function DiaporamaCours({
               </ul>
 
               {d.exemple ? (
-                <div className="mt-[2cqh] rounded-[1cqw] border-l-[0.6cqw] border-forest bg-mint px-[2.5cqw] py-[2cqh]">
+                <div className="mt-[2cqh] rounded-[1cqw] border-l-[0.6cqw] border-ink bg-wash px-[2.5cqw] py-[2cqh]">
                   <p
-                    className="font-mono uppercase tracking-widest text-forest/70"
+                    className="font-mono uppercase tracking-widest text-ink/70"
                     style={{ fontSize: "1.3cqw" }}
                   >
                     Exemple
@@ -223,9 +223,9 @@ export default function DiaporamaCours({
               ) : null}
             </div>
           ) : (
-            <div className="flex h-full flex-col justify-center bg-mint px-[7cqw]">
+            <div className="flex h-full flex-col justify-center bg-wash px-[7cqw]">
               <h2
-                className="font-display font-bold text-forest"
+                className="font-display font-bold text-ink"
                 style={{ fontSize: "4cqw" }}
               >
                 À retenir
@@ -234,7 +234,7 @@ export default function DiaporamaCours({
                 {d.points.map((p, i) => (
                   <li key={i} className="flex gap-[1.8cqw]">
                     <span
-                      className="font-mono font-bold text-forest/50"
+                      className="font-mono font-bold text-ink/50"
                       style={{ fontSize: "2.2cqw" }}
                     >
                       {String(i + 1).padStart(2, "0")}

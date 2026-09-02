@@ -62,13 +62,13 @@ export default function ChampMention({
   return (
     <div className="relative">
       {suggestions.length > 0 ? (
-        <ul className="absolute bottom-full left-0 z-10 mb-1 w-full overflow-hidden rounded-lg border border-border bg-surface shadow-[0_4px_12px_rgba(0,0,0,0.08)]">
+        <ul className="absolute bottom-full left-0 z-10 mb-1 w-full overflow-hidden rounded-lg border border-border bg-surface shadow-flottant">
           {suggestions.map((c) => (
             <li key={c.id}>
               <button
                 type="button"
                 onClick={() => choisir(c.nom)}
-                className="flex min-h-[44px] w-full items-center px-3 text-left text-sm text-ink hover:bg-mint"
+                className="flex min-h-[44px] w-full items-center px-3 text-left text-sm text-ink hover:bg-wash"
               >
                 {c.nom}
               </button>

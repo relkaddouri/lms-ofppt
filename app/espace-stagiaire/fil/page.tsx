@@ -27,7 +27,7 @@ export default async function FilPage() {
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-surface">
+    <div className="overflow-hidden rounded-[14px] border border-border bg-surface">
       {annonces.map((a) => (
         <CarteAnnonce key={a.id} annonce={a} camarades={camarades} />
       ))}

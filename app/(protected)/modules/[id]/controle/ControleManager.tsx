@@ -552,7 +552,7 @@ export default function ControleManager({
       ) : null}
 
       {avertissements.length > 0 ? (
-        <div className="mt-4 rounded-xl border border-info/30 bg-info/10 px-4 py-3">
+        <div className="mt-4 rounded-xl border border-tint-teal-strong bg-tint-teal px-4 py-3">
           <p className="text-sm font-medium text-ink">
             À vérifier avant validation
           </p>
@@ -565,7 +565,7 @@ export default function ControleManager({
       ) : null}
 
       {notice ? (
-        <p className="mt-4 rounded-xl border border-success/30 bg-success/10 px-3 py-2 text-sm text-success">
+        <p className="mt-4 rounded-xl border border-tint-green bg-success-wash px-3 py-2 text-sm text-green-dark">
           {notice}
         </p>
       ) : null}
@@ -594,7 +594,7 @@ export default function ControleManager({
             />
           </div>
         ) : (
-          <p className="mt-6 rounded-xl border border-border bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-4 text-sm text-slate">
+          <p className="mt-6 rounded-[14px] border border-border bg-surface shadow-repos p-4 text-sm text-slate">
             Enregistrez d&apos;abord un contrôle pour consulter ses copies.
           </p>
         )
@@ -660,7 +660,7 @@ export default function ControleManager({
           ) : etape === 3 ? (
             <div className="space-y-4">
               {questions.length > 0 ? (
-                <div className="mb-4 rounded-xl border border-border bg-surface p-4 shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
+                <div className="mb-4 rounded-[14px] border border-border bg-surface p-4 shadow-repos">
                   <h2 className="text-sm font-medium text-ink">
                     Retravailler ce contrôle
                   </h2>
@@ -732,9 +732,9 @@ export default function ControleManager({
                   </p>
                 ) : questions.length === 0 ? (
                   <div className="m-6 flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-paper px-6 py-10 text-center">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-mint">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-wash">
                       <svg
-                        className="h-6 w-6 text-forest"
+                        className="h-6 w-6 text-ink"
                         viewBox="0 0 24 24"
                         fill="none"
                         stroke="currentColor"
@@ -833,7 +833,7 @@ export default function ControleManager({
                                             : q.options,
                                       })
                                     }
-                                    className={`rounded-md px-[11px] py-1.5 text-[13px] font-semibold transition-colors duration-150 ease-out ${
+                                    className={`rounded-lg px-[11px] py-1.5 text-[13px] font-semibold transition-colors duration-150 ease-out ${
                                       actif
                                         ? "bg-surface text-ink shadow-[0_1px_2px_rgba(46,59,78,0.12)]"
                                         : "text-slate-2 hover:text-ink"
@@ -906,7 +906,7 @@ export default function ControleManager({
                                         ),
                                       })
                                     }
-                                    className="h-4 w-4 shrink-0 accent-forest"
+                                    className="h-4 w-4 shrink-0 accent-ink"
                                   />
                                   <input
                                     value={opt.texte}
@@ -942,11 +942,11 @@ export default function ControleManager({
                               ))}
                             </ul>
                             {q.options.length < 2 ? (
-                              <p className="mt-2 text-xs text-danger">
+                              <p className="mt-2 text-xs text-coral-dark">
                                 Un QCM demande au moins deux propositions.
                               </p>
                             ) : !q.options.some((o) => o.correcte) ? (
-                              <p className="mt-2 text-xs text-danger">
+                              <p className="mt-2 text-xs text-coral-dark">
                                 Aucune proposition n&apos;est marquée correcte.
                               </p>
                             ) : null}
@@ -1126,7 +1126,7 @@ export default function ControleManager({
                     );
                   })()}
                 </section>
-                <div className="max-w-[640px] rounded-xl border border-border bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-4">
+                <div className="max-w-[640px] rounded-[14px] border border-border bg-surface shadow-repos p-4">
                   <label
                     htmlFor="titre"
                     className="block text-sm font-medium text-ink"
@@ -1140,7 +1140,7 @@ export default function ControleManager({
                     className={`${inputClass} mt-1`}
                   />
                 </div>
-                <div className="max-w-[640px] rounded-xl border border-border bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-4">
+                <div className="max-w-[640px] rounded-[14px] border border-border bg-surface shadow-repos p-4">
                   <label
                     htmlFor="consignes"
                     className="block text-sm font-medium text-ink"
@@ -1157,7 +1157,7 @@ export default function ControleManager({
                 </div>
               </div>
               <aside className="space-y-4">
-                <div className="rounded-xl border border-border bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-4">
+                <div className="rounded-[14px] border border-border bg-surface shadow-repos p-4">
                   <h2 className="text-sm font-medium text-ink">Actions</h2>
                   <div className="mt-3 flex flex-col gap-2">
                     <Button

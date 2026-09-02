@@ -45,7 +45,7 @@ export default function EfmRegionalForm({
     <div
       className={`rounded-xl bg-surface p-4 ${
         arretee
-          ? "border-2 border-solid border-forest"
+          ? "border-2 border-solid border-ink"
           : "border border-dashed border-slate/60"
       }`}
     >

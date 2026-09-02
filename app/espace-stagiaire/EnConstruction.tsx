@@ -16,9 +16,9 @@ export default function EnConstruction({
   Icone: LucideIcon;
 }) {
   return (
-    <section className="rounded-xl border border-border bg-surface px-4 py-10 text-center">
-      <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-mint">
-        <Icone className="h-6 w-6 text-forest" aria-hidden />
+    <section className="rounded-[14px] border border-border bg-surface px-4 py-10 text-center">
+      <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-wash">
+        <Icone className="h-6 w-6 text-ink" aria-hidden />
       </span>
       <h1 className="mt-4 text-base font-semibold text-ink">{titre}</h1>
       <p className="mx-auto mt-1.5 max-w-xs text-sm text-slate">{description}</p>

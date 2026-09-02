@@ -50,12 +50,12 @@ export default function FichePreparationManager({
         ]}
       />
 
-      <div className="mt-6 rounded-xl border border-border bg-surface p-4 shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
+      <div className="mt-6 rounded-[14px] border border-border bg-surface p-4 shadow-repos">
         <label className="block text-sm font-medium text-ink" htmlFor="seance">
           Séance préparée
         </label>
         {seances.length === 0 ? (
-          <p className="mt-2 rounded-lg bg-info/10 px-3 py-2 text-sm text-ink">
+          <p className="mt-2 rounded-lg bg-tint-teal px-3 py-2 text-sm text-ink">
             Aucune séance n&apos;est encore planifiée pour ce module. Créez le plan
             de déroulement depuis un groupe pour générer ses séances.
           </p>
@@ -86,7 +86,7 @@ export default function FichePreparationManager({
             {seance ? (
               <Link
                 href={`/groupes/${seance.groupe_id}/seances/${seance.id}`}
-                className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-forest underline"
+                className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-ink underline"
               >
                 Ouvrir la page de cette séance — présences, remarques
                 <ArrowRight className="h-3 w-3" />
@@ -104,7 +104,7 @@ export default function FichePreparationManager({
 
       {seance ? (
         <div className="mt-6 grid gap-6 xl:grid-cols-[1fr_220px]">
-          <section className="rounded-xl border border-border bg-surface p-4">
+          <section className="rounded-[14px] border border-border bg-surface p-4">
             <FicheSeance
               contexte={{
                 seanceId: seance.id,
@@ -120,7 +120,7 @@ export default function FichePreparationManager({
             />
           </section>
 
-          <aside className="rounded-xl border border-border bg-surface p-4">
+          <aside className="rounded-[14px] border border-border bg-surface p-4">
             <h2 className="text-sm font-medium text-ink">Versions</h2>
             {versions.length === 0 ? (
               <p className="mt-2 text-sm text-slate">

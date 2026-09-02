@@ -7,8 +7,8 @@ export default function Introuvable() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-paper p-8">
       <Card className="w-full max-w-md p-8 text-center" padded={false}>
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-mint">
-          <Compass className="h-6 w-6 text-forest" aria-hidden />
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-wash">
+          <Compass className="h-6 w-6 text-ink" aria-hidden />
         </div>
         <h1 className="mt-4 font-display text-xl font-bold text-ink">
           Page introuvable

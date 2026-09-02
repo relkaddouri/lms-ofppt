@@ -175,9 +175,9 @@ export default function SupportSeance({
               role="tab"
               aria-selected={vue === cle}
               onClick={() => setVue(cle)}
-              className={`rounded-md px-3 py-1 text-sm ${
+              className={`rounded-lg px-3 py-1 text-sm ${
                 vue === cle
-                  ? "bg-mint font-medium text-forest"
+                  ? "bg-wash font-medium text-ink"
                   : "text-slate hover:text-ink"
               }`}
             >
@@ -198,7 +198,7 @@ export default function SupportSeance({
       ) : null}
 
       {avertissements.length > 0 ? (
-        <ul className="mt-3 list-disc space-y-0.5 rounded-lg bg-info/10 px-5 py-2 text-sm text-ink">
+        <ul className="mt-3 list-disc space-y-0.5 rounded-lg bg-tint-teal px-5 py-2 text-sm text-ink">
           {avertissements.map((a, i) => (
             <li key={i}>{a}</li>
           ))}
@@ -349,7 +349,7 @@ export default function SupportSeance({
                 className={`text-xs ${
                   support.criteres.reduce((t, c) => t + c.points, 0) === 20
                     ? "text-slate"
-                    : "text-danger"
+                    : "text-coral-dark"
                 }`}
               >
                 {support.criteres.reduce((t, c) => t + c.points, 0)} / 20
