@@ -15,6 +15,14 @@ export type Module = {
   cycle: CycleModule;
   /** Nombre de groupes auxquels le module est assigné. */
   groupes: number;
+  /**
+   * Somme des masses horaires allouées, tous groupes confondus.
+   *
+   * C'est la charge réelle du module — pas sa durée nationale de référence.
+   * Un module enseigné à deux groupes compte deux fois, avec la valeur propre
+   * à chaque groupe (PRD §4.1).
+   */
+  masseHoraireAllouee: number;
 };
 
 export async function getModules(): Promise<Module[]> {
@@ -29,16 +37,23 @@ export async function getModules(): Promise<Module[]> {
         "id, nom, description, duree_reference, competences(code_operationnel, cycle)",
       )
       .order("nom"),
-    supabase.from("groupe_modules").select("module_id"),
+    supabase
+      .from("groupe_modules")
+      .select("module_id, masse_horaire_allouee"),
   ]);
 
   if (modulesRes.error) throw new Error(modulesRes.error.message);
   if (assignationsRes.error) throw new Error(assignationsRes.error.message);
 
   const parModule = new Map<string, number>();
+  const heuresParModule = new Map<string, number>();
   for (const a of assignationsRes.data ?? []) {
     const id = a.module_id as string;
     parModule.set(id, (parModule.get(id) ?? 0) + 1);
+    heuresParModule.set(
+      id,
+      (heuresParModule.get(id) ?? 0) + (Number(a.masse_horaire_allouee) || 0),
+    );
   }
 
   return (modulesRes.data ?? []).map((m) => {
@@ -60,6 +75,7 @@ export async function getModules(): Promise<Module[]> {
       code: r.competences?.code_operationnel ?? null,
       cycle: r.competences?.cycle ?? null,
       groupes: parModule.get(r.id) ?? 0,
+      masseHoraireAllouee: heuresParModule.get(r.id) ?? 0,
     };
   });
 }

@@ -149,7 +149,15 @@ export default function ModulesManager({
     ),
   ].sort();
 
-  const heuresTotales = visibles.reduce((t, m) => t + m.duree_reference, 0);
+  // PRD §4.1 : le total de service somme les masses horaires réellement
+  // allouées par couple groupe+module, pas les durées nationales de
+  // référence. Un module enseigné à deux groupes compte deux fois, avec la
+  // valeur propre à chacun.
+  const heuresAllouees = visibles.reduce(
+    (t, m) => t + m.masseHoraireAllouee,
+    0,
+  );
+  const heuresReference = visibles.reduce((t, m) => t + m.duree_reference, 0);
 
   return (
     <div className="flex flex-col gap-6 px-6 py-10 md:px-10 md:pb-14">
@@ -164,8 +172,12 @@ export default function ModulesManager({
           <p className="text-base text-slate-2">
             <span className="font-mono text-body">{visibles.length}</span> module
             {visibles.length > 1 ? "s" : ""} ·{" "}
-            <span className="font-mono text-body">{heuresTotales} h</span> de
-            durée de référence
+            <span className="font-mono text-body">{heuresAllouees} h</span>{" "}
+            allouées
+            <span className="text-slate-light">
+              {" "}
+              · {heuresReference} h de référence nationale
+            </span>
           </p>
         </div>
         <Button icon={Plus} onClick={openCreate}>
@@ -273,9 +285,16 @@ export default function ModulesManager({
               </span>
 
               <span className="text-[14.5px] text-slate-2">
-                {m.groupes === 0
-                  ? "—"
-                  : `${m.groupes} groupe${m.groupes > 1 ? "s" : ""}`}
+                {m.groupes === 0 ? (
+                  "—"
+                ) : (
+                  <>
+                    {m.groupes} groupe{m.groupes > 1 ? "s" : ""}
+                    <span className="block font-mono text-[12.5px] text-slate-light">
+                      {m.masseHoraireAllouee} h allouées
+                    </span>
+                  </>
+                )}
               </span>
 
               <span className="flex justify-end">
