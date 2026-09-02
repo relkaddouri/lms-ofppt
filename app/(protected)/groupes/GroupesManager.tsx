@@ -15,7 +15,7 @@ import Modal from "@/components/ui/Modal";
 import { useToast } from "@/components/ui/Toast";
 import { formatDate } from "@/lib/format";
 import { Plus, Search, X } from "lucide-react";
-import { libelleModule } from "@/lib/modules";
+import { anneeDuCycle, libelleAnnee, libelleModule } from "@/lib/modules";
 
 /** Année de formation : septembre ouvre l'année suivante, comme en base. */
 function anneeDeFormation(): string {
@@ -97,6 +97,15 @@ export default function GroupesManager({
     (t, g) => t + (g.stagiaires?.[0]?.count ?? 0),
     0,
   );
+
+  // Les modules proposés suivent l'année du groupe : une 2ᵉ année ne suit pas
+  // les compétences du tronc commun. Les modules hors référentiel — sans
+  // cycle, comme les transversaux — restent proposés dans les deux cas.
+  const anneeChoisie = Number(form.annee) || 1;
+  const modulesDeLAnnee = modules.filter((m) => {
+    const a = anneeDuCycle(m.cycle);
+    return a === null || a === anneeChoisie;
+  });
 
   // Les années présentes dans les données, pour ne pas proposer un filtre vide.
   const annees = [
@@ -251,7 +260,12 @@ export default function GroupesManager({
             <select
               id="annee"
               value={form.annee}
-              onChange={(e) => setForm({ ...form, annee: e.target.value })}
+              onChange={(e) => {
+                setForm({ ...form, annee: e.target.value, specialite_id: "" });
+                // Un module coché puis rendu invisible par le changement
+                // d'année serait assigné sans que rien ne le montre.
+                setSelectedModules([]);
+              }}
               className={inputStyles}
             >
               <option value="1">1ʳᵉ année — tronc commun</option>
@@ -293,14 +307,15 @@ export default function GroupesManager({
             <span className="block text-sm font-medium text-ink">
               Modules suivis
             </span>
-            {modules.length === 0 ? (
+            {modulesDeLAnnee.length === 0 ? (
               <p className="mt-1 text-xs text-slate">
-                Aucun module disponible. Créez d&apos;abord des modules dans la
-                page Modules.
+                {modules.length === 0
+                  ? "Aucun module disponible. Créez d'abord des modules dans la page Modules."
+                  : `Aucun module de ${libelleAnnee(Number(form.annee))} dans votre référentiel.`}
               </p>
             ) : (
               <div className="mt-2 space-y-2">
-                {modules.map((m) => (
+                {modulesDeLAnnee.map((m) => (
                   <label
                     key={m.id}
                     className="flex cursor-pointer items-center gap-3 rounded-lg border border-border px-3 py-2 text-sm hover:border-ink/50"
