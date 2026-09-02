@@ -92,7 +92,7 @@ export async function getFichesPeriode(
   let requete = supabase
     .from("seances")
     .select(
-      "id, date, duree_prevue, objectif_operationnel, modules(nom), groupes(nom, annee, specialites(nom))",
+      "id, date, duree_prevue, objectif_operationnel, modules(nom), seance_groupes!inner(groupe_id, groupes(nom, annee, specialites(nom)))",
     )
     .not("date", "is", null)
     .gte("date", debut)
@@ -100,7 +100,7 @@ export async function getFichesPeriode(
     .order("date");
 
   // Sans groupe, la RLS borne déjà la requête aux séances du formateur.
-  if (groupeId) requete = requete.eq("groupe_id", groupeId);
+  if (groupeId) requete = requete.eq("seance_groupes.groupe_id", groupeId);
   if (moduleId) requete = requete.eq("module_id", moduleId);
 
   const { data: seances, error } = await requete;
@@ -134,11 +134,13 @@ export async function getFichesPeriode(
       duree_prevue: number | null;
       objectif_operationnel: string | null;
       modules: { nom: string } | null;
-      groupes: {
-        nom: string;
-        annee: number | null;
-        specialites: { nom: string } | null;
-      } | null;
+      seance_groupes: {
+        groupes: {
+          nom: string;
+          annee: number | null;
+          specialites: { nom: string } | null;
+        } | null;
+      }[];
     };
     const contenu = derniere.get(r.id);
     if (!contenu) continue;
@@ -148,9 +150,12 @@ export async function getFichesPeriode(
       dureeMinutes: r.duree_prevue ? Math.round(Number(r.duree_prevue) * 60) : null,
       objectif: r.objectif_operationnel,
       moduleNom: r.modules?.nom ?? "Module",
-      groupeNom: r.groupes?.nom ?? "Groupe",
-      filiere: r.groupes?.specialites?.nom ?? "Digital Design",
-      annee: r.groupes?.annee ?? null,
+      // Une séance FAD partagée figure au classeur de chaque groupe : on
+      // prend celui que le filtre a retenu, le premier lien.
+      groupeNom: r.seance_groupes[0]?.groupes?.nom ?? "Groupe",
+      filiere:
+        r.seance_groupes[0]?.groupes?.specialites?.nom ?? "Digital Design",
+      annee: r.seance_groupes[0]?.groupes?.annee ?? null,
       contenu,
     });
   }

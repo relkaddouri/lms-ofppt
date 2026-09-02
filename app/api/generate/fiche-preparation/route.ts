@@ -77,7 +77,7 @@ export async function POST(request: Request) {
   const { data: seance, error: errSeance } = await supabase
     .from("seances")
     .select(
-      "id, date, heure_debut, heure_fin, duree_realisee, objectif_operationnel, contenu_prevu, groupe_id, module_id, groupes(nom), modules(nom, description, duree_reference, competence_id)",
+      "id, date, heure_debut, heure_fin, duree_realisee, objectif_operationnel, contenu_prevu, module_id, seance_groupes!inner(groupe_id, groupes(nom)), modules(nom, description, duree_reference, competence_id)",
     )
     .eq("id", seanceId)
     .single();
@@ -93,9 +93,8 @@ export async function POST(request: Request) {
     duree_realisee: number | null;
     objectif_operationnel: string | null;
     contenu_prevu: string | null;
-    groupe_id: string;
     module_id: string;
-    groupes: { nom: string } | null;
+    seance_groupes: { groupe_id: string; groupes: { nom: string } | null }[];
     modules: {
       nom: string;
       description: string | null;
@@ -145,8 +144,8 @@ export async function POST(request: Request) {
   // enchaîner, pas répéter.
   const { data: precedentes } = await supabase
     .from("seances")
-    .select("date, contenu_realise")
-    .eq("groupe_id", s.groupe_id)
+    .select("date, contenu_realise, seance_groupes!inner(groupe_id)")
+    .eq("seance_groupes.seance_groupes[0]!.groupe_id", s.seance_groupes[0]!.groupe_id)
     .eq("module_id", s.module_id)
     .eq("statut", "fait")
     .not("contenu_realise", "is", null)
@@ -189,7 +188,7 @@ export async function POST(request: Request) {
       : duree
         ? `Durée : ${duree} h`
         : "Durée non renseignée.",
-    `Groupe : ${s.groupes?.nom ?? "—"}`,
+    `Groupe : ${s.seance_groupes[0]?.groupes?.nom ?? "—"}`,
     `Module : ${s.modules?.nom ?? "—"}`,
     competenceNom ? `Compétence du référentiel : ${competenceNom}` : null,
     s.objectif_operationnel

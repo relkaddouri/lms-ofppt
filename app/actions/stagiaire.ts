@@ -85,9 +85,9 @@ export async function getMonEmploiDuTemps(): Promise<EvenementStagiaire[]> {
     supabase
       .from("seances")
       .select(
-        "id, date, heure_debut, heure_fin, statut, nature, objectif_operationnel, modules(nom, competences(code_operationnel)), supports_seance(id)",
+        "id, date, heure_debut, heure_fin, statut, nature, objectif_operationnel, modules(nom, competences(code_operationnel)), supports_seance(id), seance_groupes!inner(groupe_id)",
       )
-      .eq("groupe_id", identite.groupeId)
+      .eq("seance_groupes.groupe_id", identite.groupeId)
       .not("date", "is", null),
     supabase
       .from("controles")

@@ -26,13 +26,19 @@ export default function GroupeModulesManager({
   const toast = useToast();
   const [enEdition, setEnEdition] = useState<string | null>(null);
   const [valeur, setValeur] = useState("");
+  const [valeurFad, setValeurFad] = useState("0");
   const [busy, setBusy] = useState(false);
 
   const total = modules.reduce((s, m) => s + m.masse_horaire_allouee, 0);
 
+  function ouvrirEditionFad(m: GroupeModuleInfo) {
+    setValeurFad(String(m.heures_fad));
+  }
+
   function ouvrirEdition(m: GroupeModuleInfo) {
     setEnEdition(m.module_id);
     setValeur(String(m.masse_horaire_allouee));
+    ouvrirEditionFad(m);
   }
 
   const nombre = Number(valeur);
@@ -66,7 +72,7 @@ export default function GroupeModulesManager({
     if (erreur) return;
     setBusy(true);
     try {
-      await setMasseHoraire(groupeId, moduleId, nombre);
+      await setMasseHoraire(groupeId, moduleId, nombre, Number(valeurFad) || 0);
       setEnEdition(null);
       toast("Masse horaire enregistrée");
       router.refresh();
@@ -198,6 +204,30 @@ export default function GroupeModulesManager({
                         }
                       />
                     </div>
+                    <div className="w-[140px]">
+                      <Input
+                        type="number"
+                        min={0}
+                        step={1}
+                        value={valeurFad}
+                        onChange={(e) => setValeurFad(e.target.value)}
+                        label={
+                          <span className="text-xs text-slate">
+                            dont FAD (heures)
+                          </span>
+                        }
+                        hint={
+                          <span className="text-xs text-slate-light">
+                            Présentiel :{" "}
+                            {Math.max(
+                              0,
+                              (Number(valeur) || 0) - (Number(valeurFad) || 0),
+                            )}{" "}
+                            h
+                          </span>
+                        }
+                      />
+                    </div>
                     <label className="flex shrink-0 flex-col gap-[7px]">
                       <span className="text-xs text-slate">Type d&apos;EFM</span>
                       <select
@@ -241,6 +271,13 @@ export default function GroupeModulesManager({
                     <span className="inline-flex items-center gap-1.5 rounded-full bg-wash px-3 py-1 font-mono text-sm font-medium text-ink">
                       <Clock size={16} aria-hidden />
                       {m.masse_horaire_allouee} h
+                      {m.heures_fad > 0 ? (
+                        <span className="text-slate-2">
+                          {" "}
+                          · {m.masse_horaire_allouee - m.heures_fad} présentiel
+                          + {m.heures_fad} FAD
+                        </span>
+                      ) : null}
                     </span>
                     <Button
                       variant="secondary"

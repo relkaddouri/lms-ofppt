@@ -8,8 +8,10 @@ export default async function SeancePage({
   params: Promise<{ id: string; seanceId: string }>;
 }) {
   const { id, seanceId } = await params;
-  const seance = await getSeanceDetail(seanceId);
-  if (!seance || seance.groupe_id !== id) notFound();
+  // La lecture est bornée au groupe de l'URL : une séance d'un autre groupe
+  // ne remonte tout simplement pas.
+  const seance = await getSeanceDetail(seanceId, id);
+  if (!seance) notFound();
 
   return <SeanceDetailView seance={seance} />;
 }

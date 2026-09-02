@@ -52,7 +52,7 @@ export async function getDashboardData(): Promise<{
       supabase
         .from("seances")
         .select(
-          "groupe_id, statut, date, duree_prevue, duree_realisee, updated_at, created_at",
+          "statut, date, duree_prevue, duree_realisee, updated_at, created_at",
         ),
       supabase.from("stagiaires").select("id", { count: "exact", head: true }),
       supabase.from("modules").select("id", { count: "exact", head: true }),

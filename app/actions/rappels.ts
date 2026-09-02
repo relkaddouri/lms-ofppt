@@ -43,8 +43,10 @@ export async function getRappelsControle(
   const [seancesRes, controlesRes] = await Promise.all([
     supabase
       .from("seances")
-      .select("groupe_id, module_id, duree_realisee, duree_prevue")
-      .in("groupe_id", groupeIds)
+      .select(
+        "module_id, duree_realisee, duree_prevue, seance_groupes!inner(groupe_id)",
+      )
+      .in("seance_groupes.groupe_id", groupeIds)
       .eq("statut", "fait"),
     supabase
       .from("controles")
@@ -59,11 +61,11 @@ export async function getRappelsControle(
 
   const heures = new Map<string, number>();
   for (const s of seancesRes.data ?? []) {
-    const k = cle(s.groupe_id, s.module_id);
-    heures.set(
-      k,
-      (heures.get(k) ?? 0) + Number(s.duree_realisee ?? s.duree_prevue ?? 0),
-    );
+    const h = Number(s.duree_realisee ?? s.duree_prevue ?? 0);
+    for (const lien of s.seance_groupes ?? []) {
+      const k = cle(lien.groupe_id, s.module_id);
+      heures.set(k, (heures.get(k) ?? 0) + h);
+    }
   }
 
   // Un brouillon ne couvre pas une échéance : il n'a pas été administré.

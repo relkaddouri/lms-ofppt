@@ -26,7 +26,7 @@ export async function getEcheances(): Promise<Echeance[]> {
     // séance suivante ».
     supabase
       .from("seances")
-      .select("groupe_id, module_id, date")
+      .select("module_id, date, seance_groupes(groupe_id)")
       .not("date", "is", null)
       .order("date"),
   ]);
@@ -37,8 +37,13 @@ export async function getEcheances(): Promise<Echeance[]> {
   const parCouple = new Map<string, string[]>();
   for (const s of seancesRes.data ?? []) {
     if (!s.date) continue;
-    const cle = `${s.groupe_id}|${s.module_id}`;
-    parCouple.set(cle, [...(parCouple.get(cle) ?? []), s.date]);
+    // Une séance FAD partagée compte pour chacun de ses groupes : chacun a
+    // bien reçu ces heures, même si le formateur ne les a dispensées qu'une
+    // fois.
+    for (const lien of s.seance_groupes ?? []) {
+      const cle = `${lien.groupe_id}|${s.module_id}`;
+      parCouple.set(cle, [...(parCouple.get(cle) ?? []), s.date]);
+    }
   }
 
   const aujourdhui = new Date().toISOString().slice(0, 10);

@@ -207,20 +207,35 @@ export async function assignModulesToGroupe(
  */
 export type TypeEfmModule = "local" | "regional" | null;
 
-/** Masse horaire d'un couple groupe+module. Saisie par le formateur (atome 1.7). */
+/**
+ * Masse horaire d'un couple groupe+module, et sa part à distance.
+ *
+ * Le présentiel ne se saisit pas : c'est la différence (PRD §4.1bis). La
+ * contrainte de base refuse une part FAD supérieure au total, on la vérifie
+ * ici pour rendre un message lisible plutôt qu'une erreur Postgres.
+ */
 export async function setMasseHoraire(
   groupeId: string,
   moduleId: string,
   heures: number,
+  heuresFad = 0,
 ) {
   if (!Number.isFinite(heures) || heures < 0) {
     throw new Error("La masse horaire doit être un nombre positif.");
+  }
+  if (!Number.isFinite(heuresFad) || heuresFad < 0) {
+    throw new Error("La part à distance doit être un nombre positif.");
+  }
+  if (heuresFad > heures) {
+    throw new Error(
+      "La part à distance ne peut pas dépasser la masse horaire totale.",
+    );
   }
 
   const supabase = await createClient();
   const { error } = await supabase
     .from("groupe_modules")
-    .update({ masse_horaire_allouee: heures })
+    .update({ masse_horaire_allouee: heures, heures_fad: heuresFad })
     .eq("groupe_id", groupeId)
     .eq("module_id", moduleId);
 
@@ -263,6 +278,8 @@ export type GroupeModuleInfo = {
   nom: string;
   duree_reference: number;
   masse_horaire_allouee: number;
+  /** Part à distance ; le présentiel est la différence, jamais ressaisi. */
+  heures_fad: number;
   code_operationnel: string | null;
   type_efm: TypeEfmModule;
   hasFiche: boolean;
@@ -277,7 +294,7 @@ export async function getGroupeModules(
   const { data, error } = await supabase
     .from("groupe_modules")
     .select(
-      "module_id, masse_horaire_allouee, type_efm, modules(nom, duree_reference, competences(code_operationnel))",
+      "module_id, masse_horaire_allouee, heures_fad, type_efm, modules(nom, duree_reference, competences(code_operationnel))",
     )
     .eq("groupe_id", groupeId)
     .order("created_at");
@@ -334,6 +351,7 @@ export async function getGroupeModules(
       nom: mod?.nom ?? "Module",
       duree_reference: Number(mod?.duree_reference) || 0,
       masse_horaire_allouee: Number(r.masse_horaire_allouee) || 0,
+      heures_fad: Number(r.heures_fad) || 0,
       code_operationnel: mod?.competences?.code_operationnel ?? null,
       type_efm: (r.type_efm as TypeEfmModule) ?? null,
       hasFiche: hasFiche.has(r.module_id),
@@ -369,8 +387,11 @@ export async function getCompteursGroupe(
         .eq("groupe_id", groupeId),
       supabase
         .from("seances")
-        .select("id", { count: "exact", head: true })
-        .eq("groupe_id", groupeId)
+        .select("id, seance_groupes!inner(groupe_id)", {
+          count: "exact",
+          head: true,
+        })
+        .eq("seance_groupes.groupe_id", groupeId)
         .eq("statut", "a_faire"),
       supabase
         .from("annonces")

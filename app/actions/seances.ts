@@ -21,12 +21,13 @@ export type ModeSeance = "presentiel" | "distance";
 
 export type Seance = {
   id: string;
-  groupe_id: string;
   module_id: string;
   date: string | null;
   heure_debut: string | null;
   heure_fin: string | null;
-  mode: ModeSeance | null;
+  /** Séance à distance : la seule qui puisse réunir plusieurs groupes. */
+  est_fad: boolean;
+  lien_teams: string | null;
   objectif_operationnel: string | null;
   contenu_prevu: string | null;
   contenu_realise: string | null;
@@ -42,7 +43,7 @@ export type Seance = {
 };
 
 const COLONNES =
-  "id, groupe_id, module_id, date, heure_debut, heure_fin, mode, " +
+  "id, module_id, date, heure_debut, heure_fin, est_fad, lien_teams, " +
   "objectif_operationnel, contenu_prevu, contenu_realise, duree_realisee, " +
   "a_prevoir_prochaine_seance, statut, duree_prevue, nature, " +
   "suggestion_pedagogique_id, modules(nom), " +
@@ -52,8 +53,10 @@ export async function getSeancesByGroupe(groupeId: string): Promise<Seance[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("seances")
-    .select(COLONNES)
-    .eq("groupe_id", groupeId)
+    // `!inner` restreint aux séances liées à ce groupe : une séance FAD
+    // partagée ressort donc pour chacun des groupes qu'elle réunit.
+    .select(`${COLONNES}, seance_groupes!inner(groupe_id)`)
+    .eq("seance_groupes.groupe_id", groupeId)
     // Les séances issues du plan n'ont pas encore de date : elles se lisent
     // dans l'ordre où elles ont été posées, qui est celui du référentiel.
     .order("date", { ascending: true, nullsFirst: false })
@@ -94,12 +97,11 @@ export async function createSeance(input: NouvelleSeance): Promise<string> {
   const { data, error } = await supabase
     .from("seances")
     .insert({
-      groupe_id: input.groupeId,
       module_id: input.moduleId,
       date: input.date,
       heure_debut: creneau.debut,
       heure_fin: creneau.fin,
-      mode: input.mode,
+      est_fad: input.mode === "distance",
       objectif_operationnel: input.objectifOperationnel?.trim() || null,
       contenu_prevu: input.contenuPrevu?.trim() || null,
       // Prérempli sur la durée du créneau ; ajustable une fois la séance faite.
@@ -110,6 +112,13 @@ export async function createSeance(input: NouvelleSeance): Promise<string> {
     .single();
 
   if (error) throw new Error(error.message);
+
+  // La séance existe, son rattachement suit : une séance sans groupe n'est
+  // lisible par personne, la politique d'écriture tolère cet instant.
+  const { error: errLien } = await supabase
+    .from("seance_groupes")
+    .insert({ seance_id: data.id, groupe_id: input.groupeId });
+  if (errLien) throw new Error(errLien.message);
 
   revalidatePath(`/groupes/${input.groupeId}/progression`);
   return data.id;
@@ -150,11 +159,13 @@ export async function updateSeance(
     .from("seances")
     .update(update)
     .eq("id", id)
-    .select("groupe_id")
+    .select("id, seance_groupes(groupe_id)")
     .single();
 
   if (error) throw new Error(error.message);
-  revalidatePath(`/groupes/${data.groupe_id}/progression`);
+  for (const lien of data.seance_groupes ?? []) {
+    revalidatePath(`/groupes/${lien.groupe_id}/progression`);
+  }
 }
 
 export async function deleteSeance(id: string, groupeId: string) {
@@ -193,6 +204,11 @@ export type SeanceDetail = {
   groupe_id: string;
   module_id: string;
   groupeNom: string;
+  /** Séance à distance, et son lien de visioconférence. */
+  est_fad: boolean;
+  lien_teams: string | null;
+  /** Les autres groupes réunis par cette séance, vide en présentiel. */
+  groupesPartages: { id: string; nom: string }[];
   /** Pour l'en-tête du formulaire officiel de fiche. */
   filiere: string;
   annee: number | null;
@@ -250,17 +266,26 @@ export async function saveSupport(
   return version;
 }
 
+/**
+ * Détail d'une séance, lue depuis un groupe donné.
+ *
+ * Le groupe vient de l'appelant, pas de la séance : une séance FAD partagée
+ * en réunit plusieurs, et c'est l'URL — `/groupes/[id]/seances/[seanceId]` —
+ * qui dit lequel on regarde.
+ */
 export async function getSeanceDetail(
   seanceId: string,
+  groupeId: string,
 ): Promise<SeanceDetail | null> {
   const supabase = await createClient();
 
   const { data, error } = await supabase
     .from("seances")
     .select(
-      "id, groupe_id, module_id, date, heure_debut, heure_fin, duree_prevue, duree_realisee, statut, nature, objectif_operationnel, contenu_prevu, contenu_realise, a_prevoir_prochaine_seance, groupes(nom, annee, specialites(nom)), modules(nom), suggestions_pedagogiques(code, apprentissage_base, elements_contenu)",
+      "id, module_id, date, heure_debut, heure_fin, duree_prevue, duree_realisee, statut, nature, est_fad, lien_teams, objectif_operationnel, contenu_prevu, contenu_realise, a_prevoir_prochaine_seance, modules(nom), suggestions_pedagogiques(code, apprentissage_base, elements_contenu), seance_groupes!inner(groupe_id, groupes(nom, annee, specialites(nom))), tousGroupes:seance_groupes(groupe_id, groupes(nom))",
     )
     .eq("id", seanceId)
+    .eq("seance_groupes.groupe_id", groupeId)
     .maybeSingle();
 
   if (error) throw new Error(error.message);
@@ -268,7 +293,6 @@ export async function getSeanceDetail(
 
   const s = data as unknown as {
     id: string;
-    groupe_id: string;
     module_id: string;
     date: string | null;
     heure_debut: string | null;
@@ -281,11 +305,17 @@ export async function getSeanceDetail(
     contenu_prevu: string | null;
     contenu_realise: string | null;
     a_prevoir_prochaine_seance: string | null;
-    groupes: {
-      nom: string;
-      annee: number | null;
-      specialites: { nom: string } | null;
-    } | null;
+    est_fad: boolean;
+    lien_teams: string | null;
+    seance_groupes: {
+      groupe_id: string;
+      groupes: {
+        nom: string;
+        annee: number | null;
+        specialites: { nom: string } | null;
+      } | null;
+    }[];
+    tousGroupes: { groupe_id: string; groupes: { nom: string } | null }[];
     modules: { nom: string } | null;
     suggestions_pedagogiques: {
       code: string | null;
@@ -299,7 +329,7 @@ export async function getSeanceDetail(
     supabase
       .from("stagiaires")
       .select("id, nom, prenom")
-      .eq("groupe_id", s.groupe_id)
+      .eq("groupe_id", groupeId)
       .order("nom"),
     supabase
       .from("presences")
@@ -334,11 +364,21 @@ export async function getSeanceDetail(
     (presencesRes.data ?? []).map((p) => [p.stagiaire_id, p]),
   );
 
+  // `!inner` a déjà borné la lecture au groupe demandé : c'est le premier
+  // lien, et les éventuels autres sont les groupes qui partagent la séance.
+  const lienCourant =
+    s.seance_groupes.find((l) => l.groupe_id === groupeId) ??
+    s.seance_groupes[0];
+
   return {
     ...s,
-    groupeNom: s.groupes?.nom ?? "—",
-    filiere: s.groupes?.specialites?.nom ?? "Digital Design",
-    annee: s.groupes?.annee ?? null,
+    groupe_id: groupeId,
+    groupeNom: lienCourant?.groupes?.nom ?? "—",
+    filiere: lienCourant?.groupes?.specialites?.nom ?? "Digital Design",
+    annee: lienCourant?.groupes?.annee ?? null,
+    groupesPartages: (s.tousGroupes ?? [])
+      .filter((l) => l.groupe_id !== groupeId)
+      .map((l) => ({ id: l.groupe_id, nom: l.groupes?.nom ?? "Groupe" })),
     moduleNom: s.modules?.nom ?? "—",
     objectifCode: s.suggestions_pedagogiques?.code ?? null,
     objectifIntitule: s.suggestions_pedagogiques?.apprentissage_base ?? null,
@@ -360,7 +400,7 @@ export async function getSeanceDetail(
     supportVersion: supportRes.data?.version ?? null,
     supportId: supportRes.data?.id ?? null,
     questions: supportRes.data?.id
-      ? await chargerQuestions(supportRes.data.id, s.groupe_id)
+      ? await chargerQuestions(supportRes.data.id, groupeId)
       : [],
   };
 }
@@ -431,6 +471,8 @@ export type MajSeance = {
   statut?: "a_faire" | "fait";
   contenu_realise?: string | null;
   a_prevoir_prochaine_seance?: string | null;
+  est_fad?: boolean;
+  lien_teams?: string | null;
 };
 
 /**
@@ -466,6 +508,12 @@ export async function majSeance(seanceId: string, input: MajSeance) {
     update.contenu_realise = input.contenu_realise;
   if (input.a_prevoir_prochaine_seance !== undefined)
     update.a_prevoir_prochaine_seance = input.a_prevoir_prochaine_seance;
+  if (input.est_fad !== undefined) {
+    update.est_fad = input.est_fad;
+    // Repasser en présentiel efface le lien : il ne mène plus nulle part.
+    if (!input.est_fad) update.lien_teams = null;
+  }
+  if (input.lien_teams !== undefined) update.lien_teams = input.lien_teams;
 
   // La durée réalisée se déduit du créneau : la ressaisir serait une occasion
   // de plus de se contredire.

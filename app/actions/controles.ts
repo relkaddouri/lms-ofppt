@@ -385,9 +385,9 @@ export async function getContenuCouvert(
   const { data, error } = await supabase
     .from("seances")
     .select(
-      "id, date, statut, nature, duree_realisee, duree_prevue, objectif_operationnel, contenu_prevu, contenu_realise, created_at",
+      "id, date, statut, nature, duree_realisee, duree_prevue, objectif_operationnel, contenu_prevu, contenu_realise, created_at, seance_groupes!inner(groupe_id)",
     )
-    .eq("groupe_id", groupeId)
+    .eq("seance_groupes.groupe_id", groupeId)
     .eq("module_id", moduleId)
     .order("date", { ascending: true, nullsFirst: false })
     .order("created_at", { ascending: true });

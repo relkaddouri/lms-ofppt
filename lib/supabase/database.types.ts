@@ -534,6 +534,7 @@ export type Database = {
           created_at: string
           formateur_id: string | null
           groupe_id: string
+          heures_fad: number
           masse_horaire_allouee: number
           module_id: string
           type_efm: string | null
@@ -542,6 +543,7 @@ export type Database = {
           created_at?: string
           formateur_id?: string | null
           groupe_id: string
+          heures_fad?: number
           masse_horaire_allouee: number
           module_id: string
           type_efm?: string | null
@@ -550,6 +552,7 @@ export type Database = {
           created_at?: string
           formateur_id?: string | null
           groupe_id?: string
+          heures_fad?: number
           masse_horaire_allouee?: number
           module_id?: string
           type_efm?: string | null
@@ -1199,6 +1202,39 @@ export type Database = {
         }
         Relationships: []
       }
+      seance_groupes: {
+        Row: {
+          created_at: string
+          groupe_id: string
+          seance_id: string
+        }
+        Insert: {
+          created_at?: string
+          groupe_id: string
+          seance_id: string
+        }
+        Update: {
+          created_at?: string
+          groupe_id?: string
+          seance_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seance_groupes_groupe_id_fkey"
+            columns: ["groupe_id"]
+            isOneToOne: false
+            referencedRelation: "groupes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "seance_groupes_seance_id_fkey"
+            columns: ["seance_id"]
+            isOneToOne: false
+            referencedRelation: "seances"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       seances: {
         Row: {
           a_prevoir_prochaine_seance: string | null
@@ -1208,11 +1244,11 @@ export type Database = {
           date: string | null
           duree_prevue: number | null
           duree_realisee: number | null
-          groupe_id: string
+          est_fad: boolean
           heure_debut: string | null
           heure_fin: string | null
           id: string
-          mode: string | null
+          lien_teams: string | null
           module_id: string
           nature: string | null
           objectif_operationnel: string | null
@@ -1228,11 +1264,11 @@ export type Database = {
           date?: string | null
           duree_prevue?: number | null
           duree_realisee?: number | null
-          groupe_id: string
+          est_fad?: boolean
           heure_debut?: string | null
           heure_fin?: string | null
           id?: string
-          mode?: string | null
+          lien_teams?: string | null
           module_id: string
           nature?: string | null
           objectif_operationnel?: string | null
@@ -1248,11 +1284,11 @@ export type Database = {
           date?: string | null
           duree_prevue?: number | null
           duree_realisee?: number | null
-          groupe_id?: string
+          est_fad?: boolean
           heure_debut?: string | null
           heure_fin?: string | null
           id?: string
-          mode?: string | null
+          lien_teams?: string | null
           module_id?: string
           nature?: string | null
           objectif_operationnel?: string | null
@@ -1261,13 +1297,6 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "seances_groupe_id_fkey"
-            columns: ["groupe_id"]
-            isOneToOne: false
-            referencedRelation: "groupes"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "seances_module_id_fkey"
             columns: ["module_id"]
@@ -1501,6 +1530,10 @@ export type Database = {
       v_progression_module: {
         Row: {
           groupe_id: string | null
+          heures_fad_prevues: number | null
+          heures_fad_realisees: number | null
+          heures_presentiel_prevues: number | null
+          heures_presentiel_realisees: number | null
           heures_realisees: number | null
           masse_horaire_allouee: number | null
           module_id: string | null
@@ -1601,6 +1634,7 @@ export type Database = {
         Args: { p_question_id: string }
         Returns: boolean
       }
+      peut_acceder_seance: { Args: { p_seance_id: string }; Returns: boolean }
       peut_acceder_stage: { Args: { p_stage_id: string }; Returns: boolean }
       poser_question_support: {
         Args: { p_support_id: string; p_texte: string }

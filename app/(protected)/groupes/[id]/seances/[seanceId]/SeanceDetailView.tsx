@@ -6,6 +6,7 @@ import Breadcrumb from "@/components/Breadcrumb";
 import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
 import Avatar from "@/components/ui/Avatar";
+import Interrupteur from "@/components/ui/Interrupteur";
 import { ConfirmModal } from "@/components/ui/Modal";
 import { inputStyles as inputClass } from "@/components/ui/Input";
 import { useToast } from "@/components/ui/Toast";
@@ -38,6 +39,8 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
   const [contenuRealise, setContenuRealise] = useState(
     seance.contenu_realise ?? "",
   );
+  const [estFad, setEstFad] = useState(seance.est_fad);
+  const [lienTeams, setLienTeams] = useState(seance.lien_teams ?? "");
   // Trois moments distincts : préparer, projeter, tenir le cahier. Les empiler
   // obligeait à traverser mille pixels de formulaire pour atteindre le support.
   const [onglet, setOnglet] = useState<
@@ -127,6 +130,34 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
     });
   }
 
+  function basculerFad(valeur: boolean) {
+    setEstFad(valeur);
+    if (!valeur) setLienTeams("");
+    startTransition(async () => {
+      try {
+        await majSeance(seance.id, { est_fad: valeur });
+        toast(valeur ? "Séance passée en FAD" : "Séance repassée en présentiel");
+        router.refresh();
+      } catch (e) {
+        setEstFad(!valeur);
+        toast(e instanceof Error ? e.message : "Erreur inattendue", "error");
+      }
+    });
+  }
+
+  function enregistrerLien() {
+    if ((seance.lien_teams ?? "") === lienTeams) return;
+    startTransition(async () => {
+      try {
+        await majSeance(seance.id, { lien_teams: lienTeams.trim() || null });
+        toast("Lien enregistré");
+        router.refresh();
+      } catch (e) {
+        toast(e instanceof Error ? e.message : "Erreur inattendue", "error");
+      }
+    });
+  }
+
   function enregistrerDeroulement(statut?: "a_faire" | "fait") {
     startTransition(async () => {
       try {
@@ -190,6 +221,12 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
             <Badge tone={seance.statut === "fait" ? "success" : "neutral"}>
               {seance.statut === "fait" ? "faite" : "à faire"}
             </Badge>
+            {seance.groupesPartages.length > 0 ? (
+              <Badge tone="info">
+                partagée avec{" "}
+                {seance.groupesPartages.map((g) => g.nom).join(", ")}
+              </Badge>
+            ) : null}
           </div>
           <p className="text-[14.5px] text-slate-2">
             <span className="font-mono text-body">
@@ -206,6 +243,42 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
           </div>
         </div>
       </header>
+
+      {/* PRD §4.1bis : une bascule, pas un formulaire. Le lien n'apparaît
+          qu'une fois la séance déclarée à distance. */}
+      <section className="mt-5 flex flex-wrap items-center gap-4 rounded-[14px] border border-border bg-surface px-6 py-4 shadow-repos">
+        <span className="flex items-center gap-3">
+          <Interrupteur
+            actif={estFad}
+            onChange={basculerFad}
+            disabled={enCours}
+            label="Cette séance est en FAD"
+          />
+          <span className="text-[14.5px] font-semibold text-ink">
+            Cette séance est en FAD
+          </span>
+        </span>
+        {estFad ? (
+          <label className="flex min-w-[260px] flex-1 items-center gap-3">
+            <span className="whitespace-nowrap text-sm font-semibold text-body">
+              Lien Teams
+            </span>
+            <input
+              type="url"
+              value={lienTeams}
+              onChange={(e) => setLienTeams(e.target.value)}
+              onBlur={enregistrerLien}
+              placeholder="https://teams.microsoft.com/…"
+              className={inputClass}
+            />
+          </label>
+        ) : (
+          <span className="text-[13.5px] text-slate-light">
+            Une séance à distance peut réunir plusieurs groupes ; une séance
+            en présentiel reste propre au sien.
+          </span>
+        )}
+      </section>
 
       {seance.objectifContenu ? (
         <div className="mt-5 rounded-[14px] border border-border bg-surface p-6 shadow-repos">

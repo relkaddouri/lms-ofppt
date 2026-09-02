@@ -55,8 +55,10 @@ export async function getBilanPresences(
       .order("nom"),
     supabase
       .from("seances")
-      .select("id, date, module_id, statut, objectif_operationnel")
-      .eq("groupe_id", groupeId),
+      .select(
+        "id, date, module_id, statut, objectif_operationnel, seance_groupes!inner(groupe_id)",
+      )
+      .eq("seance_groupes.groupe_id", groupeId),
     supabase
       .from("groupe_modules")
       .select("module_id, modules(nom, competences(code_operationnel))")

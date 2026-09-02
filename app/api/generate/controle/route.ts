@@ -141,10 +141,14 @@ export async function POST(request: Request) {
   // fin de module porte sur le module entier, y compris ce qui reste à faire.
   let seancesQuery = supabase
     .from("seances")
-    .select("contenu_realise, contenu_prevu, objectif_operationnel, statut")
+    .select(
+      "id, contenu_realise, contenu_prevu, objectif_operationnel, statut, seance_groupes!inner(groupe_id)",
+    )
     .eq("module_id", moduleId);
   if (!estEfm) seancesQuery = seancesQuery.eq("statut", "fait");
-  if (groupeId) seancesQuery = seancesQuery.eq("groupe_id", groupeId);
+  if (groupeId) {
+    seancesQuery = seancesQuery.eq("seance_groupes.groupe_id", groupeId);
+  }
   // Le formateur peut avoir écarté des séances à l'étape « Contenu couvert » :
   // une séance décochée ne doit pas ressortir dans les questions.
   if (Array.isArray(seanceIds) && seanceIds.length > 0) {

@@ -226,8 +226,8 @@ export async function genererPlanSeances(
 
   const { data: existantes, error: errEx } = await supabase
     .from("seances")
-    .select("id")
-    .eq("groupe_id", groupeId)
+    .select("id, seance_groupes!inner(groupe_id)")
+    .eq("seance_groupes.groupe_id", groupeId)
     .eq("module_id", moduleId)
     .not("suggestion_pedagogique_id", "is", null);
   if (errEx) throw new Error(errEx.message);
@@ -241,8 +241,8 @@ export async function genererPlanSeances(
     // préparée n'est pas à la main du générateur.
     const { data: intactes } = await supabase
       .from("seances")
-      .select("id, fiches_preparation(id)")
-      .eq("groupe_id", groupeId)
+      .select("id, fiches_preparation(id), seance_groupes!inner(groupe_id)")
+      .eq("seance_groupes.groupe_id", groupeId)
       .eq("module_id", moduleId)
       .eq("statut", "a_faire")
       .not("suggestion_pedagogique_id", "is", null);
@@ -279,20 +279,29 @@ export async function genererPlanSeances(
     throw new Error("La répartition ne contient aucune heure à planifier.");
   }
 
-  const { error: errSeances } = await supabase.from("seances").insert(
-    seances.map((s) => ({
-      groupe_id: groupeId,
-      module_id: moduleId,
-      suggestion_pedagogique_id: s.suggestion_pedagogique_id,
-      nature: s.nature,
-      duree_prevue: s.duree,
-      statut: "a_faire",
-      // L'objectif de la séance est celui du référentiel : c'est lui qui
-      // fondera la fiche de préparation et le support.
-      objectif_operationnel: `${s.code} — ${s.objectif}`,
-    })),
-  );
+  const { data: creees, error: errSeances } = await supabase
+    .from("seances")
+    .insert(
+      seances.map((s) => ({
+        module_id: moduleId,
+        suggestion_pedagogique_id: s.suggestion_pedagogique_id,
+        nature: s.nature,
+        duree_prevue: s.duree,
+        statut: "a_faire",
+        // L'objectif de la séance est celui du référentiel : c'est lui qui
+        // fondera la fiche de préparation et le support.
+        objectif_operationnel: `${s.code} — ${s.objectif}`,
+      })),
+    )
+    .select("id");
   if (errSeances) throw new Error(errSeances.message);
+
+  // Le plan produit des séances de présentiel : un seul groupe chacune. Le
+  // partage FAD se déclare séance par séance, il ne se génère pas.
+  const { error: errLiens } = await supabase.from("seance_groupes").insert(
+    (creees ?? []).map((s) => ({ seance_id: s.id, groupe_id: groupeId })),
+  );
+  if (errLiens) throw new Error(errLiens.message);
 
   let controlesCrees = 0;
   if (controles.length > 0) {

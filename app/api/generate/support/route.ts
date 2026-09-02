@@ -78,7 +78,7 @@ export async function POST(request: Request) {
   const { data: seance, error } = await supabase
     .from("seances")
     .select(
-      "id, groupe_id, module_id, heure_debut, heure_fin, duree_prevue, nature, objectif_operationnel, groupes(nom), modules(nom), suggestions_pedagogiques(code, apprentissage_base, elements_contenu, activites_apprentissage)",
+      "id, module_id, heure_debut, heure_fin, duree_prevue, nature, objectif_operationnel, seance_groupes!inner(groupe_id, groupes(nom)), modules(nom), suggestions_pedagogiques(code, apprentissage_base, elements_contenu, activites_apprentissage)",
     )
     .eq("id", seanceId)
     .maybeSingle();
@@ -88,14 +88,13 @@ export async function POST(request: Request) {
   }
 
   const s = seance as unknown as {
-    groupe_id: string;
     module_id: string;
     heure_debut: string | null;
     heure_fin: string | null;
     duree_prevue: number | null;
     nature: "theorique" | "pratique" | null;
     objectif_operationnel: string | null;
-    groupes: { nom: string } | null;
+    seance_groupes: { groupe_id: string; groupes: { nom: string } | null }[];
     modules: { nom: string } | null;
     suggestions_pedagogiques: {
       code: string | null;
@@ -115,8 +114,8 @@ export async function POST(request: Request) {
   // recommence pas.
   const { data: precedentes } = await supabase
     .from("seances")
-    .select("contenu_realise")
-    .eq("groupe_id", s.groupe_id)
+    .select("contenu_realise, seance_groupes!inner(groupe_id)")
+    .eq("seance_groupes.seance_groupes[0]!.groupe_id", s.seance_groupes[0]!.groupe_id)
     .eq("module_id", s.module_id)
     .eq("statut", "fait")
     .not("contenu_realise", "is", null);
@@ -131,7 +130,7 @@ export async function POST(request: Request) {
 
   const contexte = [
     `Module : ${s.modules?.nom ?? "—"}`,
-    `Groupe : ${s.groupes?.nom ?? "—"}`,
+    `Groupe : ${s.seance_groupes[0]?.groupes?.nom ?? "—"}`,
     duree ? `Durée de la séance : ${duree} heures.` : null,
     obj
       ? `Objectif d'apprentissage du référentiel : ${obj.code ?? ""} ${obj.apprentissage_base}`

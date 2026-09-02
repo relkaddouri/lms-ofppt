@@ -45,12 +45,18 @@ export async function getSeancesAPreparer(
   let query = supabase
     .from("seances")
     .select(
-      "id, date, heure_debut, heure_fin, statut, objectif_operationnel, contenu_prevu, contenu_realise, groupe_id, groupes(nom, annee, specialites(nom))",
+      "id, date, heure_debut, heure_fin, statut, objectif_operationnel, contenu_prevu, contenu_realise, seance_groupes(groupe_id, groupes(nom, annee, specialites(nom)))",
     )
     .eq("module_id", moduleId)
     .order("date", { ascending: true });
 
-  if (groupeId) query = query.eq("groupe_id", groupeId);
+  if (groupeId) {
+    query = query
+      .select(
+        "id, date, heure_debut, heure_fin, statut, objectif_operationnel, contenu_prevu, contenu_realise, seance_groupes!inner(groupe_id, groupes(nom, annee, specialites(nom)))",
+      )
+      .eq("seance_groupes.groupe_id", groupeId);
+  }
 
   const { data, error } = await query;
   if (error) throw new Error(error.message);

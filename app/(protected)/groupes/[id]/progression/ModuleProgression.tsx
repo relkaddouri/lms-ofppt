@@ -173,6 +173,7 @@ export default function ModuleProgression({
                       <LigneSeance
                         key={s.id}
                         seance={s}
+                        groupeId={groupeId}
                         numero={numero}
                         prochaine={s.id === prochaine?.id}
                       />

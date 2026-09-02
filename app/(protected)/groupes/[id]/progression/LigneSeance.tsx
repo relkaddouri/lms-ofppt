@@ -20,10 +20,13 @@ import { Check, ChevronRight } from "lucide-react";
  */
 export default function LigneSeance({
   seance,
+  groupeId,
   numero,
   prochaine = false,
 }: {
   seance: Seance;
+  /** Le groupe vient de la page : une séance FAD peut en réunir plusieurs. */
+  groupeId: string;
   numero: number;
   /** Première séance à faire du module : le point où reprendre. */
   prochaine?: boolean;
@@ -114,7 +117,7 @@ export default function LigneSeance({
       </span>
 
       <Link
-        href={`/groupes/${seance.groupe_id}/seances/${seance.id}`}
+        href={`/groupes/${groupeId}/seances/${seance.id}`}
         className="flex shrink-0 items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-ink hover:bg-wash"
       >
         Ouvrir
