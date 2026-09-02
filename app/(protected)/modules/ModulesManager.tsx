@@ -16,6 +16,7 @@ import Input, { Textarea, inputStyles } from "@/components/ui/Input";
 import Modal, { ConfirmModal } from "@/components/ui/Modal";
 import { useToast } from "@/components/ui/Toast";
 import { Pencil, Plus, Save, Search, Trash2, X } from "lucide-react";
+import { anneeDuCycle, libelleAnnee, libelleModule } from "@/lib/modules";
 
 /** Choix « je saisis tout moi-même », pour un module hors programme officiel. */
 const HORS_REFERENTIEL = "libre";
@@ -34,6 +35,7 @@ export default function ModulesManager({
   const [aSupprimer, setASupprimer] = useState<Module | null>(null);
   const [busy, setBusy] = useState(false);
   const [filtre, setFiltre] = useState("");
+  const [annee, setAnnee] = useState("tous");
   const [form, setForm] = useState({
     nom: "",
     description: "",
@@ -128,13 +130,24 @@ export default function ModulesManager({
   // Recherche côté client : la liste tient en mémoire, et le design system
   // exige un champ visible dès huit éléments (§11).
   const recherche = filtre.trim().toLowerCase();
-  const visibles = recherche
-    ? modules.filter((m) =>
-        [m.nom, m.code, m.description]
-          .filter(Boolean)
-          .some((v) => v!.toLowerCase().includes(recherche)),
-      )
-    : modules;
+  const visibles = modules.filter((m) => {
+    const parAnnee =
+      annee === "tous" || String(anneeDuCycle(m.cycle) ?? "") === annee;
+    if (!parAnnee) return false;
+    if (!recherche) return true;
+    return [m.nom, m.code, m.description]
+      .filter(Boolean)
+      .some((v) => v!.toLowerCase().includes(recherche));
+  });
+
+  // Les années réellement présentes : un filtre qui ne filtre rien encombre.
+  const annees = [
+    ...new Set(
+      modules
+        .map((m) => anneeDuCycle(m.cycle))
+        .filter((a): a is 1 | 2 => a !== null),
+    ),
+  ].sort();
 
   const heuresTotales = visibles.reduce((t, m) => t + m.duree_reference, 0);
 
@@ -160,7 +173,8 @@ export default function ModulesManager({
         </Button>
       </header>
 
-      <label className="relative block max-w-[420px]">
+      <div className="flex flex-wrap items-center gap-3">
+      <label className="relative block min-w-[260px] flex-1 md:max-w-[420px]">
         <span className="sr-only">Rechercher un module</span>
         <Search
           size={17}
@@ -176,6 +190,33 @@ export default function ModulesManager({
           className="w-full rounded-[9px] border border-border-strong bg-surface py-[11px] pl-10 pr-[13px] text-[15px] text-ink outline-none transition-colors duration-150 ease-out placeholder:text-slate-light focus:border-teal focus:shadow-[0_0_0_3px_rgba(46,125,158,0.15)]"
         />
       </label>
+
+        {annees.length > 1 ? (
+          <div className="flex gap-1 rounded-[11px] border border-border bg-wash-strong p-1">
+            {[
+              { valeur: "tous", libelle: "Tous" },
+              ...annees.map((a) => ({
+                valeur: String(a),
+                libelle: libelleAnnee(a),
+              })),
+            ].map((o) => (
+              <button
+                key={o.valeur}
+                type="button"
+                onClick={() => setAnnee(o.valeur)}
+                aria-pressed={annee === o.valeur}
+                className={`whitespace-nowrap rounded-lg px-3.5 py-2 text-sm font-semibold transition-colors duration-150 ease-out ${
+                  annee === o.valeur
+                    ? "bg-surface text-ink shadow-[0_1px_2px_rgba(46,59,78,0.12)]"
+                    : "text-slate-2 hover:text-ink"
+                }`}
+              >
+                {o.libelle}
+              </button>
+            ))}
+          </div>
+        ) : null}
+      </div>
 
       <div className="overflow-hidden rounded-[14px] border border-border bg-surface shadow-repos">
         <div className="grid grid-cols-[minmax(0,2.4fr)_minmax(120px,1fr)_minmax(96px,0.9fr)_52px] items-center gap-4 border-b border-border bg-paper-alt px-6 py-3.5">

@@ -18,6 +18,7 @@ import {
 } from "@/lib/creneaux";
 import { Plus } from "lucide-react";
 import { maintenant } from "@/lib/format";
+import { libelleModule } from "@/lib/modules";
 
 /**
  * Formulaire de planification d'une séance.
@@ -97,7 +98,7 @@ export default function NouvelleSeanceForm({
             {modules.map((m) => (
               <option key={m.module_id} value={m.module_id}>
                 {m.code_operationnel ? `${m.code_operationnel} — ` : ""}
-                {m.nom}
+                {libelleModule(m.code_operationnel, m.nom)}
               </option>
             ))}
           </select>

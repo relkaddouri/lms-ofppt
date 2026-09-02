@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { libelleModule } from "@/lib/modules";
 import { revalidatePath } from "next/cache";
 import {
   proposerRepartition,
@@ -59,7 +60,7 @@ export async function getPlanification(
   const { data: couple, error: errCouple } = await supabase
     .from("groupe_modules")
     .select(
-      "masse_horaire_allouee, groupes(nom), modules(nom, competence_id, competences(nom, code_officiel, duree_nationale_heures, pct_theorique, pct_pratique, pct_evaluation))",
+      "masse_horaire_allouee, groupes(nom), modules(nom, competence_id, competences(nom, code_officiel, code_operationnel, duree_nationale_heures, pct_theorique, pct_pratique, pct_evaluation))",
     )
     .eq("groupe_id", groupeId)
     .eq("module_id", moduleId)
@@ -77,6 +78,7 @@ export async function getPlanification(
       competences: {
         nom: string;
         code_officiel: string | null;
+        code_operationnel: string | null;
         duree_nationale_heures: number | null;
         pct_theorique: number | null;
         pct_pratique: number | null;
@@ -153,7 +155,10 @@ export async function getPlanification(
 
   return {
     groupeNom: c.groupes?.nom ?? "—",
-    moduleNom: c.modules.nom,
+    moduleNom: libelleModule(
+      c.modules.competences?.code_operationnel,
+      c.modules.nom,
+    ),
     competenceNom: comp?.nom ?? null,
     codeOfficiel: comp?.code_officiel ?? null,
     dureeNationale: comp?.duree_nationale_heures ?? null,

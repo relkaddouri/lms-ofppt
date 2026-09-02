@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient, getUser } from "@/lib/supabase/server";
+import { libelleModule } from "@/lib/modules";
 import { revalidatePath } from "next/cache";
 
 export type TypeRendu = "texte" | "lien" | "fichier";
@@ -39,7 +40,7 @@ export async function getDevoirsGroupe(groupeId: string): Promise<Devoir[]> {
     supabase
       .from("devoirs")
       .select(
-        "id, groupe_id, seance_id, module_id, titre, description, date_echeance, type_rendu, modules(nom), devoirs_rendus(id, statut)",
+        "id, groupe_id, seance_id, module_id, titre, description, date_echeance, type_rendu, modules(nom, competences(code_operationnel)), devoirs_rendus(id, statut)",
       )
       .eq("groupe_id", groupeId)
       .order("date_echeance", { nullsFirst: false }),
@@ -58,7 +59,10 @@ export async function getDevoirsGroupe(groupeId: string): Promise<Devoir[]> {
       Devoir,
       "moduleNom" | "nbRendus" | "nbStagiaires"
     > & {
-      modules: { nom: string } | null;
+      modules: {
+        nom: string;
+        competences: { code_operationnel: string | null } | null;
+      } | null;
       devoirs_rendus: { id: string; statut: string }[] | null;
     })[]
   ).map((d) => ({
@@ -70,7 +74,9 @@ export async function getDevoirsGroupe(groupeId: string): Promise<Devoir[]> {
     description: d.description,
     date_echeance: d.date_echeance,
     type_rendu: d.type_rendu,
-    moduleNom: d.modules?.nom ?? null,
+    moduleNom: d.modules
+      ? libelleModule(d.modules.competences?.code_operationnel, d.modules.nom)
+      : null,
     // Un brouillon n'est pas un rendu : le stagiaire ne l'a pas remis.
     nbRendus: (d.devoirs_rendus ?? []).filter((r) => r.statut === "rendu").length,
     nbStagiaires,
@@ -93,7 +99,7 @@ export async function getMesDevoirs(): Promise<DevoirStagiaire[]> {
   const { data, error } = await supabase
     .from("devoirs")
     .select(
-      "id, groupe_id, seance_id, module_id, titre, description, date_echeance, type_rendu, modules(nom), devoirs_rendus(id, contenu, statut, date_rendu, stagiaire_id)",
+      "id, groupe_id, seance_id, module_id, titre, description, date_echeance, type_rendu, modules(nom, competences(code_operationnel)), devoirs_rendus(id, contenu, statut, date_rendu, stagiaire_id)",
     )
     .order("date_echeance", { nullsFirst: false });
 
@@ -101,7 +107,10 @@ export async function getMesDevoirs(): Promise<DevoirStagiaire[]> {
 
   return (
     data as unknown as (Omit<DevoirStagiaire, "moduleNom" | "monRendu"> & {
-      modules: { nom: string } | null;
+      modules: {
+        nom: string;
+        competences: { code_operationnel: string | null } | null;
+      } | null;
       devoirs_rendus:
         | {
             id: string;
@@ -125,7 +134,9 @@ export async function getMesDevoirs(): Promise<DevoirStagiaire[]> {
       description: d.description,
       date_echeance: d.date_echeance,
       type_rendu: d.type_rendu,
-      moduleNom: d.modules?.nom ?? null,
+      moduleNom: d.modules
+      ? libelleModule(d.modules.competences?.code_operationnel, d.modules.nom)
+      : null,
       monRendu: mien
         ? {
             id: mien.id,

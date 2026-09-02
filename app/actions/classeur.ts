@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { libelleModule } from "@/lib/modules";
 
 export type SeanceAvecFiche = {
   seanceId: string;
@@ -92,7 +93,7 @@ export async function getFichesPeriode(
   let requete = supabase
     .from("seances")
     .select(
-      "id, date, duree_prevue, objectif_operationnel, modules(nom), seance_groupes!inner(groupe_id, groupes(nom, annee, specialites(nom)))",
+      "id, date, duree_prevue, objectif_operationnel, modules(nom, competences(code_operationnel)), seance_groupes!inner(groupe_id, groupes(nom, annee, specialites(nom)))",
     )
     .not("date", "is", null)
     .gte("date", debut)
@@ -133,7 +134,10 @@ export async function getFichesPeriode(
       date: string | null;
       duree_prevue: number | null;
       objectif_operationnel: string | null;
-      modules: { nom: string } | null;
+      modules: {
+        nom: string;
+        competences: { code_operationnel: string | null } | null;
+      } | null;
       seance_groupes: {
         groupes: {
           nom: string;
@@ -149,7 +153,10 @@ export async function getFichesPeriode(
       date: r.date,
       dureeMinutes: r.duree_prevue ? Math.round(Number(r.duree_prevue) * 60) : null,
       objectif: r.objectif_operationnel,
-      moduleNom: r.modules?.nom ?? "Module",
+      moduleNom: libelleModule(
+        r.modules?.competences?.code_operationnel,
+        r.modules?.nom,
+      ),
       // Une séance FAD partagée figure au classeur de chaque groupe : on
       // prend celui que le filtre a retenu, le premier lien.
       groupeNom: r.seance_groupes[0]?.groupes?.nom ?? "Groupe",

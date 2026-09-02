@@ -3,6 +3,7 @@
 import { createClient, getUser } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import type { Support } from "@/app/api/generate/support/route";
+import { libelleModule } from "@/lib/modules";
 
 export type SupportListe = {
   id: string;
@@ -51,7 +52,7 @@ export async function getMesSupports(): Promise<SupportListe[]> {
   const { data, error } = await supabase
     .from("supports_seance")
     .select(
-      "id, seance_id, type, contenu, version, seances(date, modules(nom))",
+      "id, seance_id, type, contenu, version, seances(date, modules(nom, competences(code_operationnel)))",
     )
     .order("version", { ascending: false });
 
@@ -65,7 +66,13 @@ export async function getMesSupports(): Promise<SupportListe[]> {
       seance_id: string;
       type: "theorique" | "pratique";
       contenu: unknown;
-      seances: { date: string | null; modules: { nom: string } | null } | null;
+      seances: {
+        date: string | null;
+        modules: {
+          nom: string;
+          competences: { code_operationnel: string | null } | null;
+        } | null;
+      } | null;
     };
     if (parSeance.has(r.seance_id)) continue;
     parSeance.set(r.seance_id, {
@@ -74,7 +81,12 @@ export async function getMesSupports(): Promise<SupportListe[]> {
       type: r.type,
       seanceId: r.seance_id,
       date: r.seances?.date ?? null,
-      moduleNom: r.seances?.modules?.nom ?? null,
+      moduleNom: r.seances?.modules
+        ? libelleModule(
+            r.seances.modules.competences?.code_operationnel,
+            r.seances.modules.nom,
+          )
+        : null,
       questions: 0,
     });
   }
@@ -179,7 +191,7 @@ export async function getSupportDetail(
 
   const { data, error } = await supabase
     .from("supports_seance")
-    .select("id, contenu, seances(date, modules(nom), seance_groupes(groupe_id))")
+    .select("id, contenu, seances(date, modules(nom, competences(code_operationnel)), seance_groupes(groupe_id))")
     .eq("id", supportId)
     .maybeSingle();
 
@@ -191,7 +203,10 @@ export async function getSupportDetail(
     contenu: Support;
     seances: {
       date: string | null;
-      modules: { nom: string } | null;
+      modules: {
+        nom: string;
+        competences: { code_operationnel: string | null } | null;
+      } | null;
       seance_groupes: { groupe_id: string }[];
     } | null;
   };
@@ -200,7 +215,12 @@ export async function getSupportDetail(
     id: s.id,
     contenu: s.contenu,
     date: s.seances?.date ?? null,
-    moduleNom: s.seances?.modules?.nom ?? null,
+    moduleNom: s.seances?.modules
+      ? libelleModule(
+          s.seances.modules.competences?.code_operationnel,
+          s.seances.modules.nom,
+        )
+      : null,
     // Une séance FAD partagée a plusieurs groupes ; les questions posées
     // sur son support le sont depuis l'un d'eux.
     questions: await chargerQuestions(

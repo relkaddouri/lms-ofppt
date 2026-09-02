@@ -6,6 +6,7 @@ import Badge from "@/components/ui/Badge";
 import type { AuditEntry, Controle } from "@/app/actions/controles";
 import { inputStyles } from "@/components/ui/Input";
 import { formatDateTime } from "@/lib/format";
+import { libelleModule } from "@/lib/modules";
 
 const inputClass = inputStyles;
 
@@ -91,11 +92,13 @@ function ChangesList({
 export default function HistoriqueManager({
   moduleId,
   moduleNom,
+  moduleCode,
   controles,
   entries,
 }: {
   moduleId: string;
   moduleNom: string;
+  moduleCode: string | null;
   controles: Controle[];
   entries: AuditEntry[];
 }) {
@@ -114,7 +117,7 @@ export default function HistoriqueManager({
       <Breadcrumb
         items={[
           { label: "Modules", href: "/modules" },
-          { label: moduleNom, href: `/modules/${moduleId}` },
+          { label: libelleModule(moduleCode, moduleNom), href: `/modules/${moduleId}` },
           { label: "Contrôle", href: `/modules/${moduleId}/controle` },
           { label: "Historique" },
         ]}

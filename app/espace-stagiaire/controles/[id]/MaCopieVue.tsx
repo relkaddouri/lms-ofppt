@@ -5,6 +5,7 @@ import type {
   MaCopie,
 } from "@/app/actions/controles-stagiaire";
 import { ArrowLeft } from "lucide-react";
+import { libelleModule } from "@/lib/modules";
 
 /**
  * Copie rendue, vue par son auteur.
@@ -34,7 +35,9 @@ export default function MaCopieVue({
           <h1 className="text-lg font-semibold text-ink">
             {controle.titre ?? controle.moduleNom ?? "Contrôle"}
           </h1>
-          <p className="mt-0.5 text-sm text-slate">{controle.moduleNom}</p>
+          <p className="mt-0.5 text-sm text-slate">
+            {libelleModule(controle.codeOperationnel, controle.moduleNom)}
+          </p>
         </div>
         {copie ? (
           <span className="shrink-0 rounded-xl border border-border px-4 py-2 text-center">

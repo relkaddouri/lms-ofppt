@@ -15,6 +15,7 @@ import { inputStyles } from "@/components/ui/Input";
 import { useToast } from "@/components/ui/Toast";
 import { formatDateTime } from "@/lib/format";
 import { ChevronRight, X, Zap } from "lucide-react";
+import { libelleModule } from "@/lib/modules";
 
 type Suggestion = { points: number; commentaire: string };
 
@@ -146,7 +147,7 @@ export default function CorrectionManager({
         <Breadcrumb
           items={[
             { label: "Modules", href: "/modules" },
-            { label: moduleNom, href: `/modules/${moduleId}` },
+            { label: libelleModule(moduleCode, moduleNom), href: `/modules/${moduleId}` },
             {
               label: "Contrôle",
               href: `/modules/${moduleId}/controle?groupe=${groupeId}`,
@@ -170,7 +171,7 @@ export default function CorrectionManager({
       <Breadcrumb
         items={[
           { label: "Modules", href: "/modules" },
-          { label: moduleNom, href: `/modules/${moduleId}` },
+          { label: libelleModule(moduleCode, moduleNom), href: `/modules/${moduleId}` },
           {
             label: "Contrôle",
             href: `/modules/${moduleId}/controle?groupe=${groupeId}`,

@@ -28,6 +28,7 @@ export type ControleCalendrier = {
   date_prevue: string | null;
   date_administration: string | null;
   date_envoi_propositions: string | null;
+  codeOperationnel: string | null;
   /** Une date arrêtée fait foi ; une date seulement prévue reste une estimation. */
   confirmee: boolean;
 };
@@ -72,7 +73,7 @@ export async function getCalendrier(
     supabase
       .from("controles")
       .select(
-        "id, module_id, titre, type, type_efm, date_prevue, date_administration, date_envoi_propositions, groupes(nom), modules(nom)",
+        "id, module_id, titre, type, type_efm, date_prevue, date_administration, date_envoi_propositions, groupes(nom), modules(nom, competences(code_operationnel))",
       )
       .order("date_prevue", { nullsFirst: false }),
     // Ce qui reste à poser dans le calendrier : sans ce compte, une grille
@@ -135,7 +136,10 @@ export async function getCalendrier(
     "groupeNom" | "moduleNom" | "confirmee"
   > & {
     groupes: { nom: string } | null;
-    modules: { nom: string } | null;
+    modules: {
+      nom: string;
+      competences: { code_operationnel: string | null } | null;
+    } | null;
   })[];
 
   return {
@@ -163,6 +167,7 @@ export async function getCalendrier(
       module_id: c.module_id,
       groupeNom: c.groupes?.nom ?? "—",
       moduleNom: c.modules?.nom ?? "—",
+      codeOperationnel: c.modules?.competences?.code_operationnel ?? null,
       titre: c.titre,
       type: c.type,
       type_efm: c.type_efm,

@@ -8,6 +8,7 @@ import { inputStyles as inputClass } from "@/components/ui/Input";
 import { useToast } from "@/components/ui/Toast";
 import { setDatesEfmRegional, type ControleCalendrier } from "@/app/actions/calendrier";
 import { Save } from "lucide-react";
+import { libelleModule } from "@/lib/modules";
 
 /**
  * Saisie des deux dates d'une épreuve régionale.
@@ -52,7 +53,8 @@ export default function EfmRegionalForm({
       <div className="flex flex-wrap items-center gap-2">
         <Badge tone="danger">EFM régional</Badge>
         <span className="text-sm font-medium text-ink">
-          {controle.groupeNom} · {controle.moduleNom}
+          {controle.groupeNom} ·{" "}
+          {libelleModule(controle.codeOperationnel, controle.moduleNom)}
         </span>
         <span className="ml-auto text-xs text-slate">
           {arretee ? "date arrêtée" : "date non communiquée"}

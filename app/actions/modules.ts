@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import type { CycleModule } from "@/lib/modules";
 import { revalidatePath } from "next/cache";
 
 export type Module = {
@@ -10,6 +11,8 @@ export type Module = {
   duree_reference: number;
   /** Code court de la compétence, celui avec lequel le formateur pense. */
   code: string | null;
+  /** Cycle de la compétence : c'est lui qui donne l'année de formation. */
+  cycle: CycleModule;
   /** Nombre de groupes auxquels le module est assigné. */
   groupes: number;
 };
@@ -23,7 +26,7 @@ export async function getModules(): Promise<Module[]> {
     supabase
       .from("modules")
       .select(
-        "id, nom, description, duree_reference, competences(code_operationnel)",
+        "id, nom, description, duree_reference, competences(code_operationnel, cycle)",
       )
       .order("nom"),
     supabase.from("groupe_modules").select("module_id"),
@@ -44,7 +47,10 @@ export async function getModules(): Promise<Module[]> {
       nom: string;
       description: string | null;
       duree_reference: number;
-      competences: { code_operationnel: string | null } | null;
+      competences: {
+        code_operationnel: string | null;
+        cycle: CycleModule;
+      } | null;
     };
     return {
       id: r.id,
@@ -52,6 +58,7 @@ export async function getModules(): Promise<Module[]> {
       description: r.description,
       duree_reference: r.duree_reference,
       code: r.competences?.code_operationnel ?? null,
+      cycle: r.competences?.cycle ?? null,
       groupes: parModule.get(r.id) ?? 0,
     };
   });

@@ -11,6 +11,7 @@ import Modal from "@/components/ui/Modal";
 import { useToast } from "@/components/ui/Toast";
 import { formatDate } from "@/lib/format";
 import { Plus, Search, X } from "lucide-react";
+import { libelleModule } from "@/lib/modules";
 
 /** Année de formation : septembre ouvre l'année suivante, comme en base. */
 function anneeDeFormation(): string {
@@ -273,7 +274,7 @@ export default function GroupesManager({
                       onChange={() => toggleModule(m.id)}
                       className="h-4 w-4 accent-ink"
                     />
-                    <span className="text-ink">{m.nom}</span>
+                    <span className="text-ink">{libelleModule(m.code, m.nom)}</span>
                     <span className="ml-auto font-mono text-xs text-slate">
                       {m.duree_reference}h
                     </span>

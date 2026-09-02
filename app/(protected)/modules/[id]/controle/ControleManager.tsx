@@ -30,6 +30,7 @@ import Button, { buttonStyles } from "@/components/ui/Button";
 import { inputStyles } from "@/components/ui/Input";
 import { ConfirmModal } from "@/components/ui/Modal";
 import { formatDate, slugify } from "@/lib/format";
+import { libelleModule } from "@/lib/modules";
 import {
   BadgeCheck,
   Download,
@@ -468,7 +469,7 @@ export default function ControleManager({
       <Breadcrumb
         items={[
           { label: "Modules", href: "/modules" },
-          { label: moduleNom, href: `/modules/${moduleId}` },
+          { label: libelleModule(moduleCode, moduleNom), href: `/modules/${moduleId}` },
           { label: "Contrôle" },
         ]}
       />

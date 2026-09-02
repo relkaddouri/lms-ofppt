@@ -26,6 +26,7 @@ export default async function HistoriquePage({
     <HistoriqueManager
       moduleId={id}
       moduleNom={module.nom}
+      moduleCode={module.code}
       controles={controles}
       entries={entries}
     />

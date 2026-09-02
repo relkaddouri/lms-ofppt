@@ -5,6 +5,7 @@ import Link from "next/link";
 import { LayoutGrid, List, Search } from "lucide-react";
 import type { Seance } from "@/app/actions/seances";
 import { formatDate } from "@/lib/format";
+import { libelleModule } from "@/lib/modules";
 
 export type Vue = "liste" | "tableau";
 
@@ -146,7 +147,10 @@ export default function BarreSuivi({
                           {s.objectif_operationnel ?? "Séance sans objectif"}
                         </span>
                         <span className="truncate text-[13px] text-slate-light">
-                          {s.modules?.nom ?? "Module"}
+                          {libelleModule(
+                            s.modules?.competences?.code_operationnel,
+                            s.modules?.nom,
+                          )}
                         </span>
                       </div>
                       <div className="flex items-center justify-between gap-2 border-t border-separator pt-2.5">

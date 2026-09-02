@@ -10,6 +10,7 @@ import { dureeHeures } from "@/lib/creneaux";
 import { type FichePreparation, type SeanceAPreparer } from "@/app/actions/fiches";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import { libelleModule } from "@/lib/modules";
 
 /**
  * Préparation d'une fiche depuis la page module.
@@ -20,12 +21,14 @@ import { ArrowRight } from "lucide-react";
 export default function FichePreparationManager({
   moduleId,
   moduleNom,
+  moduleCode,
   seances,
   seanceId,
   versions,
 }: {
   moduleId: string;
   moduleNom: string;
+  moduleCode: string | null;
   moduleDuree: number;
   seances: SeanceAPreparer[];
   seanceId: string | null;
@@ -44,7 +47,7 @@ export default function FichePreparationManager({
       <Breadcrumb
         items={[
           { label: "Modules", href: "/modules" },
-          { label: moduleNom, href: `/modules/${moduleId}` },
+          { label: libelleModule(moduleCode, moduleNom), href: `/modules/${moduleId}` },
           { label: "Fiche de préparation" },
         ]}
       />

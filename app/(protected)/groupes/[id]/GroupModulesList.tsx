@@ -2,6 +2,7 @@ import Link from "next/link";
 import { FileText, ListChecks } from "lucide-react";
 import Badge from "@/components/ui/Badge";
 import type { GroupeModuleInfo } from "@/app/actions/groupes";
+import { libelleModule } from "@/lib/modules";
 
 export default function GroupModulesList({
   modules,
@@ -50,9 +51,20 @@ export default function GroupModulesList({
             key={m.module_id}
             className="flex items-center justify-between gap-4 rounded-[14px] border border-border bg-surface shadow-repos p-4"
           >
-            <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-ink">{m.nom}</p>
-              <p className="mt-0.5 text-xs text-slate">{m.duree_reference} h</p>
+            <div className="flex min-w-0 items-center gap-3">
+              {m.code_operationnel ? (
+                <span className="shrink-0 rounded-[9px] bg-wash px-2.5 py-1 font-mono text-xs font-semibold text-slate-2">
+                  {m.code_operationnel}
+                </span>
+              ) : null}
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-ink">
+                  {m.nom}
+                </p>
+                <p className="mt-0.5 text-xs text-slate">
+                  {m.duree_reference} h
+                </p>
+              </div>
             </div>
             <div className="flex shrink-0 items-center gap-3">
               {status}

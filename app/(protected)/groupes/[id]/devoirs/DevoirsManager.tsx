@@ -18,6 +18,7 @@ import {
 } from "@/app/actions/devoirs";
 import type { GroupeModuleInfo } from "@/app/actions/groupes";
 import { ClipboardList, Plus, Trash2 } from "lucide-react";
+import { libelleModule } from "@/lib/modules";
 
 const TYPES: { valeur: TypeRendu; label: string; aide: string }[] = [
   { valeur: "texte", label: "Réponse écrite", aide: "Le stagiaire rédige dans l'application." },
@@ -202,7 +203,7 @@ export default function DevoirsManager({
                 {modules.map((m) => (
                   <option key={m.module_id} value={m.module_id}>
                     {m.code_operationnel ? `${m.code_operationnel} — ` : ""}
-                    {m.nom}
+                    {libelleModule(m.code_operationnel, m.nom)}
                   </option>
                 ))}
               </select>

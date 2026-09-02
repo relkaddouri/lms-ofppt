@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { libelleModule } from "@/lib/modules";
 import { revalidatePath } from "next/cache";
 import {
   creneauDe,
@@ -37,7 +38,10 @@ export type Seance = {
   duree_prevue: number | null;
   nature: "theorique" | "pratique" | null;
   suggestion_pedagogique_id: string | null;
-  modules?: { nom: string } | null;
+  modules?: {
+    nom: string;
+    competences?: { code_operationnel: string | null } | null;
+  } | null;
   /** Objectif d'apprentissage du référentiel, quand la séance vient du plan. */
   suggestions_pedagogiques?: { code: string | null; apprentissage_base: string } | null;
 };
@@ -46,7 +50,7 @@ const COLONNES =
   "id, module_id, date, heure_debut, heure_fin, est_fad, lien_teams, " +
   "objectif_operationnel, contenu_prevu, contenu_realise, duree_realisee, " +
   "a_prevoir_prochaine_seance, statut, duree_prevue, nature, " +
-  "suggestion_pedagogique_id, modules(nom), " +
+  "suggestion_pedagogique_id, modules(nom, competences(code_operationnel)), " +
   "suggestions_pedagogiques(code, apprentissage_base)";
 
 export async function getSeancesByGroupe(groupeId: string): Promise<Seance[]> {
@@ -282,7 +286,7 @@ export async function getSeanceDetail(
   const { data, error } = await supabase
     .from("seances")
     .select(
-      "id, module_id, date, heure_debut, heure_fin, duree_prevue, duree_realisee, statut, nature, est_fad, lien_teams, objectif_operationnel, contenu_prevu, contenu_realise, a_prevoir_prochaine_seance, modules(nom), suggestions_pedagogiques(code, apprentissage_base, elements_contenu), seance_groupes!inner(groupe_id, groupes(nom, annee, specialites(nom))), tousGroupes:seance_groupes(groupe_id, groupes(nom))",
+      "id, module_id, date, heure_debut, heure_fin, duree_prevue, duree_realisee, statut, nature, est_fad, lien_teams, objectif_operationnel, contenu_prevu, contenu_realise, a_prevoir_prochaine_seance, modules(nom, competences(code_operationnel)), suggestions_pedagogiques(code, apprentissage_base, elements_contenu), seance_groupes!inner(groupe_id, groupes(nom, annee, specialites(nom))), tousGroupes:seance_groupes(groupe_id, groupes(nom))",
     )
     .eq("id", seanceId)
     .eq("seance_groupes.groupe_id", groupeId)
@@ -316,7 +320,10 @@ export async function getSeanceDetail(
       } | null;
     }[];
     tousGroupes: { groupe_id: string; groupes: { nom: string } | null }[];
-    modules: { nom: string } | null;
+    modules: {
+      nom: string;
+      competences: { code_operationnel: string | null } | null;
+    } | null;
     suggestions_pedagogiques: {
       code: string | null;
       apprentissage_base: string;
@@ -379,7 +386,10 @@ export async function getSeanceDetail(
     groupesPartages: (s.tousGroupes ?? [])
       .filter((l) => l.groupe_id !== groupeId)
       .map((l) => ({ id: l.groupe_id, nom: l.groupes?.nom ?? "Groupe" })),
-    moduleNom: s.modules?.nom ?? "—",
+    moduleNom: libelleModule(
+      s.modules?.competences?.code_operationnel,
+      s.modules?.nom,
+    ),
     objectifCode: s.suggestions_pedagogiques?.code ?? null,
     objectifIntitule: s.suggestions_pedagogiques?.apprentissage_base ?? null,
     objectifContenu: s.suggestions_pedagogiques?.elements_contenu ?? null,

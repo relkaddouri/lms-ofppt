@@ -35,6 +35,7 @@ export default async function FichePreparationPage({
     <FichePreparationManager
       moduleId={id}
       moduleNom={module.nom}
+      moduleCode={module.code}
       moduleDuree={module.duree_reference}
       seances={seances}
       seanceId={choisie?.id ?? null}

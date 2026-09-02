@@ -21,6 +21,7 @@ import {
   type Indisponibilite,
 } from "@/lib/indisponibilites";
 import { CalendarPlus, ChevronLeft, ChevronRight } from "lucide-react";
+import { libelleModule } from "@/lib/modules";
 
 const JOURS = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
 
@@ -150,7 +151,11 @@ export default function CalendrierSemaine({
   // La légende n'a de sens que si la distinction est visible dans la grille.
   const afficherLegende = controlesSemaine > 0 || regionales.length > 0;
 
-  const modulesSemaine = [...new Set(seances.map((s) => s.moduleNom))];
+  const modulesSemaine = [
+    ...new Set(
+      seances.map((s) => libelleModule(s.codeOperationnel, s.moduleNom)),
+    ),
+  ];
 
   const dureeDe = (s: SeanceCalendrier) => {
     if (!s.heure_debut || !s.heure_fin) return 0;
@@ -399,7 +404,10 @@ export default function CalendrierSemaine({
                                   href={`/groupes/${s.groupe_id}/seances/${s.id}`}
                                   title={[
                                     s.groupeNom,
-                                    s.moduleNom,
+                                    libelleModule(
+                                      s.codeOperationnel,
+                                      s.moduleNom,
+                                    ),
                                     s.objectif,
                                   ]
                                     .filter(Boolean)
@@ -435,7 +443,7 @@ export default function CalendrierSemaine({
                                       : ""}
                                   </span>
                                   <span className="mt-0.5 line-clamp-2 text-[11px] leading-snug text-slate">
-                                    {s.objectif ?? s.moduleNom}
+                                    {s.objectif ?? libelleModule(s.codeOperationnel, s.moduleNom)}
                                   </span>
                                 </Link>
                               );
