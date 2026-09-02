@@ -126,16 +126,72 @@ export async function getModuleDetail(moduleId: string): Promise<ModuleDetail | 
   };
 }
 
+export type CompetenceDisponible = {
+  id: string;
+  numero: number;
+  code: string | null;
+  codeOfficiel: string | null;
+  nom: string;
+  dureeHeures: number | null;
+  /** Un module décline déjà cette compétence. */
+  dejaDeclinee: boolean;
+};
+
+/**
+ * Compétences du référentiel, pour le choix à l'ajout d'un module.
+ *
+ * Un module n'est pas inventé : c'est la déclinaison d'une compétence du
+ * programme officiel. Faire retaper l'intitulé et la durée nationale à la main
+ * invitait à la faute de frappe, et laissait surtout `competence_id` vide —
+ * le module perdait alors son code et son rattachement au référentiel.
+ */
+export async function getCompetencesDisponibles(): Promise<
+  CompetenceDisponible[]
+> {
+  const supabase = await createClient();
+
+  const [competencesRes, modulesRes] = await Promise.all([
+    supabase
+      .from("competences")
+      .select(
+        "id, numero, code_operationnel, code_officiel, nom, duree_nationale_heures",
+      )
+      .order("numero"),
+    supabase.from("modules").select("competence_id"),
+  ]);
+
+  if (competencesRes.error) throw new Error(competencesRes.error.message);
+  if (modulesRes.error) throw new Error(modulesRes.error.message);
+
+  const prises = new Set(
+    (modulesRes.data ?? [])
+      .map((m) => m.competence_id)
+      .filter((id): id is string => Boolean(id)),
+  );
+
+  return (competencesRes.data ?? []).map((c) => ({
+    id: c.id,
+    numero: c.numero,
+    code: c.code_operationnel,
+    codeOfficiel: c.code_officiel,
+    nom: c.nom,
+    dureeHeures: c.duree_nationale_heures,
+    dejaDeclinee: prises.has(c.id),
+  }));
+}
+
 export async function createModule(input: {
   nom: string;
   description?: string | null;
   duree_reference: number;
+  competence_id?: string | null;
 }) {
   const supabase = await createClient();
   const { error } = await supabase.from("modules").insert({
     nom: input.nom,
     description: input.description ?? null,
     duree_reference: input.duree_reference,
+    competence_id: input.competence_id ?? null,
   });
 
   if (error) throw new Error(error.message);

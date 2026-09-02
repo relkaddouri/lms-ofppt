@@ -7,16 +7,26 @@ import {
   createModule,
   updateModule,
   deleteModule,
+  type CompetenceDisponible,
   type Module,
 } from "@/app/actions/modules";
 import KebabMenu from "@/components/KebabMenu";
 import Button from "@/components/ui/Button";
-import Input, { Textarea } from "@/components/ui/Input";
+import Input, { Textarea, inputStyles } from "@/components/ui/Input";
 import Modal, { ConfirmModal } from "@/components/ui/Modal";
 import { useToast } from "@/components/ui/Toast";
 import { Pencil, Plus, Save, Search, Trash2, X } from "lucide-react";
 
-export default function ModulesManager({ modules }: { modules: Module[] }) {
+/** Choix « je saisis tout moi-même », pour un module hors programme officiel. */
+const HORS_REFERENTIEL = "libre";
+
+export default function ModulesManager({
+  modules,
+  competences,
+}: {
+  modules: Module[];
+  competences: CompetenceDisponible[];
+}) {
   const router = useRouter();
   const toast = useToast();
   const [open, setOpen] = useState(false);
@@ -29,15 +39,40 @@ export default function ModulesManager({ modules }: { modules: Module[] }) {
     description: "",
     duree_reference: "",
   });
+  const [competenceId, setCompetenceId] = useState<string>(HORS_REFERENTIEL);
 
   function openCreate() {
     setEditing(null);
+    setCompetenceId(HORS_REFERENTIEL);
     setForm({ nom: "", description: "", duree_reference: "" });
     setOpen(true);
   }
 
+  /**
+   * Choisir une compétence remplit les trois champs depuis le référentiel.
+   * Ils restent modifiables : la durée nationale est un repère, l'établissement
+   * l'ajuste souvent.
+   */
+  function choisirCompetence(id: string) {
+    setCompetenceId(id);
+    if (id === HORS_REFERENTIEL) {
+      setForm({ nom: "", description: "", duree_reference: "" });
+      return;
+    }
+    const c = competences.find((x) => x.id === id);
+    if (!c) return;
+    setForm({
+      nom: c.nom,
+      description: `Décliné de la compétence ${c.numero}${
+        c.codeOfficiel ? ` (${c.codeOfficiel})` : ""
+      }`,
+      duree_reference: c.dureeHeures != null ? String(c.dureeHeures) : "",
+    });
+  }
+
   function openEdit(m: Module) {
     setEditing(m);
+    setCompetenceId(HORS_REFERENTIEL);
     setForm({
       nom: m.nom,
       description: m.description ?? "",
@@ -59,7 +94,11 @@ export default function ModulesManager({ modules }: { modules: Module[] }) {
         await updateModule(editing.id, input);
         toast("Module modifié");
       } else {
-        await createModule(input);
+        await createModule({
+          ...input,
+          competence_id:
+            competenceId === HORS_REFERENTIEL ? null : competenceId,
+        });
         toast("Module ajouté");
       }
       setOpen(false);
@@ -222,6 +261,36 @@ export default function ModulesManager({ modules }: { modules: Module[] }) {
         title={editing ? "Modifier le module" : "Ajouter un module"}
       >
         <form onSubmit={handleSubmit} className="space-y-4">
+          {editing ? null : (
+            <label htmlFor="competence" className="flex flex-col gap-[7px]">
+              <span className="text-sm font-semibold text-body">
+                Compétence du référentiel
+              </span>
+              <select
+                id="competence"
+                value={competenceId}
+                onChange={(e) => choisirCompetence(e.target.value)}
+                className={inputStyles}
+              >
+                <option value={HORS_REFERENTIEL}>
+                  — Saisie libre, hors référentiel —
+                </option>
+                {competences.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.code ? `${c.code} — ` : ""}
+                    {c.nom}
+                    {c.dureeHeures != null ? ` · ${c.dureeHeures} h` : ""}
+                    {c.dejaDeclinee ? " (déjà déclinée)" : ""}
+                  </option>
+                ))}
+              </select>
+              <span className="text-[13px] text-slate-light">
+                Les champs ci-dessous se remplissent depuis le programme
+                officiel. Ajustez-les si votre établissement s&apos;en écarte.
+              </span>
+            </label>
+          )}
+
           <Input
             id="nom"
             label="Nom"
