@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Breadcrumb from "@/components/Breadcrumb";
 import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
+import Avatar from "@/components/ui/Avatar";
 import { ConfirmModal } from "@/components/ui/Modal";
 import { inputStyles as inputClass } from "@/components/ui/Input";
 import { useToast } from "@/components/ui/Toast";
@@ -22,7 +23,7 @@ import {
   type SeanceDetail,
   type RemarqueSeance,
 } from "@/app/actions/seance";
-import { Check, CheckCheck, Plus, Trash2, X } from "lucide-react";
+import { Check, CheckCheck, Plus, Trash2 } from "lucide-react";
 
 export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
   const router = useRouter();
@@ -167,13 +168,19 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
         ]}
       />
 
-      <header className="mt-6 flex flex-wrap items-start justify-between gap-4">
-        <div className="min-w-0">
+      <header className="mt-6 flex flex-wrap items-start justify-between gap-6">
+        <div className="flex min-w-0 items-start gap-4">
+          {seance.objectifCode ? (
+            <span className="mt-1 flex h-9 shrink-0 items-center justify-center rounded-[9px] bg-wash px-2.5 font-mono text-xs font-semibold text-slate-2">
+              {seance.objectifCode}
+            </span>
+          ) : null}
+          <div className="flex min-w-0 flex-col gap-2">
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-2xl font-semibold text-ink">
-              {seance.objectifCode
-                ? `${seance.objectifCode} — ${seance.objectifIntitule}`
-                : (seance.objectif_operationnel ?? "Séance")}
+            <h1 className="font-display text-[26px] font-bold leading-tight tracking-[-0.02em] text-ink">
+              {seance.objectifIntitule ??
+                seance.objectif_operationnel ??
+                "Séance"}
             </h1>
             {seance.nature ? (
               <Badge tone={seance.nature === "pratique" ? "info" : "neutral"}>
@@ -184,34 +191,28 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
               {seance.statut === "fait" ? "faite" : "à faire"}
             </Badge>
           </div>
-          <p className="mt-1 text-sm text-slate">
-            {[
-              seance.moduleNom,
-              seance.date ? formatDate(seance.date) : "date à définir",
-              creneau,
-              seance.duree_prevue ? formatHeures(seance.duree_prevue) : null,
-            ]
-              .filter(Boolean)
-              .join(" · ")}
+          <p className="text-[14.5px] text-slate-2">
+            <span className="font-mono text-body">
+              {[
+                seance.date ? formatDate(seance.date) : "date à définir",
+                creneau,
+                seance.duree_prevue ? formatHeures(seance.duree_prevue) : null,
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+            </span>
+            {seance.moduleNom ? ` · ${seance.moduleNom}` : ""}
           </p>
+          </div>
         </div>
-        {seance.statut !== "fait" ? (
-          <Button
-            icon={Check}
-            onClick={() => enregistrerDeroulement("fait")}
-            disabled={enCours}
-          >
-            Marquer la séance faite
-          </Button>
-        ) : null}
       </header>
 
       {seance.objectifContenu ? (
-        <div className="mt-4 rounded-xl border border-border bg-surface p-4">
-          <h2 className="text-sm font-medium text-ink">
+        <div className="mt-5 rounded-[14px] border border-border bg-surface p-6 shadow-repos">
+          <h2 className="font-display text-[15px] font-semibold text-ink">
             Éléments de contenu du référentiel
           </h2>
-          <p className="mt-1 whitespace-pre-line text-sm text-slate">
+          <p className="mt-2 whitespace-pre-line text-[14.5px] leading-relaxed text-body">
             {seance.objectifContenu}
           </p>
         </div>
@@ -220,53 +221,53 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
       <div
         role="tablist"
         aria-label="Vue de la séance"
-        className="mt-6 flex gap-1 border-b border-border"
+        className="mt-6 flex items-stretch gap-1.5 border-t border-separator px-1"
       >
-        <button
-          type="button"
-          role="tab"
-          aria-selected={onglet === "preparation"}
-          onClick={() => setOnglet("preparation")}
-          className={`-mb-px border-b-2 px-4 py-2 text-sm ${
-            onglet === "preparation"
-              ? "border-forest font-medium text-forest"
-              : "border-transparent text-slate hover:text-ink"
-          }`}
-        >
-          Préparation
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={onglet === "support"}
-          onClick={() => setOnglet("support")}
-          className={`-mb-px border-b-2 px-4 py-2 text-sm ${
-            onglet === "support"
-              ? "border-forest font-medium text-forest"
-              : "border-transparent text-slate hover:text-ink"
-          }`}
-        >
-          Support
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={onglet === "deroulement"}
-          onClick={() => setOnglet("deroulement")}
-          className={`-mb-px border-b-2 px-4 py-2 text-sm ${
-            onglet === "deroulement"
-              ? "border-forest font-medium text-forest"
-              : "border-transparent text-slate hover:text-ink"
-          }`}
-        >
-          Déroulement
-        </button>
+        {(
+          [
+            { cle: "preparation" as const, label: "Préparation", compte: 0 },
+            {
+              cle: "support" as const,
+              label: "Support",
+              compte: seance.questions.length,
+            },
+            { cle: "deroulement" as const, label: "Déroulement", compte: 0 },
+          ]
+        ).map((o) => {
+          const actif = onglet === o.cle;
+          return (
+            <button
+              key={o.cle}
+              type="button"
+              role="tab"
+              aria-selected={actif}
+              onClick={() => setOnglet(o.cle)}
+              className={`flex items-center gap-2 whitespace-nowrap border-b-2 px-2.5 py-3.5 text-sm transition-colors duration-150 ease-out hover:text-ink ${
+                actif
+                  ? "border-b-ink font-semibold text-ink"
+                  : "border-b-transparent text-slate-2"
+              }`}
+            >
+              {o.label}
+              {o.compte > 0 ? (
+                <span
+                  className={`rounded-full px-1.5 py-px font-mono text-xs font-medium ${
+                    actif ? "bg-wash text-ink" : "bg-paper text-slate-2"
+                  }`}
+                >
+                  {o.compte}
+                </span>
+              ) : null}
+            </button>
+          );
+        })}
       </div>
+
       <div className="mt-5">
         {onglet === "preparation" ? (
-          <section className="rounded-xl border border-border bg-surface p-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-base font-semibold text-ink">
+          <section className="overflow-hidden rounded-[14px] border border-border bg-surface shadow-repos">
+            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-separator bg-paper-alt px-6 py-[18px]">
+              <h2 className="font-display text-base font-semibold text-ink">
                 Fiche de préparation
               </h2>
               {seance.ficheVersion ? (
@@ -275,7 +276,7 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
                 <Badge tone="neutral">aucune version</Badge>
               )}
             </div>
-            <div className="mt-4">
+            <div className="px-6 py-[22px]">
               <FicheSeance
                 contexte={{
                   seanceId: seance.id,
@@ -292,16 +293,25 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
             </div>
           </section>
         ) : onglet === "support" ? (
-          <section className="rounded-xl border border-border bg-surface p-4">
-            <h2 className="text-base font-semibold text-ink">
-              {seance.nature === "pratique"
-                ? "Énoncé de travaux pratiques"
-                : "Support de cours"}
-            </h2>
-            <p className="mt-1 text-xs text-slate">
-              Le document remis aux stagiaires, distinct de votre fiche.
-            </p>
-            <div className="mt-3">
+          <section className="overflow-hidden rounded-[14px] border border-border bg-surface shadow-repos">
+            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-separator bg-paper-alt px-6 py-[18px]">
+              <div className="flex flex-col gap-[3px]">
+                <h2 className="font-display text-base font-semibold text-ink">
+                  {seance.nature === "pratique"
+                    ? "Énoncé de travaux pratiques"
+                    : "Support de cours"}
+                </h2>
+                <p className="text-[13px] text-slate-light">
+                  Le document remis aux stagiaires, distinct de votre fiche.
+                </p>
+              </div>
+              {seance.supportVersion ? (
+                <span className="font-mono text-[12.5px] text-slate-2">
+                  Version {seance.supportVersion}
+                </span>
+              ) : null}
+            </div>
+            <div className="px-6 py-[22px]">
               <SupportSeance
                 contexte={{
                   seanceId: seance.id,
@@ -321,7 +331,7 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
             </div>
 
             {seance.supportId ? (
-              <div className="mt-6 border-t border-border pt-5">
+              <div className="border-t border-separator px-6 py-[22px]">
                 <QuestionsSupport
                   supportId={seance.supportId}
                   questions={seance.questions}
@@ -335,14 +345,38 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
             ) : null}
           </section>
         ) : (
-          <div className="grid gap-6 lg:grid-cols-2">
-            <section className="rounded-xl border border-border bg-surface p-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-base font-semibold text-ink">Présences</h2>
+          <div className="grid items-start gap-5 lg:[grid-template-columns:minmax(0,1.15fr)_minmax(0,1fr)]">
+            <section className="min-w-0 overflow-hidden rounded-[14px] border border-border bg-surface shadow-repos">
+              <div className="flex flex-wrap items-center gap-3 border-b border-separator px-[22px] py-[18px]">
+                <div className="flex flex-col gap-[3px]">
+                  <h2 className="font-display text-base font-semibold text-ink">
+                    Appel
+                  </h2>
+                  <p className="text-[13px] text-slate-light">
+                    <span
+                      className={`font-mono font-medium ${
+                        presents > 0 ? "text-green-dark" : "text-slate-light"
+                      }`}
+                    >
+                      {presents}
+                    </span>{" "}
+                    présents ·{" "}
+                    <span
+                      className={`font-mono font-medium ${
+                        absents > 0 ? "text-coral-dark" : "text-slate-light"
+                      }`}
+                    >
+                      {absents}
+                    </span>{" "}
+                    absents sur {presences.length}
+                    {nonPointes > 0 ? ` · ${nonPointes} non pointés` : ""}
+                  </p>
+                </div>
                 <Button
                   variant="secondary"
                   size="sm"
                   icon={CheckCheck}
+                  className="ml-auto"
                   onClick={toutPresent}
                   disabled={enCours || presences.length === 0}
                 >
@@ -351,134 +385,222 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
               </div>
 
               {presences.length === 0 ? (
-                <p className="mt-3 text-sm text-slate">
+                <p className="px-[22px] py-8 text-center text-sm text-slate-light">
                   Aucun stagiaire inscrit dans ce groupe.
                 </p>
               ) : (
-                <>
-                  <p className="mt-1 text-xs text-slate">
-                    {presents} présents · {absents} absents
-                    {nonPointes > 0 ? ` · ${nonPointes} non pointés` : ""}
-                  </p>
-                  <ul className="mt-3 space-y-1.5">
-                    {presences.map((p) => (
-                      <li
+                <div className="max-h-[520px] overflow-y-auto">
+                  {presences.map((p) => {
+                    const absent = p.present === false;
+                    const nomComplet = `${p.prenom} ${p.nom}`;
+                    return (
+                      <button
                         key={p.stagiaire_id}
-                        className="flex items-center justify-between gap-2 rounded-lg border border-border px-3 py-1.5"
+                        type="button"
+                        aria-pressed={p.present === true}
+                        aria-label={`${nomComplet} — ${
+                          absent ? "absent" : p.present ? "présent" : "non pointé"
+                        }`}
+                        disabled={enCours}
+                        // Un stagiaire non pointé bascule d'abord vers présent :
+                        // c'est le cas majoritaire, et un premier clic qui
+                        // marque absent serait un piège.
+                        onClick={() => pointer(p.stagiaire_id, p.present !== true)}
+                        className={`flex w-full items-center gap-3 border-b border-separator px-[22px] py-3 text-left transition-colors duration-150 ease-out ${
+                          absent ? "bg-alert-wash" : "bg-surface hover:bg-paper"
+                        }`}
                       >
-                        <span className="truncate text-sm text-ink">
-                          {p.prenom} {p.nom}
+                        <span
+                          aria-hidden
+                          className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-[1.5px] ${
+                            p.present === true
+                              ? "border-ink bg-ink"
+                              : "border-border-strong bg-surface"
+                          }`}
+                        >
+                          {p.present === true ? (
+                            <Check
+                              className="h-3 w-3 text-white"
+                              strokeWidth={3}
+                            />
+                          ) : null}
                         </span>
-                        <span className="flex shrink-0 gap-1">
-                          <button
-                            type="button"
-                            aria-label={`${p.prenom} ${p.nom} présent`}
-                            aria-pressed={p.present === true}
-                            onClick={() => pointer(p.stagiaire_id, true)}
-                            className={`rounded-md border px-2 py-1 ${
-                              p.present === true
-                                ? "border-success bg-success/10 text-success"
-                                : "border-border text-slate hover:border-success/50"
+                        <Avatar prenom={p.prenom} nom={p.nom} taille="xs" />
+                        <span className="flex min-w-0 flex-col gap-[2px]">
+                          <span
+                            className={`truncate text-[14.5px] font-semibold ${
+                              absent ? "text-slate-light" : "text-ink"
                             }`}
                           >
-                            <Check className="h-3.5 w-3.5" />
-                          </button>
-                          <button
-                            type="button"
-                            aria-label={`${p.prenom} ${p.nom} absent`}
-                            aria-pressed={p.present === false}
-                            onClick={() => pointer(p.stagiaire_id, false)}
-                            className={`rounded-md border px-2 py-1 ${
-                              p.present === false
-                                ? "border-danger bg-danger/10 text-danger"
-                                : "border-border text-slate hover:border-danger/50"
-                            }`}
-                          >
-                            <X className="h-3.5 w-3.5" />
-                          </button>
+                            {nomComplet}
+                          </span>
+                          {/* La maquette place ici le matricule ; aucune
+                              colonne de ce genre n'existe dans `stagiaires`,
+                              le motif d'absence est ce que la donnée offre. */}
+                          {p.motif ? (
+                            <span className="text-[12.5px] text-slate-light">
+                              {p.motif}
+                            </span>
+                          ) : null}
                         </span>
+                        <span
+                          className={`ml-auto whitespace-nowrap rounded-full border px-2.5 py-[3px] text-[12.5px] font-semibold ${
+                            p.present === true
+                              ? "border-tint-success-strong bg-success-wash text-green-dark"
+                              : absent
+                                ? "border-tint-alert-strong bg-alert-wash text-coral-dark"
+                                : "border-border bg-wash-strong text-slate-2"
+                          }`}
+                        >
+                          {p.present === true
+                            ? "Présent"
+                            : absent
+                              ? "Absent"
+                              : "Non pointé"}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </section>
+
+            <div className="flex min-w-0 flex-col gap-5">
+              <section className="flex flex-col gap-3 rounded-[14px] border border-border bg-surface p-[22px] shadow-repos">
+                <div className="flex items-baseline justify-between gap-3">
+                  <h2 className="font-display text-base font-semibold text-ink">
+                    Contenu réalisé
+                  </h2>
+                  <span className="font-mono text-[12.5px] text-muted">
+                    {contenuRealise.length} caractères
+                  </span>
+                </div>
+                <div className="overflow-hidden rounded-[10px] border border-border-strong border-l-[3px] border-l-ink bg-surface">
+                  <textarea
+                    rows={5}
+                    value={contenuRealise}
+                    onChange={(e) => setContenuRealise(e.target.value)}
+                    placeholder="Ce qui a effectivement été traité, l'écart avec la préparation, l'état d'avancement du groupe…"
+                    className="w-full resize-y border-none bg-transparent px-[15px] py-[13px] text-[15px] leading-relaxed text-body outline-none placeholder:text-slate-light"
+                  />
+                </div>
+                <span className="text-[13px] text-slate-light">
+                  Repris automatiquement dans le classeur pédagogique et le
+                  bilan du module.
+                </span>
+              </section>
+
+              <section className="flex flex-col gap-3.5 rounded-[14px] border border-border bg-surface p-[22px] shadow-repos">
+                <div className="flex items-baseline justify-between gap-3">
+                  <h2 className="font-display text-base font-semibold text-ink">
+                    Remarques
+                  </h2>
+                  <span className="font-mono text-[12.5px] text-muted">
+                    {String(seance.remarques.length).padStart(2, "0")}
+                  </span>
+                </div>
+
+                {seance.remarques.length === 0 ? (
+                  <p className="py-2 text-sm text-slate-light">
+                    Aucune remarque.
+                  </p>
+                ) : (
+                  <ul className="flex flex-col gap-[9px]">
+                    {seance.remarques.map((r) => (
+                      <li
+                        key={r.id}
+                        className="flex items-start gap-[11px] rounded-[10px] border border-border bg-paper-alt px-[13px] py-[11px]"
+                      >
+                        <span
+                          aria-hidden
+                          className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-teal"
+                        />
+                        <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                          <span className="text-[14.5px] leading-snug text-body">
+                            {r.texte}
+                          </span>
+                          <span className="font-mono text-[12px] text-slate-light">
+                            {formatDateTime(r.created_at)}
+                          </span>
+                        </span>
+                        <button
+                          type="button"
+                          aria-label="Supprimer la remarque"
+                          onClick={() => setRemarqueASupprimer(r)}
+                          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[7px] border border-transparent text-coral-dark transition-colors duration-150 ease-out hover:border-tint-alert-strong hover:bg-alert-wash"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" aria-hidden />
+                        </button>
                       </li>
                     ))}
                   </ul>
-                </>
-              )}
-            </section>
-            <section className="rounded-xl border border-border bg-surface p-4">
-              <h2 className="text-base font-semibold text-ink">
-                Ce qui a été fait
-              </h2>
-              <p className="mt-1 text-xs text-slate">
-                Alimente la préparation de la séance suivante et le contenu
-                couvert par les contrôles.
-              </p>
-              <textarea
-                rows={4}
-                value={contenuRealise}
-                onChange={(e) => setContenuRealise(e.target.value)}
-                placeholder="Notions réellement traitées…"
-                className={`${inputClass} mt-2`}
-              />
-              <Button
-                size="sm"
-                className="mt-2"
-                onClick={() => enregistrerDeroulement()}
-                disabled={enCours}
-              >
-                Enregistrer
-              </Button>
-            </section>
-            <section className="rounded-xl border border-border bg-surface p-4">
-              <h2 className="text-base font-semibold text-ink">Remarques</h2>
-              <div className="mt-2 flex gap-2">
-                <input
-                  value={nouvelleRemarque}
-                  onChange={(e) => setNouvelleRemarque(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !enCours) ajouter();
-                  }}
-                  placeholder="Incident, point à reprendre…"
-                  aria-label="Nouvelle remarque"
-                  className={inputClass}
-                />
-                <Button
-                  size="sm"
-                  icon={Plus}
-                  onClick={ajouter}
-                  disabled={enCours || !nouvelleRemarque.trim()}
-                >
-                  Ajouter
-                </Button>
-              </div>
+                )}
 
-              {seance.remarques.length === 0 ? (
-                <p className="mt-3 text-sm text-slate">Aucune remarque.</p>
-              ) : (
-                <ul className="mt-3 space-y-2">
-                  {seance.remarques.map((r) => (
-                    <li
-                      key={r.id}
-                      className="flex items-start justify-between gap-2 rounded-lg border border-border px-3 py-2"
-                    >
-                      <div className="min-w-0">
-                        <p className="text-sm text-ink">{r.texte}</p>
-                        <p className="mt-0.5 text-xs text-slate">
-                          {formatDateTime(r.created_at)}
-                        </p>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        icon={Trash2}
-                        aria-label="Supprimer la remarque"
-                        onClick={() => setRemarqueASupprimer(r)}
-                      >
-                        {""}
-                      </Button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </section>
+                <div className="flex gap-2">
+                  <input
+                    value={nouvelleRemarque}
+                    onChange={(e) => setNouvelleRemarque(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !enCours) ajouter();
+                    }}
+                    placeholder="Incident, point à reprendre…"
+                    aria-label="Nouvelle remarque"
+                    className={inputClass}
+                  />
+                  <Button
+                    size="sm"
+                    icon={Plus}
+                    onClick={ajouter}
+                    disabled={enCours || !nouvelleRemarque.trim()}
+                  >
+                    Ajouter
+                  </Button>
+                </div>
+              </section>
+
+              <section className="flex flex-col gap-3.5 rounded-[14px] border border-border bg-surface px-[22px] py-5 shadow-repos">
+                <div className="flex items-center gap-2.5">
+                  <span
+                    aria-hidden
+                    className={`h-[7px] w-[7px] shrink-0 rounded-full ${
+                      seance.statut === "fait" ? "bg-green" : "bg-teal"
+                    }`}
+                  />
+                  <p
+                    className={`text-sm leading-snug ${
+                      seance.statut === "fait" ? "text-green-dark" : "text-body"
+                    }`}
+                  >
+                    {seance.statut === "fait"
+                      ? "Séance clôturée : appel enregistré et contenu réalisé versé au classeur."
+                      : `Appel saisi pour ${presents + absents} stagiaires sur ${presences.length}${
+                          contenuRealise.trim()
+                            ? " · contenu réalisé renseigné. La séance peut être clôturée."
+                            : " · contenu réalisé à renseigner."
+                        }`}
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <Button
+                    variant="secondary"
+                    onClick={() => enregistrerDeroulement()}
+                    disabled={enCours}
+                  >
+                    Enregistrer
+                  </Button>
+                  <Button
+                    icon={Check}
+                    className="min-w-[200px] flex-1 justify-center"
+                    onClick={() => enregistrerDeroulement("fait")}
+                    disabled={enCours || seance.statut === "fait"}
+                  >
+                    {seance.statut === "fait"
+                      ? "Séance marquée faite"
+                      : "Marquer la séance faite"}
+                  </Button>
+                </div>
+              </section>
+            </div>
           </div>
         )}
       </div>

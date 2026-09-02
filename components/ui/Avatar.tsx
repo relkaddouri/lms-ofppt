@@ -1,6 +1,6 @@
 import { initials } from "@/lib/format";
 
-export type AvatarTaille = "sm" | "md" | "lg";
+export type AvatarTaille = "xs" | "sm" | "md" | "lg";
 
 /**
  * Pastille d'initiales — l'élément signature des listes de personnes.
@@ -17,6 +17,7 @@ export type AvatarTaille = "sm" | "md" | "lg";
 const FONDS = ["bg-ink", "bg-green", "bg-teal"] as const;
 
 const tailles: Record<AvatarTaille, string> = {
+  xs: "h-[34px] w-[34px] text-[11.5px]",
   sm: "h-[38px] w-[38px] text-[13px]",
   md: "h-10 w-10 text-[13px]",
   lg: "h-11 w-11 text-[15px]",
