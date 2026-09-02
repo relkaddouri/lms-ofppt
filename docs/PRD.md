@@ -1,6 +1,10 @@
-# PRD — Pédago (Classeur pédagogique numérique) — v2
+# PRD — LMS OFPPT (Classeur pédagogique numérique) — v3
 
-**Version 2** — mise à jour après réception du programme de formation complet, d'un exemple réel de classeur pédagogique, et du document de soutenance OFPPT. Quelques points restent ouverts, signalés au fil du document et récapitulés en §8.
+**Version 3** — changement structurant sur le fonctionnement de la planification, communiqué par le porteur de projet en cours de développement (l'app s'appelle désormais "Pédago" dans son interface, ce document garde le nom de code historique du projet). Trois changements majeurs par rapport à la v2 :
+
+1. Le **motif hebdomadaire récurrent** devient le mécanisme pivot qui génère les séances automatiquement (§4.9), remplaçant la création séance par séance à la main supposée en v2.
+2. Une **page "Emploi du temps" dédiée**, document officiel exportable en PDF (§4.9), distincte du calendrier opérationnel au quotidien (§4.10).
+3. **Correction de la convention de nommage des modules** : deux séries distinctes par année (`M1XX` pour le tronc commun, `M2XX` pour la spécialisation), pas un pattern unique basé sur le numéro de compétence (§3).
 
 ---
 
@@ -28,7 +32,7 @@ Objectifs secondaires, également exprimés par le porteur du projet :
 | **Formateur** | Utilisateur principal — porteur du projet et, à terme, potentiellement d'autres formateurs du même centre | Préparer ses séances, suivre la progression, générer et corriger des contrôles, gérer son calendrier |
 | **Stagiaire** | Compte authentifié (login + mot de passe), accès principalement depuis mobile | Voir un fil d'actualité (annonces du formateur, avec commentaires et réactions "j'aime"), consulter ses devoirs et ses contrôles par module, consulter son emploi du temps, consulter les supports de cours et poser des questions dessus (avec possibilité de mentionner/taguer un camarade) |
 
-*L'audit des fiches de préparation par l'administration OFPPT ne nécessite pas d'accès à l'application : il se fait via l'export "classeur pédagogique" (§4.12), remis en PDF ou imprimé. Aucun rôle applicatif dédié n'est donc prévu pour l'administrateur.*
+*L'audit des fiches de préparation par l'administration OFPPT ne nécessite pas d'accès à l'application : il se fait via l'export "classeur pédagogique" (§4.13), remis en PDF ou imprimé. Aucun rôle applicatif dédié n'est donc prévu pour l'administrateur.*
 
 ---
 
@@ -77,10 +81,17 @@ Séance (rattachée à un couple Groupe + Module précis)
  └── Contenu "à prévoir pour la prochaine séance" (champ de transition entre deux séances)
 
  Note : plusieurs séances peuvent se succéder le même jour sur des modules différents
- (ex. 3h sur le module A puis 2h sur le module B dans un même bloc de 5h) — voir §4.10.
+ (ex. 3h sur le module A puis 2h sur le module B dans un même bloc de 5h) — voir §4.11.
 ```
 
-**Correspondance code officiel ↔ code opérationnel — confirmée par les documents reçus.** Le programme complet de la spécialité UX Designer compte **16 compétences** (le document officiel les appelle lui-même "modules"), codées `DIA_DES_TS-01` à `DIA_DESOUX_TS-16`. Au quotidien, le classeur pédagogique du porteur de projet utilise des codes courts (`M102`, `M104`, `M106`, `M108`...) qui suivent le pattern **`M1` + numéro de compétence sur 2 chiffres** — ex. `M106` = compétence n°6 "Déterminer les concepts de l'UX/UI Design". La **compétence n°16** ("S'intégrer en milieu professionnel", 160h) est le module de stage/soutenance (§4.13). Un module `EGTSI106` apparaît aussi dans les exemples réels — hors des 16 compétences de spécialité, probablement un module transversal commun à plusieurs filières (culture numérique générale) ; à confirmer, mais le modèle de données doit rester assez souple pour accueillir des modules qui ne suivent pas le pattern `M1XX`.
+**Correspondance code officiel ↔ code opérationnel — corrigée par le porteur de projet (v3).** Le programme complet de la spécialité UX Designer compte **16 compétences** (le document officiel les appelle lui-même "modules"), codées `DIA_DES_TS-01` à `DIA_DESOUX_TS-16`. Au quotidien, le classeur pédagogique utilise des codes courts qui suivent **deux séries distinctes selon l'année**, pas un pattern unique :
+
+- **1ère année (tronc commun, compétences 1 à 8)** : préfixe `M1`, numéro identique à celui de la compétence — `M101` à `M108`. Ex. `M106` = compétence n°6.
+- **2ème année (spécialisation, compétences 9 à 16)** : préfixe `M2`, numéro **décalé de -8 par rapport à la compétence** — `M201` à `M208`. Ex. `M201` = compétence n°9, `M206` = compétence n°14.
+
+La **compétence n°16** (`M208`, "S'intégrer en milieu professionnel", 160h) est le module de stage/soutenance (§4.14), traité à part fonctionnellement même s'il porte un code `M2XX` par cohérence de nommage. Un module `EGTSI106` apparaît aussi dans les exemples réels — hors des 16 compétences de spécialité, probablement un module transversal commun à plusieurs filières (culture numérique générale) ; le modèle de données doit rester assez souple pour accueillir des modules qui ne suivent ni le pattern `M1XX` ni `M2XX`.
+
+**Implication produit** : le code opérationnel affiché à l'écran doit toujours être dérivé de l'année du cycle (`tronc_commun` → `M1XX`, `specialisation` → `M2XX`) et du rang de la compétence dans son cycle, jamais recalculé à partir du seul numéro de compétence 1-16 comme le modèle initial le supposait à tort.
 
 **Distinction importante à ne jamais confondre dans le produit** :
 
@@ -113,13 +124,32 @@ Le nombre de modules qu'un formateur enseigne n'est pas fixe et varie par groupe
 
 Le même module a donc une masse horaire différente selon le groupe — probablement pour tenir compte du niveau ou du rythme propre à chaque groupe. **La table d'assignation Groupe↔Module doit porter sa propre masse horaire allouée, distincte de la durée nationale de référence de la compétence** (qui, elle, est fixe et vient du programme officiel — voir §3).
 
+**Type d'EFM porté par le module, pas seulement par le contrôle — ajout v3.** Chaque module (au niveau de son assignation à un groupe, comme la masse horaire) porte un attribut `type_efm` : **local (EFML)** ou **régional (EFMR)**. Cette information ne sert pas seulement à distinguer un contrôle une fois créé (§4.7) — elle a un rôle de **planification en amont** :
+
+- Un module à EFMR a une date d'épreuve **fixée par la Direction Régionale**, externe et non négociable. Le formateur a donc intérêt à **démarrer ces modules en priorité** dans l'année, pour ne pas se retrouver contraint par une échéance externe alors que le module n'est pas assez avancé.
+- Le produit doit permettre de **visualiser facilement quels modules d'un groupe sont à EFMR**, pour orienter l'ordre de programmation des modules dans l'année (voir §4.9, motif hebdomadaire et génération de séances).
+
 **Règles** :
 
 - Un module peut être suivi par plusieurs groupes simultanément (ex. M104 par DES101 et DES102) — chaque couple groupe+module a sa propre progression, ses propres séances, et sa propre masse horaire allouée, indépendantes les unes des autres.
 - Un groupe peut avoir plusieurs formateurs (chacun responsable d'un sous-ensemble de modules).
-- La spécialisation de 2ème année comporte les compétences restantes du programme (après celles couvertes en tronc commun), dont la dernière (compétence 16, "S'intégrer en milieu professionnel") est toujours traitée à part (voir §4.13).
+- La spécialisation de 2ème année comporte les compétences restantes du programme (après celles couvertes en tronc commun), dont la dernière (compétence 16, "S'intégrer en milieu professionnel") est toujours traitée à part (voir §4.14).
 
-**À noter, distinction importante pour ne pas confondre deux notions de masse horaire** : la masse horaire vue ici (par groupe/module, ex. 420h/an pour un groupe sur l'ensemble de ses modules) est **différente** de la masse horaire légale annuelle du formateur (910h, §4.10) — la première mesure ce qu'un groupe reçoit au total (potentiellement réparti entre plusieurs formateurs), la seconde mesure la charge de travail totale d'un formateur (tous groupes et modules confondus).
+**À noter, distinction importante pour ne pas confondre deux notions de masse horaire** : la masse horaire vue ici (par groupe/module, ex. 420h/an pour un groupe sur l'ensemble de ses modules) est **différente** de la masse horaire légale annuelle du formateur (910h, §4.11) — la première mesure ce qu'un groupe reçoit au total (potentiellement réparti entre plusieurs formateurs), la seconde mesure la charge de travail totale d'un formateur (tous groupes et modules confondus).
+
+### 4.1bis Formation à distance (FAD) et séances partagées entre groupes — ajout v3
+
+**La masse horaire allouée à un couple groupe+module se décompose en présentiel et FAD.** À l'assignation d'un module à un groupe, en plus de la masse horaire totale (§4.1), le formateur précise combien d'heures relèvent de la formation à distance — le présentiel se déduit par soustraction (ex. 100h au total, 25h déclarées FAD → 75h présentiel calculées automatiquement, pas ressaisies).
+
+**Particularité du tronc commun (1ère année) : une séance FAD peut être partagée entre deux groupes.** Contrairement au présentiel — toujours propre à un seul groupe — une séance FAD peut réunir DES101 et DES102 en une seule séance, parce que le contenu à distance est le même pour les deux. Ça change directement le calcul de charge réelle : sur l'exemple donné par le porteur de projet, un module de 100h (75h présentiel + 25h FAD) suivi par DES101 **et** DES102 ne représente **pas** 200h de dispense réelle (100h × 2 groupes) mais **175h** (75h + 75h de présentiel, chacun propre à son groupe, **plus 25h de FAD dispensées une seule fois** pour les deux groupes ensemble) — alors que chaque groupe continue d'être crédité individuellement de ses 100h dans sa propre progression.
+
+**Implication sur le modèle de données — changement structurant** : une séance n'est plus systématiquement rattachée à un seul groupe. Le modèle doit permettre à une séance FAD d'être liée à **plusieurs groupes simultanément** (typiquement DES101+DES102 pour un module de tronc commun), alors qu'une séance présentielle reste toujours propre à un seul groupe. Quand une séance FAD partagée est marquée "faite", elle doit incrémenter la progression **des deux groupes en même temps**, sans compter cette heure en double dans le calcul de charge réelle du formateur.
+
+**Champs et fonctionnalités à ajouter** :
+
+- Sur la séance : un indicateur simple (case à cocher ou bouton bascule) "Cette séance est en FAD" — pas de formulaire complexe, une bascule suffit
+- Quand une séance est marquée FAD : un champ **lien Teams** apparaît, à saisir pour cette séance précise
+- **Deux compteurs de progression distincts par couple groupe+module** : heures présentiel réalisées / heures présentiel prévues, et heures FAD réalisées / heures FAD prévues — pas seulement un total confondu comme c'était implicitement le cas jusqu'ici
 
 ### 4.2 Import/saisie du référentiel officiel (Programme, Compétences, Fiches prescrites, Suggestions pédagogiques)
 
@@ -129,11 +159,26 @@ Le même module a donc une masse horaire différente selon le groupe — probabl
 - Ce référentiel est saisi **une fois par spécialité** et réutilisé chaque année — pas resaisi à chaque rentrée
 - Format d'import à trancher techniquement lors du backlog : parsing semi-automatique du document Word (structure tabulaire assez régulière d'une compétence à l'autre, donc automatisable avec relecture humaine de contrôle) plutôt qu'une saisie manuelle intégrale, vu le volume (16 compétences détaillées)
 
+### 4.2bis Répartition des éléments de contenu par séance — couverture garantie du référentiel national (ajout v3)
+
+**Enjeu, à comprendre avant le mécanisme.** Ce référentiel n'est pas une simple base d'inspiration locale : c'est le programme national, identique pour tous les formateurs marocains de la spécialité. En 2ème année, les stagiaires passent un **Examen de Fin de Formation (EFF)** national, dont le porteur de projet est **le concepteur et le validateur**. L'EFF se construit en référence directe à ce référentiel — ce qui signifie que **chaque élément de contenu du référentiel doit avoir été effectivement couvert en séance**, chez lui comme chez tout autre formateur du pays, sans quoi l'examen porterait sur du contenu jamais enseigné. Ce n'est donc pas une préférence pédagogique, c'est une garantie de couverture curriculaire à respecter strictement.
+
+**Ce que la répartition horaire fait déjà bien, à conserver tel quel** : pour chaque apprentissage de base (ex. A.1, A.2, A.3, A.4 sous l'élément A), le système répartit déjà correctement les heures théoriques et pratiques en proportion des pourcentages du référentiel national (ex. élément A = 35% de la masse horaire du module), et génère les séances correspondantes. C'est confirmé correct par le porteur de projet sur l'écran de répartition horaire déjà construit.
+
+**Ce qui manque et doit être ajouté** : au-delà de la durée, chaque apprentissage de base porte une **liste d'éléments de contenu précis** (ex. pour A.1 "Appréhender la gestion de projet UX/UI" : définition du concept de projet, usage d'un cahier des charges, spécificités du projet UX/UI, analyse de sa propre expérience utilisateur, étude de benchmarking, initiation au Design Thinking). Le système doit :
+
+1. **Répartir ces éléments de contenu sur les séances générées pour cet apprentissage** — si A.1 est couvert sur 2 séances, chaque séance reçoit un sous-ensemble précis et non chevauchant de ces éléments de contenu, de sorte que l'ensemble des séances couvre 100% de la liste officielle, sans doublon ni oubli.
+2. **Faire de cette répartition la base de la fiche de préparation de chaque séance** (§4.3) — la fiche générée pour une séance ne doit pas être une synthèse générique de l'apprentissage entier, mais doit porter précisément les éléments de contenu qui lui ont été assignés.
+3. **Afficher une vue de couverture** — par apprentissage, par élément de compétence, par module : quels éléments de contenu du référentiel ont été assignés à une séance déjà réalisée, lesquels restent à couvrir. Cette vue doit permettre au formateur de vérifier, avant la fin d'un module, que l'intégralité du référentiel a bien été couverte — pas seulement que les heures ont été dispensées.
+
+**Implication sur le modèle de données** : une table de liaison entre séance et élément(s) de contenu couvert(s) — pas un simple texte libre, mais une référence explicite aux lignes du référentiel officiel importé en §4.2, pour que la vue de couverture puisse être calculée automatiquement plutôt que déclarée à la main.
+
 ### 4.3 Génération IA de fiches de préparation par séance
 
 - Le formateur sélectionne un groupe, un module, une date de séance
 - La fiche générée s'appuie sur :
   - La fiche prescrite et les suggestions pédagogiques du module concerné (source de vérité pédagogique)
+  - **Les éléments de contenu précisément assignés à cette séance (§4.2bis)** — pas l'apprentissage de base dans son ensemble, seulement le sous-ensemble qui revient à cette séance précise
   - Ce qui a déjà été couvert dans les séances précédentes de ce couple groupe+module (pour éviter les répétitions et respecter la progression)
   - Le mode de la séance (présentiel / à distance) — le déroulé pédagogique peut différer
 
@@ -141,9 +186,9 @@ Le même module a donc une masse horaire différente selon le groupe — probabl
 - Une fiche existe en version théorique et pratique — le produit doit permettre de générer les deux séparément ou ensemble selon le besoin de la séance
 - Chaque séance porte aussi, en complément de la fiche : l'**objectif opérationnel** de la séance (prévision), le **contenu réalisé** effectivement couvert, la **durée réalisée** et son **cumul** sur le module, et un champ "**à prévoir pour la prochaine séance**" — ces quatre champs reprennent fidèlement la structure du tableau "Planification et suivi de réalisation" du cahier du formateur officiel, et alimentent directement le calcul de progression (§4.6)
 
-**Format de la fiche — tranché : format officiel synthétique.** La fiche générée doit suivre strictement la définition du cahier du formateur officiel : *"Elle ne doit en aucun cas comprendre des détails du cours. C'est un schéma de la leçon, composé de mots clés, d'idées clés, d'exemples, d'éléments importants à ne pas oublier."* Concrètement, la génération IA produit un **aide-mémoire structuré** — mots-clés, idées clés, exemples, points de vigilance — et non un déroulé minuté détaillé. Le modèle "Fiche préparation : cours théoriques" donné en exemple initial (blocs minutés de 5-15 minutes avec contenu et stratégie pédagogique détaillés pour chacun) **ne sert donc plus de gabarit de génération** — il reste utile comme référence de structure globale (durée de séance, date, objectif) mais pas pour le niveau de détail du contenu pédagogique lui-même.
+**Format de la fiche — tranché : format officiel synthétique.** La fiche générée doit suivre strictement la définition du cahier du formateur officiel : *"Elle ne doit en aucun cas comprendre des détails du cours. C'est un schéma de la leçon, composé de mots clés, d'idées clés, d'exemples, d'éléments importants à ne pas oublier."* Concrètement, la génération IA produit un **aide-mémoire structuré** — mots-clés, idées clés, exemples, points de vigilance, construit autour des éléments de contenu assignés (§4.2bis) — et non un déroulé minuté détaillé. Le modèle "Fiche préparation : cours théoriques" donné en exemple initial (blocs minutés de 5-15 minutes avec contenu et stratégie pédagogique détaillés pour chacun) **ne sert donc plus de gabarit de génération** — il reste utile comme référence de structure globale (durée de séance, date, objectif) mais pas pour le niveau de détail du contenu pédagogique lui-même.
 
-Implication pour le prompt de génération IA (§7, à préciser lors du backlog) : contraindre explicitement le modèle à produire un schéma court plutôt qu'un texte développé, avec une limite de longueur/densité pour éviter qu'il "déborde" vers un cours complet malgré la consigne.
+Implication pour le prompt de génération IA (§7, à préciser lors du backlog) : contraindre explicitement le modèle à produire un schéma court plutôt qu'un texte développé, avec une limite de longueur/densité pour éviter qu'il "déborde" vers un cours complet malgré la consigne — et à ne jamais s'écarter des éléments de contenu assignés à la séance, ni en omettre, ni en inventer d'autres.
 
 ### 4.4 Génération IA de support de cours (16:9)
 
@@ -186,7 +231,7 @@ Fonctionnalités de l'espace stagiaire :
 - L'interface de préparation affiche donc d'abord le contenu réellement couvert — partiel pour un CC, complet pour un EFM — comme base de travail.
 - Le formateur **choisit lui-même le format** du contrôle : théorique (QCM + questions ouvertes), pratique (avec grille d'évaluation, barème par critère), ou synthèse théorique + pratique combinée. L'app ne décide jamais du format à sa place, pour un CC comme pour un EFM.
 - Une fois le format choisi, l'IA assiste la préparation à la demande (génère des questions, un barème, un corrigé proposés) mais **tout reste éditable et le formateur garde la main sur le contenu final** — l'app propose, le formateur dispose.
-- Passation par lien public accessible aux stagiaires (chronométrée), correction assistée par IA avec justification du barème (leçons tirées des tests précédents : modèle de raisonnement séparé pour un rendu propre, validation du corrigé jamais exposée côté client, note toujours recalculée serveur)
+- Passation via le compte stagiaire authentifié (chronométrée), cohérent avec §4.5 — pas de lien public séparé. Correction assistée par IA avec justification du barème (leçons tirées des tests précédents : modèle de raisonnement séparé pour un rendu propre, validation du corrigé jamais exposée côté client, note toujours recalculée serveur)
 - Export imprimable (PDF) du contrôle et du corrigé
 - Traçabilité : le produit doit permettre de vérifier qu'un module a bien reçu son minimum réglementaire (2 CC + 1 EFM) avant la fin du module
 
@@ -209,25 +254,63 @@ Fonctionnalités de l'espace stagiaire :
 - Copies corrigées et notes remises à la Direction Pédagogique **au plus tard 10 jours après l'administration**
 - Résultats affichés aux stagiaires **au plus tard 15 jours après l'administration**
 
-**Implication produit** : ces échéances alimentent une vraie fonctionnalité de calendrier, précisée en §4.9 — pas une simple amélioration future.
+**Implication produit** : ces échéances alimentent une vraie fonctionnalité de calendrier, précisée en §4.9 et §4.10 — pas une simple amélioration future.
 
-**Point de modélisation important** : chaque module doit porter un attribut **type d'EFM : local (EFML) ou régional (EFMR)** — cette distinction détermine si l'app peut estimer la date automatiquement ou si elle doit être saisie manuellement (voir §4.9).
+**Point de modélisation** : le champ `type_efm` (local/régional) vit désormais au niveau du module lui-même (§4.1), pas seulement du contrôle — voir §4.1 pour le rôle de priorisation que joue cette information, et §4.9-§4.10 pour son effet sur le calendrier.
 
 ### 4.8 Présences
 
 - Prise de présence par séance, par stagiaire, liée au couple groupe+module+séance
 - Vue agrégée par stagiaire (taux de présence sur le module / sur l'année) — utile en cas d'audit ou de suivi disciplinaire
 
-### 4.9 Calendrier
+### 4.9 Emploi du temps — motif hebdomadaire récurrent (moteur de génération) et page officielle
+
+**Changement structurant v3.** Jusqu'ici, le PRD supposait que le formateur crée chaque séance une par une, à la main, avec sa date choisie au moment de la créer. Ce n'est pas comment ça se passe réellement : le formateur déclare **une fois** son rythme hebdomadaire — quel groupe, quel jour, quel créneau — et c'est ce rythme qui **génère automatiquement les séances à venir**, pas l'inverse.
+
+**Exemple réel donné par le porteur de projet**, pour une semaine type :
+
+| Jour | Créneau | Groupe |
+|---|---|---|
+| Lundi | 13h30–18h30 | DDOUX201 |
+| Mardi | 8h30–13h30 | DDOUX201 |
+| Mercredi | 13h30–18h30 | DDOUX201 |
+| Jeudi | 8h30–13h30 | DDOUX201 |
+| Vendredi | 8h30–11h00 | DES101 |
+| Vendredi | 11h00–13h30 | DES102 |
+
+**Ce motif n'est pas figé sur toute l'année.** Il peut changer d'une période à l'autre selon l'avancement des modules — le produit doit donc pouvoir gérer **plusieurs motifs successifs dans le temps** pour un même formateur (chacun avec sa date de début), pas un seul motif annuel immuable.
+
+**Mécanisme de génération, pour un groupe donné à partir d'une date de début** (ex. DDOUX201 démarre le 07/09/2026) :
+
+1. Le système avance semaine par semaine selon le motif hebdomadaire actif, en proposant une séance à chaque créneau du motif
+2. Il **saute automatiquement les jours non travaillés** — jours fériés/vacances OFPPT, indisponibilités déclarées par le formateur (mission, absence médicale, engagement personnel — §4.10, ci-dessous)
+3. Il attribue les séances générées au module en cours, dans l'ordre de la répartition horaire déjà prévue (§4.1, masse horaire allouée par module)
+4. **Priorisation entre modules d'un même groupe** : à masse horaire équivalente, les modules à EFM régional (§4.1) devraient être proposés en premier dans la séquence, puisque leur échéance externe est fixe et non négociable — l'app doit au moins **signaler visuellement** quels modules du groupe sont à EFMR pour aider le formateur à choisir l'ordre, sans nécessairement l'imposer automatiquement en v1
+
+**Prévisions calculées à partir de cette génération** :
+
+- **Par module** : une date de fin prévisionnelle (ex. "M110 se termine le [date]"), déduite de sa masse horaire restante divisée par le rythme hebdomadaire réel qui lui est consacré
+- **Par année complète** (1ère ou 2ème) : si tous les modules de l'année sont programmés dans le motif, une date de fin prévisionnelle cumulée pour l'ensemble de l'année
+
+**Positionnement automatique des dates de contrôle** : une fois les séances générées, les dates estimées de CC1, CC2 et EFM local (§4.9 ancien contenu, repris ci-dessous) se calent sur ce calendrier réellement généré, pas sur une simple estimation déconnectée des vraies séances.
+
+#### Page dédiée "Emploi du temps"
+
+**Nouvelle page, distincte du calendrier opérationnel (§4.10 ci-dessous)** — c'est le document officiel équivalent à celui du classeur pédagogique papier (section I.B du cahier du formateur : période de validité, horaires, groupes concernés, modules à mettre en œuvre). Contenu :
+
+- Le motif hebdomadaire actif, présenté en grille lisible (jours en colonnes, créneaux en lignes, groupe/module affiché dans chaque case occupée)
+- Historique des motifs précédents si plusieurs se sont succédé dans l'année, avec leurs dates de validité respectives
+- **Export PDF**, mise en page soignée, dans un format proche du document officiel que l'administration attend — pour impression ou dépôt dans le classeur pédagogique
+
+### 4.10 Calendrier opérationnel (vue semaine)
 
 - Calendrier des jours fériés et vacances OFPPT, préchargé (source à définir — saisie manuelle initiale probable, l'OFPPT ne semble pas exposer d'API)
-- Emploi du temps personnel du formateur, saisi dans l'app
-- Déclaration d'absence (ex. maladie) qui se reflète visuellement dans le calendrier — impacte potentiellement le recalcul de la progression prévue
+- Déclaration d'absence (ex. maladie) qui se reflète visuellement dans le calendrier — impacte potentiellement le recalcul de la progression prévue et régénère les projections de fin de module (§4.9 ci-dessus)
 - Distinction séances présentiel / à distance visible dans le calendrier
 
-**Calendrier des contrôles par module — fonctionnalité v1, précisée par le porteur de projet.**
+**Calendrier des contrôles par module.**
 
-Pour chaque module en cours, l'app affiche une **estimation des dates prévisionnelles de CC1, CC2, et EFM**, calculée à partir du rythme réel de progression du groupe sur ce module (même logique que le rappel du seuil des 30h en §4.6). Le comportement diffère selon le type d'EFM du module :
+Pour chaque module en cours, l'app affiche une **estimation des dates prévisionnelles de CC1, CC2, et EFM**, calculée à partir des séances réellement générées par le motif hebdomadaire (§4.9 ci-dessus), pas d'une simple estimation de rythme moyen. Le comportement diffère selon le type d'EFM du module :
 
 - **Module à EFM local (EFML)** : la date d'EFM peut être **estimée par l'app**, comme les CC — c'est une échéance interne, liée uniquement au rythme d'avancement du module.
 - **Module à EFM régional (EFMR)** : la date **ne peut jamais être estimée par l'app**, car elle est fixée par la Direction Régionale et communiquée par email au formateur, en dehors de l'application. Deux champs à saisir manuellement dès réception de cette communication :
@@ -236,9 +319,9 @@ Pour chaque module en cours, l'app affiche une **estimation des dates prévision
 
   Une fois ces deux dates saisies, l'app programme les rappels correspondants (échéance de préparation à l'approche, jour de l'épreuve, délais de restitution des notes — §4.7) exactement comme elle le ferait pour une date estimée automatiquement.
 
-**Implication sur le modèle de données** : le module porte un champ `type_efm` (local/régional). Le calendrier des contrôles distingue visuellement les dates **estimées** (CC1, CC2, EFML) des dates **confirmées manuellement** (EFMR) — pour que le formateur sache toujours si une date affichée est une prévision ou une échéance ferme.
+**Implication sur le modèle de données** : le calendrier des contrôles distingue visuellement les dates **estimées** (CC1, CC2, EFML) des dates **confirmées manuellement** (EFMR) — pour que le formateur sache toujours si une date affichée est une prévision ou une échéance ferme.
 
-### 4.10 Masse horaire réglementaire et découpage horaire des séances
+### 4.11 Masse horaire réglementaire et découpage horaire des séances
 
 Point réglementaire à respecter dans le produit, distinct de la gestion pédagogique pure :
 
@@ -249,7 +332,7 @@ Point réglementaire à respecter dans le produit, distinct de la gestion pédag
 - Le rythme hebdomadaire n'est pas fixe sur l'année : l'administration démarre généralement à **27,5h/semaine** en début d'année et le réduit progressivement jusqu'à **25h/semaine** en fin d'année — le produit doit donc pouvoir suivre un rythme hebdomadaire cible variable dans le temps, pas une moyenne constante
 - Règle à ne jamais violer dans les alertes/calculs : ne pas dépasser les 910h légales, sauf couverture explicite par des heures supplémentaires restant sous le plafond de 260h/an et 30h/mois
 
-**Implication produit** : le calendrier (§4.9) doit inclure un **suivi cumulatif des heures dispensées** — par semaine, par mois, par année — avec distinction heures normales / heures supplémentaires, et une alerte si le cumul approche ou dépasse un plafond (hebdomadaire cible, mensuel de 30h supplémentaires, ou annuel de 910h/1170h). Ce suivi se nourrit directement des séances effectivement réalisées.
+**Implication produit** : le calendrier (§4.10) doit inclure un **suivi cumulatif des heures dispensées** — par semaine, par mois, par année — avec distinction heures normales / heures supplémentaires, et une alerte si le cumul approche ou dépasse un plafond (hebdomadaire cible, mensuel de 30h supplémentaires, ou annuel de 910h/1170h). Ce suivi se nourrit directement des séances effectivement réalisées.
 
 **Découpage horaire des séances**
 
@@ -277,18 +360,18 @@ L'interface de création de séance doit donc proposer ces deux blocs (matin/soi
 - Le calcul de progression et de **seuil de contrôle** (§4.6), qui s'appuie sur les heures réellement dispensées par module
 - La génération de **contrôles**, dont la durée doit correspondre à un temps de passation cohérent avec le temps réellement disponible
 
-### 4.11 Banque de questions des stagiaires (archive pluriannuelle)
+### 4.12 Banque de questions des stagiaires (archive pluriannuelle)
 
 - Les questions posées par les stagiaires (sur les supports de cours, éventuellement sur les contrôles) sont conservées d'année en année
 - Objectif exprimé par le porteur de projet : réutiliser cette base au fil du temps pour enrichir la plateforme — probablement pour affiner la génération IA future ou constituer une FAQ par module. *Le mécanisme exact de réutilisation (FAQ affichée, enrichissement du prompt IA, autre) reste à préciser — à ne pas sur-spécifier en v1, prévoir seulement la structure de conservation.*
 
-### 4.12 Export "classeur pédagogique"
+### 4.13 Export "classeur pédagogique"
 
 - Export téléchargeable regroupant, a minima, les fiches de préparation d'un module/groupe sur une période, dans un format proche du classeur pédagogique papier existant
 - Usage principal : audits internes OFPPT sur les fiches de préparation
 - *Question ouverte : le format exact du classeur pédagogique n'a pas encore été fourni — section à préciser à réception de l'exemple annoncé par le porteur de projet.*
 
-### 4.13 Module stage / soutenance (compétence 16 — dernière du programme)
+### 4.14 Module stage / soutenance (compétence 16 — dernière du programme)
 
 Traité différemment des autres modules, car il ne suit pas le schéma séance/fiche de préparation classique :
 
@@ -354,6 +437,6 @@ Tirées des enseignements du prototype précédent (audit de code réalisé sur 
 1. Validation de ce PRD par le porteur de projet
 2. **Points restant à trancher avant le passage au code** (signalés en ligne dans les sections concernées) :
    - Calcul exact du seuil de contrôle proportionnel (30h réactif à une durée de module inférieure, ex. 25h) — §4.6
-   - Formule de calcul de la note générale de stage à partir des notes de rapport, d'exposé et du tuteur — §4.13
+   - Formule de calcul de la note générale de stage à partir des notes de rapport, d'exposé et du tuteur — §4.14
    - Nature précise de la fonctionnalité "devoirs" côté stagiaire (type de rendu, notation) — §4.5
 3. Une fois validé, découpage en backlog atomique (même méthode que le prototype précédent) avec `docs/design_system.md` et `docs/conventions.md` posés dès le départ

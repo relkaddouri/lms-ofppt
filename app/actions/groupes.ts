@@ -198,6 +198,15 @@ export async function assignModulesToGroupe(
   revalidatePath(`/groupes/${groupeId}`);
 }
 
+/**
+ * Type d'épreuve de fin de module, porté par l'assignation au groupe.
+ *
+ * `null` veut dire « pas encore renseigné » : c'est un état réel au moment
+ * où l'on assigne un module, et le supposer local par défaut masquerait
+ * justement les EFM régionaux qu'on cherche à faire ressortir.
+ */
+export type TypeEfmModule = "local" | "regional" | null;
+
 /** Masse horaire d'un couple groupe+module. Saisie par le formateur (atome 1.7). */
 export async function setMasseHoraire(
   groupeId: string,
@@ -220,12 +229,42 @@ export async function setMasseHoraire(
   revalidatePath(`/groupes/${groupeId}`);
 }
 
+/**
+ * Type d'EFM d'un couple groupe+module (PRD §4.1).
+ *
+ * Il se déclare ici plutôt qu'au moment de créer l'épreuve : un module à EFM
+ * régional a une date imposée par la Direction Régionale, donc le formateur a
+ * besoin de savoir lesquels le sont *avant* de décider dans quel ordre il
+ * programme ses modules dans l'année.
+ */
+export async function setTypeEfm(
+  groupeId: string,
+  moduleId: string,
+  type: TypeEfmModule,
+) {
+  if (type !== null && type !== "local" && type !== "regional") {
+    throw new Error("Type d'EFM inconnu.");
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("groupe_modules")
+    .update({ type_efm: type })
+    .eq("groupe_id", groupeId)
+    .eq("module_id", moduleId);
+
+  if (error) throw new Error(error.message);
+
+  revalidatePath(`/groupes/${groupeId}`);
+}
+
 export type GroupeModuleInfo = {
   module_id: string;
   nom: string;
   duree_reference: number;
   masse_horaire_allouee: number;
   code_operationnel: string | null;
+  type_efm: TypeEfmModule;
   hasFiche: boolean;
   controleStatut: "brouillon" | "valide" | null;
 };
@@ -238,7 +277,7 @@ export async function getGroupeModules(
   const { data, error } = await supabase
     .from("groupe_modules")
     .select(
-      "module_id, masse_horaire_allouee, modules(nom, duree_reference, competences(code_operationnel))",
+      "module_id, masse_horaire_allouee, type_efm, modules(nom, duree_reference, competences(code_operationnel))",
     )
     .eq("groupe_id", groupeId)
     .order("created_at");
@@ -296,6 +335,7 @@ export async function getGroupeModules(
       duree_reference: Number(mod?.duree_reference) || 0,
       masse_horaire_allouee: Number(r.masse_horaire_allouee) || 0,
       code_operationnel: mod?.competences?.code_operationnel ?? null,
+      type_efm: (r.type_efm as TypeEfmModule) ?? null,
       hasFiche: hasFiche.has(r.module_id),
       controleStatut:
         (controleStatut.get(r.module_id) as "brouillon" | "valide") ?? null,

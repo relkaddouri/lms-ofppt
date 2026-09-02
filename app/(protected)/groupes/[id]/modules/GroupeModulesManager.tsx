@@ -3,10 +3,15 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { setMasseHoraire, type GroupeModuleInfo } from "@/app/actions/groupes";
+import {
+  setMasseHoraire,
+  setTypeEfm,
+  type GroupeModuleInfo,
+  type TypeEfmModule,
+} from "@/app/actions/groupes";
 import Card from "@/components/ui/Card";
 import Button, { buttonStyles } from "@/components/ui/Button";
-import Input from "@/components/ui/Input";
+import Input, { inputStyles } from "@/components/ui/Input";
 import { useToast } from "@/components/ui/Toast";
 import { ArrowRight, BookOpen, Check, Clock, Pencil, X } from "lucide-react";
 
@@ -37,6 +42,25 @@ export default function GroupeModulesManager({
       : !Number.isFinite(nombre) || nombre < 0
         ? "La masse horaire doit être un nombre positif."
         : null;
+
+  async function changerTypeEfm(moduleId: string, type: TypeEfmModule) {
+    setBusy(true);
+    try {
+      await setTypeEfm(groupeId, moduleId, type);
+      toast(
+        type === "regional"
+          ? "EFM régional — pensez à démarrer ce module tôt dans l'année."
+          : type === "local"
+            ? "EFM local enregistré"
+            : "Type d'EFM remis à préciser",
+      );
+      router.refresh();
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "Erreur inattendue", "error");
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function enregistrer(moduleId: string) {
     if (erreur) return;
@@ -113,6 +137,25 @@ export default function GroupeModulesManager({
                     <span className="truncate text-sm font-semibold text-ink">
                       {m.nom}
                     </span>
+                    {/* PRD §4.1 : un EFM régional a une date imposée par la
+                        Direction Régionale. Le repérer d'un coup d'œil est ce
+                        qui permet de décider dans quel ordre programmer les
+                        modules de l'année. */}
+                    <span
+                      className={`whitespace-nowrap rounded-full border px-2.5 py-[3px] text-[11.5px] font-semibold ${
+                        m.type_efm === "regional"
+                          ? "border-tint-alert-strong bg-alert-wash text-coral-dark"
+                          : m.type_efm === "local"
+                            ? "border-border bg-wash-strong text-slate-2"
+                            : "border-dashed border-border-strong bg-surface text-muted"
+                      }`}
+                    >
+                      {m.type_efm === "regional"
+                        ? "EFM régional"
+                        : m.type_efm === "local"
+                          ? "EFM local"
+                          : "EFM à préciser"}
+                    </span>
                   </div>
                   <p className="mt-1 text-xs text-slate">
                     Référence nationale :{" "}
@@ -138,7 +181,7 @@ export default function GroupeModulesManager({
                 </div>
 
                 {edition ? (
-                  <div className="flex w-full max-w-[320px] items-start gap-2">
+                  <div className="flex w-full max-w-[460px] flex-wrap items-start gap-3">
                     <div className="flex-1">
                       <Input
                         type="number"
@@ -155,6 +198,24 @@ export default function GroupeModulesManager({
                         }
                       />
                     </div>
+                    <label className="flex shrink-0 flex-col gap-[7px]">
+                      <span className="text-xs text-slate">Type d&apos;EFM</span>
+                      <select
+                        value={m.type_efm ?? ""}
+                        onChange={(e) =>
+                          changerTypeEfm(
+                            m.module_id,
+                            (e.target.value || null) as TypeEfmModule,
+                          )
+                        }
+                        disabled={busy}
+                        className={inputStyles}
+                      >
+                        <option value="">À préciser</option>
+                        <option value="local">Local</option>
+                        <option value="regional">Régional</option>
+                      </select>
+                    </label>
                     <div className="mt-6 flex shrink-0 gap-2">
                       <Button
                         size="sm"

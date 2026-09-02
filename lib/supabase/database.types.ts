@@ -118,6 +118,7 @@ export type Database = {
         Row: {
           code_officiel: string
           code_operationnel: string | null
+          code_operationnel_surcharge: string | null
           competences_paralleles: string | null
           competences_prealables: string | null
           created_at: string
@@ -132,10 +133,12 @@ export type Database = {
           pct_pratique: number | null
           pct_theorique: number | null
           programme_id: string
+          rang_cycle: number
         }
         Insert: {
           code_officiel: string
           code_operationnel?: string | null
+          code_operationnel_surcharge?: string | null
           competences_paralleles?: string | null
           competences_prealables?: string | null
           created_at?: string
@@ -150,10 +153,12 @@ export type Database = {
           pct_pratique?: number | null
           pct_theorique?: number | null
           programme_id: string
+          rang_cycle: number
         }
         Update: {
           code_officiel?: string
           code_operationnel?: string | null
+          code_operationnel_surcharge?: string | null
           competences_paralleles?: string | null
           competences_prealables?: string | null
           created_at?: string
@@ -168,6 +173,7 @@ export type Database = {
           pct_pratique?: number | null
           pct_theorique?: number | null
           programme_id?: string
+          rang_cycle?: number
         }
         Relationships: [
           {
@@ -530,6 +536,7 @@ export type Database = {
           groupe_id: string
           masse_horaire_allouee: number
           module_id: string
+          type_efm: string | null
         }
         Insert: {
           created_at?: string
@@ -537,6 +544,7 @@ export type Database = {
           groupe_id: string
           masse_horaire_allouee: number
           module_id: string
+          type_efm?: string | null
         }
         Update: {
           created_at?: string
@@ -544,6 +552,7 @@ export type Database = {
           groupe_id?: string
           masse_horaire_allouee?: number
           module_id?: string
+          type_efm?: string | null
         }
         Relationships: [
           {
@@ -1519,6 +1528,10 @@ export type Database = {
     }
     Functions: {
       annee_scolaire: { Args: { p_date: string }; Returns: string }
+      code_operationnel_derive: {
+        Args: { p_cycle: string; p_rang: number }
+        Returns: string
+      }
       corriger_passation: {
         Args: { p_note: number; p_passation_id: string; p_responses: Json }
         Returns: undefined
