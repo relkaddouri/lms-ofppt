@@ -60,7 +60,7 @@ export async function getCalendrier(
     supabase
       .from("seances")
       .select(
-        "id, groupe_id, date, heure_debut, heure_fin, statut, nature, objectif_operationnel, groupes(nom), modules(nom, competences(code_operationnel))",
+        "id, date, heure_debut, heure_fin, statut, nature, est_fad, objectif_operationnel, seance_groupes(groupe_id, groupes(nom)), modules(nom, competences(code_operationnel))",
       )
       .not("date", "is", null)
       .gte("date", debut)
@@ -80,7 +80,7 @@ export async function getCalendrier(
     supabase
       .from("seances")
       .select(
-        "groupe_id, module_id, duree_prevue, duree_realisee, groupes(nom), modules(nom, competences(code_operationnel))",
+        "module_id, duree_prevue, duree_realisee, seance_groupes(groupe_id, groupes(nom)), modules(nom, competences(code_operationnel))",
       )
       .is("date", null),
   ]);
@@ -91,37 +91,39 @@ export async function getCalendrier(
 
   const groupes = new Map<string, APlanifier>();
   for (const s of (sansDateRes.data ?? []) as unknown as {
-    groupe_id: string;
     module_id: string;
     duree_prevue: number | null;
     duree_realisee: number | null;
-    groupes: { nom: string } | null;
+    seance_groupes: { groupe_id: string; groupes: { nom: string } | null }[];
     modules: {
       nom: string;
       competences: { code_operationnel: string | null } | null;
     } | null;
   }[]) {
-    const cle = `${s.groupe_id}|${s.module_id}`;
-    const courant = groupes.get(cle) ?? {
-      groupe_id: s.groupe_id,
-      groupeNom: s.groupes?.nom ?? "—",
-      module_id: s.module_id,
-      moduleNom: s.modules?.nom ?? "—",
-      codeOperationnel: s.modules?.competences?.code_operationnel ?? null,
-      seances: 0,
-      heures: 0,
-    };
-    courant.seances += 1;
-    courant.heures += Number(s.duree_prevue ?? s.duree_realisee ?? 0);
-    groupes.set(cle, courant);
+    // Une séance FAD partagée reste à poser pour chacun de ses groupes.
+    for (const lien of s.seance_groupes ?? []) {
+      const cle = `${lien.groupe_id}|${s.module_id}`;
+      const courant = groupes.get(cle) ?? {
+        groupe_id: lien.groupe_id,
+        groupeNom: lien.groupes?.nom ?? "—",
+        module_id: s.module_id,
+        moduleNom: s.modules?.nom ?? "—",
+        codeOperationnel: s.modules?.competences?.code_operationnel ?? null,
+        seances: 0,
+        heures: 0,
+      };
+      courant.seances += 1;
+      courant.heures += Number(s.duree_prevue ?? s.duree_realisee ?? 0);
+      groupes.set(cle, courant);
+    }
   }
 
   const seances = (seancesRes.data ?? []) as unknown as (Omit<
     SeanceCalendrier,
-    "groupeNom" | "moduleNom" | "codeOperationnel" | "objectif"
+    "groupeNom" | "moduleNom" | "codeOperationnel" | "objectif" | "groupe_id"
   > & {
     objectif_operationnel: string | null;
-    groupes: { nom: string } | null;
+    seance_groupes: { groupe_id: string; groupes: { nom: string } | null }[];
     modules: {
       nom: string;
       competences: { code_operationnel: string | null } | null;
@@ -139,19 +141,23 @@ export async function getCalendrier(
   return {
     aPlanifier: [...groupes.values()].sort((a, b) => b.seances - a.seances),
     seancesSansDate: (sansDateRes.data ?? []).length,
-    seances: seances.map((s) => ({
-      id: s.id,
-      groupe_id: s.groupe_id,
-      groupeNom: s.groupes?.nom ?? "—",
-      moduleNom: s.modules?.nom ?? "—",
-      codeOperationnel: s.modules?.competences?.code_operationnel ?? null,
-      date: s.date,
-      heure_debut: s.heure_debut,
-      heure_fin: s.heure_fin,
-      statut: s.statut,
-      nature: s.nature,
-      objectif: s.objectif_operationnel,
-    })),
+    // Une séance partagée apparaît dans la grille de chacun de ses groupes :
+    // c'est bien le même créneau, vu depuis deux groupes.
+    seances: seances.flatMap((s) =>
+      (s.seance_groupes ?? []).map((lien) => ({
+        id: s.id,
+        groupe_id: lien.groupe_id,
+        groupeNom: lien.groupes?.nom ?? "—",
+        moduleNom: s.modules?.nom ?? "—",
+        codeOperationnel: s.modules?.competences?.code_operationnel ?? null,
+        date: s.date,
+        heure_debut: s.heure_debut,
+        heure_fin: s.heure_fin,
+        statut: s.statut,
+        nature: s.nature,
+        objectif: s.objectif_operationnel,
+      })),
+    ),
     controles: controles.map((c) => ({
       id: c.id,
       module_id: c.module_id,

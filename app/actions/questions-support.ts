@@ -179,7 +179,7 @@ export async function getSupportDetail(
 
   const { data, error } = await supabase
     .from("supports_seance")
-    .select("id, contenu, seances(date, groupe_id, modules(nom))")
+    .select("id, contenu, seances(date, modules(nom), seance_groupes(groupe_id))")
     .eq("id", supportId)
     .maybeSingle();
 
@@ -191,8 +191,8 @@ export async function getSupportDetail(
     contenu: Support;
     seances: {
       date: string | null;
-      groupe_id: string;
       modules: { nom: string } | null;
+      seance_groupes: { groupe_id: string }[];
     } | null;
   };
 
@@ -201,7 +201,12 @@ export async function getSupportDetail(
     contenu: s.contenu,
     date: s.seances?.date ?? null,
     moduleNom: s.seances?.modules?.nom ?? null,
-    questions: await chargerQuestions(s.id, s.seances?.groupe_id ?? ""),
+    // Une séance FAD partagée a plusieurs groupes ; les questions posées
+    // sur son support le sont depuis l'un d'eux.
+    questions: await chargerQuestions(
+      s.id,
+      s.seances?.seance_groupes[0]?.groupe_id ?? "",
+    ),
   };
 }
 

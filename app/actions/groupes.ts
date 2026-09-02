@@ -314,8 +314,8 @@ export async function getGroupeModules(
       // une ». Le filtre passe par la séance.
       supabase
         .from("fiches_preparation")
-        .select("seances!inner(module_id, groupe_id)")
-        .eq("seances.groupe_id", groupeId)
+        .select("seances!inner(module_id, seance_groupes!inner(groupe_id))")
+        .eq("seances.seance_groupes.groupe_id", groupeId)
         .in("seances.module_id", ids),
       supabase
         .from("controles")
