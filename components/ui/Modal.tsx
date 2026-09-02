@@ -27,24 +27,36 @@ export default function Modal({
 }) {
   const panneauRef = useRef<HTMLDivElement>(null);
 
+  // `onClose` est presque toujours une fonction fléchée écrite dans le JSX :
+  // elle change d'identité à chaque rendu. La garder dans les dépendances
+  // relançait l'effet à chaque frappe — et le `focus()` sur le panneau
+  // arrachait le curseur du champ en cours de saisie. Une référence tient la
+  // version courante sans peser sur les dépendances.
+  const fermerRef = useRef(onClose);
+  useEffect(() => {
+    fermerRef.current = onClose;
+  }, [onClose]);
+
   useEffect(() => {
     if (!open) return;
 
     function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") fermerRef.current();
     }
     document.addEventListener("keydown", onKey);
 
     const overflowPrecedent = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
+    // Une seule fois, à l'ouverture : le panneau prend le focus pour que la
+    // tabulation et Échap partent de la modale, pas de la page derrière.
     panneauRef.current?.focus();
 
     return () => {
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = overflowPrecedent;
     };
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open || typeof document === "undefined") return null;
 
@@ -52,7 +64,7 @@ export default function Modal({
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4"
       onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        if (e.target === e.currentTarget) fermerRef.current();
       }}
     >
       <div
