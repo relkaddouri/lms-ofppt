@@ -251,6 +251,51 @@ export type Database = {
           },
         ]
       }
+      creneaux_motif: {
+        Row: {
+          created_at: string
+          groupe_id: string
+          heure_debut: string
+          heure_fin: string
+          id: string
+          jour_semaine: number
+          motif_id: string
+        }
+        Insert: {
+          created_at?: string
+          groupe_id: string
+          heure_debut: string
+          heure_fin: string
+          id?: string
+          jour_semaine: number
+          motif_id: string
+        }
+        Update: {
+          created_at?: string
+          groupe_id?: string
+          heure_debut?: string
+          heure_fin?: string
+          id?: string
+          jour_semaine?: number
+          motif_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creneaux_motif_groupe_id_fkey"
+            columns: ["groupe_id"]
+            isOneToOne: false
+            referencedRelation: "groupes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "creneaux_motif_motif_id_fkey"
+            columns: ["motif_id"]
+            isOneToOne: false
+            referencedRelation: "motifs_hebdomadaires"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       criteres_particuliers_performance: {
         Row: {
           created_at: string
@@ -703,6 +748,41 @@ export type Database = {
           },
           {
             foreignKeyName: "modules_formateur_id_fkey"
+            columns: ["formateur_id"]
+            isOneToOne: false
+            referencedRelation: "profils"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      motifs_hebdomadaires: {
+        Row: {
+          created_at: string
+          date_debut: string
+          date_fin: string | null
+          formateur_id: string
+          id: string
+          libelle: string | null
+        }
+        Insert: {
+          created_at?: string
+          date_debut: string
+          date_fin?: string | null
+          formateur_id: string
+          id?: string
+          libelle?: string | null
+        }
+        Update: {
+          created_at?: string
+          date_debut?: string
+          date_fin?: string | null
+          formateur_id?: string
+          id?: string
+          libelle?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "motifs_hebdomadaires_formateur_id_fkey"
             columns: ["formateur_id"]
             isOneToOne: false
             referencedRelation: "profils"
@@ -1618,6 +1698,10 @@ export type Database = {
           temperature: number
           updated_at: string
         }[]
+      }
+      ouvrir_motif: {
+        Args: { p_date_debut: string; p_libelle: string }
+        Returns: string
       }
       peut_acceder_annonce: { Args: { p_annonce_id: string }; Returns: boolean }
       peut_acceder_audit: {
