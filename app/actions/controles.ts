@@ -82,7 +82,8 @@ export type PassationDetail = {
   question_id: string;
   enonce: string;
   bareme: number;
-  points: number;
+  /** `null` tant que la question n'a pas été corrigée. */
+  points: number | null;
   commentaire: string;
   corrige: string;
   reponse: string;
@@ -269,12 +270,42 @@ export async function getPassations(controleId: string): Promise<Passation[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("passations_controle")
-    .select("*")
+    .select("id, controle_id, nom_complet, email, note, responses, submitted_at")
     .eq("controle_id", controleId)
     .order("submitted_at", { ascending: true });
 
   if (error) throw new Error(error.message);
   return (data ?? []) as Passation[];
+}
+
+/**
+ * Enregistre la correction d'une copie : points et commentaires question par
+ * question, et la note qui en découle.
+ *
+ * La note n'est pas passée à part par confort : elle est recalculée ici depuis
+ * les points, pour qu'aucun appel ne puisse afficher une note qui ne
+ * corresponde pas au détail.
+ */
+export async function corrigerPassation(
+  passationId: string,
+  responses: PassationDetail[],
+) {
+  const supabase = await createClient();
+
+  const note = responses.reduce(
+    (somme, r) => somme + (Number(r.points) || 0),
+    0,
+  );
+
+  const { error } = await supabase.rpc("corriger_passation", {
+    p_passation_id: passationId,
+    p_responses: responses,
+    p_note: Math.min(20, Math.max(0, note)),
+  });
+
+  if (error) throw new Error(error.message);
+  revalidatePath("/modules");
+  return note;
 }
 
 export type AuditEntry = {

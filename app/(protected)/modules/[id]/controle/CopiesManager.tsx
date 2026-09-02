@@ -2,9 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import { getPassations, type Passation } from "@/app/actions/controles";
-import { Download } from "lucide-react";
+import Link from "next/link";
+import { Download, PenLine } from "lucide-react";
 import Badge from "@/components/ui/Badge";
-import Button from "@/components/ui/Button";
+import Button, { buttonStyles } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
 
 import { formatDateTime, slugify } from "@/lib/format";
@@ -19,10 +20,14 @@ export default function CopiesManager({
   controleId,
   controleTitre,
   moduleNom,
+  moduleId,
+  groupeId,
 }: {
   controleId: string;
   controleTitre: string;
   moduleNom: string;
+  moduleId: string;
+  groupeId: string;
 }) {
   const [passations, setPassations] = useState<Passation[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -72,7 +77,7 @@ export default function CopiesManager({
           questions: (selected.responses ?? []).map((d) => ({
             enonce: d.enonce,
             bareme: d.bareme,
-            points: d.points,
+            points: d.points ?? 0,
             commentaire: d.commentaire,
             reponse: d.reponse,
             corrige: d.corrige,
@@ -159,6 +164,15 @@ export default function CopiesManager({
                 >
                   Télécharger la copie (PDF)
                 </Button>
+                {/* La liste ne fait que montrer ; corriger se passe sur
+                    l'écran dédié, copie par copie. */}
+                <Link
+                  href={`/modules/${moduleId}/controle/correction?groupe=${groupeId}&controle=${controleId}&copie=${selected.id}`}
+                  className={buttonStyles("primary", "sm")}
+                >
+                  <PenLine size={16} aria-hidden />
+                  Corriger cette copie
+                </Link>
               </div>
 
               <p className="mt-4 font-display text-4xl font-bold text-ink">
@@ -178,14 +192,16 @@ export default function CopiesManager({
                       </h3>
                       <Badge
                         tone={
-                          d.points === d.bareme
-                            ? "success"
-                            : d.points > 0
-                              ? "info"
-                              : "danger"
+                          d.points === null
+                            ? "neutral"
+                            : d.points === d.bareme
+                              ? "success"
+                              : d.points > 0
+                                ? "info"
+                                : "danger"
                         }
                       >
-                        {d.points} / {d.bareme} pts
+                        {d.points ?? "—"} / {d.bareme} pts
                       </Badge>
                     </div>
                     <p className="mt-2 text-sm text-ink">{d.enonce}</p>

@@ -588,6 +588,8 @@ export default function ControleManager({
               controleId={activeId}
               controleTitre={titre}
               moduleNom={moduleNom}
+              moduleId={moduleId}
+              groupeId={groupeId ?? ""}
             />
           </div>
         ) : (
