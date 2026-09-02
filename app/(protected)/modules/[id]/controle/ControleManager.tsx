@@ -541,6 +541,7 @@ export default function ControleManager({
       {issuDuModele ? (
         <div className="mt-4">
           <BandeauIa
+            variante="engageant"
             meta={`Claude · ${questions.length} question${questions.length > 1 ? "s" : ""}`}
             onRelu={() => setIssuDuModele(false)}
           >
