@@ -23,10 +23,35 @@ type ParsedRow = {
   error?: string;
 };
 
+/**
+ * Normalise un en-tête de colonne pour le comparer.
+ *
+ * Les listes officielles écrivent « Prénom », pas « prenom » : une simple
+ * mise en minuscules laissait l'accent, la colonne n'était pas reconnue et
+ * les quinze lignes ressortaient en « prenom manquant ». On retire aussi le
+ * BOM qu'Excel place en tête de fichier, et la ponctuation d'espacement.
+ */
+function normaliserEntete(valeur: string): string {
+  return valeur
+    .replace(/^\ufeff/, "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
+}
+
+/** Intitulés acceptés pour chaque champ, tels qu'on les rencontre. */
+const ALIAS: Record<string, string[]> = {
+  cef: ["cef", "codecef", "matricule", "numerocef"],
+  nom: ["nom", "nomdefamille"],
+  prenom: ["prenom", "prenoms"],
+  email: ["email", "mail", "adresseemail", "courriel"],
+};
+
 function getField(raw: Record<string, string>, key: string) {
-  const lower = key.toLowerCase();
-  const entry = Object.entries(raw).find(
-    ([k]) => k.trim().toLowerCase() === lower,
+  const acceptes = ALIAS[key] ?? [key];
+  const entry = Object.entries(raw).find(([k]) =>
+    acceptes.includes(normaliserEntete(k)),
   );
   return entry ? (entry[1] ?? "").trim() : "";
 }
@@ -53,6 +78,10 @@ export default function StagiaireCsvImport({
     Papa.parse<Record<string, string>>(file, {
       header: true,
       skipEmptyLines: true,
+      // Les exports francophones séparent au point-virgule ; « auto » laisse
+      // Papa trancher entre virgule, point-virgule et tabulation.
+      delimiter: "",
+      transformHeader: (h) => h.replace(/^\ufeff/, "").trim(),
       complete(results) {
         if (results.errors.length) {
           setParseError(
@@ -214,7 +243,15 @@ export default function StagiaireCsvImport({
                             {r.prenom} {r.nom}
                           </p>
                           <p className="truncate text-xs text-slate">
-                            {r.email || "—"}
+                            {/* Le CEF avant l'e-mail : c'est lui qu'on
+                                relit pour vérifier une ligne. */}
+                            {r.cef ? (
+                              <span className="font-mono text-slate-2">
+                                {r.cef}
+                              </span>
+                            ) : null}
+                            {r.cef && r.email ? " · " : ""}
+                            {r.email || (r.cef ? "" : "—")}
                           </p>
                         </div>
                       </div>
