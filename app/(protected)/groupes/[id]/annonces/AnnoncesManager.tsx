@@ -10,11 +10,19 @@ import {
 import { useToast } from "@/components/ui/Toast";
 import Button from "@/components/ui/Button";
 import Input, { Textarea } from "@/components/ui/Input";
-import Card from "@/components/ui/Card";
-import { ConfirmModal } from "@/components/ui/Modal";
+import Modal, { ConfirmModal } from "@/components/ui/Modal";
 import { formatDate } from "@/lib/format";
-import { Send, Trash2 } from "lucide-react";
+import { Megaphone, Plus, Send, Trash2 } from "lucide-react";
 
+const VIDE = { titre: "", contenu: "", date: "" };
+
+/**
+ * Annonces d'un groupe.
+ *
+ * Le formulaire est passé en modale : publier une annonce est un geste
+ * occasionnel, et le laisser déplié en permanence poussait la liste — la seule
+ * chose qu'on vient consulter la plupart du temps — sous la ligne de flottaison.
+ */
 export default function AnnoncesManager({
   groupeId,
   annonces,
@@ -24,7 +32,8 @@ export default function AnnoncesManager({
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
-  const [form, setForm] = useState({ titre: "", contenu: "", date: "" });
+  const [ouvert, setOuvert] = useState(false);
+  const [form, setForm] = useState(VIDE);
   const [aSupprimer, setASupprimer] = useState<Annonce | null>(null);
   const toast = useToast();
 
@@ -37,7 +46,8 @@ export default function AnnoncesManager({
         contenu: form.contenu || undefined,
         date: form.date || undefined,
       });
-      setForm({ titre: "", contenu: "", date: "" });
+      setForm(VIDE);
+      setOuvert(false);
       toast("Annonce publiée");
       router.refresh();
     } catch (err) {
@@ -62,15 +72,94 @@ export default function AnnoncesManager({
     }
   }
 
+  // Une modale fermée ne doit rien retenir de la saisie abandonnée.
+  function fermer() {
+    if (busy) return;
+    setOuvert(false);
+    setForm(VIDE);
+  }
+
   return (
     <div>
-      <Card className="mt-6 max-w-[640px]">
-        <h2 className="text-sm font-medium text-ink">Publier une annonce</h2>
-        <form onSubmit={handleSubmit} className="mt-3 space-y-4">
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
+        <div className="flex flex-col gap-1">
+          <h2 className="font-display text-xl font-bold text-ink">Annonces</h2>
+          <p className="text-[14.5px] text-slate-light">
+            Ce que le groupe voit apparaître dans son fil.
+          </p>
+        </div>
+        <Button icon={Plus} onClick={() => setOuvert(true)}>
+          Nouvelle annonce
+        </Button>
+      </div>
+
+      <div className="mt-5 flex flex-col gap-3.5">
+        {annonces.length === 0 ? (
+          <div className="flex flex-col items-center gap-3 rounded-[14px] border border-border bg-surface px-6 py-12 text-center shadow-repos">
+            <span className="flex h-11 w-11 items-center justify-center rounded-full bg-wash">
+              <Megaphone size={20} className="text-slate-light" aria-hidden />
+            </span>
+            <p className="text-[15px] font-semibold text-ink">
+              Aucune annonce publiée
+            </p>
+            <p className="max-w-[380px] text-[14px] text-slate-light">
+              Une annonce apparaît dans le fil du groupe et reste consultable
+              par les stagiaires.
+            </p>
+            <Button variant="secondary" icon={Plus} onClick={() => setOuvert(true)}>
+              Publier la première
+            </Button>
+          </div>
+        ) : (
+          annonces.map((a) => (
+            <article
+              key={a.id}
+              className="rounded-[14px] border border-border bg-surface p-[22px] shadow-repos"
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex min-w-0 flex-col gap-[3px]">
+                  <h3 className="font-display text-[17px] font-semibold text-ink">
+                    {a.titre}
+                  </h3>
+                  {/* La date est facultative à la saisie : sans elle, celle
+                      de publication reste le repère juste. */}
+                  <p className="font-mono text-[12.5px] text-slate-light">
+                    {a.date
+                      ? formatDate(a.date)
+                      : `publiée le ${formatDate(a.created_at)}`}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  aria-label={`Supprimer l'annonce « ${a.titre} »`}
+                  onClick={() => setASupprimer(a)}
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] border border-transparent text-coral-dark transition-colors duration-150 ease-out hover:border-tint-alert-strong hover:bg-alert-wash"
+                >
+                  <Trash2 size={15} aria-hidden />
+                </button>
+              </div>
+              {a.contenu ? (
+                <p className="mt-3 whitespace-pre-line text-[14.5px] leading-relaxed text-body">
+                  {a.contenu}
+                </p>
+              ) : null}
+            </article>
+          ))
+        )}
+      </div>
+
+      <Modal
+        open={ouvert}
+        onClose={fermer}
+        title="Publier une annonce"
+        description="Elle apparaîtra dans le fil du groupe."
+      >
+        <form id="form-annonce" onSubmit={handleSubmit} className="space-y-4">
           <Input
             id="titre"
             label="Titre"
             required
+            autoFocus
             value={form.titre}
             onChange={(e) => setForm({ ...form, titre: e.target.value })}
           />
@@ -84,11 +173,15 @@ export default function AnnoncesManager({
           <Input
             id="date"
             label="Date"
+            hint="Facultative — la date de publication fait foi sans elle."
             type="date"
             value={form.date}
             onChange={(e) => setForm({ ...form, date: e.target.value })}
           />
-          <div className="flex justify-end">
+          <div className="flex justify-end gap-3 pt-1">
+            <Button type="button" variant="secondary" onClick={fermer} disabled={busy}>
+              Annuler
+            </Button>
             <Button
               type="submit"
               icon={Send}
@@ -99,43 +192,7 @@ export default function AnnoncesManager({
             </Button>
           </div>
         </form>
-      </Card>
-
-      <div className="mt-6 space-y-4">
-        {annonces.length === 0 ? (
-          <Card className="p-6 text-center text-sm text-slate" padded={false}>
-            Aucune annonce publiée.
-          </Card>
-        ) : (
-          annonces.map((a) => (
-            <Card key={a.id}>
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <h3 className="font-display text-lg font-bold text-ink">
-                    {a.titre}
-                  </h3>
-                  <p className="mt-0.5 font-mono text-xs text-slate">
-                    {formatDate(a.date)}
-                  </p>
-                </div>
-                <Button
-                  variant="danger"
-                  size="sm"
-                  icon={Trash2}
-                  onClick={() => setASupprimer(a)}
-                >
-                  Supprimer
-                </Button>
-              </div>
-              {a.contenu ? (
-                <p className="mt-2 whitespace-pre-line text-sm text-ink">
-                  {a.contenu}
-                </p>
-              ) : null}
-            </Card>
-          ))
-        )}
-      </div>
+      </Modal>
 
       <ConfirmModal
         open={aSupprimer !== null}

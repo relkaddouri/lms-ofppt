@@ -1,20 +1,23 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import Button from "@/components/ui/Button";
-import Input from "@/components/ui/Input";
-import { inputStyles } from "@/components/ui/Input";
+import Input, { inputStyles } from "@/components/ui/Input";
 import { useToast } from "@/components/ui/Toast";
 import { formatDate, slugify } from "@/lib/format";
 import { lireFiche } from "@/components/FicheSeance";
-import { getFichesPeriode, type ContexteClasseur } from "@/app/actions/classeur";
+import { getFichesPeriode, type GroupeClasseur } from "@/app/actions/classeur";
 import { FolderDown } from "lucide-react";
 
 /** Premier et dernier jour du mois en cours, la période qu'on exporte le plus. */
 function moisCourant(): { debut: string; fin: string } {
   const maintenant = new Date();
   const premier = new Date(maintenant.getFullYear(), maintenant.getMonth(), 1);
-  const dernier = new Date(maintenant.getFullYear(), maintenant.getMonth() + 1, 0);
+  const dernier = new Date(
+    maintenant.getFullYear(),
+    maintenant.getMonth() + 1,
+    0,
+  );
   const iso = (d: Date) =>
     `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
       d.getDate(),
@@ -22,46 +25,66 @@ function moisCourant(): { debut: string; fin: string } {
   return { debut: iso(premier), fin: iso(dernier) };
 }
 
-export default function ExportClasseur({
-  groupeId,
-  contexte,
+/**
+ * Export du classeur pédagogique.
+ *
+ * Il vivait dans l'onglet Fiches d'un groupe, ce qui le limitait à ce groupe
+ * alors que le document remis couvre toute la charge du formateur. Il est donc
+ * remonté au niveau du compte, avec deux filtres facultatifs — un groupe, un
+ * module — au lieu d'un périmètre imposé par la page où l'on se trouve.
+ */
+export default function ClasseurExport({
+  groupes,
 }: {
-  groupeId: string;
-  contexte: ContexteClasseur;
+  groupes: GroupeClasseur[];
 }) {
   const toast = useToast();
   const [enCours, startTransition] = useTransition();
   const defaut = moisCourant();
+  const [groupeId, setGroupeId] = useState("tous");
   const [moduleId, setModuleId] = useState("tous");
   const [debut, setDebut] = useState(defaut.debut);
   const [fin, setFin] = useState(defaut.fin);
+
+  const groupe = groupes.find((g) => g.id === groupeId) ?? null;
+
+  // Sans groupe choisi, on propose l'union des modules — dédoublonnée, un même
+  // module étant souvent enseigné à plusieurs groupes.
+  const modules = useMemo(() => {
+    const source = groupe ? groupe.modules : groupes.flatMap((g) => g.modules);
+    const vus = new Map<string, { id: string; nom: string; code: string | null }>();
+    for (const m of source) if (!vus.has(m.id)) vus.set(m.id, m);
+    return [...vus.values()].sort((a, b) => a.nom.localeCompare(b.nom, "fr"));
+  }, [groupe, groupes]);
+
+  function changerGroupe(id: string) {
+    setGroupeId(id);
+    setModuleId("tous");
+  }
 
   function exporter() {
     startTransition(async () => {
       try {
         const { fiches, sansFiche } = await getFichesPeriode(
-          groupeId,
+          groupeId === "tous" ? null : groupeId,
           moduleId === "tous" ? null : moduleId,
           debut,
           fin,
         );
 
         if (fiches.length === 0) {
-          toast(
-            "Aucune fiche enregistrée sur cette période.",
-            "error",
-          );
+          toast("Aucune fiche enregistrée sur cette période.", "error");
           return;
         }
 
-        const moduleChoisi = contexte.modules.find((m) => m.id === moduleId);
+        const moduleChoisi = modules.find((m) => m.id === moduleId);
         const { telechargerClasseurPdf } = await import("@/lib/pdf-classeur");
 
         await telechargerClasseurPdf(
           {
             etablissement: "OFPPT",
-            filiere: contexte.filiere,
-            groupe: contexte.groupeNom,
+            filiere: groupe ? groupe.filiere : "Toutes les filières",
+            groupe: groupe ? groupe.nom : "Tous les groupes",
             module: moduleChoisi
               ? `${moduleChoisi.code ? `${moduleChoisi.code} — ` : ""}${moduleChoisi.nom}`
               : "Tous les modules",
@@ -76,9 +99,9 @@ export default function ExportClasseur({
                 nature: f.nature,
                 date: s.date ? formatDate(s.date) : null,
                 dureeHeures: s.dureeMinutes ? s.dureeMinutes / 60 : null,
-                filiere: contexte.filiere,
-                annee: contexte.annee,
-                groupe: contexte.groupeNom,
+                filiere: s.filiere,
+                annee: s.annee,
+                groupe: s.groupeNom,
                 module: s.moduleNom,
                 objectifs: f.objectifs || s.objectif || "",
                 modalite: f.modalite,
@@ -92,7 +115,7 @@ export default function ExportClasseur({
             };
           }),
           `classeur-${slugify(
-            `${contexte.groupeNom} ${debut} ${fin}`,
+            `${groupe ? groupe.nom : "tous-groupes"} ${debut} ${fin}`,
             "classeur",
           )}.pdf`,
         );
@@ -111,26 +134,36 @@ export default function ExportClasseur({
   }
 
   return (
-    <section className="mt-6 rounded-xl border border-border bg-surface p-4">
-      <h3 className="flex items-center gap-1.5 text-sm font-medium text-ink">
-        <FolderDown className="h-4 w-4 text-slate" aria-hidden />
-        Classeur pédagogique
-      </h3>
-      <p className="mt-1 text-xs text-slate">
-        Les fiches d&apos;une période reliées en un seul document, dans la forme
-        attendue du cahier du formateur.
-      </p>
+    <section
+      aria-label="Paramètres de l'export"
+      className="mt-6 max-w-[860px] rounded-[14px] border border-border bg-surface p-[26px] shadow-repos"
+    >
+      <div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(180px,1fr))]">
+        <label className="flex flex-col gap-[7px]">
+          <span className="text-sm font-semibold text-body">Groupe</span>
+          <select
+            value={groupeId}
+            onChange={(e) => changerGroupe(e.target.value)}
+            className={inputStyles}
+          >
+            <option value="tous">Tous les groupes</option>
+            {groupes.map((g) => (
+              <option key={g.id} value={g.id}>
+                {g.nom}
+              </option>
+            ))}
+          </select>
+        </label>
 
-      <div className="mt-3 flex flex-wrap items-end gap-3">
-        <label className="block">
-          <span className="mb-1 block text-xs text-slate">Module</span>
+        <label className="flex flex-col gap-[7px]">
+          <span className="text-sm font-semibold text-body">Module</span>
           <select
             value={moduleId}
             onChange={(e) => setModuleId(e.target.value)}
             className={inputStyles}
           >
             <option value="tous">Tous les modules</option>
-            {contexte.modules.map((m) => (
+            {modules.map((m) => (
               <option key={m.id} value={m.id}>
                 {m.code ? `${m.code} — ${m.nom}` : m.nom}
               </option>
@@ -138,8 +171,8 @@ export default function ExportClasseur({
           </select>
         </label>
 
-        <label className="block">
-          <span className="mb-1 block text-xs text-slate">Du</span>
+        <label className="flex flex-col gap-[7px]">
+          <span className="text-sm font-semibold text-body">Du</span>
           <Input
             type="date"
             value={debut}
@@ -147,8 +180,8 @@ export default function ExportClasseur({
           />
         </label>
 
-        <label className="block">
-          <span className="mb-1 block text-xs text-slate">Au</span>
+        <label className="flex flex-col gap-[7px]">
+          <span className="text-sm font-semibold text-body">Au</span>
           <Input
             type="date"
             value={fin}
@@ -156,7 +189,13 @@ export default function ExportClasseur({
             onChange={(e) => setFin(e.target.value)}
           />
         </label>
+      </div>
 
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-separator pt-5">
+        <span className="text-[13.5px] text-slate-light">
+          Les séances sans fiche enregistrée sont écartées ; leur nombre vous
+          est indiqué après l&apos;export.
+        </span>
         <Button
           icon={FolderDown}
           onClick={exporter}
