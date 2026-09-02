@@ -107,9 +107,11 @@ export default function CarteAnnonce({
             {annonce.titre}
           </h2>
         ) : null}
-        <p className="whitespace-pre-line text-base leading-relaxed text-body">
-          <TexteMentions texte={annonce.contenu} camarades={camarades} />
-        </p>
+        {annonce.contenu ? (
+          <p className="whitespace-pre-line text-base leading-relaxed text-body">
+            <TexteMentions texte={annonce.contenu} camarades={camarades} />
+          </p>
+        ) : null}
       </div>
 
       <div className="flex items-center gap-2">

@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getSeanceDetail } from "@/app/actions/seance";
+import { getSeanceDetail } from "@/app/actions/seances";
 import SeanceDetailView from "./SeanceDetailView";
 
 export default async function SeancePage({

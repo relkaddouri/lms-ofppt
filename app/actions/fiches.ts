@@ -137,27 +137,3 @@ export async function saveFiche(seanceId: string, contenu: string) {
   revalidatePath("/modules");
   return next;
 }
-
-/**
- * Ancienne fiche rattachée au module, conservée par la migration 027.
- *
- * Aucune règle ne permet de la rattacher automatiquement à une séance : elle
- * est proposée en lecture pour que le formateur reprenne son contenu s'il le
- * souhaite, plutôt que de le perdre silencieusement.
- */
-export async function getFicheLegacy(moduleId: string): Promise<string | null> {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("fiches_prescrites_legacy")
-    .select("contenu")
-    .eq("module_id", moduleId)
-    .order("version", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  if (error) {
-    console.error("[fiches] lecture de l'ancienne fiche", error.message);
-    return null;
-  }
-  return data?.contenu ?? null;
-}

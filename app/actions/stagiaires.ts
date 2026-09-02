@@ -19,7 +19,7 @@ export async function getStagiairesByGroupe(
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("stagiaires")
-    .select("*")
+    .select("id, nom, prenom, email, groupe_id, user_id")
     .eq("groupe_id", groupeId)
     .order("nom");
 

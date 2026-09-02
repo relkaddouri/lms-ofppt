@@ -338,7 +338,9 @@ export async function getModuleAudit(
 
   const { data, error } = await supabase
     .from("audit_log")
-    .select("*")
+    .select(
+      "id, table_name, ligne_id, action, ancienne_valeur, nouvelle_valeur, utilisateur, date",
+    )
     .in("ligne_id", ids)
     .order("date", { ascending: false });
 

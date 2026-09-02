@@ -30,7 +30,6 @@ export default function FichePreparationManager({
   seances: SeanceAPreparer[];
   seanceId: string | null;
   versions: FichePreparation[];
-  ficheLegacy: string | null;
 }) {
   const router = useRouter();
   const seance = seances.find((s) => s.id === seanceId) ?? null;

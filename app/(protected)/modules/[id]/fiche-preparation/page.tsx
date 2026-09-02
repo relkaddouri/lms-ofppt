@@ -2,7 +2,6 @@ import { getModules } from "@/app/actions/modules";
 import {
   getFichesVersions,
   getSeancesAPreparer,
-  getFicheLegacy,
 } from "@/app/actions/fiches";
 import { redirect } from "next/navigation";
 import FichePreparationManager from "./FichePreparationManager";
@@ -30,10 +29,7 @@ export default async function FichePreparationPage({
     seances.find((s) => s.statut === "a_faire") ??
     seances[0];
 
-  const [versions, ficheLegacy] = await Promise.all([
-    choisie ? getFichesVersions(choisie.id) : Promise.resolve([]),
-    getFicheLegacy(id),
-  ]);
+  const versions = choisie ? await getFichesVersions(choisie.id) : [];
 
   return (
     <FichePreparationManager
@@ -43,7 +39,6 @@ export default async function FichePreparationPage({
       seances={seances}
       seanceId={choisie?.id ?? null}
       versions={versions}
-      ficheLegacy={ficheLegacy}
     />
   );
 }

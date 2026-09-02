@@ -16,7 +16,7 @@ export type Commentaire = {
 export type AnnonceFil = {
   id: string;
   titre: string | null;
-  contenu: string;
+  contenu: string | null;
   date: string | null;
   created_at: string;
   jaime: number;

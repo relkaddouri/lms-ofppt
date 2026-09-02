@@ -71,8 +71,24 @@ export type CompetenceLiee = {
   duree_nationale_heures: number | null;
 };
 
+/**
+ * Le module tel que la table le porte, sans les champs calculés de `Module`.
+ *
+ * `ModuleDetail.module` était typé `Module`, qui promet un `code` et un
+ * `groupes` que cette requête ne rapporte pas : les deux étaient `undefined`
+ * à l'exécution tout en étant déclarés présents. Le détail expose la
+ * compétence et les groupes à côté, c'est là qu'il faut les lire.
+ */
+export type ModuleBrut = {
+  id: string;
+  nom: string;
+  description: string | null;
+  duree_reference: number;
+  competence_id: string | null;
+};
+
 export type ModuleDetail = {
-  module: Module;
+  module: ModuleBrut;
   competence: CompetenceLiee | null;
   controles: ModuleControleInfo[];
   hasFiche: boolean;
@@ -111,7 +127,9 @@ export async function getModuleDetail(moduleId: string): Promise<ModuleDetail | 
   if (groupes.error) throw new Error(groupes.error.message);
   if (controles.error) throw new Error(controles.error.message);
 
-  const brut = mod.data as Module & { competences?: CompetenceLiee | null };
+  const brut = mod.data as ModuleBrut & {
+    competences?: CompetenceLiee | null;
+  };
 
   return {
     module: brut,

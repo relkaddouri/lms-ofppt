@@ -100,10 +100,14 @@ export async function saveParametresLlm(input: SaisieParametresLlm) {
   const { error } = await supabase.rpc("enregistrer_parametres_llm", {
     p_fournisseur: input.fournisseur,
     p_modele: modele,
-    p_base_url: baseUrl,
-    p_cle: cle || null,
+    p_base_url: baseUrl ?? undefined,
+    // La fonction distingue « paramètre absent » de « valeur nulle » : passer
+    // `null` là où elle attend un défaut la ferait échouer.
+    p_cle: cle || undefined,
     p_max_tokens: Math.round(input.max_tokens),
-    p_temperature: description.temperature ? input.temperature : null,
+    p_temperature: description.temperature
+      ? (input.temperature ?? undefined)
+      : undefined,
   });
   if (error) throw new Error(messageLisible(error));
 

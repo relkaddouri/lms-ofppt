@@ -22,7 +22,7 @@ import {
   majSeance,
   type SeanceDetail,
   type RemarqueSeance,
-} from "@/app/actions/seance";
+} from "@/app/actions/seances";
 import { Check, CheckCheck, Plus, Trash2 } from "lucide-react";
 
 export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {

@@ -121,6 +121,8 @@ export async function getFichesPeriode(
   // en dernier.
   const derniere = new Map<string, string>();
   for (const f of fiches ?? []) {
+    // Une version sans contenu ne vaut pas une page de classeur.
+    if (!f.contenu) continue;
     if (!derniere.has(f.seance_id)) derniere.set(f.seance_id, f.contenu);
   }
 

@@ -1,10 +1,20 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import type { Database } from "./database.types";
 
+/**
+ * Client Supabase typé sur le schéma réel.
+ *
+ * `database.types.ts` est régénéré depuis la base par
+ * `npx supabase gen types typescript --linked`. Sans lui, chaque requête
+ * renvoyait `any` : une colonne renommée ou supprimée ne se voyait qu'à
+ * l'exécution, et les `as unknown as { … }` du code n'étaient vérifiés par
+ * rien.
+ */
 export async function createClient() {
   const cookieStore = await cookies();
 
-  return createServerClient(
+  return createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { saveSupport } from "@/app/actions/seance";
+import { saveSupport } from "@/app/actions/seances";
 import { useToast } from "@/components/ui/Toast";
 import BandeauIa from "@/components/BandeauIa";
 import Button from "@/components/ui/Button";

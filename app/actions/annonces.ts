@@ -17,7 +17,7 @@ export async function getAnnoncesByGroupe(groupeId: string): Promise<Annonce[]> 
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("annonces")
-    .select("*")
+    .select("id, groupe_id, titre, contenu, date, created_at")
     .eq("groupe_id", groupeId)
     .order("created_at", { ascending: false });
 
