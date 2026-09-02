@@ -131,56 +131,100 @@ export default function RepartitionManager({
   // Les objectifs se lisent par élément de compétence, comme dans le manuel.
   let lettrePrecedente = "";
 
+  const totalReparti = totalTheorique + totalPratique + plan.heuresEvaluation;
+  const avancement =
+    plan.masseHoraire > 0
+      ? Math.min(100, Math.round((totalReparti / plan.masseHoraire) * 100))
+      : 0;
+
   return (
-    <div className="p-8">
+    <div className="flex flex-col gap-6 px-6 py-10 md:px-10 md:pb-14">
       <Breadcrumb
         items={[
           { label: "Groupes", href: "/groupes" },
           { label: plan.groupeNom, href: `/groupes/${groupeId}` },
           { label: "Modules", href: `/groupes/${groupeId}/modules` },
-          { label: plan.moduleNom },
+          { label: "Répartition horaire" },
         ]}
       />
 
-      <header className="mt-6">
-        <h1 className="text-2xl font-semibold text-ink">
-          Plan de déroulement du module
-        </h1>
-        <p className="mt-1 text-sm text-slate">
-          {plan.competenceNom}
+      <header className="flex flex-col gap-2">
+        <span className="font-mono text-[11.5px] uppercase tracking-[0.12em] text-slate-light">
+          {plan.groupeNom}
           {plan.codeOfficiel ? ` · ${plan.codeOfficiel}` : ""}
-          {plan.dureeNationale
-            ? ` · ${plan.dureeNationale} h au référentiel national`
-            : ""}
-        </p>
+        </span>
+        <h1 className="font-display text-[28px] font-bold leading-tight tracking-[-0.02em] text-ink">
+          Répartir la masse horaire — {plan.moduleNom}
+        </h1>
+        <p className="text-[15px] text-slate-2">{plan.competenceNom}</p>
       </header>
 
-      <div className="mt-4 grid gap-3 sm:grid-cols-4">
+      <div className="grid gap-5 [grid-template-columns:repeat(auto-fit,minmax(190px,1fr))]">
         {[
-          { libelle: "Masse horaire allouée", valeur: formatHeures(plan.masseHoraire) },
-          { libelle: `Théorique (${plan.pctTheorique} %)`, valeur: formatHeures(totalTheorique) },
-          { libelle: `Pratique (${plan.pctPratique} %)`, valeur: formatHeures(totalPratique) },
           {
-            libelle: `Évaluation (${plan.pctEvaluation} %)`,
-            valeur: formatHeures(plan.heuresEvaluation),
+            libelle: "Masse horaire allouée",
+            valeur: formatHeures(plan.masseHoraire),
+            note: plan.dureeNationale
+              ? `référentiel ${plan.dureeNationale} h`
+              : "hors référentiel national",
+          },
+          {
+            libelle: "Séances proposées",
+            valeur: String(apercu.seances.length),
+            note: `${apercu.seances.filter((s) => s.nature === "theorique").length} théoriques · ${apercu.seances.filter((s) => s.nature === "pratique").length} pratiques`,
+          },
+          {
+            libelle: "Réparti",
+            valeur: formatHeures(totalReparti),
+            note: `${formatHeures(Math.max(0, plan.masseHoraire - totalReparti))} restantes`,
+          },
+          {
+            libelle: "Contrôles recommandés",
+            valeur: String(apercu.controles.length),
+            note: `un jalon tous les ${HEURES_PAR_CONTROLE} h`,
           },
         ].map((c) => (
-          <div key={c.libelle} className="rounded-xl border border-border bg-surface p-3">
-            <p className="text-xs text-slate">{c.libelle}</p>
-            <p className="mt-0.5 text-lg font-semibold text-ink">{c.valeur}</p>
+          <div
+            key={c.libelle}
+            className="flex flex-col gap-2 rounded-[14px] border border-border bg-surface px-5 pb-4 pt-[18px] shadow-repos"
+          >
+            <span className="text-[13.5px] text-slate-2">{c.libelle}</span>
+            <span className="font-display text-[28px] font-bold leading-none tracking-[-0.02em] text-ink">
+              {c.valeur}
+            </span>
+            <span className="text-[12.5px] text-slate-light">{c.note}</span>
           </div>
         ))}
       </div>
 
+      <div className="flex flex-col gap-2 rounded-[14px] border border-border bg-surface p-6 shadow-repos">
+        <div className="flex items-baseline justify-between gap-3">
+          <span className="text-[13.5px] text-slate">
+            Avancement de la répartition
+          </span>
+          <span className="font-mono text-sm font-medium text-body">
+            {formatHeures(totalReparti)} / {formatHeures(plan.masseHoraire)}
+          </span>
+        </div>
+        <span className="h-[9px] overflow-hidden rounded-full bg-wash">
+          <span
+            className={`block h-full rounded-full transition-[width] duration-150 ease-out ${
+              avancement >= 100 ? "bg-green" : "bg-teal"
+            }`}
+            style={{ width: `${avancement}%` }}
+          />
+        </span>
+      </div>
+
       {proposition ? (
-        <p className="mt-4 rounded-xl border border-info/30 bg-info/10 px-4 py-3 text-sm text-ink">
+        <p className="rounded-[10px] border border-tint-teal-strong bg-tint-teal px-4 py-3 text-sm text-teal-dark">
           Le manuel de formateur laisse ces heures en « ? ». Voici une
           proposition, calculée depuis la part de chaque élément au référentiel.
           Ajustez-la, puis enregistrez : rien n&apos;est encore enregistré.
         </p>
       ) : null}
 
-      <div className="mt-4 rounded-xl border border-border bg-surface px-4 py-3">
+      <div className="rounded-[14px] border border-border bg-surface p-6 shadow-repos">
         <p className="text-sm text-ink">
           <span className="font-medium">{apercu.seances.length} séances</span>{" "}
           seront créées, dont{" "}
@@ -200,23 +244,21 @@ export default function RepartitionManager({
         </p>
       </div>
 
-      <div className="mt-4 overflow-x-auto rounded-xl border border-border bg-surface">
+      <div className="overflow-x-auto rounded-[14px] border border-border bg-surface shadow-repos">
         <table className="w-full min-w-[720px] text-sm">
           <thead>
-            <tr className="border-b border-border bg-paper text-left">
-              <th className="px-3 py-2 font-medium text-slate">
+            <tr className="border-b border-border bg-paper-alt text-left font-mono text-[11px] uppercase tracking-[0.1em] text-slate-light">
+              <th className="px-4 py-3.5 font-medium">
                 Objectif d&apos;apprentissage
               </th>
-              <th className="w-28 px-3 py-2 text-right font-medium text-slate">
+              <th className="w-28 px-4 py-3.5 text-right font-medium">
                 Théorique
               </th>
-              <th className="w-28 px-3 py-2 text-right font-medium text-slate">
+              <th className="w-28 px-4 py-3.5 text-right font-medium">
                 Pratique
               </th>
-              <th className="w-24 px-3 py-2 text-right font-medium text-slate">
-                Total
-              </th>
-              <th className="w-32 px-3 py-2 font-medium text-slate">Mode</th>
+              <th className="w-24 px-4 py-3.5 text-right font-medium">Total</th>
+              <th className="w-32 px-4 py-3.5 font-medium">Mode</th>
             </tr>
           </thead>
           <tbody>
@@ -282,7 +324,7 @@ export default function RepartitionManager({
         </table>
       </div>
 
-      <div className="mt-4 flex flex-wrap items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <Button icon={Save} onClick={() => enregistrer(false)} disabled={enCours}>
           {enCours ? "Enregistrement…" : "Enregistrer et créer les séances"}
         </Button>
@@ -303,7 +345,7 @@ export default function RepartitionManager({
           Manuel de formateur
         </Button>
         <span
-          className={`ml-auto text-sm ${ecart === 0 ? "text-slate" : "text-danger"}`}
+          className={`ml-auto text-sm ${ecart === 0 ? "text-slate-2" : "text-coral-dark"}`}
         >
           {formatHeures(total)} répartie{ecart === 0 ? "s" : "s"} sur{" "}
           {formatHeures(plan.masseHoraire)}
