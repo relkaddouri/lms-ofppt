@@ -145,7 +145,7 @@ contrôles et produire les fiches est le travail manuel que cette application do
 
 ## Phase 6 — Déploiement
 
-- [ ] **6.1** — Terminal : `vercel`, variables d'environnement Supabase + clé API IA dans le dashboard Vercel.
+- [ ] **6.1** — Terminal : `npx vercel login` puis `npx vercel link`, et les variables d'environnement listées dans `docs/DEPLOIEMENT.md`. Pas de clé API IA à poser : chaque formateur enregistre la sienne depuis Paramètres, chiffrée dans le Vault Supabase.
   **Test** : connecte-toi en formateur et en stagiaire depuis l'URL de production, vérifie que les deux espaces fonctionnent.
 
 ---
