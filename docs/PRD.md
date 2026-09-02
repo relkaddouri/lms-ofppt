@@ -124,6 +124,8 @@ Le nombre de modules qu'un formateur enseigne n'est pas fixe et varie par groupe
 
 Le même module a donc une masse horaire différente selon le groupe — probablement pour tenir compte du niveau ou du rythme propre à chaque groupe. **La table d'assignation Groupe↔Module doit porter sa propre masse horaire allouée, distincte de la durée nationale de référence de la compétence** (qui, elle, est fixe et vient du programme officiel — voir §3).
 
+**Règle de calcul non négociable, confirmée par le document officiel "Tableau de service" (§4.13bis) : toute statistique de masse horaire totale affichée dans l'app doit sommer les masses horaires allouées par couple groupe+module, jamais les durées de référence des modules.** Un module enseigné à deux groupes compte deux fois, avec sa valeur propre à chaque groupe — le confondre avec la somme des durées de référence (un seul total par module, peu importe le nombre de groupes) donne un chiffre faux, comme démontré par l'écart entre 690h (durées de référence sommées) et 920h (le vrai total du document officiel).
+
 **Type d'EFM porté par le module, pas seulement par le contrôle — ajout v3.** Chaque module (au niveau de son assignation à un groupe, comme la masse horaire) porte un attribut `type_efm` : **local (EFML)** ou **régional (EFMR)**. Cette information ne sert pas seulement à distinguer un contrôle une fois créé (§4.7) — elle a un rôle de **planification en amont** :
 
 - Un module à EFMR a une date d'épreuve **fixée par la Direction Régionale**, externe et non négociable. Le formateur a donc intérêt à **démarrer ces modules en priorité** dans l'année, pour ne pas se retrouver contraint par une échéance externe alors que le module n'est pas assez avancé.
@@ -369,7 +371,19 @@ L'interface de création de séance doit donc proposer ces deux blocs (matin/soi
 
 - Export téléchargeable regroupant, a minima, les fiches de préparation d'un module/groupe sur une période, dans un format proche du classeur pédagogique papier existant
 - Usage principal : audits internes OFPPT sur les fiches de préparation
-- *Question ouverte : le format exact du classeur pédagogique n'a pas encore été fourni — section à préciser à réception de l'exemple annoncé par le porteur de projet.*
+- *Résolu et construit (Phase 5 du backlog) — export PDF fonctionnel depuis l'onglet Fiches d'un groupe, avec sélection de module et de période.*
+
+### 4.13bis Tableau de service — document officiel de masse horaire (ajout v3)
+
+**Nouveau document de référence, distinct du classeur pédagogique et de l'emploi du temps.** C'est le document produit par la Direction Régionale, qui liste et fait valider l'ensemble des affectations horaires d'un formateur sur l'année — signé par le formateur, le Directeur Pédagogique et le Directeur Régional.
+
+**Colonnes du document officiel** (référence directe fournie par le porteur de projet) : Date d'affectation, Filière, Année, Groupe/Sous-groupe, Code module, Intitulé du module, Masse horaire affectée (MH AFF), Mutation (MUT), EFP — avec un total général en bas de tableau.
+
+**Le calcul du total doit toujours passer par les assignations groupe+module, jamais par la durée de référence d'un module seul.** C'est le point qui a révélé cette lacune : un module enseigné à deux groupes différents (ex. M104 : 90h pour DES101, 75h pour DES102) compte **deux fois**, avec sa masse horaire propre à chaque groupe — pas une seule fois avec sa durée de référence nationale. Toute statistique agrégée affichée dans l'app (comme le total sur la page Modules) doit être calculée en sommant `masse_horaire_allouee` sur toutes les lignes `groupe_modules`, jamais en sommant `duree_reference` sur les modules — les deux ne représentent pas la même chose et ne doivent jamais être confondues à l'écran.
+
+**Ajout par rapport au document papier officiel** : contrairement au document OFPPT qui ne montre qu'un total par ligne, l'app doit décomposer chaque ligne en présentiel / FAD (§4.1bis) — utile au formateur pour son propre suivi, même si cette décomposition ne fait pas partie du format officiel transmis à la Direction.
+
+**Fonctionnalité produit** : une page (ou un export depuis une page existante) qui génère ce tableau automatiquement à partir des assignations réelles `groupe_modules` du formateur, avec export dans un format proche du document officiel — évite la ressaisie manuelle dans un tableur, comme c'était visiblement le cas jusqu'ici.
 
 ### 4.14 Module stage / soutenance (compétence 16 — dernière du programme)
 

@@ -6,7 +6,7 @@ import Link from "next/link";
 import { createGroupe, type Groupe } from "@/app/actions/groupes";
 import type { Module } from "@/app/actions/modules";
 import Button from "@/components/ui/Button";
-import Input from "@/components/ui/Input";
+import Input, { inputStyles } from "@/components/ui/Input";
 import Modal from "@/components/ui/Modal";
 import { useToast } from "@/components/ui/Toast";
 import { formatDate } from "@/lib/format";
@@ -43,8 +43,7 @@ export default function GroupesManager({
   const [busy, setBusy] = useState(false);
   const [form, setForm] = useState({
     nom: "",
-    date_debut: "",
-    date_fin: "",
+    annee: "1",
   });
   const [selectedModules, setSelectedModules] = useState<string[]>([]);
 
@@ -60,12 +59,11 @@ export default function GroupesManager({
     try {
       await createGroupe({
         nom: form.nom,
-        date_debut: form.date_debut || undefined,
-        date_fin: form.date_fin || undefined,
+        annee: Number(form.annee) || null,
         module_ids: selectedModules,
       });
       setOpen(false);
-      setForm({ nom: "", date_debut: "", date_fin: "" });
+      setForm({ nom: "", annee: "1" });
       setSelectedModules([]);
       toast("Groupe créé");
       router.refresh();
@@ -215,8 +213,9 @@ export default function GroupesManager({
                       Période de formation
                     </span>
                     <span className="font-mono text-[13px] text-body">
-                      {formatDate(g.date_debut, "—")} →{" "}
-                      {formatDate(g.date_fin, "—")}
+                      {g.date_debut
+                        ? `${formatDate(g.date_debut)} → ${formatDate(g.date_fin)}`
+                        : "emploi du temps à générer"}
                     </span>
                   </div>
                 </div>
@@ -235,22 +234,25 @@ export default function GroupesManager({
             value={form.nom}
             onChange={(e) => setForm({ ...form, nom: e.target.value })}
           />
-          <div className="grid grid-cols-2 gap-4">
-            <Input
-              id="date_debut"
-              label="Date de début"
-              type="date"
-              value={form.date_debut}
-              onChange={(e) => setForm({ ...form, date_debut: e.target.value })}
-            />
-            <Input
-              id="date_fin"
-              label="Date de fin"
-              type="date"
-              value={form.date_fin}
-              onChange={(e) => setForm({ ...form, date_fin: e.target.value })}
-            />
-          </div>
+          {/* Les dates de début et de fin ne se saisissent plus : elles se
+              lisent sur les séances que le motif hebdomadaire a placées. */}
+          <label htmlFor="annee" className="flex flex-col gap-[7px]">
+            <span className="text-sm font-semibold text-body">
+              Année de formation
+            </span>
+            <select
+              id="annee"
+              value={form.annee}
+              onChange={(e) => setForm({ ...form, annee: e.target.value })}
+              className={inputStyles}
+            >
+              <option value="1">1ʳᵉ année — tronc commun</option>
+              <option value="2">2ᵉ année — spécialisation</option>
+            </select>
+            <span className="text-[13px] text-slate-light">
+              La période du groupe se calculera depuis son emploi du temps.
+            </span>
+          </label>
 
           <div>
             <span className="block text-sm font-medium text-ink">

@@ -46,8 +46,13 @@ export default function GroupeDetail({
     }
   }
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState({ nom: "", prenom: "", email: "" });
-  const [editForm, setEditForm] = useState({ nom: "", prenom: "", email: "" });
+  const [form, setForm] = useState({ nom: "", prenom: "", email: "", cef: "" });
+  const [editForm, setEditForm] = useState({
+    nom: "",
+    prenom: "",
+    email: "",
+    cef: "",
+  });
   const toast = useToast();
 
   async function handleAdd(e: React.FormEvent) {
@@ -58,8 +63,9 @@ export default function GroupeDetail({
         nom: form.nom,
         prenom: form.prenom,
         email: form.email || undefined,
+        cef: form.cef || undefined,
       });
-      setForm({ nom: "", prenom: "", email: "" });
+      setForm({ nom: "", prenom: "", email: "", cef: "" });
       toast("Stagiaire ajouté");
       router.refresh();
     } catch (err) {
@@ -87,6 +93,7 @@ export default function GroupeDetail({
       nom: s.nom,
       prenom: s.prenom,
       email: s.email ?? "",
+      cef: s.cef ?? "",
     });
   }
 
@@ -101,6 +108,7 @@ export default function GroupeDetail({
         nom: editForm.nom,
         prenom: editForm.prenom,
         email: editForm.email || undefined,
+        cef: editForm.cef || undefined,
       });
       setEditingId(null);
       toast("Modification enregistrée");
@@ -124,6 +132,14 @@ export default function GroupeDetail({
           onSubmit={handleAdd}
           className="mt-3 grid grid-cols-1 gap-4 md:grid-cols-[1fr_1fr_1.5fr_auto]"
         >
+            <Input
+              id="cef"
+              label="CEF"
+              inputMode="numeric"
+              hint="Identifiant OFPPT, sert à se connecter"
+              value={form.cef}
+              onChange={(e) => setForm({ ...form, cef: e.target.value })}
+            />
             <Input
               id="nom"
               label="Nom"
@@ -185,7 +201,15 @@ export default function GroupeDetail({
                   editingId === s.id ? (
                     <tr key={s.id} className="border-t border-border bg-paper">
                       <td className="px-4 py-3">
-                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
+                          <Input
+                            value={editForm.cef}
+                            onChange={(e) =>
+                              setEditForm({ ...editForm, cef: e.target.value })
+                            }
+                            placeholder="CEF"
+                            inputMode="numeric"
+                          />
                           <Input
                             value={editForm.nom}
                             onChange={(e) =>
@@ -239,7 +263,15 @@ export default function GroupeDetail({
                               {s.prenom} {s.nom}
                             </p>
                             <p className="truncate text-xs text-slate">
-                              {s.email ?? "—"}
+                              {/* Le CEF passe devant : c'est lui que le
+                                  formateur retrouve dans ses listes. */}
+                              {s.cef ? (
+                                <span className="font-mono text-slate-2">
+                                  {s.cef}
+                                </span>
+                              ) : null}
+                              {s.cef && s.email ? " · " : ""}
+                              {s.email ?? (s.cef ? "" : "—")}
                               {s.user_id ? (
                                 <span className="ml-1.5 text-green-dark">
                                   · compte actif

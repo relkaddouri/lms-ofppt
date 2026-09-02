@@ -18,6 +18,7 @@ type ParsedRow = {
   nom: string;
   prenom: string;
   email: string;
+  cef: string;
   valid: boolean;
   error?: string;
 };
@@ -66,6 +67,8 @@ export default function StagiaireCsvImport({
           const nom = getField(raw, "nom");
           const prenom = getField(raw, "prenom");
           const email = getField(raw, "email");
+          // Les listes officielles de l'OFPPT nomment cette colonne « CEF ».
+          const cef = getField(raw, "cef");
 
           const errors: string[] = [];
           if (!nom) errors.push("nom manquant");
@@ -77,6 +80,7 @@ export default function StagiaireCsvImport({
             nom,
             prenom,
             email,
+            cef,
             valid: errors.length === 0,
             error: errors.length ? errors.join(", ") : undefined,
           };
@@ -98,7 +102,12 @@ export default function StagiaireCsvImport({
   async function handleImport() {
     const validRows: StagiaireImportRow[] = rows
       .filter((r) => r.valid)
-      .map((r) => ({ nom: r.nom, prenom: r.prenom, email: r.email || null }));
+      .map((r) => ({
+        nom: r.nom,
+        prenom: r.prenom,
+        email: r.email || null,
+        cef: r.cef || null,
+      }));
 
     if (!validRows.length) return;
 
@@ -133,7 +142,7 @@ export default function StagiaireCsvImport({
           Importer depuis un CSV
         </Button>
         <span className="text-xs text-slate">
-          Colonnes attendues : <span className="font-mono">nom, prenom, email</span>
+          Colonnes attendues : <span className="font-mono">cef, nom, prenom, email</span>
         </span>
         <input
           ref={inputRef}

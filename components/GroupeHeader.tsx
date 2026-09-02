@@ -56,9 +56,19 @@ export default function GroupeHeader({
               <span className="rounded-full border border-border bg-wash-strong px-2.5 py-1 text-[12.5px] font-semibold text-slate-2">
                 {stagiairesCount} stagiaire{stagiairesCount > 1 ? "s" : ""}
               </span>
-              <span className="font-mono text-[13px] text-slate-light">
-                {formatDate(groupe.date_debut)} → {formatDate(groupe.date_fin)}
-              </span>
+              {/* La période se lit sur les séances placées, pas sur une
+                  saisie : tant que l'emploi du temps n'est pas généré, il
+                  n'y a rien d'honnête à afficher. */}
+              {groupe.date_debut ? (
+                <span className="font-mono text-[13px] text-slate-light">
+                  {formatDate(groupe.date_debut)} →{" "}
+                  {formatDate(groupe.date_fin)}
+                </span>
+              ) : (
+                <span className="font-mono text-[13px] text-muted">
+                  emploi du temps à générer
+                </span>
+              )}
             </div>
           </div>
         </div>

@@ -15,10 +15,25 @@ export default async function LoginPage({
   async function signIn(formData: FormData) {
     "use server";
 
-    const email = String(formData.get("email") ?? "");
+    const saisie = String(formData.get("email") ?? "").trim();
     const password = String(formData.get("password") ?? "");
 
     const supabase = await createClient();
+
+    // Un stagiaire connaît son CEF, pas forcément une adresse : sans arobase,
+    // on résout le CEF en adresse de connexion avant d'authentifier.
+    let email = saisie;
+    if (saisie && !saisie.includes("@")) {
+      const { data } = await supabase.rpc("email_du_cef", { p_cef: saisie });
+      if (!data) {
+        redirect(
+          `/login?error=${encodeURIComponent(
+            "Aucun compte ne correspond à ce CEF. Vérifiez le numéro, ou utilisez votre adresse e-mail.",
+          )}`,
+        );
+      }
+      email = data;
+    }
 
     const { error } = await supabase.auth.signInWithPassword({
       email,
@@ -69,15 +84,15 @@ export default async function LoginPage({
           <form action={signIn} className="flex flex-col gap-5">
             <label htmlFor="email" className="flex flex-col gap-[7px]">
               <span className="text-sm font-semibold text-body">
-                Adresse e-mail
+                Adresse e-mail ou CEF
               </span>
               <input
                 id="email"
                 name="email"
-                type="email"
+                type="text"
                 required
-                autoComplete="email"
-                placeholder="prenom.nom@ofppt.ma"
+                autoComplete="username"
+                placeholder="prenom.nom@ofppt.ma ou 2007021300178"
                 className="rounded-[9px] border border-border-strong bg-surface px-[13px] py-3 text-[15px] text-ink outline-none transition-colors duration-150 ease-out placeholder:text-slate-light focus:border-teal focus:shadow-[0_0_0_3px_rgba(46,125,158,0.15)]"
               />
             </label>

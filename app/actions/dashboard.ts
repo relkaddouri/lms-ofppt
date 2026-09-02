@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { getProgressionTousGroupes } from "@/app/actions/progression";
+import { getPeriodesGroupes } from "@/app/actions/groupes";
 import { cumule } from "@/lib/progression";
 import { maintenant } from "@/lib/format";
 
@@ -49,7 +50,7 @@ export async function getDashboardData(): Promise<{
 
   const [groupesRes, seancesRes, stagiairesRes, modulesRes, controlesRes] =
     await Promise.all([
-      supabase.from("groupes").select("id, nom, date_fin"),
+      supabase.from("groupes").select("id, nom"),
       supabase
         .from("seances")
         .select(
@@ -73,11 +74,17 @@ export async function getDashboardData(): Promise<{
   const seances = seancesRes.data;
 
   const today = maintenant();
+  // La fin d'un groupe n'est plus saisie : elle se lit sur sa dernière séance
+  // datée (PRD §4.9). Un groupe sans séance datée reste actif.
+  const periodes = await getPeriodesGroupes();
+  const finDe = (id: string) => periodes.get(id)?.fin ?? null;
+
   const stats: DashboardStats = {
     totalStagiaires: stagiairesRes.count ?? 0,
-    groupesActifs: groupes.filter(
-      (g) => !g.date_fin || g.date_fin >= today,
-    ).length,
+    groupesActifs: groupes.filter((g) => {
+      const fin = finDe(g.id);
+      return !fin || fin >= today;
+    }).length,
     modulesCount: modulesRes.count ?? 0,
     controlesEnAttente: controlesRes.count ?? 0,
   };
@@ -91,7 +98,7 @@ export async function getDashboardData(): Promise<{
     return {
       id: g.id,
       nom: g.nom,
-      date_fin: g.date_fin,
+      date_fin: finDe(g.id),
       heuresRealisees: total.heuresRealisees,
       masseHoraire: total.masseHoraire,
       pourcentage: total.pourcentage,

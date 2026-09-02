@@ -1,11 +1,18 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getUser } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
 export type Groupe = {
   id: string;
   nom: string;
+  /**
+   * Première et dernière séance datées du groupe.
+   *
+   * Ces bornes ne se saisissent plus : elles se déduisent du calendrier
+   * réellement généré par le motif hebdomadaire (PRD §4.9). Nulles tant
+   * qu'aucune séance n'a de date.
+   */
   date_debut: string | null;
   date_fin: string | null;
   annee: number | null;
@@ -14,15 +21,52 @@ export type Groupe = {
   stagiaires?: { count: number }[];
 };
 
+/**
+ * Bornes réelles de chaque groupe, lues sur ses séances datées.
+ *
+ * Une seule requête pour tous les groupes : la faire par groupe multiplierait
+ * les allers-retours sur l'écran qui les liste tous.
+ */
+export async function getPeriodesGroupes(): Promise<
+  Map<string, { debut: string | null; fin: string | null }>
+> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("seance_groupes")
+    .select("groupe_id, seances!inner(date)")
+    .not("seances.date", "is", null);
+
+  if (error) throw new Error(error.message);
+
+  const bornes = new Map<string, { debut: string | null; fin: string | null }>();
+  for (const ligne of data ?? []) {
+    const r = ligne as unknown as {
+      groupe_id: string;
+      seances: { date: string | null } | null;
+    };
+    const d = r.seances?.date;
+    if (!d) continue;
+    const courant = bornes.get(r.groupe_id);
+    if (!courant) bornes.set(r.groupe_id, { debut: d, fin: d });
+    else {
+      if (d < courant.debut!) courant.debut = d;
+      if (d > courant.fin!) courant.fin = d;
+    }
+  }
+  return bornes;
+}
+
 export async function getGroupes(): Promise<Groupe[]> {
   const supabase = await createClient();
+  const periodes = await getPeriodesGroupes();
   // Colonnes explicites plutôt que `*` (conventions.md).
   const { data, error } = await supabase
     .from("groupes")
     .select(
-      "id, nom, date_debut, date_fin, annee, specialites(nom), stagiaires(count)",
+      "id, nom, annee, specialites(nom), stagiaires(count)",
     )
-    .order("date_debut", { ascending: true, nullsFirst: true });
+    .order("nom");
 
   if (error) throw new Error(error.message);
 
@@ -30,17 +74,16 @@ export async function getGroupes(): Promise<Groupe[]> {
     const r = g as unknown as {
       id: string;
       nom: string;
-      date_debut: string | null;
-      date_fin: string | null;
       annee: number | null;
       specialites: { nom: string } | null;
       stagiaires?: { count: number }[];
     };
+    const periode = periodes.get(r.id);
     return {
       id: r.id,
       nom: r.nom,
-      date_debut: r.date_debut,
-      date_fin: r.date_fin,
+      date_debut: periode?.debut ?? null,
+      date_fin: periode?.fin ?? null,
       annee: r.annee,
       specialite: r.specialites?.nom ?? null,
       stagiaires: r.stagiaires,
@@ -52,25 +95,24 @@ export async function getGroupeById(id: string): Promise<Groupe | null> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("groupes")
-    .select("id, nom, date_debut, date_fin, annee, specialites(nom)")
+    .select("id, nom, annee, specialites(nom)")
     .eq("id", id)
     .single();
 
   if (error || !data) return null;
 
+  const periode = (await getPeriodesGroupes()).get(id);
   const r = data as unknown as {
     id: string;
     nom: string;
-    date_debut: string | null;
-    date_fin: string | null;
     annee: number | null;
     specialites: { nom: string } | null;
   };
   return {
     id: r.id,
     nom: r.nom,
-    date_debut: r.date_debut,
-    date_fin: r.date_fin,
+    date_debut: periode?.debut ?? null,
+    date_fin: periode?.fin ?? null,
     annee: r.annee,
     specialite: r.specialites?.nom ?? null,
   };
@@ -78,18 +120,21 @@ export async function getGroupeById(id: string): Promise<Groupe | null> {
 
 export async function createGroupe(input: {
   nom: string;
-  date_debut?: string;
-  date_fin?: string;
+  annee?: number | null;
   module_ids?: string[];
 }) {
   const supabase = await createClient();
+  const user = await getUser();
+  if (!user) throw new Error("Authentification requise.");
 
   const { data, error } = await supabase
     .from("groupes")
     .insert({
       nom: input.nom,
-      date_debut: input.date_debut ?? null,
-      date_fin: input.date_fin ?? null,
+      annee: input.annee ?? null,
+      // Sans ce champ, la politique d'écriture refuse la ligne : elle exige
+      // `formateur_id = auth.uid()`. C'est ce qui bloquait toute création.
+      formateur_id: user.id,
     })
     .select("id")
     .single();
@@ -107,8 +152,7 @@ export async function updateGroupe(
   id: string,
   input: {
     nom: string;
-    date_debut?: string;
-    date_fin?: string;
+    annee?: number | null;
     module_ids?: string[];
   },
 ) {
@@ -118,8 +162,7 @@ export async function updateGroupe(
     .from("groupes")
     .update({
       nom: input.nom,
-      date_debut: input.date_debut ?? null,
-      date_fin: input.date_fin ?? null,
+      annee: input.annee ?? null,
     })
     .eq("id", id);
 

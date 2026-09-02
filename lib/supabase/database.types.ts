@@ -630,8 +630,6 @@ export type Database = {
         Row: {
           annee: number | null
           created_at: string
-          date_debut: string | null
-          date_fin: string | null
           formateur_id: string | null
           id: string
           nom: string
@@ -640,8 +638,6 @@ export type Database = {
         Insert: {
           annee?: number | null
           created_at?: string
-          date_debut?: string | null
-          date_fin?: string | null
           formateur_id?: string | null
           id?: string
           nom: string
@@ -650,8 +646,6 @@ export type Database = {
         Update: {
           annee?: number | null
           created_at?: string
-          date_debut?: string | null
-          date_fin?: string | null
           formateur_id?: string | null
           id?: string
           nom?: string
@@ -1481,6 +1475,7 @@ export type Database = {
       }
       stagiaires: {
         Row: {
+          cef: string | null
           created_at: string
           email: string | null
           groupe_id: string | null
@@ -1490,6 +1485,7 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          cef?: string | null
           created_at?: string
           email?: string | null
           groupe_id?: string | null
@@ -1499,6 +1495,7 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          cef?: string | null
           created_at?: string
           email?: string | null
           groupe_id?: string | null
@@ -1649,6 +1646,7 @@ export type Database = {
         Args: { p_note: number; p_passation_id: string; p_responses: Json }
         Returns: undefined
       }
+      email_du_cef: { Args: { p_cef: string }; Returns: string }
       enregistrer_parametres_llm: {
         Args: {
           p_base_url?: string
