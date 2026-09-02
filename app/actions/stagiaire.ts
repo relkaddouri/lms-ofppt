@@ -8,6 +8,8 @@ export type IdentiteStagiaire = {
   prenom: string;
   groupeId: string;
   groupeNom: string;
+  /** Année de formation du groupe, affichée sous le nom en tête d'écran. */
+  annee: number | null;
 };
 
 /**
@@ -23,7 +25,7 @@ export async function getIdentiteStagiaire(): Promise<IdentiteStagiaire | null> 
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("stagiaires")
-    .select("id, nom, prenom, groupe_id, groupes(nom)")
+    .select("id, nom, prenom, groupe_id, groupes(nom, annee)")
     .eq("user_id", user.id)
     .maybeSingle();
 
@@ -34,7 +36,7 @@ export async function getIdentiteStagiaire(): Promise<IdentiteStagiaire | null> 
     nom: string;
     prenom: string;
     groupe_id: string;
-    groupes: { nom: string } | null;
+    groupes: { nom: string; annee: number | null } | null;
   };
 
   return {
@@ -43,6 +45,7 @@ export async function getIdentiteStagiaire(): Promise<IdentiteStagiaire | null> 
     prenom: s.prenom,
     groupeId: s.groupe_id,
     groupeNom: s.groupes?.nom ?? "—",
+    annee: s.groupes?.annee ?? null,
   };
 }
 
@@ -61,6 +64,8 @@ export type EvenementStagiaire = {
   typeControle: "CC" | "EFM" | null;
   typeEfm: "local" | "regional" | null;
   dureeHeures: number | null;
+  /** Séances seulement : le support publié, s'il existe déjà. */
+  supportId: string | null;
 };
 
 /**
@@ -80,7 +85,7 @@ export async function getMonEmploiDuTemps(): Promise<EvenementStagiaire[]> {
     supabase
       .from("seances")
       .select(
-        "id, date, heure_debut, heure_fin, statut, nature, objectif_operationnel, modules(nom, competences(code_operationnel))",
+        "id, date, heure_debut, heure_fin, statut, nature, objectif_operationnel, modules(nom, competences(code_operationnel)), supports_seance(id)",
       )
       .eq("groupe_id", identite.groupeId)
       .not("date", "is", null),
@@ -108,6 +113,7 @@ export async function getMonEmploiDuTemps(): Promise<EvenementStagiaire[]> {
         nom: string;
         competences: { code_operationnel: string | null } | null;
       } | null;
+      supports_seance: { id: string }[] | null;
     };
     return {
       id: r.id,
@@ -123,6 +129,7 @@ export async function getMonEmploiDuTemps(): Promise<EvenementStagiaire[]> {
       typeControle: null,
       typeEfm: null,
       dureeHeures: null,
+      supportId: r.supports_seance?.[0]?.id ?? null,
     };
   });
 
@@ -158,6 +165,7 @@ export async function getMonEmploiDuTemps(): Promise<EvenementStagiaire[]> {
         typeControle: r.type,
         typeEfm: r.type_efm,
         dureeHeures: r.duree_heures,
+        supportId: null,
       };
     })
     .filter((c) => c !== null);

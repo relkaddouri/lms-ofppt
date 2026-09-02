@@ -37,7 +37,7 @@ export function NavigationHaute() {
   const pathname = usePathname();
 
   return (
-    <nav aria-label="Navigation principale" className="hidden md:block">
+    <nav aria-label="Sections de votre espace" className="hidden md:block">
       <ul className="flex gap-1">
         {ONGLETS.map(({ href, libelle, Icone }) => {
           const actif = pathname.startsWith(href);
@@ -46,10 +46,10 @@ export function NavigationHaute() {
               <Link
                 href={href}
                 aria-current={actif ? "page" : undefined}
-                className={`flex min-h-[44px] items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors ${
+                className={`flex min-h-[44px] items-center gap-2 rounded-[9px] px-3 py-2 text-sm no-underline transition-colors duration-150 ease-out hover:no-underline ${
                   actif
-                    ? "bg-wash font-medium text-ink"
-                    : "text-slate hover:bg-wash hover:text-ink"
+                    ? "bg-wash font-semibold text-ink"
+                    : "text-slate-2 hover:bg-paper hover:text-ink"
                 }`}
               >
                 <Icone className="h-4 w-4 shrink-0" aria-hidden />
@@ -69,30 +69,33 @@ export function NavigationBasse() {
   return (
     <nav
       aria-label="Navigation principale"
-      className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-surface pb-[env(safe-area-inset-bottom)] md:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-surface pb-[env(safe-area-inset-bottom)] shadow-ancre md:hidden"
     >
-      <ul className="mx-auto flex max-w-lg">
+      <ul className="mx-auto flex max-w-lg items-stretch px-1 pb-3 pt-2">
         {ONGLETS.map((onglet) => {
           const { href, libelle, Icone } = onglet;
           const court = "libelleCourt" in onglet ? onglet.libelleCourt : libelle;
           const actif = pathname.startsWith(href);
           return (
-            <li key={href} className="flex-1">
+            <li key={href} className="min-w-0 flex-1">
               <Link
                 href={href}
                 aria-current={actif ? "page" : undefined}
-                className="flex min-h-[56px] flex-col items-center justify-center gap-0.5 px-1 py-2"
+                // La maquette laisse l'icône nue : c'est son trait et sa
+                // teinte qui portent l'état actif, pas une pastille de fond.
+                className={`flex min-h-[44px] flex-col items-center gap-[5px] px-0.5 py-[7px] no-underline hover:no-underline ${
+                  actif ? "text-ink" : "text-muted"
+                }`}
               >
+                <Icone
+                  size={21}
+                  strokeWidth={actif ? 2.2 : 1.8}
+                  aria-hidden
+                  className="shrink-0"
+                />
                 <span
-                  className={`flex h-7 w-11 items-center justify-center rounded-full transition-colors ${
-                    actif ? "bg-wash text-ink" : "text-slate"
-                  }`}
-                >
-                  <Icone className="h-5 w-5" aria-hidden />
-                </span>
-                <span
-                  className={`whitespace-nowrap text-[10px] leading-tight ${
-                    actif ? "font-medium text-ink" : "text-slate"
+                  className={`whitespace-nowrap text-[10.5px] leading-tight ${
+                    actif ? "font-semibold" : "font-normal"
                   }`}
                 >
                   {court}

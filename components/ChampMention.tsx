@@ -1,8 +1,6 @@
 "use client";
 
 import { useRef, useState } from "react";
-import Button from "@/components/ui/Button";
-import { inputStyles } from "@/components/ui/Input";
 import type { Camarade } from "@/app/actions/fil";
 import { Send } from "lucide-react";
 
@@ -77,7 +75,10 @@ export default function ChampMention({
         </ul>
       ) : null}
 
-      <div className="flex gap-2">
+      {/* Champ arrondi en pilule et bouton rond, comme la maquette mobile :
+          le composeur se lit comme une barre de message, pas comme un
+          formulaire. */}
+      <div className="flex items-center gap-[9px]">
         <input
           ref={champ}
           value={texte}
@@ -91,17 +92,17 @@ export default function ChampMention({
           }}
           placeholder={placeholder}
           aria-label={placeholder}
-          className={inputStyles}
+          className="min-h-[44px] min-w-0 flex-1 rounded-full border border-border-strong bg-surface px-[15px] py-[11px] text-[14.5px] text-ink outline-none transition-colors duration-150 ease-out placeholder:text-slate-light focus:border-teal focus:shadow-[0_0_0_3px_rgba(46,125,158,0.15)]"
         />
-        <Button
-          icon={Send}
+        <button
+          type="button"
           onClick={envoyer}
           disabled={busy || !texte.trim()}
           aria-label="Envoyer"
-          className="min-h-[44px] min-w-[44px] shrink-0"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-ink bg-ink text-white transition-colors duration-150 ease-out hover:border-ofppt-ink-dark hover:bg-ofppt-ink-dark disabled:cursor-not-allowed disabled:border-muted disabled:bg-muted"
         >
-          {""}
-        </Button>
+          <Send size={17} aria-hidden />
+        </button>
       </div>
     </div>
   );

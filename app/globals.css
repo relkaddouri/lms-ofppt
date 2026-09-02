@@ -143,15 +143,21 @@ body {
   font-family: var(--font-source-sans), system-ui, sans-serif;
 }
 
-/* Les liens portent la sarcelle, comme dans la planche de style. */
-a {
-  color: var(--ofppt-teal);
-  text-decoration: none;
-}
+/* Les liens portent la sarcelle, comme dans la planche de style.
+   Dans la couche `base` : hors couche, une règle d'élément l'emporte sur
+   toute utilitaire, quelle que soit la spécificité — un `<Link>` portant
+   `text-ink` ou `text-muted` ressortait donc en sarcelle, dans la barre
+   latérale comme dans la navigation stagiaire. */
+@layer base {
+  a {
+    color: var(--ofppt-teal);
+    text-decoration: none;
+  }
 
-a:hover {
-  color: var(--ofppt-ink);
-  text-decoration: underline;
+  a:hover {
+    color: var(--ofppt-ink);
+    text-decoration: underline;
+  }
 }
 
 @keyframes toast-in {
