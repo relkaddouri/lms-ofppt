@@ -3,7 +3,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { createGroupe, type Groupe } from "@/app/actions/groupes";
+import {
+  createGroupe,
+  type Groupe,
+  type Specialite,
+} from "@/app/actions/groupes";
 import type { Module } from "@/app/actions/modules";
 import Button from "@/components/ui/Button";
 import Input, { inputStyles } from "@/components/ui/Input";
@@ -31,9 +35,11 @@ function numeroDe(nom: string): string {
 export default function GroupesManager({
   groupes,
   modules,
+  specialites,
 }: {
   groupes: Groupe[];
   modules: Module[];
+  specialites: Specialite[];
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -44,6 +50,7 @@ export default function GroupesManager({
   const [form, setForm] = useState({
     nom: "",
     annee: "1",
+    specialite_id: "",
   });
   const [selectedModules, setSelectedModules] = useState<string[]>([]);
 
@@ -60,10 +67,11 @@ export default function GroupesManager({
       await createGroupe({
         nom: form.nom,
         annee: Number(form.annee) || null,
+        specialite_id: form.specialite_id || null,
         module_ids: selectedModules,
       });
       setOpen(false);
-      setForm({ nom: "", annee: "1" });
+      setForm({ nom: "", annee: "1", specialite_id: "" });
       setSelectedModules([]);
       toast("Groupe créé");
       router.refresh();
@@ -253,6 +261,33 @@ export default function GroupesManager({
               La période du groupe se calculera depuis son emploi du temps.
             </span>
           </label>
+
+          {/* Une 2ᵉ année est rattachée à une spécialité : c'est ce que la
+              base exige, et ce que le formulaire omettait — la création
+              échouait sans que rien ne le dise. */}
+          {form.annee === "2" ? (
+            <label htmlFor="specialite" className="flex flex-col gap-[7px]">
+              <span className="text-sm font-semibold text-body">
+                Spécialité
+              </span>
+              <select
+                id="specialite"
+                required
+                value={form.specialite_id}
+                onChange={(e) =>
+                  setForm({ ...form, specialite_id: e.target.value })
+                }
+                className={inputStyles}
+              >
+                <option value="">— Choisir une spécialité —</option>
+                {specialites.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.nom}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : null}
 
           <div>
             <span className="block text-sm font-medium text-ink">

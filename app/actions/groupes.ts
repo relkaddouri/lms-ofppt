@@ -118,9 +118,23 @@ export async function getGroupeById(id: string): Promise<Groupe | null> {
   };
 }
 
+export type Specialite = { id: string; nom: string };
+
+/** Spécialités du référentiel, pour rattacher un groupe de 2ᵉ année. */
+export async function getSpecialites(): Promise<Specialite[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("specialites")
+    .select("id, nom")
+    .order("nom");
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
+
 export async function createGroupe(input: {
   nom: string;
   annee?: number | null;
+  specialite_id?: string | null;
   module_ids?: string[];
 }) {
   const supabase = await createClient();
@@ -132,6 +146,9 @@ export async function createGroupe(input: {
     .insert({
       nom: input.nom,
       annee: input.annee ?? null,
+      // Une 2ᵉ année est forcément rattachée à une spécialité : la base le
+      // vérifie (`groupes_specialite_si_annee2`), le formulaire le demande.
+      specialite_id: input.annee === 2 ? (input.specialite_id ?? null) : null,
       // Sans ce champ, la politique d'écriture refuse la ligne : elle exige
       // `formateur_id = auth.uid()`. C'est ce qui bloquait toute création.
       formateur_id: user.id,
