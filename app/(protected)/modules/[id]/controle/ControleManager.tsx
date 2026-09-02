@@ -19,7 +19,9 @@ import {
 } from "@/app/actions/controles";
 import CopiesManager from "./CopiesManager";
 import ContenuCouvert from "./ContenuCouvert";
-import { Stepper, NavigationEtapes } from "./Stepper";
+import { Stepper, NavigationEtapes, ETAPES } from "./Stepper";
+import CarteChoix, { type Choix } from "./CarteChoix";
+import Segments from "@/components/ui/Segments";
 import { useToast } from "@/components/ui/Toast";
 import BandeauIa from "@/components/BandeauIa";
 import Breadcrumb from "@/components/Breadcrumb";
@@ -27,7 +29,7 @@ import Badge from "@/components/ui/Badge";
 import Button, { buttonStyles } from "@/components/ui/Button";
 import { inputStyles } from "@/components/ui/Input";
 import { ConfirmModal } from "@/components/ui/Modal";
-import { slugify } from "@/lib/format";
+import { formatDate, slugify } from "@/lib/format";
 import {
   BadgeCheck,
   Download,
@@ -54,6 +56,13 @@ const LIBELLE_QUESTION: Record<TypeQuestion, string> = {
   exercice: "Exercice d'application",
 };
 
+/** Libellés courts du segmenté de la maquette, où la place est comptée. */
+const LIBELLE_COURT: Record<TypeQuestion, string> = {
+  qcm: "QCM",
+  ouverte: "Ouverte",
+  exercice: "Exercice",
+};
+
 const inputClass = inputStyles;
 const btnGhostLink = buttonStyles("ghost", "sm");
 
@@ -71,6 +80,52 @@ function newQuestion(): DraftQuestion {
 function optionVide(): OptionQcm {
   return { texte: "", correcte: false };
 }
+
+/**
+ * Les trois natures que la maquette présente côte à côte. Le modèle en garde
+ * deux champs — `type` et `type_efm` — que ces clés recomposent.
+ */
+const NATURES: readonly Choix<"cc" | "efml" | "efmr">[] = [
+  {
+    cle: "cc",
+    label: "CC",
+    detail: "Contrôle continu interne au module.",
+    meta: "Validation formateur",
+  },
+  {
+    cle: "efml",
+    label: "EFM local",
+    detail: "Évaluation de fin de module, sujet établissement.",
+    meta: "Validation chef de pôle",
+  },
+  {
+    cle: "efmr",
+    label: "EFM régional",
+    detail: "Sujet régional harmonisé entre établissements.",
+    meta: "Date imposée par la DR",
+  },
+];
+
+const FORMATS: readonly Choix<FormatControle>[] = [
+  {
+    cle: "theorique",
+    label: "Théorique",
+    detail: "Questions de cours et raisonnement écrit.",
+    meta: "Salle de cours",
+  },
+  {
+    cle: "pratique",
+    label: "Pratique",
+    detail: "Manipulation sur poste, livrable évalué.",
+    meta: "Salle informatique",
+  },
+  {
+    cle: "mixte",
+    label: "Mixte",
+    detail: "Partie écrite puis mise en œuvre sur machine.",
+    meta: "Salle informatique",
+  },
+];
 
 export default function ControleManager({
   moduleId,
@@ -122,6 +177,22 @@ export default function ControleManager({
   // Préparer un contrôle se fait en quatre temps : voir ce qui est couvert,
   // choisir la nature, produire les questions, relire.
   const [etape, setEtape] = useState(1);
+  // Séances retenues à l'étape 1, transmises au générateur.
+  const [seancesRetenues, setSeancesRetenues] = useState<string[]>([]);
+
+  // Une seule clé pour les trois cartes de nature, recomposée depuis les deux
+  // champs que le modèle enregistre.
+  const natureCle: "cc" | "efml" | "efmr" =
+    type === "CC" ? "cc" : typeEfm === "regional" ? "efmr" : "efml";
+
+  function changerNature(cle: "cc" | "efml" | "efmr") {
+    if (cle === "cc") {
+      setType("CC");
+      return;
+    }
+    setType("EFM");
+    setTypeEfm(cle === "efmr" ? "regional" : "local");
+  }
   const [confirmSuppression, setConfirmSuppression] = useState(false);
   const toast = useToast();
 
@@ -200,6 +271,7 @@ export default function ControleManager({
           // sélecteur « Théorique / Pratique » ne serait qu'une étiquette.
           format,
           type,
+          seanceIds: seancesRetenues,
           ...(raffiner
             ? {
                 instruction: instruction.trim(),
@@ -401,7 +473,25 @@ export default function ControleManager({
         ]}
       />
 
-      <div className="mt-6 flex flex-wrap items-end gap-4 rounded-xl border border-border bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-4">
+      <header className="mt-6 flex flex-col gap-2">
+        <span className="font-mono text-[11.5px] uppercase tracking-[0.12em] text-slate-light">
+          Étape {etape} sur {ETAPES.length} · {ETAPES[etape - 1]?.libelle}
+        </span>
+        <h1 className="font-display text-[29px] font-bold leading-tight tracking-[-0.02em] text-ink">
+          {titre.trim() || `Contrôle — ${moduleNom}`}
+        </h1>
+        <p className="text-base text-slate-2">
+          {[
+            groupeNom,
+            NATURES.find((n) => n.cle === natureCle)?.label,
+            datePrevue ? `session du ${formatDate(datePrevue)}` : null,
+          ]
+            .filter(Boolean)
+            .join(" · ")}
+        </p>
+      </header>
+
+      <div className="mt-6 flex flex-wrap items-end gap-4 rounded-[14px] border border-border bg-surface p-[18px] shadow-repos">
         <div>
           <label
             htmlFor="genDuree"
@@ -450,7 +540,10 @@ export default function ControleManager({
 
       {issuDuModele ? (
         <div className="mt-4">
-          <BandeauIa>
+          <BandeauIa
+            meta={`Claude · ${questions.length} question${questions.length > 1 ? "s" : ""}`}
+            onRelu={() => setIssuDuModele(false)}
+          >
             Sujet et corrigé générés par l&apos;IA — relisez-les avant de
             valider le contrôle.
           </BandeauIa>
@@ -476,27 +569,16 @@ export default function ControleManager({
         </p>
       ) : null}
 
-      <div className="mt-6 flex gap-1 rounded-xl border border-border bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-1">
-        <button
-          onClick={() => setTab("editeur")}
-          className={`flex-1 rounded-[4px] px-3 py-1.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-forest ${
-            tab === "editeur"
-              ? "bg-mint text-forest"
-              : "text-slate hover:bg-slate/5"
-          }`}
-        >
-          Éditeur
-        </button>
-        <button
-          onClick={() => setTab("copies")}
-          className={`flex-1 rounded-[4px] px-3 py-1.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-forest ${
-            tab === "copies"
-              ? "bg-mint text-forest"
-              : "text-slate hover:bg-slate/5"
-          }`}
-        >
-          Copies
-        </button>
+      <div className="mt-6 max-w-[320px]">
+        <Segments
+          valeur={tab}
+          ariaLabel="Vue du contrôle"
+          onChange={setTab}
+          options={[
+            { valeur: "editeur" as const, libelle: "Éditeur" },
+            { valeur: "copies" as const, libelle: "Copies" },
+          ]}
+        />
       </div>
 
       {tab === "copies" ? (
@@ -523,99 +605,54 @@ export default function ControleManager({
                 groupeId={groupeId ?? null}
                 moduleId={moduleId}
                 type={type}
+                onSelection={setSeancesRetenues}
               />
             </div>
           ) : etape === 2 ? (
-            <div className="max-w-[760px] space-y-4">
-              <div className="max-w-[640px] rounded-xl border border-border bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-4">
-                <h2 className="text-sm font-medium text-ink">
-                  Nature du contrôle
-                </h2>
-                <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <div>
-                    <label htmlFor="type" className="block text-xs text-slate">
-                      Type
-                    </label>
-                    <select
-                      id="type"
-                      value={type}
-                      onChange={(e) => setType(e.target.value as TypeControle)}
-                      className={`${inputClass} mt-1`}
-                    >
-                      <option value="CC">Contrôle continu (CC)</option>
-                      <option value="EFM">
-                        Épreuve de fin de module (EFM)
-                      </option>
-                    </select>
-                  </div>
+            <div className="flex max-w-[880px] flex-col gap-5">
+              <CarteChoix
+                titre="Nature du contrôle"
+                description="Détermine le circuit de validation et l'archivage."
+                valeur={natureCle}
+                onChange={changerNature}
+                choix={NATURES}
+              />
 
-                  {type === "EFM" ? (
-                    <div>
-                      <label
-                        htmlFor="typeEfm"
-                        className="block text-xs text-slate"
-                      >
-                        Portée de l&apos;EFM
-                      </label>
-                      <select
-                        id="typeEfm"
-                        value={typeEfm}
-                        onChange={(e) => setTypeEfm(e.target.value as TypeEfm)}
-                        className={`${inputClass} mt-1`}
-                      >
-                        <option value="local">Local (date estimable)</option>
-                        <option value="regional">
-                          Régional (date imposée)
-                        </option>
-                      </select>
-                    </div>
-                  ) : null}
+              <CarteChoix
+                titre="Format d'évaluation"
+                description="Oriente la génération des questions à l'étape suivante."
+                valeur={format}
+                onChange={setFormat}
+                choix={FORMATS}
+              />
 
-                  <div>
-                    <label
-                      htmlFor="format"
-                      className="block text-xs text-slate"
-                    >
-                      Format
-                    </label>
-                    <select
-                      id="format"
-                      value={format}
-                      onChange={(e) =>
-                        setFormat(e.target.value as FormatControle)
-                      }
-                      className={`${inputClass} mt-1`}
-                    >
-                      <option value="theorique">Théorique</option>
-                      <option value="pratique">Pratique</option>
-                      <option value="mixte">Théorique et pratique</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label
-                      htmlFor="datePrevue"
-                      className="block text-xs text-slate"
-                    >
-                      Date prévue
-                    </label>
-                    <input
-                      id="datePrevue"
-                      type="date"
-                      value={datePrevue}
-                      onChange={(e) => setDatePrevue(e.target.value)}
-                      className={`${inputClass} mt-1`}
-                    />
-                  </div>
-                </div>
-                {type === "EFM" && typeEfm === "regional" ? (
-                  <p className="mt-3 text-xs text-slate">
-                    La date d&apos;un EFM régional est fixée par la Direction
-                    Régionale : elle se saisit ici, elle ne peut pas être
-                    estimée.
+              <section className="flex flex-col gap-[18px] rounded-[14px] border border-border bg-surface p-6 shadow-repos">
+                <div className="flex flex-col gap-1">
+                  <h2 className="font-display text-[18px] font-semibold text-ink">
+                    Session
+                  </h2>
+                  <p className="text-sm text-slate-light">
+                    {natureCle === "efmr"
+                      ? "La date d'un EFM régional est fixée par la Direction Régionale : elle se saisit ici, elle ne peut pas être estimée."
+                      : "La date à laquelle le groupe passera l'épreuve."}
                   </p>
-                ) : null}
-              </div>
+                </div>
+                <label
+                  htmlFor="datePrevue"
+                  className="flex max-w-[240px] flex-col gap-[7px]"
+                >
+                  <span className="text-sm font-semibold text-body">
+                    Date prévue
+                  </span>
+                  <input
+                    id="datePrevue"
+                    type="date"
+                    value={datePrevue}
+                    onChange={(e) => setDatePrevue(e.target.value)}
+                    className={inputClass}
+                  />
+                </label>
+              </section>
             </div>
           ) : etape === 3 ? (
             <div className="space-y-4">
@@ -657,20 +694,41 @@ export default function ControleManager({
                 </div>
               ) : null}
 
-              <div className="rounded-xl border border-border bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-4">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-sm font-medium text-ink">Questions</h2>
-                  <Badge tone={totalBareme === 20 ? "success" : "info"}>
-                    Barème : {totalBareme} / 20
-                  </Badge>
+              <div className="overflow-hidden rounded-[14px] border border-border bg-surface shadow-repos">
+                <div className="flex flex-wrap items-center justify-between gap-4 border-b border-separator bg-paper-alt px-6 py-[18px]">
+                  <h2 className="font-display text-[17px] font-semibold text-ink">
+                    Questions{" "}
+                    <span className="font-mono text-sm font-medium text-slate-light">
+                      {String(questions.length).padStart(2, "0")}
+                    </span>
+                  </h2>
+                  <span className="flex items-center gap-2.5">
+                    <span className="text-[13.5px] text-slate-light">
+                      Barème
+                    </span>
+                    <span
+                      className={`font-mono text-[15px] font-medium ${
+                        totalBareme > 20
+                          ? "text-coral-dark"
+                          : totalBareme === 20
+                            ? "text-green-dark"
+                            : "text-ink"
+                      }`}
+                    >
+                      {totalBareme}
+                    </span>
+                    <span className="font-mono text-[13px] text-muted">
+                      / 20
+                    </span>
+                  </span>
                 </div>
 
                 {loading ? (
-                  <p className="mt-3 text-sm text-slate">
+                  <p className="px-6 py-5 text-sm text-slate-light">
                     Chargement du contrôle…
                   </p>
                 ) : questions.length === 0 ? (
-                  <div className="mt-6 flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-paper px-6 py-10 text-center">
+                  <div className="m-6 flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-paper px-6 py-10 text-center">
                     <div className="flex h-12 w-12 items-center justify-center rounded-full bg-mint">
                       <svg
                         className="h-6 w-6 text-forest"
@@ -689,106 +747,137 @@ export default function ControleManager({
                       Aucune question pour l&apos;instant
                     </p>
                     <p className="mt-1 text-sm text-slate">
-                      Générez un contrôle avec l&apos;IA pour préparer
-                      automatiquement les questions et le barème.
+                      Générez un contrôle avec l&apos;IA, ou composez-le
+                      question par question.
                     </p>
-                    <Button
-                      icon={Sparkles}
-                      onClick={() => handleGenerate(false)}
-                      loading={busy}
-                      loadingLabel="Génération…"
-                      className="mt-5"
-                    >
-                      Générer un contrôle
-                    </Button>
+                    {/* Sans cette seconde porte, un formateur sans clé de
+                        modèle n'avait aucun moyen de composer son contrôle. */}
+                    <div className="mt-5 flex flex-wrap justify-center gap-2.5">
+                      <Button
+                        icon={Sparkles}
+                        onClick={() => handleGenerate(false)}
+                        loading={busy}
+                        loadingLabel="Génération…"
+                      >
+                        Générer un contrôle
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        icon={Plus}
+                        onClick={() =>
+                          setQuestions((prev) => [...prev, newQuestion()])
+                        }
+                      >
+                        Ajouter une question
+                      </Button>
+                    </div>
                   </div>
                 ) : (
-                  <div className="mt-3 space-y-4">
+                  <div>
                     {questions.map((q, i) => (
                       <div
                         key={q.id}
-                        className="rounded-lg border border-border p-3"
+                        className="flex gap-3.5 border-b border-separator px-6 py-[18px] last:border-b-0"
                       >
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                          <span className="text-xs font-medium uppercase tracking-wide text-slate">
-                            Question {i + 1}
-                          </span>
-                          <div className="flex items-center gap-2">
-                            <select
+                        <span
+                          aria-hidden
+                          className="mt-1 flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-[7px] bg-wash font-mono text-xs font-semibold text-slate-2"
+                        >
+                          {String(i + 1).padStart(2, "0")}
+                        </span>
+                        <div className="flex min-w-0 flex-1 flex-col gap-2.5">
+                          <div className="overflow-hidden rounded-[10px] border border-border-strong bg-surface">
+                            <textarea
+                              id={`enonce-${q.id}`}
+                              rows={2}
+                              aria-label={`Énoncé de la question ${i + 1}`}
+                              value={q.enonce}
+                              placeholder="Énoncé de la question…"
+                              onChange={(e) =>
+                                updateQuestion(q.id, { enonce: e.target.value })
+                              }
+                              className="w-full resize-y border-none bg-transparent px-[13px] py-[11px] text-[15px] leading-snug text-body outline-none placeholder:text-slate-light"
+                            />
+                          </div>
+
+                          <div className="flex flex-wrap items-center gap-2.5">
+                            <span
+                              role="radiogroup"
                               aria-label={`Type de la question ${i + 1}`}
-                              value={q.type}
-                              onChange={(e) => {
-                                const type = e.target.value as TypeQuestion;
-                                updateQuestion(q.id, {
-                                  type,
-                                  options:
-                                    type === "qcm" && q.options.length === 0
-                                      ? [
-                                          optionVide(),
-                                          optionVide(),
-                                          optionVide(),
-                                        ]
-                                      : q.options,
-                                });
-                              }}
-                              className={`${inputClass} w-44 py-1 text-xs`}
+                              className="flex gap-[3px] rounded-[9px] border border-border bg-wash-strong p-[3px]"
                             >
                               {(
-                                Object.keys(LIBELLE_QUESTION) as TypeQuestion[]
-                              ).map((t) => (
-                                <option key={t} value={t}>
-                                  {LIBELLE_QUESTION[t]}
-                                </option>
-                              ))}
-                            </select>
-                            <Button
-                              variant="danger"
-                              size="sm"
-                              icon={Trash2}
-                              onClick={() => removeQuestion(q.id)}
+                                Object.keys(LIBELLE_COURT) as TypeQuestion[]
+                              ).map((tq) => {
+                                const actif = q.type === tq;
+                                return (
+                                  <button
+                                    key={tq}
+                                    type="button"
+                                    role="radio"
+                                    aria-checked={actif}
+                                    onClick={() =>
+                                      updateQuestion(q.id, {
+                                        type: tq,
+                                        options:
+                                          tq === "qcm" &&
+                                          q.options.length === 0
+                                            ? [
+                                                optionVide(),
+                                                optionVide(),
+                                                optionVide(),
+                                              ]
+                                            : q.options,
+                                      })
+                                    }
+                                    className={`rounded-md px-[11px] py-1.5 text-[13px] font-semibold transition-colors duration-150 ease-out ${
+                                      actif
+                                        ? "bg-surface text-ink shadow-[0_1px_2px_rgba(46,59,78,0.12)]"
+                                        : "text-slate-2 hover:text-ink"
+                                    }`}
+                                  >
+                                    {LIBELLE_COURT[tq]}
+                                  </button>
+                                );
+                              })}
+                            </span>
+
+                            <label
+                              htmlFor={`bareme-${q.id}`}
+                              className="ml-auto flex items-center gap-2"
                             >
-                              Supprimer
-                            </Button>
+                              <span className="text-[13px] text-slate-2">
+                                Barème
+                              </span>
+                              <span className="flex items-stretch overflow-hidden rounded-lg border border-border-strong bg-surface">
+                                <input
+                                  id={`bareme-${q.id}`}
+                                  type="number"
+                                  min={0}
+                                  step={0.5}
+                                  value={q.bareme}
+                                  onChange={(e) =>
+                                    updateQuestion(q.id, {
+                                      bareme: Number(e.target.value) || 0,
+                                    })
+                                  }
+                                  className="w-14 border-none bg-transparent px-2 py-[7px] text-right font-mono text-sm text-ink outline-none"
+                                />
+                                <span className="flex items-center border-l border-border px-[9px] font-mono text-[12.5px] text-slate-light">
+                                  pts
+                                </span>
+                              </span>
+                            </label>
+
+                            <button
+                              type="button"
+                              aria-label={`Supprimer la question ${i + 1}`}
+                              onClick={() => removeQuestion(q.id)}
+                              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-transparent text-coral-dark transition-colors duration-150 ease-out hover:border-tint-alert-strong hover:bg-alert-wash"
+                            >
+                              <Trash2 size={15} aria-hidden />
+                            </button>
                           </div>
-                        </div>
-                        <div className="mt-2">
-                          <label
-                            className="block text-xs text-slate"
-                            htmlFor={`enonce-${q.id}`}
-                          >
-                            Énoncé
-                          </label>
-                          <textarea
-                            id={`enonce-${q.id}`}
-                            rows={2}
-                            value={q.enonce}
-                            onChange={(e) =>
-                              updateQuestion(q.id, { enonce: e.target.value })
-                            }
-                            className={`${inputClass} mt-1`}
-                          />
-                        </div>
-                        <div className="mt-2 w-32">
-                          <label
-                            className="block text-xs text-slate"
-                            htmlFor={`bareme-${q.id}`}
-                          >
-                            Barème
-                          </label>
-                          <input
-                            id={`bareme-${q.id}`}
-                            type="number"
-                            min={0}
-                            step={0.5}
-                            value={q.bareme}
-                            onChange={(e) =>
-                              updateQuestion(q.id, {
-                                bareme: Number(e.target.value) || 0,
-                              })
-                            }
-                            className={`${inputClass} mt-1`}
-                          />
-                        </div>
 
                         {q.type === "qcm" ? (
                           <div className="mt-3">
@@ -893,19 +982,35 @@ export default function ControleManager({
                             />
                           </div>
                         )}
+                        </div>
                       </div>
                     ))}
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      icon={Plus}
-                      onClick={() =>
-                        setQuestions((prev) => [...prev, newQuestion()])
-                      }
-                      className="mt-4"
-                    >
-                      Ajouter une question
-                    </Button>
+                    <div className="flex flex-wrap items-center gap-3 bg-paper-alt px-6 py-4">
+                      <Button
+                        variant="secondary"
+                        icon={Plus}
+                        onClick={() =>
+                          setQuestions((prev) => [...prev, newQuestion()])
+                        }
+                      >
+                        Ajouter une question
+                      </Button>
+                      <span
+                        className={`text-[13.5px] ${
+                          totalBareme === 20
+                            ? "text-green-dark"
+                            : totalBareme > 20
+                              ? "text-coral-dark"
+                              : "text-slate-light"
+                        }`}
+                      >
+                        {totalBareme === 20
+                          ? "Barème complet."
+                          : totalBareme > 20
+                            ? "Barème supérieur à 20 points."
+                            : `Il reste ${20 - totalBareme} points à répartir.`}
+                      </span>
+                    </div>
                   </div>
                 )}
               </div>
@@ -913,6 +1018,111 @@ export default function ControleManager({
           ) : (
             <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_340px]">
               <div className="space-y-4">
+                <section className="flex flex-col gap-[22px] rounded-[14px] border border-border bg-surface p-[26px] shadow-repos">
+                  <div className="flex flex-wrap items-start justify-between gap-6">
+                    <div className="flex flex-col gap-1">
+                      <h2 className="font-display text-[18px] font-semibold text-ink">
+                        Relecture finale
+                      </h2>
+                      <p className="text-sm text-slate-light">
+                        Vérifiez la cohérence du barème avant validation.
+                      </p>
+                    </div>
+                    <div className="flex flex-col items-end gap-1">
+                      <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-slate-light">
+                        Barème total
+                      </span>
+                      <span
+                        className={`font-display text-[40px] font-bold leading-none tracking-[-0.03em] ${
+                          totalBareme > 20
+                            ? "text-coral-dark"
+                            : totalBareme === 20
+                              ? "text-green-dark"
+                              : "text-ink"
+                        }`}
+                      >
+                        {totalBareme}
+                      </span>
+                      <span className="font-mono text-[13px] text-slate-light">
+                        sur 20 points
+                      </span>
+                    </div>
+                  </div>
+
+                  <dl className="grid gap-4 border-t border-separator pt-5 [grid-template-columns:repeat(auto-fit,minmax(150px,1fr))]">
+                    {[
+                      {
+                        cle: "Nature",
+                        valeur:
+                          NATURES.find((n) => n.cle === natureCle)?.label ??
+                          "—",
+                        mono: false,
+                      },
+                      {
+                        cle: "Format",
+                        valeur:
+                          FORMATS.find((f) => f.cle === format)?.label ?? "—",
+                        mono: false,
+                      },
+                      {
+                        cle: "Questions",
+                        valeur: String(questions.length).padStart(2, "0"),
+                        mono: true,
+                      },
+                      {
+                        cle: "Contenu couvert",
+                        valeur: `${seancesRetenues.length} séances`,
+                        mono: true,
+                      },
+                    ].map((c) => (
+                      <div key={c.cle} className="flex flex-col gap-[5px]">
+                        <dt className="text-[13px] text-slate-light">
+                          {c.cle}
+                        </dt>
+                        <dd
+                          className={`text-[15px] font-semibold text-ink ${
+                            c.mono ? "font-mono font-medium" : ""
+                          }`}
+                        >
+                          {c.valeur}
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
+
+                  {(() => {
+                    const relu = !issuDuModele;
+                    const conforme = totalBareme === 20;
+                    const bon = relu && conforme;
+                    return (
+                      <div
+                        className={`flex items-center gap-2.5 rounded-[10px] border px-3.5 py-3 ${
+                          bon
+                            ? "border-tint-success-strong bg-success-wash"
+                            : "border-tint-alert-strong bg-alert-wash"
+                        }`}
+                      >
+                        <span
+                          aria-hidden
+                          className={`h-[7px] w-[7px] shrink-0 rounded-full ${
+                            bon ? "bg-green" : "bg-coral"
+                          }`}
+                        />
+                        <span
+                          className={`text-[13.5px] leading-snug ${
+                            bon ? "text-green-dark" : "text-coral-dark"
+                          }`}
+                        >
+                          {!relu
+                            ? "Les questions générées par l'IA n'ont pas encore été marquées comme relues."
+                            : conforme
+                              ? "Contenu relu et barème conforme — prêt pour validation."
+                              : `Contenu relu, mais le barème totalise ${totalBareme} points au lieu de 20.`}
+                        </span>
+                      </div>
+                    );
+                  })()}
+                </section>
                 <div className="max-w-[640px] rounded-xl border border-border bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-4">
                   <label
                     htmlFor="titre"

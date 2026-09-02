@@ -67,6 +67,8 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   size?: ButtonSize;
   /** Icône lucide affichée avant le libellé, 16px, espacement 6px. */
   icon?: LucideIcon;
+  /** Même chose après le libellé, pour les boutons qui font avancer. */
+  iconRight?: LucideIcon;
   /** Libellé de substitution pendant une action en cours. */
   loadingLabel?: string;
   loading?: boolean;
@@ -77,6 +79,7 @@ export default function Button({
   variant = "primary",
   size = "md",
   icon: Icon,
+  iconRight: IconRight,
   loading = false,
   loadingLabel,
   className = "",
@@ -98,6 +101,7 @@ export default function Button({
         <>
           {Icon ? <Icon size={16} aria-hidden /> : null}
           {children}
+          {IconRight ? <IconRight size={16} aria-hidden /> : null}
         </>
       )}
     </button>

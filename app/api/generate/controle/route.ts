@@ -89,6 +89,7 @@ export async function POST(request: Request) {
     controleExistant,
     format: formatRecu,
     type: typeRecu,
+    seanceIds,
   } = await request.json().catch(() => ({}));
 
   const format = formatValide(formatRecu);
@@ -144,6 +145,11 @@ export async function POST(request: Request) {
     .eq("module_id", moduleId);
   if (!estEfm) seancesQuery = seancesQuery.eq("statut", "fait");
   if (groupeId) seancesQuery = seancesQuery.eq("groupe_id", groupeId);
+  // Le formateur peut avoir écarté des séances à l'étape « Contenu couvert » :
+  // une séance décochée ne doit pas ressortir dans les questions.
+  if (Array.isArray(seanceIds) && seanceIds.length > 0) {
+    seancesQuery = seancesQuery.in("id", seanceIds);
+  }
 
   const { data: seances } = await seancesQuery;
 

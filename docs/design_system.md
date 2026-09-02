@@ -152,7 +152,8 @@ Le calendrier (formateur) doit distinguer visuellement plusieurs états qui ont 
 
 Toute donnée produite par l'IA (fiche de préparation, questions de contrôle, corrigé, correction suggérée) doit être visuellement marquée **tant qu'elle n'a pas été relue et validée par le formateur** :
 
-- Bandeau discret en haut du bloc concerné : icône étoile/éclair + texte "Généré par l'IA — à relire", fond `--signal`-équivalent (`--mint` avec bordure `--ofppt-ink` fine)
+- Bandeau en haut du bloc concerné : icône éclair + texte "Généré par l'IA — à relire", fond `--tint-alert` avec bordure `--tint-alert-strong`, texte `--ofppt-coral-dark` (rendu de `Préparer un contrôle.dc.html`, qui remplace le bandeau menthe des premières versions)
+- Il porte, quand la donnée s'y prête, l'origine du contenu en mono (« Claude · 6 questions ») et un bouton plein corail "Marquer comme relu" — le seul bouton plein corail admis avec l'action destructive, parce qu'il est justement le point d'attention de la page
 - Ce bandeau **disparaît** dès que le formateur modifie ou valide explicitement le contenu (bouton "Valider" ou simple édition du texte) — à ce moment, le contenu devient visuellement identique à un contenu saisi manuellement
 - Cette règle découle directement des enseignements de l'audit précédent : ne jamais laisser une note ou un contenu généré passer pour définitif sans passage humain visible
 

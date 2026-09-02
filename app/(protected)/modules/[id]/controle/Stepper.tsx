@@ -1,7 +1,7 @@
 "use client";
 
 import Button from "@/components/ui/Button";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight } from "lucide-react";
 
 export const ETAPES = [
   { numero: 1, libelle: "Contenu couvert" },
@@ -13,7 +13,12 @@ export const ETAPES = [
 /**
  * Indicateur d'avancement du parcours de préparation.
  *
- * Les étapes déjà atteintes restent cliquables : préparer un contrôle n'est pas
+ * `Préparer un contrôle.dc.html` remplace la rangée de pastilles de la v2 par
+ * une frise : un rond par étape, relié au suivant par une barre qui verdit une
+ * fois l'étape franchie, et une jauge sous l'ensemble. On lit d'un coup où
+ * l'on en est, ce que quatre boutons alignés ne disaient pas.
+ *
+ * Toutes les étapes restent cliquables : préparer un contrôle n'est pas
  * linéaire, on revient volontiers sur le format après avoir vu les questions.
  */
 export function Stepper({
@@ -24,45 +29,70 @@ export function Stepper({
   onAller: (n: number) => void;
 }) {
   return (
-    <div className="mb-5">
-      <p className="text-xs font-medium uppercase tracking-wide text-slate">
-        Étape {etape} sur {ETAPES.length}
-      </p>
-      <ol className="mt-2 flex flex-wrap gap-1">
-        {ETAPES.map((e) => {
-          const atteinte = e.numero <= etape;
+    <div className="flex flex-col gap-3.5 rounded-[14px] border border-border bg-surface px-[22px] py-[18px] shadow-repos">
+      <ol className="flex items-center">
+        {ETAPES.map((e, i) => {
+          const faite = e.numero < etape;
           const courante = e.numero === etape;
+          const derniere = i === ETAPES.length - 1;
           return (
-            <li key={e.numero}>
+            <li
+              key={e.numero}
+              className={`flex min-w-0 items-center gap-2.5 ${
+                derniere ? "flex-none" : "flex-1"
+              }`}
+            >
               <button
                 type="button"
                 onClick={() => onAller(e.numero)}
                 aria-current={courante ? "step" : undefined}
-                className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm transition-colors ${
-                  courante
-                    ? "bg-forest text-white"
-                    : atteinte
-                      ? "bg-mint text-forest hover:bg-mint/70"
-                      : "text-slate hover:text-ink"
-                }`}
+                className="flex min-w-0 items-center gap-2.5 text-left"
               >
                 <span
-                  className={`flex h-5 w-5 items-center justify-center rounded-full font-mono text-xs ${
+                  className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-[1.5px] font-mono text-[12.5px] font-semibold ${
                     courante
-                      ? "bg-white/20"
-                      : atteinte
-                        ? "bg-forest/10"
-                        : "bg-border"
+                      ? "border-ink bg-ink text-white"
+                      : faite
+                        ? "border-tint-success-strong bg-success-wash text-green-dark"
+                        : "border-border-strong bg-surface text-muted"
                   }`}
                 >
-                  {e.numero}
+                  {faite ? (
+                    <Check className="h-3.5 w-3.5" strokeWidth={3} aria-hidden />
+                  ) : (
+                    e.numero
+                  )}
                 </span>
-                {e.libelle}
+                <span
+                  className={`truncate text-sm font-semibold ${
+                    courante
+                      ? "text-ink"
+                      : faite
+                        ? "text-body"
+                        : "text-muted"
+                  }`}
+                >
+                  {e.libelle}
+                </span>
               </button>
+              {derniere ? null : (
+                <span
+                  aria-hidden
+                  className={`h-0.5 min-w-3 flex-1 rounded-sm ${
+                    faite ? "bg-tint-success-strong" : "bg-wash"
+                  }`}
+                />
+              )}
             </li>
           );
         })}
       </ol>
+      <div className="h-[5px] overflow-hidden rounded-full bg-wash">
+        <div
+          className="h-full rounded-full bg-ink transition-[width] duration-200 ease-out"
+          style={{ width: `${(etape / ETAPES.length) * 100}%` }}
+        />
+      </div>
     </div>
   );
 }
@@ -77,29 +107,30 @@ export function NavigationEtapes({
   peutAvancer: boolean;
 }) {
   return (
-    <div className="mt-6 flex items-center gap-2 border-t border-border pt-4">
+    <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
       <Button
-        variant="ghost"
+        variant="secondary"
         icon={ChevronLeft}
         onClick={() => onAller(etape - 1)}
         disabled={etape <= 1}
       >
         Précédent
       </Button>
+      <span className="font-mono text-[13px] text-muted">
+        {etape < ETAPES.length
+          ? "Enregistrez avant de quitter la page."
+          : "Dernière étape — enregistrez ou validez le contrôle."}
+      </span>
       {etape < ETAPES.length ? (
         <Button
-          variant="secondary"
-          icon={ChevronRight}
+          iconRight={ChevronRight}
           onClick={() => onAller(etape + 1)}
           disabled={!peutAvancer}
-          className="ml-auto"
         >
-          {ETAPES[etape].libelle}
+          {etape === 3 ? "Relire" : "Continuer"}
         </Button>
       ) : (
-        <span className="ml-auto text-xs text-slate">
-          Dernière étape — enregistrez ou validez le contrôle.
-        </span>
+        <span />
       )}
     </div>
   );
