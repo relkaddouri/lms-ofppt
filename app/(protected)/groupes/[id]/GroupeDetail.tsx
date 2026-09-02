@@ -13,7 +13,6 @@ import KebabMenu from "@/components/KebabMenu";
 import { useToast } from "@/components/ui/Toast";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
-import Card from "@/components/ui/Card";
 import { initials } from "@/lib/format";
 import { Check, Mail, Pencil, Plus, Save, Trash2, X } from "lucide-react";
 import { inviterStagiaire } from "@/app/actions/invitations";
@@ -46,6 +45,7 @@ export default function GroupeDetail({
     }
   }
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [ajoutOuvert, setAjoutOuvert] = useState(false);
   const [form, setForm] = useState({ nom: "", prenom: "", email: "", cef: "" });
   const [editForm, setEditForm] = useState({
     nom: "",
@@ -54,6 +54,13 @@ export default function GroupeDetail({
     cef: "",
   });
   const toast = useToast();
+
+  /** Une modale fermée ne retient rien de la saisie abandonnée. */
+  function fermerAjout() {
+    if (busy) return;
+    setAjoutOuvert(false);
+    setForm({ nom: "", prenom: "", email: "", cef: "" });
+  }
 
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
@@ -66,6 +73,7 @@ export default function GroupeDetail({
         cef: form.cef || undefined,
       });
       setForm({ nom: "", prenom: "", email: "", cef: "" });
+      setAjoutOuvert(false);
       toast("Stagiaire ajouté");
       router.refresh();
     } catch (err) {
@@ -122,24 +130,34 @@ export default function GroupeDetail({
 
   return (
     <section className="mt-6">
-      <h2 className="font-display text-xl font-bold text-ink">
-        Stagiaires
-      </h2>
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <h2 className="font-display text-xl font-bold text-ink">Stagiaires</h2>
+        <Button icon={Plus} onClick={() => setAjoutOuvert(true)}>
+          Ajouter un stagiaire
+        </Button>
+      </div>
 
-      <Card className="mt-4 max-w-[640px]">
-        <h3 className="text-sm font-medium text-ink">Ajout rapide</h3>
-        <form
-          onSubmit={handleAdd}
-          className="mt-3 grid grid-cols-1 gap-4 md:grid-cols-[1fr_1fr_1.5fr_auto]"
-        >
-            <Input
-              id="cef"
-              label="CEF"
-              inputMode="numeric"
-              hint="Identifiant OFPPT, sert à se connecter"
-              value={form.cef}
-              onChange={(e) => setForm({ ...form, cef: e.target.value })}
-            />
+      {/* Ajouter un stagiaire est un geste ponctuel : le formulaire déplié en
+          permanence poussait la liste — ce qu'on vient consulter — sous la
+          ligne de flottaison. L'import CSV reste à part : il a son propre
+          aperçu avant confirmation. */}
+      <Modal
+        open={ajoutOuvert}
+        onClose={fermerAjout}
+        title="Ajouter un stagiaire"
+        description="Le CEF suffit à lui donner accès à son espace."
+      >
+        <form onSubmit={handleAdd} className="space-y-4">
+          <Input
+            id="cef"
+            label="CEF"
+            inputMode="numeric"
+            autoFocus
+            hint="Identifiant OFPPT, sert à se connecter"
+            value={form.cef}
+            onChange={(e) => setForm({ ...form, cef: e.target.value })}
+          />
+          <div className="grid gap-4 sm:grid-cols-2">
             <Input
               id="nom"
               label="Nom"
@@ -154,28 +172,37 @@ export default function GroupeDetail({
               value={form.prenom}
               onChange={(e) => setForm({ ...form, prenom: e.target.value })}
             />
-            <Input
-              id="email"
-              label="Email"
-              type="email"
-              value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })}
-            />
-            <div className="flex items-end">
-              <Button
-                type="submit"
-                icon={Plus}
-                loading={busy}
-                loadingLabel="Ajout…"
-                className="w-full md:w-auto"
-              >
-                Ajouter
-              </Button>
-            </div>
-          </form>
-        </Card>
+          </div>
+          <Input
+            id="email"
+            label="Email"
+            type="email"
+            hint="Facultatif — le CEF suffit pour se connecter."
+            value={form.email}
+            onChange={(e) => setForm({ ...form, email: e.target.value })}
+          />
+          <div className="flex justify-end gap-3 pt-1">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={fermerAjout}
+              disabled={busy}
+            >
+              Annuler
+            </Button>
+            <Button
+              type="submit"
+              icon={Plus}
+              loading={busy}
+              loadingLabel="Ajout…"
+            >
+              Ajouter
+            </Button>
+          </div>
+        </form>
+      </Modal>
 
-        <StagiaireCsvImport groupeId={groupeId} />
+      <StagiaireCsvImport groupeId={groupeId} />
 
         <div className="mt-4 overflow-hidden rounded-[14px] border border-border bg-surface shadow-repos">
           <table className="w-full text-left text-sm">
