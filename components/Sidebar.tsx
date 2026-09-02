@@ -27,6 +27,7 @@ const GROUPES_NAV = [
       { href: "/calendrier", label: "Calendrier" },
       { href: "/emploi-du-temps", label: "Emploi du temps" },
       { href: "/classeur", label: "Classeur" },
+      { href: "/tableau-service", label: "Tableau de service" },
     ],
   },
   {
