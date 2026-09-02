@@ -287,7 +287,7 @@ export default function CorrectionManager({
                   <span
                     className={`inline-flex items-center gap-1.5 self-start whitespace-nowrap rounded-full border px-2.5 py-[3px] text-xs font-semibold ${
                       faite
-                        ? "border-tint-success-strong bg-success-wash text-green-dark"
+                        ? "border-tint-green bg-success-wash text-green-dark"
                         : "border-tint-alert-strong bg-alert-wash text-coral-dark"
                     }`}
                   >

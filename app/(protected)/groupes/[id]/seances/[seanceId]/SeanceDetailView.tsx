@@ -446,7 +446,7 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
                         <span
                           className={`ml-auto whitespace-nowrap rounded-full border px-2.5 py-[3px] text-[12.5px] font-semibold ${
                             p.present === true
-                              ? "border-tint-success-strong bg-success-wash text-green-dark"
+                              ? "border-tint-green bg-success-wash text-green-dark"
                               : absent
                                 ? "border-tint-alert-strong bg-alert-wash text-coral-dark"
                                 : "border-border bg-wash-strong text-slate-2"

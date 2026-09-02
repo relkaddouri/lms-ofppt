@@ -53,7 +53,7 @@ export function Stepper({
                     courante
                       ? "border-ink bg-ink text-white"
                       : faite
-                        ? "border-tint-success-strong bg-success-wash text-green-dark"
+                        ? "border-tint-green bg-success-wash text-green-dark"
                         : "border-border-strong bg-surface text-muted"
                   }`}
                 >
@@ -79,7 +79,7 @@ export function Stepper({
                 <span
                   aria-hidden
                   className={`h-0.5 min-w-3 flex-1 rounded-sm ${
-                    faite ? "bg-tint-success-strong" : "bg-wash"
+                    faite ? "bg-tint-green" : "bg-wash"
                   }`}
                 />
               )}

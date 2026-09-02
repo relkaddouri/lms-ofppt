@@ -1100,7 +1100,7 @@ export default function ControleManager({
                       <div
                         className={`flex items-center gap-2.5 rounded-[10px] border px-3.5 py-3 ${
                           bon
-                            ? "border-tint-success-strong bg-success-wash"
+                            ? "border-tint-green bg-success-wash"
                             : "border-tint-alert-strong bg-alert-wash"
                         }`}
                       >
