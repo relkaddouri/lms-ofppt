@@ -17,6 +17,7 @@ import {
   type PartieBloc,
 } from "@/lib/creneaux";
 import { Plus } from "lucide-react";
+import { maintenant } from "@/lib/format";
 
 /**
  * Formulaire de planification d'une séance.
@@ -40,7 +41,7 @@ export default function NouvelleSeanceForm({
   const [busy, setBusy] = useState(false);
   const [form, setForm] = useState({
     moduleId: modules[0]?.module_id ?? "",
-    date: new Date().toISOString().slice(0, 10),
+    date: maintenant(),
     bloc: "matin" as BlocHoraire,
     partie: "complet" as PartieBloc,
     mode: "presentiel" as ModeSeance,

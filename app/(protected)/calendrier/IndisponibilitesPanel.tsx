@@ -22,8 +22,11 @@ const LABEL = new Map(TYPES_INDISPONIBILITE.map((t) => [t.valeur, t.label]));
 
 export default function IndisponibilitesPanel({
   indisponibilites,
+  semaine,
 }: {
   indisponibilites: Indisponibilite[];
+  /** Bornes de la semaine affichée : celles qui la touchent sont mises en avant. */
+  semaine: { debut: string; fin: string };
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -99,6 +102,11 @@ export default function IndisponibilitesPanel({
         <h2 className="flex items-center gap-1.5 text-sm font-medium text-ink">
           <CalendarOff className="h-4 w-4 text-slate" aria-hidden />
           Jours non travaillés
+          {indisponibilites.length > 0 ? (
+            <span className="font-mono text-xs font-normal text-slate-light">
+              {indisponibilites.length} à venir
+            </span>
+          ) : null}
         </h2>
         <Button
           variant="secondary"
@@ -222,15 +230,20 @@ export default function IndisponibilitesPanel({
 
       {indisponibilites.length === 0 ? (
         <p className="mt-3 text-xs text-slate">
-          Aucun jour non travaillé sur cette semaine. Déclarez les fériés, les
-          vacances ou une absence pour qu'ils apparaissent dans la grille.
+          Aucun jour non travaillé déclaré. Ajoutez les fériés, les vacances
+          ou une absence : ils grisent la grille, et le générateur de
+          l&apos;emploi du temps les saute.
         </p>
       ) : (
         <ul className="mt-3 space-y-1.5">
           {indisponibilites.map((i) => (
             <li
               key={i.id}
-              className="flex items-center justify-between gap-2 rounded-lg border border-border px-2.5 py-1.5"
+              className={`flex items-center justify-between gap-2 rounded-lg border px-2.5 py-1.5 ${
+                i.date_debut <= semaine.fin && i.date_fin >= semaine.debut
+                  ? "border-border-strong bg-paper-alt"
+                  : "border-border"
+              }`}
             >
               <span className="min-w-0">
                 <span className="block truncate text-sm text-ink">

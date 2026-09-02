@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import { BLOCS, formatHeure } from "@/lib/creneaux";
-import { formatDate, formatHeures } from "@/lib/format";
+import { dateLocale, formatDate, formatHeures } from "@/lib/format";
 import type {
   SeanceCalendrier,
   ControleCalendrier,
@@ -24,7 +24,7 @@ import { CalendarPlus, ChevronLeft, ChevronRight } from "lucide-react";
 
 const JOURS = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
 
-const iso = (d: Date) => d.toISOString().slice(0, 10);
+const iso = dateLocale;
 
 function decale(lundi: string, jours: number): string {
   const d = new Date(`${lundi}T12:00:00`);
@@ -82,6 +82,7 @@ export default function CalendrierSemaine({
   bilan,
   echeances,
   indisponibilites,
+  indisponibilitesAVenir,
 }: {
   lundi: string;
   seances: SeanceCalendrier[];
@@ -91,6 +92,8 @@ export default function CalendrierSemaine({
   bilan: BilanHeures;
   echeances: Echeance[];
   indisponibilites: Indisponibilite[];
+  /** Toutes celles à venir : le panneau doit rester utilisable hors semaine. */
+  indisponibilitesAVenir: Indisponibilite[];
 }) {
   const router = useRouter();
   const aujourdhui = iso(new Date());
@@ -542,7 +545,10 @@ export default function CalendrierSemaine({
         </div>
 
         <div className="mt-6 grid gap-4 lg:grid-cols-2">
-          <IndisponibilitesPanel indisponibilites={indisponibilites} />
+          <IndisponibilitesPanel
+            indisponibilites={indisponibilitesAVenir}
+            semaine={{ debut: lundi, fin: decale(lundi, 6) }}
+          />
 
           <EcheancesReglementaires
             echeances={echeances}

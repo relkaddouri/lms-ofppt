@@ -10,7 +10,7 @@ import type { LucideIcon } from "lucide-react";
 import { getDashboardData } from "@/app/actions/dashboard";
 import { getUser } from "@/lib/supabase/server";
 import DashboardCharts from "./DashboardCharts";
-import { formatDate } from "@/lib/format";
+import { formatDate, maintenant } from "@/lib/format";
 
 export const metadata = { title: "Tableau de bord" };
 
@@ -44,7 +44,7 @@ function tonProgression(pourcentage: number): string {
 function joursAvant(date: string | null): number | null {
   if (!date) return null;
   const jour = 86_400_000;
-  const aujourdhui = new Date().toISOString().slice(0, 10);
+  const aujourdhui = maintenant();
   return Math.round(
     (new Date(`${date}T12:00:00Z`).getTime() -
       new Date(`${aujourdhui}T12:00:00Z`).getTime()) /

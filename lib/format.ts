@@ -82,3 +82,22 @@ export function slugify(value: string, fallback = "document"): string {
     .replace(/\s+/g, "-");
   return slug || fallback;
 }
+
+/**
+ * Une date au format `YYYY-MM-DD`, dans le fuseau de l'utilisateur.
+ *
+ * `toISOString().slice(0, 10)` ne fait pas ça : il convertit d'abord en UTC.
+ * À l'est de Greenwich, le lundi ramené à minuit local ressort daté du
+ * dimanche — c'est ce qui bloquait la navigation du calendrier, chaque
+ * « semaine suivante » retombant sur la même semaine.
+ */
+export function dateLocale(d: Date): string {
+  const mois = String(d.getMonth() + 1).padStart(2, "0");
+  const jour = String(d.getDate()).padStart(2, "0");
+  return `${d.getFullYear()}-${mois}-${jour}`;
+}
+
+/** La date du jour, telle que l'utilisateur la lit sur son calendrier. */
+export function maintenant(): string {
+  return dateLocale(new Date());
+}

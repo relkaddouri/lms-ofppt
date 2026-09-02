@@ -7,7 +7,7 @@ import Button from "@/components/ui/Button";
 import Input, { inputStyles } from "@/components/ui/Input";
 import Modal from "@/components/ui/Modal";
 import { useToast } from "@/components/ui/Toast";
-import { formatDate } from "@/lib/format";
+import { formatDate, maintenant } from "@/lib/format";
 import type { Groupe } from "@/app/actions/groupes";
 import {
   ajouterCreneau,
@@ -50,7 +50,7 @@ export default function EmploiDuTempsManager({
   const [nouveauMotif, setNouveauMotif] = useState(false);
   const [formMotif, setFormMotif] = useState({
     libelle: "",
-    dateDebut: new Date().toISOString().slice(0, 10),
+    dateDebut: maintenant(),
   });
   const [formCreneau, setFormCreneau] = useState({
     ...VIDE_CRENEAU,
@@ -58,7 +58,7 @@ export default function EmploiDuTempsManager({
   });
   const [generation, setGeneration] = useState({
     groupeId: groupes[0]?.id ?? "",
-    dateDebut: new Date().toISOString().slice(0, 10),
+    dateDebut: maintenant(),
   });
 
   function creerMotif(e: React.FormEvent) {

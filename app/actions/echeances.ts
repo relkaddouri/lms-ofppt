@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { maintenant } from "@/lib/format";
 import {
   echeancesDe,
   trierEcheances,
@@ -46,7 +47,7 @@ export async function getEcheances(): Promise<Echeance[]> {
     }
   }
 
-  const aujourdhui = new Date().toISOString().slice(0, 10);
+  const aujourdhui = maintenant();
 
   const controles = (controlesRes.data ?? []) as unknown as {
     id: string;

@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { getProgressionTousGroupes } from "@/app/actions/progression";
 import { cumule } from "@/lib/progression";
+import { maintenant } from "@/lib/format";
 
 export type GroupeProgression = {
   id: string;
@@ -71,7 +72,7 @@ export async function getDashboardData(): Promise<{
   const groupes = groupesRes.data;
   const seances = seancesRes.data;
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = maintenant();
   const stats: DashboardStats = {
     totalStagiaires: stagiairesRes.count ?? 0,
     groupesActifs: groupes.filter(

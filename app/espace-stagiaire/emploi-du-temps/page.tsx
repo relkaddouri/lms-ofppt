@@ -9,7 +9,7 @@ import {
   FileText,
   FlaskConical,
 } from "lucide-react";
-import { formatHeures } from "@/lib/format";
+import { formatHeures, maintenant } from "@/lib/format";
 import {
   getMonEmploiDuTemps,
   type EvenementStagiaire,
@@ -222,7 +222,7 @@ export default async function EmploiDuTempsPage() {
     );
   }
 
-  const aujourdhui = new Date().toISOString().slice(0, 10);
+  const aujourdhui = maintenant();
   const anneeCourante = new Date().getUTCFullYear();
 
   // Ce qui reste à venir d'abord : le passé n'est qu'une référence.

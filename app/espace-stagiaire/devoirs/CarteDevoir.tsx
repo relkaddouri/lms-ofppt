@@ -7,7 +7,7 @@ import Badge from "@/components/ui/Badge";
 import AutoTextarea from "@/components/ui/AutoTextarea";
 import { inputStyles } from "@/components/ui/Input";
 import { useToast } from "@/components/ui/Toast";
-import { formatDate, formatDateTime } from "@/lib/format";
+import { formatDate, formatDateTime, maintenant } from "@/lib/format";
 import { enregistrerRendu, type DevoirStagiaire } from "@/app/actions/devoirs";
 import { Check, Save } from "lucide-react";
 
@@ -15,7 +15,7 @@ import { Check, Save } from "lucide-react";
 function joursRestants(echeance: string | null): number | null {
   if (!echeance) return null;
   const jour = 86_400_000;
-  const aujourdhui = new Date().toISOString().slice(0, 10);
+  const aujourdhui = maintenant();
   return Math.round(
     (new Date(`${echeance}T12:00:00Z`).getTime() -
       new Date(`${aujourdhui}T12:00:00Z`).getTime()) /

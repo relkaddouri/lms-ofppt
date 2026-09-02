@@ -29,6 +29,30 @@ export async function getIndisponibilites(
   return (data ?? []) as Indisponibilite[];
 }
 
+/**
+ * Toutes les indisponibilités encore à venir, quelle que soit la semaine.
+ *
+ * Le panneau du calendrier n'affichait que celles de la semaine affichée :
+ * un férié déclaré pour décembre disparaissait de l'écran aussitôt saisi, et
+ * il fallait retrouver sa semaine pour le corriger. Une liste à part, bornée
+ * au futur, rend l'ensemble consultable depuis n'importe quelle semaine.
+ */
+export async function getIndisponibilitesAVenir(
+  depuis: string,
+): Promise<Indisponibilite[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("indisponibilites")
+    .select("id, type, date_debut, date_fin, demi_journee, libelle, motif")
+    .gte("date_fin", depuis)
+    .order("date_debut")
+    .limit(60);
+
+  if (error) throw new Error(error.message);
+  return (data ?? []) as Indisponibilite[];
+}
+
 export type NouvelleIndisponibilite = {
   type: TypeIndisponibilite;
   date_debut: string;

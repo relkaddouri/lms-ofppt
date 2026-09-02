@@ -2,6 +2,7 @@
 
 import { createClient, getUser } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { dateLocale } from "@/lib/format";
 import {
   construireSemaines,
   construireBilan,
@@ -15,7 +16,7 @@ import {
 function lundiDe(d: Date): string {
   const j = new Date(d);
   j.setDate(j.getDate() - ((j.getDay() + 6) % 7));
-  return j.toISOString().slice(0, 10);
+  return dateLocale(j);
 }
 
 /**
