@@ -177,13 +177,24 @@ export default function GroupeModulesManager({
                       </>
                     ) : null}
                   </p>
-                  <Link
-                    href={`/groupes/${groupeId}/modules/${m.module_id}`}
-                    className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-ink underline"
-                  >
-                    Plan de déroulement
-                    <ArrowRight className="h-3 w-3" />
-                  </Link>
+                  <span className="mt-2 flex flex-wrap items-center gap-4">
+                    <Link
+                      href={`/groupes/${groupeId}/modules/${m.module_id}`}
+                      className="inline-flex items-center gap-1 text-xs font-medium text-ink underline"
+                    >
+                      Plan de déroulement
+                      <ArrowRight className="h-3 w-3" />
+                    </Link>
+                    {/* PRD §4.2bis : les heures dispensées ne disent pas si
+                        le référentiel a été couvert. */}
+                    <Link
+                      href={`/groupes/${groupeId}/modules/${m.module_id}/couverture`}
+                      className="inline-flex items-center gap-1 text-xs font-medium text-ink underline"
+                    >
+                      Couverture du référentiel
+                      <ArrowRight className="h-3 w-3" />
+                    </Link>
+                  </span>
                 </div>
 
                 {edition ? (

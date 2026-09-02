@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { appelerLlm, chargerConfigLlm, ErreurLlm } from "@/lib/llm";
 import { dureeHeures, formatHeure } from "@/lib/creneaux";
+import { getElementsDeSeance } from "@/app/actions/couverture";
 import { verifierQuota, QUOTA_GENERATION } from "@/lib/rate-limit";
 import { NextResponse } from "next/server";
 
@@ -179,6 +180,12 @@ export async function POST(request: Request) {
     ].filter((l): l is string => l !== null);
   });
 
+  // PRD §4.2bis : la fiche porte sur les éléments de contenu assignés à CETTE
+  // séance, pas sur l'apprentissage entier dont elle ne couvre qu'une part.
+  // C'est ce qui garantit qu'aucun élément du référentiel national ne passe
+  // à la trappe entre deux séances.
+  const elementsAssignes = await getElementsDeSeance(seanceId);
+
   const minutes = duree ? Math.round(duree * 60) : null;
 
   const prompt = [
@@ -200,6 +207,14 @@ export async function POST(request: Request) {
       ? `Déjà traité avec ce groupe sur ce module : ${dejaCouvert}`
       : "Aucune séance de ce module n'a encore été faite avec ce groupe.",
     "",
+    elementsAssignes.length
+      ? [
+          "Éléments de contenu du référentiel assignés à CETTE séance —",
+          "la fiche doit les traiter tous, et ne pas déborder sur les autres :",
+          ...elementsAssignes.map((e: string, i: number) => `  ${i + 1}. ${e}`),
+        ].join("\n")
+      : null,
+    elementsAssignes.length ? "" : null,
     referentiel.length
       ? ["Référentiel officiel de la compétence :", ...referentiel].join("\n")
       : "Le référentiel de cette compétence n'est pas encore saisi.",

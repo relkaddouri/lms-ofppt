@@ -298,7 +298,7 @@ export async function genererPlanSeances(
         objectif_operationnel: `${s.code} — ${s.objectif}`,
       })),
     )
-    .select("id");
+    .select("id, suggestion_pedagogique_id");
   if (errSeances) throw new Error(errSeances.message);
 
   // Le plan produit des séances de présentiel : un seul groupe chacune. Le
@@ -307,6 +307,8 @@ export async function genererPlanSeances(
     (creees ?? []).map((s) => ({ seance_id: s.id, groupe_id: groupeId })),
   );
   if (errLiens) throw new Error(errLiens.message);
+
+  const elementsRepartis = await repartirElementsContenu(supabase, creees ?? []);
 
   let controlesCrees = 0;
   if (controles.length > 0) {
@@ -333,4 +335,66 @@ export async function genererPlanSeances(
     controlesCrees,
     dejaPlanifie: false,
   };
+}
+
+/**
+ * Répartit les éléments de contenu du référentiel sur les séances générées.
+ *
+ * PRD §4.2bis : l'EFF national porte sur ce référentiel, donc chaque élément
+ * doit avoir été traité. Une séance ne reçoit pas l'apprentissage entier mais
+ * une part précise et non chevauchante de sa liste — l'ensemble des séances
+ * d'un apprentissage couvre 100 %% de ses éléments, sans doublon ni oubli.
+ *
+ * Les parts sont contiguës et suivent l'ordre du référentiel : les six
+ * éléments de A.1 sur deux séances donnent 1-3 puis 4-6, pas un panachage.
+ * Un apprentissage qui a moins d'éléments que de séances en laisse certaines
+ * sans élément propre — c'est le référentiel qui est ainsi, pas un oubli.
+ */
+async function repartirElementsContenu(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  seances: { id: string; suggestion_pedagogique_id: string | null }[],
+): Promise<number> {
+  const parApprentissage = new Map<string, string[]>();
+  for (const s of seances) {
+    if (!s.suggestion_pedagogique_id) continue;
+    const liste = parApprentissage.get(s.suggestion_pedagogique_id) ?? [];
+    liste.push(s.id);
+    parApprentissage.set(s.suggestion_pedagogique_id, liste);
+  }
+  if (parApprentissage.size === 0) return 0;
+
+  const { data: elements, error } = await supabase
+    .from("elements_contenu")
+    .select("id, suggestion_pedagogique_id, ordre")
+    .in("suggestion_pedagogique_id", [...parApprentissage.keys()])
+    .order("ordre");
+  if (error) throw new Error(error.message);
+
+  const liens: { seance_id: string; element_contenu_id: string }[] = [];
+  for (const [suggestionId, seanceIds] of parApprentissage) {
+    const propres = (elements ?? []).filter(
+      (e) => e.suggestion_pedagogique_id === suggestionId,
+    );
+    if (propres.length === 0) continue;
+
+    // Parts contiguës : les premières séances prennent le reste de la
+    // division, pour que l'écart entre elles ne dépasse jamais un élément.
+    const base = Math.floor(propres.length / seanceIds.length);
+    const reste = propres.length % seanceIds.length;
+    let curseur = 0;
+    for (let i = 0; i < seanceIds.length; i += 1) {
+      const combien = base + (i < reste ? 1 : 0);
+      for (const e of propres.slice(curseur, curseur + combien)) {
+        liens.push({ seance_id: seanceIds[i]!, element_contenu_id: e.id });
+      }
+      curseur += combien;
+    }
+  }
+
+  if (liens.length === 0) return 0;
+  const { error: errLiens } = await supabase
+    .from("seance_elements_contenu")
+    .insert(liens);
+  if (errLiens) throw new Error(errLiens.message);
+  return liens.length;
 }

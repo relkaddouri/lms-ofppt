@@ -510,6 +510,38 @@ export type Database = {
           },
         ]
       }
+      elements_contenu: {
+        Row: {
+          created_at: string
+          id: string
+          intitule: string
+          ordre: number
+          suggestion_pedagogique_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          intitule: string
+          ordre: number
+          suggestion_pedagogique_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          intitule?: string
+          ordre?: number
+          suggestion_pedagogique_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "elements_contenu_suggestion_pedagogique_id_fkey"
+            columns: ["suggestion_pedagogique_id"]
+            isOneToOne: false
+            referencedRelation: "suggestions_pedagogiques"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fiches_preparation: {
         Row: {
           contenu: string | null
@@ -1276,6 +1308,39 @@ export type Database = {
         }
         Relationships: []
       }
+      seance_elements_contenu: {
+        Row: {
+          created_at: string
+          element_contenu_id: string
+          seance_id: string
+        }
+        Insert: {
+          created_at?: string
+          element_contenu_id: string
+          seance_id: string
+        }
+        Update: {
+          created_at?: string
+          element_contenu_id?: string
+          seance_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seance_elements_contenu_element_contenu_id_fkey"
+            columns: ["element_contenu_id"]
+            isOneToOne: false
+            referencedRelation: "elements_contenu"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "seance_elements_contenu_seance_id_fkey"
+            columns: ["seance_id"]
+            isOneToOne: false
+            referencedRelation: "seances"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       seance_groupes: {
         Row: {
           created_at: string
@@ -1315,6 +1380,7 @@ export type Database = {
           contenu_prevu: string | null
           contenu_realise: string | null
           created_at: string
+          cree_par: string | null
           date: string | null
           duree_prevue: number | null
           duree_realisee: number | null
@@ -1335,6 +1401,7 @@ export type Database = {
           contenu_prevu?: string | null
           contenu_realise?: string | null
           created_at?: string
+          cree_par?: string | null
           date?: string | null
           duree_prevue?: number | null
           duree_realisee?: number | null
@@ -1355,6 +1422,7 @@ export type Database = {
           contenu_prevu?: string | null
           contenu_realise?: string | null
           created_at?: string
+          cree_par?: string | null
           date?: string | null
           duree_prevue?: number | null
           duree_realisee?: number | null
