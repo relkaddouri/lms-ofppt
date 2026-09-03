@@ -5,33 +5,39 @@ import { dessinerLogo, nomEtablissement, type Marque } from "@/lib/pdf-marque";
  * Tableau de service — le document de masse horaire de la Direction Régionale.
  *
  * Il ne ressemble à aucun autre export de l'application : c'est un tableau
- * administratif signé par le formateur, le Directeur Pédagogique et le
- * Directeur Régional (PRD §4.13bis). L'ordre des colonnes et le bloc de
- * signatures reprennent le document papier ; deux colonnes s'y ajoutent,
- * Présentiel et FAD, qui n'y figurent pas mais servent au suivi du formateur.
+ * administratif signé par le formateur et le Directeur Pédagogique, dont la
+ * structure est reprise d'un exemplaire réel (PRD §4.13bis). Chaque ligne y
+ * porte quatre valeurs — présentiel et distance, croisés avec le semestre —
+ * et non un total unique.
  *
- * MUT et EFP restent vides : l'application ne détient aucune donnée qui leur
- * corresponde. Elles sont conservées pour que le tableau se superpose au
- * document officiel et se complète à la main, plutôt que d'être supprimées.
+ * La part à distance d'un module partagé entre deux groupes n'est portée que
+ * par une seule des deux lignes : sur l'exemplaire officiel, les cellules de
+ * l'autre sont laissées vides. C'est ce qui sépare la charge réelle du
+ * formateur de la progression cumulée de ses groupes.
  */
 
 export type LignePdfService = {
-  dateAffectation: string;
   filiere: string;
-  annee: string;
   groupe: string;
+  annee: string;
   codeModule: string;
   module: string;
-  mhAffectee: number;
-  heuresPresentiel: number;
-  heuresFad: number;
+  pS1: number;
+  sS1: number;
+  pS2: number;
+  sS2: number;
+  /** Cellules FAD laissées vides, comme sur le document officiel. */
+  fadMutualisee: boolean;
 };
 
 export type EnteteService = {
   marque: Marque;
+  codeSecteur: string | null;
   formateur: string;
-  /** Date d'édition, affichée telle quelle. */
-  edite: string;
+  specialite: string | null;
+  niveauFormation: string | null;
+  anneeScolaire: string | null;
+  matricule: string | null;
 };
 
 const ENCRE: [number, number, number] = [17, 24, 39];
@@ -40,60 +46,42 @@ const TRAIT: [number, number, number] = [140, 140, 140];
 const FOND: [number, number, number] = [238, 240, 243];
 
 const X = 12;
-const BAS = 178;
+const BAS = 172;
 
-type Colonne = {
-  titre: string;
-  largeur: number;
-  aligne?: "right";
-  /** Colonne hors document officiel, grisée dans l'en-tête. */
-  ajout?: boolean;
-};
+type Colonne = { titre: string; largeur: number; nombre?: boolean };
 
 const COLONNES: Colonne[] = [
-  { titre: "Date d'affectation", largeur: 22 },
-  { titre: "Filière", largeur: 26 },
-  { titre: "Année", largeur: 14 },
-  { titre: "Groupe", largeur: 20 },
-  { titre: "Code", largeur: 14 },
-  { titre: "Module", largeur: 62 },
-  { titre: "MH AFF", largeur: 16, aligne: "right" },
-  { titre: "Présentiel", largeur: 20, aligne: "right", ajout: true },
-  { titre: "FAD", largeur: 14, aligne: "right", ajout: true },
-  { titre: "MUT", largeur: 14 },
-  { titre: "EFP", largeur: 51 },
+  { titre: "Filière", largeur: 48 },
+  { titre: "Groupe", largeur: 26 },
+  { titre: "Année de Formation", largeur: 26 },
+  { titre: "Code Module", largeur: 24 },
+  { titre: "Module", largeur: 77 },
+  { titre: "MHT AFF P S1", largeur: 18, nombre: true },
+  { titre: "MHT AFF S S1", largeur: 18, nombre: true },
+  { titre: "MHT AFF P S2", largeur: 18, nombre: true },
+  { titre: "MHT AFF S S2", largeur: 18, nombre: true },
 ];
 
 const LARGEUR = COLONNES.reduce((t, c) => t + c.largeur, 0);
 
-function bords(): number[] {
-  const xs: number[] = [];
-  let x = X;
-  for (const c of COLONNES) {
-    xs.push(x);
-    x += c.largeur;
-  }
-  return xs;
-}
+const XS = COLONNES.reduce<number[]>((acc, c) => {
+  acc.push((acc[acc.length - 1] ?? X) + (acc.length ? COLONNES[acc.length - 1].largeur : 0));
+  return acc;
+}, []);
 
-const XS = bords();
-
-const HAUTEUR_ENTETE = 9.5;
+const HAUTEUR_ENTETE = 11;
 
 function enTeteColonnes(doc: jsPDF, y: number): number {
   doc.setFillColor(...FOND);
   doc.rect(X, y, LARGEUR, HAUTEUR_ENTETE, "F");
-  doc.setFont("helvetica", "bold").setFontSize(7.5);
+  doc.setFont("helvetica", "bold").setFontSize(6.6).setTextColor(...ENCRE);
 
   COLONNES.forEach((c, i) => {
-    // Grisées, les deux colonnes qui n'appartiennent pas au document officiel :
-    // à la lecture on distingue tout de suite l'ajout de l'original.
-    doc.setTextColor(...(c.ajout ? GRIS : ENCRE));
-    // « Date d'affectation » ne tient pas sur une ligne de 24 mm : l'en-tête
-    // s'enroule au lieu de tronquer, sinon la colonne s'annonce « Date ».
-    const lignes = doc.splitTextToSize(c.titre, c.largeur - 4) as string[];
-    const haut = y + (lignes.length > 1 ? 4 : 5.9);
-    if (c.aligne === "right") {
+    // « MHT AFF P S1 » et « Année de Formation » ne tiennent pas sur une ligne
+    // dans des colonnes de 18 à 26 mm : l'en-tête s'enroule au lieu de tronquer.
+    const lignes = doc.splitTextToSize(c.titre, c.largeur - 3) as string[];
+    const haut = y + (HAUTEUR_ENTETE - lignes.length * 2.9) / 2 + 2.4;
+    if (c.nombre) {
       doc.text(lignes, XS[i] + c.largeur - 2, haut, { align: "right" });
     } else {
       doc.text(lignes, XS[i] + 2, haut);
@@ -102,43 +90,110 @@ function enTeteColonnes(doc: jsPDF, y: number): number {
 
   doc.setDrawColor(...TRAIT).setLineWidth(0.3);
   doc.rect(X, y, LARGEUR, HAUTEUR_ENTETE);
+  XS.slice(1).forEach((x) => doc.line(x, y, x, y + HAUTEUR_ENTETE));
   return y + HAUTEUR_ENTETE;
 }
 
-function entete(doc: jsPDF, e: EnteteService, y: number): number {
-  // Le logo est posé à droite : à gauche, il pousserait le titre du document
-  // vers le bas et déséquilibrerait un tableau qui occupe toute la largeur.
-  const largeurLogo = dessinerLogo(doc, e.marque, X + LARGEUR - 46, y - 4, 14, 46);
+/** Le bloc d'identité en haut à gauche du document officiel. */
+function identite(doc: jsPDF, e: EnteteService, y: number): number {
+  const champs: [string, string][] = [
+    ["Code Secteur", e.codeSecteur ?? ""],
+    ["Formateur", e.formateur],
+    ["Spécialité", e.specialite ?? ""],
+    ["Niveau de formation", e.niveauFormation ?? ""],
+    ["Année Scolaire", e.anneeScolaire ?? ""],
+  ];
 
-  doc.setFont("helvetica", "bold").setFontSize(9).setTextColor(...GRIS);
-  const nom = doc.splitTextToSize(
-    nomEtablissement(e.marque),
-    LARGEUR - (largeurLogo > 0 ? largeurLogo + 8 : 0),
-  ) as string[];
-  doc.text(nom, X, y);
-  y += nom.length * 4 + 3;
+  const lLibelle = 34;
+  const lValeur = 52;
+  const hLigne = 5;
 
-  doc.setFont("helvetica", "bold").setFontSize(17).setTextColor(...ENCRE);
-  doc.text("Tableau de service", X, y);
-  y += 6;
+  champs.forEach(([libelle, valeur], i) => {
+    const haut = y + i * hLigne;
+    doc.setFillColor(...FOND);
+    doc.rect(X, haut, lLibelle, hLigne, "F");
+    doc.setDrawColor(...TRAIT).setLineWidth(0.2);
+    doc.rect(X, haut, lLibelle, hLigne);
+    doc.rect(X + lLibelle, haut, lValeur, hLigne);
 
-  doc.setFont("helvetica", "normal").setFontSize(9).setTextColor(...GRIS);
-  doc.text(`${e.formateur} — édité le ${e.edite}`, X, y);
-  return y + 6;
+    doc.setFont("helvetica", "bold").setFontSize(6.4).setTextColor(...ENCRE);
+    doc.text(libelle, X + 1.5, haut + 3.4);
+    doc.setFont("helvetica", "normal").setTextColor(...ENCRE);
+    doc.text(
+      (doc.splitTextToSize(valeur, lValeur - 3) as string[])[0] ?? "",
+      X + lLibelle + 1.5,
+      haut + 3.4,
+    );
+  });
+
+  const bas = y + champs.length * hLigne;
+
+  // Titre au centre, logo à droite : la disposition du document officiel.
+  doc.setFont("helvetica", "bold").setFontSize(11).setTextColor(...ENCRE);
+  doc.text(
+    `Tableau de service pour l'année ${e.anneeScolaire ?? ""}`.trim(),
+    X + LARGEUR / 2,
+    y + 12,
+    { align: "center" },
+  );
+
+  const largeurLogo = dessinerLogo(doc, e.marque, X + LARGEUR - 52, y + 2, 15, 52);
+  if (largeurLogo === 0) {
+    doc.setFont("helvetica", "bold").setFontSize(8).setTextColor(...GRIS);
+    doc.text(
+      doc.splitTextToSize(nomEtablissement(e.marque), 52) as string[],
+      X + LARGEUR,
+      y + 6,
+      { align: "right" },
+    );
+  }
+
+  return bas + 6;
 }
 
-/** Les trois signatures du document officiel, posées côte à côte. */
-function signatures(doc: jsPDF, y: number): void {
-  const titres = ["Le formateur", "Le Directeur Pédagogique", "Le Directeur Régional"];
-  const largeur = LARGEUR / 3;
+/** Le cadre de signature du bas de page. */
+function signatures(doc: jsPDF, e: EnteteService, y: number): void {
+  const cols = [
+    { titre: "Formateur", largeur: 46, valeur: e.formateur },
+    { titre: "Matricule", largeur: 34, valeur: e.matricule ?? "" },
+    { titre: "Signature", largeur: 40, valeur: "" },
+    { titre: "Directeur Pédagogique - Directeur d'EFP", largeur: LARGEUR - 120, valeur: "" },
+  ];
 
-  doc.setFont("helvetica", "normal").setFontSize(8).setTextColor(...GRIS);
-  titres.forEach((t, i) => {
-    const x = X + i * largeur;
-    doc.text(t, x + largeur / 2, y, { align: "center" });
+  const hTitre = 6;
+  const hCorps = 22;
+  let x = X;
+
+  for (const c of cols) {
+    doc.setFillColor(...FOND);
+    doc.rect(x, y, c.largeur, hTitre, "F");
     doc.setDrawColor(...TRAIT).setLineWidth(0.3);
-    doc.rect(x + 6, y + 3, largeur - 12, 22);
-  });
+    doc.rect(x, y, c.largeur, hTitre);
+    doc.rect(x, y + hTitre, c.largeur, hCorps);
+
+    doc.setFont("helvetica", "bold").setFontSize(6.8).setTextColor(...ENCRE);
+    doc.text(
+      (doc.splitTextToSize(c.titre, c.largeur - 3) as string[])[0] ?? "",
+      x + c.largeur / 2,
+      y + 4,
+      { align: "center" },
+    );
+
+    if (c.valeur) {
+      doc.setFont("helvetica", "normal").setFontSize(7.5);
+      doc.text(c.valeur, x + c.largeur / 2, y + hTitre + 7, { align: "center" });
+    }
+    x += c.largeur;
+  }
+
+  // La mention manuscrite du document, laissée à compléter.
+  doc.setFont("helvetica", "normal").setFontSize(7.5).setTextColor(...ENCRE);
+  doc.text(
+    "Fait à ………………………………  le ……/……/…………",
+    X + LARGEUR - (LARGEUR - 120) / 2 - 0,
+    y + hTitre + 13,
+    { align: "center" },
+  );
 }
 
 export async function construireTableauServicePdf(
@@ -148,57 +203,59 @@ export async function construireTableauServicePdf(
   const { default: JsPDF } = await import("jspdf");
   const doc = new JsPDF({ unit: "mm", format: "a4", orientation: "landscape" });
 
-  // L'établissement est le même sur toutes les lignes : il est mesuré une fois.
-  const centre = nomEtablissement(e.marque);
-
-  let y = entete(doc, e, 18);
+  let y = identite(doc, e, 12);
   y = enTeteColonnes(doc, y);
 
-  const total = { mh: 0, presentiel: 0, fad: 0 };
+  const total = { pS1: 0, sS1: 0, pS2: 0, sS2: 0 };
+  let anneePrecedente: string | null = null;
+
+  const cellule = (n: number) => (n === 0 ? "0" : String(n));
 
   for (const l of lignes) {
-    doc.setFont("helvetica", "normal").setFontSize(7.5);
-    // Filière et Module sont les deux seules colonnes dont le texte déborde :
-    // « Digital Design - Option UX Designer » et les intitulés du référentiel.
-    // Elles s'enroulent sur plusieurs lignes, la hauteur de ligne suit la plus
-    // haute des deux — les tronquer ferait perdre l'information au document.
-    const filiere = doc.splitTextToSize(l.filiere, COLONNES[1].largeur - 4) as string[];
-    const module = doc.splitTextToSize(l.module, COLONNES[5].largeur - 4) as string[];
-    const efp = doc.splitTextToSize(centre, COLONNES[10].largeur - 4) as string[];
-    const hauteur = Math.max(
-      7,
-      Math.max(filiere.length, module.length, efp.length) * 3.6 + 3.4,
-    );
+    // Le document sépare les années par une ligne vide : sans elle, le passage
+    // du tronc commun à la spécialisation ne se voit pas.
+    if (anneePrecedente !== null && l.annee !== anneePrecedente) {
+      if (y + 4 <= BAS) {
+        doc.setDrawColor(...TRAIT).setLineWidth(0.2);
+        doc.rect(X, y, LARGEUR, 4);
+        XS.slice(1).forEach((x) => doc.line(x, y, x, y + 4));
+        y += 4;
+      }
+    }
+    anneePrecedente = l.annee;
 
-    // Le tableau se poursuit page après page, en-tête de colonnes répété :
-    // sans cela une deuxième page arriverait sans repère de lecture.
+    doc.setFont("helvetica", "normal").setFontSize(7);
+    const filiere = doc.splitTextToSize(l.filiere, COLONNES[0].largeur - 3) as string[];
+    const module = doc.splitTextToSize(l.module, COLONNES[4].largeur - 3) as string[];
+    const hauteur = Math.max(6.5, Math.max(filiere.length, module.length) * 3.2 + 3);
+
     if (y + hauteur > BAS) {
       doc.addPage();
-      y = enTeteColonnes(doc, 18);
+      y = enTeteColonnes(doc, 14);
     }
 
     const cellules: (string | string[])[] = [
-      l.dateAffectation,
       filiere,
-      l.annee,
       l.groupe,
+      l.annee,
       l.codeModule,
       module,
-      String(l.mhAffectee),
-      String(l.heuresPresentiel),
-      String(l.heuresFad),
-      "",
-      efp,
+      cellule(l.pS1),
+      // Vide, pas zéro : le document distingue « aucune heure » de « portée par
+      // l'autre groupe ».
+      l.fadMutualisee ? "" : cellule(l.sS1),
+      cellule(l.pS2),
+      l.fadMutualisee ? "" : cellule(l.sS2),
     ];
 
     doc.setTextColor(...ENCRE);
     COLONNES.forEach((c, i) => {
       const texte = cellules[i];
       if (!texte.length) return;
-      if (c.aligne === "right") {
-        doc.text(texte as string, XS[i] + c.largeur - 2, y + 4.6, { align: "right" });
+      if (c.nombre) {
+        doc.text(texte as string, XS[i] + c.largeur - 2, y + 4.2, { align: "right" });
       } else {
-        doc.text(texte, XS[i] + 2, y + 4.6);
+        doc.text(texte, XS[i] + 2, y + 4.2);
       }
     });
 
@@ -206,36 +263,49 @@ export async function construireTableauServicePdf(
     doc.rect(X, y, LARGEUR, hauteur);
     XS.slice(1).forEach((x) => doc.line(x, y, x, y + hauteur));
 
-    total.mh += l.mhAffectee;
-    total.presentiel += l.heuresPresentiel;
-    total.fad += l.heuresFad;
+    if (!l.fadMutualisee) {
+      total.sS1 += l.sS1;
+      total.sS2 += l.sS2;
+    }
+    total.pS1 += l.pS1;
+    total.pS2 += l.pS2;
     y += hauteur;
   }
 
-  if (y + 9 > BAS) {
+  const general = total.pS1 + total.sS1 + total.pS2 + total.sS2;
+
+  if (y + 16 > BAS) {
     doc.addPage();
-    y = 18;
+    y = enTeteColonnes(doc, 14);
   }
 
+  // ── Ligne de total, une valeur par colonne ────────────────────────────
   doc.setFillColor(...FOND);
-  doc.rect(X, y, LARGEUR, 9, "F");
+  doc.rect(X, y, LARGEUR, 7, "F");
   doc.setDrawColor(...TRAIT).setLineWidth(0.3);
-  doc.rect(X, y, LARGEUR, 9);
-  doc.setFont("helvetica", "bold").setFontSize(8.5).setTextColor(...ENCRE);
-  doc.text("Total général", XS[0] + 2, y + 5.8);
-  doc.text(String(total.mh), XS[6] + COLONNES[6].largeur - 2, y + 5.8, { align: "right" });
-  doc.text(String(total.presentiel), XS[7] + COLONNES[7].largeur - 2, y + 5.8, { align: "right" });
-  doc.text(String(total.fad), XS[8] + COLONNES[8].largeur - 2, y + 5.8, { align: "right" });
-  y += 9;
+  doc.rect(X, y, LARGEUR, 7);
+  doc.line(XS[5], y, XS[5], y + 7);
+  doc.setFont("helvetica", "bold").setFontSize(8).setTextColor(...ENCRE);
+  doc.text("Total", XS[5] - 2, y + 4.7, { align: "right" });
+  [total.pS1, total.sS1, total.pS2, total.sS2].forEach((v, i) => {
+    const c = 5 + i;
+    doc.line(XS[c], y, XS[c], y + 7);
+    doc.text(String(v), XS[c] + COLONNES[c].largeur - 2, y + 4.7, { align: "right" });
+  });
+  y += 7;
 
-  doc.setFont("helvetica", "normal").setFontSize(7).setTextColor(...GRIS);
-  doc.text(
-    "Présentiel et FAD ne figurent pas sur le document officiel : ils décomposent la masse horaire affectée pour le suivi du formateur. MUT est à compléter.",
-    X,
-    y + 5,
-  );
+  // ── Total général ─────────────────────────────────────────────────────
+  doc.setFillColor(...FOND);
+  doc.rect(XS[5], y, LARGEUR + X - XS[5], 7, "F");
+  doc.setDrawColor(...TRAIT).setLineWidth(0.3);
+  doc.rect(XS[5], y, LARGEUR + X - XS[5], 7);
+  doc.line(XS[8], y, XS[8], y + 7);
+  doc.setFont("helvetica", "bold").setFontSize(8).setTextColor(...ENCRE);
+  doc.text("MHT AFF S1+S2 (P+S)", XS[8] - 2, y + 4.7, { align: "right" });
+  doc.text(String(general), X + LARGEUR - 2, y + 4.7, { align: "right" });
+  y += 7;
 
-  signatures(doc, y + 16);
+  signatures(doc, e, y + 6);
 
   const pages = doc.getNumberOfPages();
   for (let p = 1; p <= pages; p++) {

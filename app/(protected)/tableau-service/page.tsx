@@ -6,7 +6,7 @@ import TableauService from "./TableauService";
 export const metadata = { title: "Tableau de service" };
 
 export default async function TableauServicePage() {
-  const [lignes, user, etablissement] = await Promise.all([
+  const [tableau, user, etablissement] = await Promise.all([
     getTableauService(),
     getUser(),
     getEtablissement(),
@@ -14,9 +14,10 @@ export default async function TableauServicePage() {
 
   return (
     <TableauService
-      lignes={lignes}
-      formateur={user?.email ?? "Formateur"}
+      lignes={tableau.lignes}
+      specialite={tableau.specialite}
       etablissement={etablissement}
+      emailCompte={user?.email ?? "Formateur"}
     />
   );
 }

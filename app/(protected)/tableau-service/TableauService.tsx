@@ -5,54 +5,56 @@ import Link from "next/link";
 import { FileDown, Sheet } from "lucide-react";
 import Button from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
-import { formatDate, maintenant, slugify } from "@/lib/format";
+import { maintenant, slugify } from "@/lib/format";
 import { libelleAnnee } from "@/lib/modules";
-import type { LigneService } from "@/app/actions/tableau-service";
+import { marqueDe } from "@/lib/pdf-marque";
+import { heuresPortees, type LigneService } from "@/lib/tableau-service";
 import type { Etablissement } from "@/app/actions/etablissement";
-import { marqueDe, nomEtablissement } from "@/lib/pdf-marque";
 
 /**
- * Tableau de service (PRD §4.13bis).
+ * Tableau de service (PRD §4.13bis), sur la structure d'un exemplaire signé.
  *
- * Reproduction à l'écran du document que la Direction Régionale fait signer,
- * dans l'ordre de ses colonnes. Deux colonnes s'y ajoutent — Présentiel et
- * FAD — parce que le formateur suit cette décomposition pour lui-même ; deux
- * EFP porte le nom du centre réglé dans Paramètres. MUT reste vide faute de
- * donnée dans l'application, mais demeure visible pour que le tableau se
- * superpose au papier et se complète à la main.
+ * Chaque ligne porte quatre valeurs — présentiel et distance, croisés avec le
+ * semestre — et non un total unique. La part à distance d'un module partagé
+ * entre deux groupes n'est portée que par une seule des deux lignes : les
+ * cellules de l'autre restent vides, comme sur le document officiel. C'est ce
+ * qui sépare la charge réelle du formateur de la progression cumulée de ses
+ * groupes, deux totaux qui n'ont jamais été censés être égaux.
  */
 
 const COLONNES = [
-  { cle: "date", titre: "Date d'affectation" },
   { cle: "filiere", titre: "Filière" },
-  { cle: "annee", titre: "Année" },
   { cle: "groupe", titre: "Groupe" },
+  { cle: "annee", titre: "Année de formation" },
+  { cle: "code", titre: "Code module" },
   { cle: "module", titre: "Module" },
-  { cle: "mh", titre: "MH AFF", nombre: true },
-  { cle: "presentiel", titre: "Présentiel", nombre: true, ajout: true },
-  { cle: "fad", titre: "FAD", nombre: true, ajout: true },
-  { cle: "mut", titre: "MUT", vide: true },
-  { cle: "efp", titre: "EFP" },
+  { cle: "pS1", titre: "MHT AFF P S1", nombre: true },
+  { cle: "sS1", titre: "MHT AFF S S1", nombre: true },
+  { cle: "pS2", titre: "MHT AFF P S2", nombre: true },
+  { cle: "sS2", titre: "MHT AFF S S2", nombre: true },
 ] as const;
 
 const GRILLE =
-  "grid grid-cols-[100px_110px_70px_90px_minmax(170px,1fr)_76px_78px_64px_60px_140px] items-center gap-3";
+  "grid grid-cols-[150px_90px_80px_74px_minmax(180px,1fr)_76px_76px_76px_76px] items-center gap-3";
 
 export default function TableauService({
   lignes,
-  formateur,
+  specialite,
   etablissement,
+  emailCompte,
 }: {
   lignes: LigneService[];
-  formateur: string;
+  specialite: string | null;
   etablissement: Etablissement;
+  emailCompte: string;
 }) {
   const toast = useToast();
   const [enCours, startTransition] = useTransition();
   const [annee, setAnnee] = useState("tous");
-  // Le même centre sur toutes les lignes, comme sur le document officiel où la
-  // colonne EFP se répète.
-  const centre = nomEtablissement(marqueDe(etablissement));
+
+  // À défaut de nom réglé, l'adresse du compte : un document sans formateur
+  // identifié ne se signe pas.
+  const formateur = etablissement.nomFormateur ?? emailCompte;
 
   const annees = useMemo(
     () =>
@@ -68,45 +70,61 @@ export default function TableauService({
   const total = useMemo(
     () =>
       visibles.reduce(
-        (t, l) => ({
-          mh: t.mh + l.mhAffectee,
-          presentiel: t.presentiel + l.heuresPresentiel,
-          fad: t.fad + l.heuresFad,
-        }),
-        { mh: 0, presentiel: 0, fad: 0 },
+        (t, l) => {
+          const h = heuresPortees(l);
+          return {
+            pS1: t.pS1 + h.pS1,
+            sS1: t.sS1 + h.sS1,
+            pS2: t.pS2 + h.pS2,
+            sS2: t.sS2 + h.sS2,
+          };
+        },
+        { pS1: 0, sS1: 0, pS2: 0, sS2: 0 },
       ),
     [visibles],
   );
 
+  const general = total.pS1 + total.sS1 + total.pS2 + total.sS2;
+
+  const entete = {
+    marque: marqueDe(etablissement),
+    codeSecteur: etablissement.codeSecteur,
+    formateur,
+    specialite,
+    niveauFormation: etablissement.niveauFormation,
+    anneeScolaire: etablissement.anneeScolaire,
+    matricule: etablissement.matricule,
+  };
+
+  const pourExport = () =>
+    visibles.map((l) => ({
+      filiere: l.filiere,
+      groupe: l.groupe,
+      annee: l.annee ? String(l.annee) : "",
+      codeModule: l.codeModule ?? "",
+      module: l.module,
+      pS1: l.presentielS1,
+      sS1: l.fadS1,
+      pS2: l.presentielS2,
+      sS2: l.fadS2,
+      fadMutualisee: l.fadMutualisee,
+    }));
+
   const nomFichier = (ext: string) =>
     `tableau-de-service-${slugify(
-      annee === "tous" ? maintenant() : `${libelleAnnee(Number(annee))} ${maintenant()}`,
+      `${etablissement.anneeScolaire ?? maintenant()} ${
+        annee === "tous" ? "" : libelleAnnee(Number(annee))
+      }`,
       "tableau-de-service",
     )}.${ext}`;
 
   function exporterPdf() {
     startTransition(async () => {
       try {
-        const { telechargerTableauServicePdf } = await import("@/lib/pdf-tableau-service");
-        await telechargerTableauServicePdf(
-          {
-            marque: marqueDe(etablissement),
-            formateur,
-            edite: formatDate(maintenant()),
-          },
-          visibles.map((l) => ({
-            dateAffectation: l.dateAffectation ? formatDate(l.dateAffectation) : "",
-            filiere: l.filiere,
-            annee: l.annee ? String(l.annee) : "",
-            groupe: l.groupe,
-            codeModule: l.codeModule ?? "",
-            module: l.module,
-            mhAffectee: l.mhAffectee,
-            heuresPresentiel: l.heuresPresentiel,
-            heuresFad: l.heuresFad,
-          })),
-          nomFichier("pdf"),
+        const { telechargerTableauServicePdf } = await import(
+          "@/lib/pdf-tableau-service"
         );
+        await telechargerTableauServicePdf(entete, pourExport(), nomFichier("pdf"));
         toast(`Tableau de service de ${visibles.length} lignes téléchargé`);
       } catch (e) {
         toast(e instanceof Error ? e.message : "Export impossible.", "error");
@@ -117,23 +135,28 @@ export default function TableauService({
   function exporterCsv() {
     // Point-virgule et BOM : c'est ce qu'attend un tableur configuré en
     // français, où la virgule est le séparateur décimal.
-    const cellule = (v: string | number) => `"${String(v).replaceAll('"', '""')}"`;
-    const entete = COLONNES.map((c) => c.titre);
-    const corps = visibles.map((l) => [
-      l.dateAffectation ? formatDate(l.dateAffectation) : "",
+    const cel = (v: string | number) => `"${String(v).replaceAll('"', '""')}"`;
+    // Une cellule FAD vide, jamais un zéro : le document distingue « aucune
+    // heure » de « portée par l'autre groupe ».
+    const corps: (string | number)[][] = visibles.map((l) => [
       l.filiere,
-      l.annee ?? "",
       l.groupe,
-      l.codeModule ? `${l.codeModule} — ${l.module}` : l.module,
-      l.mhAffectee,
-      l.heuresPresentiel,
-      l.heuresFad,
-      "",
-      centre,
+      l.annee ?? "",
+      l.codeModule ?? "",
+      l.module,
+      l.presentielS1,
+      l.fadMutualisee ? "" : l.fadS1,
+      l.presentielS2,
+      l.fadMutualisee ? "" : l.fadS2,
     ]);
-    const pied = ["Total général", "", "", "", "", total.mh, total.presentiel, total.fad, "", ""];
 
-    const csv = [entete, ...corps, pied].map((r) => r.map(cellule).join(";")).join("\r\n");
+    const pied = ["Total", "", "", "", "", total.pS1, total.sS1, total.pS2, total.sS2];
+    const general2 = ["MHT AFF S1+S2 (P+S)", "", "", "", "", "", "", "", general];
+
+    const csv = [COLONNES.map((c) => c.titre), ...corps, pied, general2]
+      .map((r) => r.map(cel).join(";"))
+      .join("\r\n");
+
     const lien = document.createElement("a");
     lien.href = URL.createObjectURL(
       new Blob([`﻿${csv}`], { type: "text/csv;charset=utf-8" }),
@@ -144,6 +167,14 @@ export default function TableauService({
     toast(`${visibles.length} lignes exportées`);
   }
 
+  const manquants = [
+    !etablissement.codeSecteur && "le code secteur",
+    !etablissement.niveauFormation && "le niveau de formation",
+    !etablissement.anneeScolaire && "l'année scolaire",
+    !etablissement.matricule && "le matricule",
+    !etablissement.nomFormateur && "votre nom",
+  ].filter(Boolean) as string[];
+
   return (
     <div className="flex flex-col gap-6 px-6 py-10 md:px-10 md:pb-14">
       <header className="flex flex-wrap items-end justify-between gap-6">
@@ -153,18 +184,30 @@ export default function TableauService({
           </span>
           <h1 className="font-display text-[34px] font-bold leading-tight tracking-[-0.02em] text-ink">
             Tableau de service
+            {etablissement.anneeScolaire ? (
+              <span className="text-slate-light">
+                {" "}
+                {etablissement.anneeScolaire}
+              </span>
+            ) : null}
           </h1>
           <p className="text-base text-slate-2">
-            Vos affectations horaires de l&apos;année, dans la forme que fait signer la
-            Direction Régionale.{" "}
-            <span className="font-mono text-body">{visibles.length} ligne
-            {visibles.length > 1 ? "s" : ""}</span>{" "}
-            · <span className="font-mono text-body">{total.mh} h</span> au total.
+            Vos affectations horaires de l&apos;année, dans la forme que fait
+            signer la Direction Régionale.{" "}
+            <span className="font-mono text-body">
+              {visibles.length} ligne{visibles.length > 1 ? "s" : ""}
+            </span>{" "}
+            · <span className="font-mono text-body">{general} h</span> de charge.
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <Button variant="secondary" icon={Sheet} onClick={exporterCsv} disabled={visibles.length === 0}>
+          <Button
+            variant="secondary"
+            icon={Sheet}
+            onClick={exporterCsv}
+            disabled={visibles.length === 0}
+          >
             Exporter en CSV
           </Button>
           <Button
@@ -178,6 +221,29 @@ export default function TableauService({
           </Button>
         </div>
       </header>
+
+      {/* Le bloc d'identité du document officiel, tel qu'il sera imprimé. */}
+      <section
+        aria-label="En-tête du document"
+        className="flex flex-wrap gap-x-10 gap-y-3 rounded-[14px] border border-border bg-surface px-6 py-4 shadow-repos"
+      >
+        {[
+          ["Code secteur", etablissement.codeSecteur],
+          ["Formateur", formateur],
+          ["Spécialité", specialite],
+          ["Niveau de formation", etablissement.niveauFormation],
+          ["Matricule", etablissement.matricule],
+        ].map(([libelle, valeur]) => (
+          <span key={libelle} className="flex flex-col gap-0.5">
+            <span className="font-mono text-[10.5px] uppercase tracking-[0.1em] text-slate-light">
+              {libelle}
+            </span>
+            <span className="text-[14.5px] text-ink">
+              {valeur || <span className="text-muted">à renseigner</span>}
+            </span>
+          </span>
+        ))}
+      </section>
 
       {annees.length > 1 ? (
         <div className="flex flex-wrap items-center gap-3">
@@ -206,14 +272,14 @@ export default function TableauService({
 
       <div className="overflow-hidden rounded-[14px] border border-border bg-surface shadow-repos">
         <div className="overflow-x-auto">
-          <div className="min-w-[1060px]">
-            <div className={`${GRILLE} border-b border-border bg-paper-alt px-6 py-3.5`}>
+          <div className="min-w-[960px]">
+            <div className={`${GRILLE} border-b border-border bg-paper-alt px-6 py-3`}>
               {COLONNES.map((c) => (
                 <span
                   key={c.cle}
-                  className={`font-mono text-[11px] uppercase tracking-[0.1em] ${
-                    "ajout" in c || "vide" in c ? "text-muted" : "text-slate-light"
-                  } ${"nombre" in c ? "text-right" : ""}`}
+                  className={`font-mono text-[10.5px] uppercase leading-tight tracking-[0.08em] text-slate-light ${
+                    "nombre" in c ? "text-right" : ""
+                  }`}
                 >
                   {c.titre}
                 </span>
@@ -226,68 +292,97 @@ export default function TableauService({
                   Aucune affectation
                 </span>
                 <span className="text-[13.5px] text-slate-light">
-                  Le tableau se remplit dès qu&apos;un module est affecté à un groupe.
+                  Le tableau se remplit dès qu&apos;un module est affecté à un
+                  groupe.
                 </span>
               </div>
             ) : (
               <>
-                {visibles.map((l) => (
-                  <div
-                    key={l.id}
-                    className={`${GRILLE} border-b border-separator px-6 py-3.5 transition-colors duration-150 ease-out last:border-0 hover:bg-paper`}
-                  >
-                    <span className="font-mono text-[13px] text-slate-2">
-                      {l.dateAffectation ? formatDate(l.dateAffectation) : "—"}
-                    </span>
-                    <span className="truncate text-[14px] text-slate-2">{l.filiere}</span>
-                    <span className="text-[14px] text-slate-2">
-                      {l.annee ? libelleAnnee(l.annee) : "—"}
-                    </span>
-                    <span className="text-[14.5px] font-semibold text-ink">{l.groupe}</span>
-                    <span className="flex min-w-0 items-center gap-2.5">
-                      <span className="flex h-7 shrink-0 items-center justify-center rounded-[7px] bg-wash px-2 font-mono text-[11.5px] font-semibold text-slate-2">
+                {visibles.map((l, i) => {
+                  // Le document sépare les années : sans ce filet, le passage
+                  // du tronc commun à la spécialisation ne se voit pas.
+                  const rupture = i > 0 && visibles[i - 1].annee !== l.annee;
+                  return (
+                    <div
+                      key={l.id}
+                      className={`${GRILLE} border-b border-separator px-6 py-3 transition-colors duration-150 ease-out last:border-0 hover:bg-paper ${
+                        rupture ? "border-t-2 border-t-border-strong" : ""
+                      }`}
+                    >
+                      <span className="truncate text-[13.5px] text-slate-2" title={l.filiere}>
+                        {l.filiere}
+                      </span>
+                      <span className="text-[14.5px] font-semibold text-ink">
+                        {l.groupe}
+                      </span>
+                      <span className="text-[14px] text-slate-2">
+                        {l.annee ?? "—"}
+                      </span>
+                      <span className="font-mono text-[12.5px] font-semibold text-slate-2">
                         {l.codeModule ?? "—"}
                       </span>
                       <span className="truncate text-[14px] text-body" title={l.module}>
                         {l.module}
                       </span>
-                    </span>
-                    <span className="text-right font-mono text-[14.5px] font-semibold text-ink">
-                      {l.mhAffectee}
-                    </span>
-                    <span className="text-right font-mono text-[14px] text-slate-2">
-                      {l.heuresPresentiel}
-                    </span>
-                    <span className="text-right font-mono text-[14px] text-slate-2">
-                      {l.heuresFad}
-                    </span>
-                    <span aria-hidden className="text-[14px] text-muted">
-                      —
-                    </span>
-                    <span
-                      className="truncate text-[13px] text-slate-2"
-                      title={centre}
-                    >
-                      {centre}
-                    </span>
-                  </div>
-                ))}
+                      <span className="text-right font-mono text-[14.5px] text-ink">
+                        {l.presentielS1}
+                      </span>
+                      <span
+                        className="text-right font-mono text-[14.5px] text-ink"
+                        title={
+                          l.fadMutualisee
+                            ? `${l.fadS1} h portées par l'autre groupe`
+                            : undefined
+                        }
+                      >
+                        {l.fadMutualisee ? (
+                          <span className="text-muted">—</span>
+                        ) : (
+                          l.fadS1
+                        )}
+                      </span>
+                      <span className="text-right font-mono text-[14.5px] text-ink">
+                        {l.presentielS2}
+                      </span>
+                      <span
+                        className="text-right font-mono text-[14.5px] text-ink"
+                        title={
+                          l.fadMutualisee
+                            ? `${l.fadS2} h portées par l'autre groupe`
+                            : undefined
+                        }
+                      >
+                        {l.fadMutualisee ? (
+                          <span className="text-muted">—</span>
+                        ) : (
+                          l.fadS2
+                        )}
+                      </span>
+                    </div>
+                  );
+                })}
 
-                <div className={`${GRILLE} border-t border-border bg-paper-alt px-6 py-4`}>
-                  <span className="col-span-5 text-[14.5px] font-semibold text-ink">
-                    Total général
+                <div className={`${GRILLE} border-t border-border bg-paper-alt px-6 py-3`}>
+                  <span className="col-span-5 text-right text-[14.5px] font-semibold text-ink">
+                    Total
                   </span>
-                  <span className="text-right font-mono text-[15px] font-bold text-ink">
-                    {total.mh}
+                  {[total.pS1, total.sS1, total.pS2, total.sS2].map((v, i) => (
+                    <span
+                      key={i}
+                      className="text-right font-mono text-[15px] font-bold text-ink"
+                    >
+                      {v}
+                    </span>
+                  ))}
+                </div>
+
+                <div className={`${GRILLE} border-t border-border bg-wash px-6 py-3.5`}>
+                  <span className="col-span-8 text-right font-mono text-[12px] uppercase tracking-[0.08em] text-slate-2">
+                    MHT AFF S1+S2 (P+S)
                   </span>
-                  <span className="text-right font-mono text-[14px] text-slate-2">
-                    {total.presentiel}
+                  <span className="text-right font-display text-[18px] font-bold text-ink">
+                    {general}
                   </span>
-                  <span className="text-right font-mono text-[14px] text-slate-2">
-                    {total.fad}
-                  </span>
-                  <span aria-hidden />
-                  <span aria-hidden />
                 </div>
               </>
             )}
@@ -296,16 +391,22 @@ export default function TableauService({
       </div>
 
       <p className="max-w-[820px] text-[13.5px] text-slate-light">
-        <span className="font-semibold text-slate-2">Présentiel</span> et{" "}
-        <span className="font-semibold text-slate-2">FAD</span> ne figurent pas sur le
-        document officiel : elles décomposent la masse horaire affectée pour votre
-        propre suivi. <span className="font-semibold text-slate-2">EFP</span> reprend
-        le nom du centre réglé dans{" "}
-        <Link href="/parametres">Paramètres</Link>, où se dépose aussi le logo
-        imprimé en tête des documents.{" "}
-        <span className="font-semibold text-slate-2">MUT</span> reste vide —
-        l&apos;application ne détient pas cette donnée — et se complète à la main
-        sur le document imprimé.
+        Un tiret dans une colonne <span className="font-semibold text-slate-2">S</span>{" "}
+        signale une part à distance <span className="font-semibold text-slate-2">partagée</span>{" "}
+        avec un autre groupe : le groupe en est bien crédité pour sa progression,
+        mais vous ne la dispensez qu&apos;une fois, donc elle ne compte qu&apos;une
+        fois ici.
+        {manquants.length ? (
+          <>
+            {" "}
+            L&apos;en-tête du document imprimé attend encore{" "}
+            {manquants.join(", ")} —{" "}
+            <Link href="/parametres" className="font-semibold">
+              à renseigner dans Paramètres
+            </Link>
+            .
+          </>
+        ) : null}
       </p>
     </div>
   );

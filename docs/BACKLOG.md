@@ -154,7 +154,7 @@ contrôles et produire les fiches est le travail manuel que cette application do
 
 L'ordre ci-dessous est arrêté : chaque atome se termine et se teste avant que le suivant commence.
 
-- [ ] **7.1 — Atome 3 · Tableau de service** refait sur la structure exacte du document signé : colonnes `MHT AFF P S1 / S S1 / P S2 / S S2`, cellules FAD vides sur la ligne du groupe qui partage, totaux par colonne et total général `MHT AFF S1+S2 (P+S)`, en-tête (Code Secteur, Formateur, Spécialité, Niveau, Année scolaire), cadre Formateur / Matricule / Signature / Directeur Pédagogique - Directeur d'EFP.
+- [x] **7.1 — Atome 3 · Tableau de service** refait sur la structure exacte du document signé : colonnes `MHT AFF P S1 / S S1 / P S2 / S S2`, cellules FAD vides sur la ligne du groupe qui partage, totaux par colonne et total général `MHT AFF S1+S2 (P+S)`, en-tête (Code Secteur, Formateur, Spécialité, Niveau, Année scolaire), cadre Formateur / Matricule / Signature / Directeur Pédagogique - Directeur d'EFP.
   **Test** : le total recalculé tombe sur 920 h et chaque colonne sur 425 / 80 / 355 / 60, comme le document signé.
 
 - [ ] **7.2 — Lot design · correctifs courts**
