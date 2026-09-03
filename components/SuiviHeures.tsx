@@ -24,7 +24,7 @@ function Jauge({ p }: { p: Plafond }) {
         </span>
       </div>
       <div
-        className="mt-1 h-1.5 overflow-hidden rounded-full bg-border"
+        className="mt-1 h-1.5 overflow-hidden rounded-full bg-wash"
         role="progressbar"
         aria-valuenow={pct}
         aria-valuemin={0}
@@ -72,7 +72,7 @@ export default function SuiviHeures({
         ) : null}
         {annuel ? (
           <span className="flex items-center gap-2">
-            <span className="h-1.5 w-24 overflow-hidden rounded-full bg-border">
+            <span className="h-1.5 w-24 overflow-hidden rounded-full bg-wash">
               <span
                 className={`block h-full rounded-full ${
                   annuel.niveau === "depasse"

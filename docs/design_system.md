@@ -114,6 +114,8 @@ Repris directement du modèle de référence : chaque ligne représentant une pe
 
 La colonne de progression réutilise le même principe qu'une colonne "Score" : un pourcentage simple, aligné à droite, en `IBM Plex Mono`, jamais une barre graphique complexe — la clarté du chiffre prime.
 
+**Précision apportée à la revue périodique** : cette règle vise **une colonne dans une liste de personnes**, là où une barre par ligne transformerait une liste en histogramme illisible. Elle n'interdit pas la barre de proportion décrite en §5.4, qui porte sur **un seul objet** — la progression d'un module, la charge d'une semaine, la couverture d'un référentiel. Vérifié : les sept barres du produit sont toutes dans ce second cas, aucune liste de personnes n'en porte.
+
 ## 5. Nouveaux patterns inspirés des captures de référence
 
 Trois patterns visibles dans les nouvelles captures fournies n'existent pas encore dans l'app et doivent être ajoutés au vocabulaire du design system avant d'être implémentés où c'est utile.
@@ -129,6 +131,16 @@ Une icône cloche dans la barre supérieure, avec un badge rond `--ofppt-coral` 
 ### 5.3 Fil de commentaires avec réactions et étiquettes de visibilité
 
 Au-delà du fil d'annonces déjà présent côté stagiaire, ce pattern s'applique à tout contexte de discussion contextuelle (ex. commentaires internes sur une copie, échange formateur-formateur sur un groupe partagé). Chaque entrée : avatar, nom, une étiquette pilule optionnelle indiquant la visibilité ("Privé" en `--ofppt-coral` clair, "Équipe" en `--ofppt-teal` clair) et le rôle de l'auteur en texte `--slate`, le message, puis une rangée d'actions discrètes (réagir, marquer comme lu, menu "..."). Une réaction existante s'affiche en pastille arrondie avec l'emoji/icône et un compteur. La mention `@nom` dans un message est cliquable et surlignée en fond `--mint`, texte `--ofppt-ink`. Champ de saisie en bas avec les actions (lien, mention, bascule de visibilité) sur une ligne dédiée sous le texte, jamais mélangées au texte.
+
+### 5.4 Barre de proportion — recensée à la revue périodique
+
+Sept écrans l'utilisaient sans qu'elle figure ici, avec trois hauteurs et trois couleurs de piste différentes pour le même objet. Convention unique, désormais :
+
+- **Piste** `--wash`, coins `999px`, `overflow-hidden`.
+- **Hauteur** : `6px` quand la barre accompagne une ligne ou une valeur (suivi des heures, progression d'un module dans une liste) ; `10px` quand elle est le sujet de sa carte (avancement d'une répartition, courbe de difficulté d'un contrôle).
+- **Remplissage** : `--ofppt-teal` en cours, `--ofppt-green` une fois l'objectif atteint. Le corail est exclu — une barre n'est pas un point d'attention, elle mesure.
+- **Deux segments** quand la barre compare deux parts d'un même tout (accessible / discriminant sur la courbe de difficulté §8) : `--ofppt-green` puis `--ofppt-teal`, sans écart entre eux, chaque segment repris en légende avec sa pastille et son chiffre. Jamais plus de deux segments : au-delà, c'est un tableau.
+- **Toujours accompagnée du chiffre**, jamais seule : la barre donne l'ordre de grandeur, le chiffre donne la valeur.
 
 ## 6. Espace stagiaire — mobile-first (règles spécifiques)
 
@@ -193,6 +205,9 @@ Une fiche prescrite ou un tableau de suggestions pédagogiques contient beaucoup
 - **`Interrupteur`** : bascule d'un réglage booléen, jamais d'une navigation. Piste 46×26, pastille blanche de 20px glissant de 3px à 23px, piste `--ofppt-green` à l'état actif et `--border-strong` au repos. Porte `role="switch"` et un `label` qui dit ce qu'il commande, pas son état.
 - **`Breadcrumb`** : chemin de retour sur les écrans à deux niveaux ou plus (un groupe, un module d'un groupe). Segments en `--slate-2`, séparateur `/` en `--muted`, dernier segment non cliquable.
 - **`GroupeTabs`** : navigation entre les onglets d'un groupe, avec débordement horizontal et menu « Plus » au-delà de la largeur disponible — un groupe porte plus d'onglets qu'un écran ne peut en montrer, et les tronquer en cacherait certains définitivement.
+- **`SelecteurAnnee`** : change la portée de toute l'application, comme on change de dossier de travail (PRD §4.15). Bouton de la barre supérieure portant l'année en `IBM Plex Mono`, menu à droite listant les années de la plus récente à la plus ancienne, l'année en cours signalée en `--ofppt-green`. Il reste ouvrable avec une seule année déclarée : c'est de là que se crée la suivante. Changer d'année recharge la page — une portée globale ne se rafraîchit pas par morceaux.
+- **`NouvelleAnnee`** : modale de duplication. Cases à cocher, **toutes cochées par défaut**, chacune annonçant ce que le groupe emporte — décocher avant est réversible, supprimer après ne l'est pas. Ce qui n'est pas repris est écrit dans la modale, jamais découvert après coup.
+- **`RendusDevoir`** : liste dépliable des copies déposées sous un devoir. Fermée par défaut — la plupart des devoirs se consultent sans le détail — et ne charge ses données qu'à l'ouverture.
 
 ## 11. Règles UX
 
@@ -211,6 +226,10 @@ Une fiche prescrite ou un tableau de suggestions pédagogiques contient beaucoup
 - **Focus clavier toujours visible** (contour `--ofppt-ink` 2px minimum) sur tout élément interactif ; contraste texte/fond conforme AA sur tout le texte.
 - **La préparation d'un contrôle suit un parcours guidé en étapes visibles** (contenu couvert → choix du format → assistance IA → relecture/validation), jamais un formulaire unique avec tout mélangé — chaque étape affiche où l'utilisateur en est (ex. indicateur "Étape 2 sur 4"), cohérent avec le fait que le formateur garde la main à chaque étape (PRD §4.7).
 - **Un module porte toujours son code opérationnel court en évidence** (ex. `M106`) dans `IBM Plex Mono`, avec le nom complet de la compétence juste à côté en texte normal — jamais l'un sans l'autre, le formateur pense en codes courts au quotidien mais a besoin du nom complet pour lever toute ambiguïté.
+
+### Ligne réservée dans un tableau de saisie
+
+Une ligne qui occupe du total sans être modifiable — les dix heures d'évaluation d'une répartition horaire (§4.7 du PRD) — se distingue par un fond `--paper-alt`, un filet supérieur `--border-strong` qui la sépare du bloc saisissable, un badge « réservé », et un tiret `--slate-light` à la place de chaque champ. Elle n'est jamais absente ni simplement soustraite du total : un formateur doit voir ce qui lui est retiré, pas le déduire d'un total qui ne tombe pas juste.
 
 ## 12. Gouvernance des futurs composants
 
@@ -239,5 +258,7 @@ Transitions courtes uniquement (150-200ms, `ease-out`) sur les changements d'ét
 Un composant partagé porte un nom français métier s'il est spécifique au domaine (`RailDeProgression`, `BandeauIa`), un nom anglais générique s'il est purement technique/réutilisable (`Button`, `Modal`, `KebabMenu`) — cohérent avec la convention déjà établie dans `conventions.md` (français pour le métier, anglais pour la technique).
 
 ### Revue périodique
+
+**Dernière revue : 3 septembre 2026**, après treize atomes — au-delà des huit à dix prévus. Elle a produit : la précision de §4 sur la barre en liste de personnes, le recensement de la barre de proportion (§5.4) et de la ligne réservée (§11), et l'ajout de `SelecteurAnnee`, `NouvelleAnnee` et `RendusDevoir` en §10. Trois hauteurs et trois couleurs de piste coexistaient pour la même barre : elles ont été alignées dans le code au passage.
 
 Comme pour `conventions.md`, relis ce fichier face au code réel tous les 8-10 composants ajoutés — pas seulement au moment de l'écrire. Un design system qui n'est jamais confronté au code dérive silencieusement, exactement comme on l'a vu avec le token `--mist` jamais défini mais utilisé 18 fois.

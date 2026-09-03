@@ -231,7 +231,7 @@ export default function RepartitionManager({
             </>
           ) : null}
         </p>
-        <span className="h-[9px] overflow-hidden rounded-full bg-wash">
+        <span className="h-2.5 overflow-hidden rounded-full bg-wash">
           <span
             className={`block h-full rounded-full transition-[width] duration-150 ease-out ${
               avancement >= 100 ? "bg-green" : "bg-teal"

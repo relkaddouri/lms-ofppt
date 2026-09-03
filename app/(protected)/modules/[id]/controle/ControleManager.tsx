@@ -1160,7 +1160,7 @@ export default function ControleManager({
                       </span>
                     </div>
 
-                    <div className="flex h-2.5 overflow-hidden rounded-full bg-wash-strong">
+                    <div className="flex h-2.5 overflow-hidden rounded-full bg-wash">
                       <span
                         className="bg-green"
                         style={{

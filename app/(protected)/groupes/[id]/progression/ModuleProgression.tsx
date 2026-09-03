@@ -99,7 +99,7 @@ export default function ModuleProgression({
 
           <span className="mt-1.5 flex flex-wrap items-center gap-3">
             <span
-              className="h-1.5 w-40 overflow-hidden rounded-full bg-border"
+              className="h-1.5 w-40 overflow-hidden rounded-full bg-wash"
               role="progressbar"
               aria-valuenow={pct}
               aria-valuemin={0}
