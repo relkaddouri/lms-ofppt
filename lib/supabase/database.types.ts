@@ -1858,6 +1858,14 @@ export type Database = {
         Args: { p_note: number; p_passation_id: string; p_responses: Json }
         Returns: undefined
       }
+      dupliquer_annee: {
+        Args: {
+          p_annee_source: string
+          p_groupe_ids: string[]
+          p_libelle: string
+        }
+        Returns: string
+      }
       email_du_cef: { Args: { p_cef: string }; Returns: string }
       enregistrer_parametres_llm: {
         Args: {

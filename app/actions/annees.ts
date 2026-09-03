@@ -100,3 +100,97 @@ export async function getPortee(): Promise<Portee> {
 
   return { anneeId: annee.id, groupeIds: (data ?? []).map((g) => g.id) };
 }
+
+export type GroupeADupliquer = {
+  id: string;
+  nom: string;
+  annee: number | null;
+  nbModules: number;
+  nbSeances: number;
+  nbControles: number;
+};
+
+/**
+ * Les groupes d'une année, avec de quoi décider lesquels reconduire.
+ *
+ * Le formateur ne reconduit pas forcément tout : un groupe qui n'existera plus
+ * se décoche (PRD §4.15). Les compteurs disent ce que la duplication emporte
+ * avec chaque groupe.
+ */
+export async function getGroupesADupliquer(
+  anneeId: string,
+): Promise<GroupeADupliquer[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("groupes")
+    .select(
+      "id, nom, annee, groupe_modules(count), seance_groupes(count), controles(count)",
+    )
+    .eq("annee_scolaire_id", anneeId)
+    .order("nom");
+
+  if (error) throw new Error(error.message);
+
+  const compte = (v: unknown) =>
+    Array.isArray(v) && v.length > 0
+      ? Number((v[0] as { count?: number }).count ?? 0)
+      : 0;
+
+  return (data ?? []).map((g) => {
+    const r = g as unknown as {
+      id: string;
+      nom: string;
+      annee: number | null;
+      groupe_modules: unknown;
+      seance_groupes: unknown;
+      controles: unknown;
+    };
+    return {
+      id: r.id,
+      nom: r.nom,
+      annee: r.annee,
+      nbModules: compte(r.groupe_modules),
+      nbSeances: compte(r.seance_groupes),
+      nbControles: compte(r.controles),
+    };
+  });
+}
+
+/**
+ * Crée une nouvelle année à partir d'une précédente et la sélectionne.
+ *
+ * La copie elle-même se fait en base, en une transaction : une duplication
+ * interrompue à mi-chemin laisserait une année à moitié peuplée. Ce qui repart
+ * de zéro — stagiaires, copies, présences — n'est pas copié ; le motif
+ * hebdomadaire non plus, il se redéclare et datera ensuite les séances
+ * reconduites, qui arrivent sans date.
+ */
+export async function dupliquerAnnee(
+  anneeSourceId: string,
+  libelle: string,
+  groupeIds: string[],
+): Promise<string> {
+  const user = await getUser();
+  if (!user) throw new Error("Authentification requise.");
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("dupliquer_annee", {
+    p_annee_source: anneeSourceId,
+    p_libelle: libelle.trim(),
+    p_groupe_ids: groupeIds,
+  });
+  if (error) throw new Error(error.message);
+
+  const nouvelle = data as unknown as string;
+
+  // On bascule sur l'année créée : c'est celle sur laquelle on va travailler,
+  // et la laisser en arrière-plan obligerait à la chercher.
+  const { error: errChoix } = await supabase.rpc("choisir_annee_scolaire", {
+    p_annee_id: nouvelle,
+  });
+  if (errChoix) throw new Error(errChoix.message);
+
+  revalidatePath("/", "layout");
+  return nouvelle;
+}
