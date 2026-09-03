@@ -9,6 +9,8 @@ import Button from "@/components/ui/Button";
 import { inputStyles as inputClass } from "@/components/ui/Input";
 import AutoTextarea from "@/components/ui/AutoTextarea";
 import { slugify } from "@/lib/format";
+import { getEtablissement } from "@/app/actions/etablissement";
+import { marqueDe } from "@/lib/pdf-marque";
 import {
   Download,
   Pencil,
@@ -173,7 +175,10 @@ export default function FicheSeance({
   async function exporter() {
     setBusy(true);
     try {
-      const { telechargerFichePdf } = await import("@/lib/pdf-fiche");
+      const [{ telechargerFichePdf }, marque] = await Promise.all([
+        import("@/lib/pdf-fiche"),
+        getEtablissement(),
+      ]);
       await telechargerFichePdf(
         {
           nature: fiche.nature,
@@ -200,6 +205,7 @@ export default function FicheSeance({
             .join(" "),
           "seance",
         )}.pdf`,
+        marqueDe(marque),
       );
     } catch {
       toast("Export PDF impossible.", "error");

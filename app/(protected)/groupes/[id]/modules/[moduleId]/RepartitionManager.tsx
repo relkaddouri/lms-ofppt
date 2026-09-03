@@ -18,6 +18,8 @@ import { ConfirmModal } from "@/components/ui/Modal";
 import { getManuel } from "@/app/actions/manuel";
 import { slugify } from "@/lib/format";
 import { BookOpen, RotateCcw, Save } from "lucide-react";
+import { getEtablissement } from "@/app/actions/etablissement";
+import { marqueDe } from "@/lib/pdf-marque";
 
 export default function RepartitionManager({
   groupeId,
@@ -63,13 +65,17 @@ export default function RepartitionManager({
       try {
         const manuel = await getManuel(moduleId, groupeId);
         if (!manuel) throw new Error("Référentiel introuvable pour ce module.");
-        const { telechargerManuelPdf } = await import("@/lib/pdf-manuel");
+        const [{ telechargerManuelPdf }, marque] = await Promise.all([
+          import("@/lib/pdf-manuel"),
+          getEtablissement(),
+        ]);
         await telechargerManuelPdf(
           manuel,
           `manuel-formateur-competence-${manuel.numero}-${slugify(
             plan.groupeNom,
             "groupe",
           )}.pdf`,
+          marqueDe(marque),
         );
       } catch (e) {
         toast(e instanceof Error ? e.message : "Export impossible.", "error");

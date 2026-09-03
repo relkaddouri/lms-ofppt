@@ -1,4 +1,5 @@
 import type jsPDF from "jspdf";
+import { dessinerEntete, type Marque } from "@/lib/pdf-marque";
 
 /**
  * Copie corrigée d'un contrôle, en vectoriel.
@@ -41,10 +42,15 @@ const ENCRE: [number, number, number] = [17, 24, 39];
 const GRIS: [number, number, number] = [110, 116, 126];
 const TRAIT: [number, number, number] = [200, 203, 208];
 
-export async function construireCopiePdf(c: Copie): Promise<jsPDF> {
+export async function construireCopiePdf(
+  c: Copie,
+  marque?: Marque,
+): Promise<jsPDF> {
   const { default: JsPDF } = await import("jspdf");
   const doc = new JsPDF({ unit: "mm", format: "a4" });
-  let y = HAUT;
+  // Une copie corrigée est un document d'archive : elle porte l'identité du
+  // centre au même titre que le contrôle dont elle sort.
+  let y = dessinerEntete(doc, marque, X, HAUT, LARGEUR);
 
   function place(hauteur: number) {
     if (y + hauteur > BAS) {
@@ -156,7 +162,11 @@ export async function construireCopiePdf(c: Copie): Promise<jsPDF> {
   return doc;
 }
 
-export async function telechargerCopiePdf(c: Copie, nomFichier: string) {
-  const doc = await construireCopiePdf(c);
+export async function telechargerCopiePdf(
+  c: Copie,
+  nomFichier: string,
+  marque?: Marque,
+) {
+  const doc = await construireCopiePdf(c, marque);
   doc.save(nomFichier);
 }

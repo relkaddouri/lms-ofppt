@@ -1,4 +1,5 @@
 import type jsPDF from "jspdf";
+import { dessinerEntete, type Marque } from "@/lib/pdf-marque";
 import type { Support } from "@/app/api/generate/support/route";
 
 /**
@@ -30,10 +31,11 @@ const FOND: [number, number, number] = [238, 241, 244];
 export async function construireSupportPdf(
   support: Support,
   entete: EnteteSupport,
+  marque?: Marque,
 ): Promise<jsPDF> {
   const { default: JsPDF } = await import("jspdf");
   const doc = new JsPDF({ unit: "mm", format: "a4" });
-  let y = HAUT;
+  let y = dessinerEntete(doc, marque, X, HAUT, LARGEUR);
 
   const place = (h: number) => {
     if (y + h > BAS) {
@@ -222,7 +224,8 @@ export async function telechargerSupportPdf(
   support: Support,
   entete: EnteteSupport,
   nomFichier: string,
+  marque?: Marque,
 ) {
-  const doc = await construireSupportPdf(support, entete);
+  const doc = await construireSupportPdf(support, entete, marque);
   doc.save(nomFichier);
 }

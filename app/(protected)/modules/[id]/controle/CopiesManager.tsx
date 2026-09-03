@@ -9,6 +9,8 @@ import Button, { buttonStyles } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
 
 import { formatDateTime, slugify } from "@/lib/format";
+import { getEtablissement } from "@/app/actions/etablissement";
+import { marqueDe } from "@/lib/pdf-marque";
 
 function noteTone(note: number): "success" | "info" | "danger" {
   if (note >= 10) return "success";
@@ -65,7 +67,10 @@ export default function CopiesManager({
     if (!selected) return;
     setBusy(true);
     try {
-      const { telechargerCopiePdf } = await import("@/lib/pdf-copie");
+      const [{ telechargerCopiePdf }, marque] = await Promise.all([
+        import("@/lib/pdf-copie"),
+        getEtablissement(),
+      ]);
       await telechargerCopiePdf(
         {
           titre: controleTitre || "Contrôle",
@@ -86,6 +91,7 @@ export default function CopiesManager({
           avecCorrige: true,
         },
         `copie-${slugify(selected.nom_complet, "copie")}-${slugify(controleTitre || "controle", "controle")}.pdf`,
+        marqueDe(marque),
       );
     } catch (err) {
       toast(

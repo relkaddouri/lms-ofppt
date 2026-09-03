@@ -12,6 +12,8 @@ import { slugify } from "@/lib/format";
 import DiaporamaCours from "@/components/DiaporamaCours";
 import type { Support } from "@/app/api/generate/support/route";
 import { Download, Save, Sparkles } from "lucide-react";
+import { getEtablissement } from "@/app/actions/etablissement";
+import { marqueDe } from "@/lib/pdf-marque";
 
 export type ContexteSupport = {
   seanceId: string;
@@ -101,7 +103,10 @@ export default function SupportSeance({
     if (!support) return;
     setBusy(true);
     try {
-      const { telechargerSupportPdf } = await import("@/lib/pdf-support");
+      const [{ telechargerSupportPdf }, marque] = await Promise.all([
+        import("@/lib/pdf-support"),
+        getEtablissement(),
+      ]);
       await telechargerSupportPdf(
         support,
         {
@@ -117,6 +122,7 @@ export default function SupportSeance({
             .join(" "),
           "support",
         )}.pdf`,
+        marqueDe(marque),
       );
     } catch {
       toast("Export PDF impossible.", "error");

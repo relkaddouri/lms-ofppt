@@ -41,6 +41,8 @@ import {
   Trash2,
   Wand2,
 } from "lucide-react";
+import { getEtablissement } from "@/app/actions/etablissement";
+import { marqueDe } from "@/lib/pdf-marque";
 
 type DraftQuestion = {
   id: string;
@@ -422,7 +424,10 @@ export default function ControleManager({
   async function handleDownloadPdf() {
     setBusy(true);
     try {
-      const { telechargerControlePdf } = await import("@/lib/pdf-controle");
+      const [{ telechargerControlePdf }, marque] = await Promise.all([
+        import("@/lib/pdf-controle"),
+        getEtablissement(),
+      ]);
       await telechargerControlePdf(
         {
           titre: titre || "Contrôle",
@@ -443,6 +448,7 @@ export default function ControleManager({
           })),
         },
         `controle-${slugify(`${moduleCode ?? ""} ${groupeNom} ${moduleNom}`, "controle")}.pdf`,
+        marqueDe(marque),
       );
     } catch (err) {
       toast(

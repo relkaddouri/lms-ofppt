@@ -1,12 +1,15 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
+import Link from "next/link";
 import { FileDown, Sheet } from "lucide-react";
 import Button from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
 import { formatDate, maintenant, slugify } from "@/lib/format";
 import { libelleAnnee } from "@/lib/modules";
 import type { LigneService } from "@/app/actions/tableau-service";
+import type { Etablissement } from "@/app/actions/etablissement";
+import { marqueDe, nomEtablissement } from "@/lib/pdf-marque";
 
 /**
  * Tableau de service (PRD §4.13bis).
@@ -14,9 +17,9 @@ import type { LigneService } from "@/app/actions/tableau-service";
  * Reproduction à l'écran du document que la Direction Régionale fait signer,
  * dans l'ordre de ses colonnes. Deux colonnes s'y ajoutent — Présentiel et
  * FAD — parce que le formateur suit cette décomposition pour lui-même ; deux
- * autres, MUT et EFP, restent vides faute de donnée dans l'application, mais
- * demeurent visibles pour que le tableau se superpose au papier et se
- * complète à la main.
+ * EFP porte le nom du centre réglé dans Paramètres. MUT reste vide faute de
+ * donnée dans l'application, mais demeure visible pour que le tableau se
+ * superpose au papier et se complète à la main.
  */
 
 const COLONNES = [
@@ -29,22 +32,27 @@ const COLONNES = [
   { cle: "presentiel", titre: "Présentiel", nombre: true, ajout: true },
   { cle: "fad", titre: "FAD", nombre: true, ajout: true },
   { cle: "mut", titre: "MUT", vide: true },
-  { cle: "efp", titre: "EFP", vide: true },
+  { cle: "efp", titre: "EFP" },
 ] as const;
 
 const GRILLE =
-  "grid grid-cols-[100px_120px_80px_96px_minmax(200px,1fr)_76px_84px_64px_60px_64px] items-center gap-3";
+  "grid grid-cols-[100px_110px_70px_90px_minmax(170px,1fr)_76px_78px_64px_60px_140px] items-center gap-3";
 
 export default function TableauService({
   lignes,
   formateur,
+  etablissement,
 }: {
   lignes: LigneService[];
   formateur: string;
+  etablissement: Etablissement;
 }) {
   const toast = useToast();
   const [enCours, startTransition] = useTransition();
   const [annee, setAnnee] = useState("tous");
+  // Le même centre sur toutes les lignes, comme sur le document officiel où la
+  // colonne EFP se répète.
+  const centre = nomEtablissement(marqueDe(etablissement));
 
   const annees = useMemo(
     () =>
@@ -82,7 +90,7 @@ export default function TableauService({
         const { telechargerTableauServicePdf } = await import("@/lib/pdf-tableau-service");
         await telechargerTableauServicePdf(
           {
-            etablissement: "OFPPT",
+            marque: marqueDe(etablissement),
             formateur,
             edite: formatDate(maintenant()),
           },
@@ -121,7 +129,7 @@ export default function TableauService({
       l.heuresPresentiel,
       l.heuresFad,
       "",
-      "",
+      centre,
     ]);
     const pied = ["Total général", "", "", "", "", total.mh, total.presentiel, total.fad, "", ""];
 
@@ -198,7 +206,7 @@ export default function TableauService({
 
       <div className="overflow-hidden rounded-[14px] border border-border bg-surface shadow-repos">
         <div className="overflow-x-auto">
-          <div className="min-w-[1040px]">
+          <div className="min-w-[1060px]">
             <div className={`${GRILLE} border-b border-border bg-paper-alt px-6 py-3.5`}>
               {COLONNES.map((c) => (
                 <span
@@ -256,8 +264,11 @@ export default function TableauService({
                     <span aria-hidden className="text-[14px] text-muted">
                       —
                     </span>
-                    <span aria-hidden className="text-[14px] text-muted">
-                      —
+                    <span
+                      className="truncate text-[13px] text-slate-2"
+                      title={centre}
+                    >
+                      {centre}
                     </span>
                   </div>
                 ))}
@@ -288,10 +299,13 @@ export default function TableauService({
         <span className="font-semibold text-slate-2">Présentiel</span> et{" "}
         <span className="font-semibold text-slate-2">FAD</span> ne figurent pas sur le
         document officiel : elles décomposent la masse horaire affectée pour votre
-        propre suivi. <span className="font-semibold text-slate-2">MUT</span> et{" "}
-        <span className="font-semibold text-slate-2">EFP</span> restent vides —
-        l&apos;application ne détient pas encore ces données — et sont à compléter
-        à la main sur le document imprimé.
+        propre suivi. <span className="font-semibold text-slate-2">EFP</span> reprend
+        le nom du centre réglé dans{" "}
+        <Link href="/parametres">Paramètres</Link>, où se dépose aussi le logo
+        imprimé en tête des documents.{" "}
+        <span className="font-semibold text-slate-2">MUT</span> reste vide —
+        l&apos;application ne détient pas cette donnée — et se complète à la main
+        sur le document imprimé.
       </p>
     </div>
   );

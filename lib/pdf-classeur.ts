@@ -1,4 +1,5 @@
 import type jsPDF from "jspdf";
+import { dessinerEntete, type Marque } from "@/lib/pdf-marque";
 import {
   dessinerFiche,
   ENCRE,
@@ -19,7 +20,6 @@ import {
  */
 
 export type EnteteClasseur = {
-  etablissement: string;
   filiere: string;
   groupe: string;
   module: string;
@@ -36,12 +36,11 @@ function pageDeGarde(
   doc: jsPDF,
   entete: EnteteClasseur,
   fiches: FicheDatee[],
+  marque?: Marque,
 ): void {
-  let y = 60;
-
-  doc.setFont("helvetica", "bold").setFontSize(11).setTextColor(...GRIS);
-  doc.text(entete.etablissement.toUpperCase(), X, y);
-  y += 14;
+  // Le bandeau d'identité tient lieu de ce qui n'était qu'un sigle en
+  // majuscules : sur une page de garde, le logo du centre a sa place.
+  let y = dessinerEntete(doc, marque, X, 52, LARGEUR, 16) + 6;
 
   doc.setFont("helvetica", "bold").setFontSize(24).setTextColor(...ENCRE);
   doc.text("Classeur pédagogique", X, y);
@@ -114,15 +113,16 @@ function paginer(doc: jsPDF, entete: EnteteClasseur): void {
 export async function construireClasseurPdf(
   entete: EnteteClasseur,
   fiches: FicheDatee[],
+  marque?: Marque,
 ): Promise<jsPDF> {
   const { default: JsPDF } = await import("jspdf");
   const doc = new JsPDF({ unit: "mm", format: "a4" });
 
-  pageDeGarde(doc, entete, fiches);
+  pageDeGarde(doc, entete, fiches, marque);
 
   for (const f of fiches) {
     doc.addPage();
-    dessinerFiche(doc, f.fiche);
+    dessinerFiche(doc, f.fiche, marque);
   }
 
   paginer(doc, entete);
@@ -133,7 +133,8 @@ export async function telechargerClasseurPdf(
   entete: EnteteClasseur,
   fiches: FicheDatee[],
   nomFichier: string,
+  marque?: Marque,
 ) {
-  const doc = await construireClasseurPdf(entete, fiches);
+  const doc = await construireClasseurPdf(entete, fiches, marque);
   doc.save(nomFichier);
 }

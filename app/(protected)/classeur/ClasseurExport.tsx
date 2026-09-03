@@ -7,6 +7,8 @@ import { useToast } from "@/components/ui/Toast";
 import { formatDate, slugify } from "@/lib/format";
 import { lireFiche } from "@/components/FicheSeance";
 import { getFichesPeriode, type GroupeClasseur } from "@/app/actions/classeur";
+import { getEtablissement } from "@/app/actions/etablissement";
+import { marqueDe } from "@/lib/pdf-marque";
 import { FolderDown } from "lucide-react";
 
 /** Premier et dernier jour du mois en cours, la période qu'on exporte le plus. */
@@ -78,11 +80,13 @@ export default function ClasseurExport({
         }
 
         const moduleChoisi = modules.find((m) => m.id === moduleId);
-        const { telechargerClasseurPdf } = await import("@/lib/pdf-classeur");
+        const [{ telechargerClasseurPdf }, marque] = await Promise.all([
+          import("@/lib/pdf-classeur"),
+          getEtablissement(),
+        ]);
 
         await telechargerClasseurPdf(
           {
-            etablissement: "OFPPT",
             filiere: groupe ? groupe.filiere : "Toutes les filières",
             groupe: groupe ? groupe.nom : "Tous les groupes",
             module: moduleChoisi
@@ -118,6 +122,7 @@ export default function ClasseurExport({
             `${groupe ? groupe.nom : "tous-groupes"} ${debut} ${fin}`,
             "classeur",
           )}.pdf`,
+          marqueDe(marque),
         );
 
         toast(

@@ -1,4 +1,5 @@
 import type jsPDF from "jspdf";
+import { dessinerLogo, nomEtablissement, type Marque } from "@/lib/pdf-marque";
 
 /**
  * Tableau de service — le document de masse horaire de la Direction Régionale.
@@ -27,7 +28,7 @@ export type LignePdfService = {
 };
 
 export type EnteteService = {
-  etablissement: string;
+  marque: Marque;
   formateur: string;
   /** Date d'édition, affichée telle quelle. */
   edite: string;
@@ -50,17 +51,17 @@ type Colonne = {
 };
 
 const COLONNES: Colonne[] = [
-  { titre: "Date d'affectation", largeur: 24 },
-  { titre: "Filière", largeur: 30 },
+  { titre: "Date d'affectation", largeur: 22 },
+  { titre: "Filière", largeur: 26 },
   { titre: "Année", largeur: 14 },
-  { titre: "Groupe", largeur: 22 },
-  { titre: "Code", largeur: 16 },
-  { titre: "Module", largeur: 77 },
-  { titre: "MH AFF", largeur: 18, aligne: "right" },
-  { titre: "Présentiel", largeur: 22, aligne: "right", ajout: true },
-  { titre: "FAD", largeur: 16, aligne: "right", ajout: true },
-  { titre: "MUT", largeur: 16 },
-  { titre: "EFP", largeur: 18 },
+  { titre: "Groupe", largeur: 20 },
+  { titre: "Code", largeur: 14 },
+  { titre: "Module", largeur: 62 },
+  { titre: "MH AFF", largeur: 16, aligne: "right" },
+  { titre: "Présentiel", largeur: 20, aligne: "right", ajout: true },
+  { titre: "FAD", largeur: 14, aligne: "right", ajout: true },
+  { titre: "MUT", largeur: 14 },
+  { titre: "EFP", largeur: 51 },
 ];
 
 const LARGEUR = COLONNES.reduce((t, c) => t + c.largeur, 0);
@@ -105,9 +106,17 @@ function enTeteColonnes(doc: jsPDF, y: number): number {
 }
 
 function entete(doc: jsPDF, e: EnteteService, y: number): number {
+  // Le logo est posé à droite : à gauche, il pousserait le titre du document
+  // vers le bas et déséquilibrerait un tableau qui occupe toute la largeur.
+  const largeurLogo = dessinerLogo(doc, e.marque, X + LARGEUR - 46, y - 4, 14, 46);
+
   doc.setFont("helvetica", "bold").setFontSize(9).setTextColor(...GRIS);
-  doc.text(e.etablissement.toUpperCase(), X, y);
-  y += 7;
+  const nom = doc.splitTextToSize(
+    nomEtablissement(e.marque),
+    LARGEUR - (largeurLogo > 0 ? largeurLogo + 8 : 0),
+  ) as string[];
+  doc.text(nom, X, y);
+  y += nom.length * 4 + 3;
 
   doc.setFont("helvetica", "bold").setFontSize(17).setTextColor(...ENCRE);
   doc.text("Tableau de service", X, y);
@@ -139,6 +148,9 @@ export async function construireTableauServicePdf(
   const { default: JsPDF } = await import("jspdf");
   const doc = new JsPDF({ unit: "mm", format: "a4", orientation: "landscape" });
 
+  // L'établissement est le même sur toutes les lignes : il est mesuré une fois.
+  const centre = nomEtablissement(e.marque);
+
   let y = entete(doc, e, 18);
   y = enTeteColonnes(doc, y);
 
@@ -152,7 +164,11 @@ export async function construireTableauServicePdf(
     // haute des deux — les tronquer ferait perdre l'information au document.
     const filiere = doc.splitTextToSize(l.filiere, COLONNES[1].largeur - 4) as string[];
     const module = doc.splitTextToSize(l.module, COLONNES[5].largeur - 4) as string[];
-    const hauteur = Math.max(7, Math.max(filiere.length, module.length) * 3.6 + 3.4);
+    const efp = doc.splitTextToSize(centre, COLONNES[10].largeur - 4) as string[];
+    const hauteur = Math.max(
+      7,
+      Math.max(filiere.length, module.length, efp.length) * 3.6 + 3.4,
+    );
 
     // Le tableau se poursuit page après page, en-tête de colonnes répété :
     // sans cela une deuxième page arriverait sans repère de lecture.
@@ -172,7 +188,7 @@ export async function construireTableauServicePdf(
       String(l.heuresPresentiel),
       String(l.heuresFad),
       "",
-      "",
+      efp,
     ];
 
     doc.setTextColor(...ENCRE);
@@ -214,7 +230,7 @@ export async function construireTableauServicePdf(
 
   doc.setFont("helvetica", "normal").setFontSize(7).setTextColor(...GRIS);
   doc.text(
-    "Présentiel et FAD ne figurent pas sur le document officiel : ils décomposent la masse horaire affectée pour le suivi du formateur. MUT et EFP sont à compléter.",
+    "Présentiel et FAD ne figurent pas sur le document officiel : ils décomposent la masse horaire affectée pour le suivi du formateur. MUT est à compléter.",
     X,
     y + 5,
   );

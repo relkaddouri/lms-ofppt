@@ -6,27 +6,33 @@ import { ChevronRight, Lock } from "lucide-react";
 import Segments from "@/components/ui/Segments";
 import ParametresLlmForm from "./ParametresLlmForm";
 import ParametresHeuresForm from "./ParametresHeuresForm";
+import ParametresEtablissementForm from "./ParametresEtablissementForm";
 import type { ParametresLlm } from "@/app/actions/parametres-llm";
 import type { ParametresFormateur } from "@/app/actions/heures";
+import type { Etablissement } from "@/app/actions/etablissement";
 
 const ONGLETS = [
   { cle: "heures", libelle: "Ma charge horaire" },
+  { cle: "etablissement", libelle: "Établissement" },
   { cle: "llm", libelle: "Modèle de langage" },
 ] as const;
 
 type Onglet = (typeof ONGLETS)[number]["cle"];
 
 /**
- * Deux réglages sans rapport l'un avec l'autre : la charge horaire du
- * formateur et le fournisseur d'intelligence artificielle. Les empiler sur une
- * seule page obligeait à traverser l'un pour atteindre l'autre.
+ * Trois réglages sans rapport les uns avec les autres : la charge horaire du
+ * formateur, l'identité de son établissement et le fournisseur d'intelligence
+ * artificielle. Les empiler sur une seule page obligeait à traverser l'un pour
+ * atteindre l'autre.
  */
 export default function ParametresOnglets({
   llm,
   heures,
+  etablissement,
 }: {
   llm: ParametresLlm | null;
   heures: ParametresFormateur;
+  etablissement: Etablissement;
 }) {
   const [onglet, setOnglet] = useState<Onglet>("heures");
 
@@ -39,11 +45,11 @@ export default function ParametresOnglets({
         options={ONGLETS.map((o) => ({ valeur: o.cle, libelle: o.libelle }))}
       />
 
-      {onglet === "heures" ? (
-        <ParametresHeuresForm initial={heures} />
-      ) : (
-        <ParametresLlmForm initial={llm} />
-      )}
+      {onglet === "heures" ? <ParametresHeuresForm initial={heures} /> : null}
+      {onglet === "etablissement" ? (
+        <ParametresEtablissementForm initial={etablissement} />
+      ) : null}
+      {onglet === "llm" ? <ParametresLlmForm initial={llm} /> : null}
 
       {/* Le journal n'est pas un réglage : il ne se règle pas, il se
           consulte. Il a donc son écran, atteint depuis ici. */}

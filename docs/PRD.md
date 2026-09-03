@@ -373,17 +373,28 @@ L'interface de création de séance doit donc proposer ces deux blocs (matin/soi
 - Usage principal : audits internes OFPPT sur les fiches de préparation
 - *Résolu et construit (Phase 5 du backlog) — export PDF fonctionnel depuis l'onglet Fiches d'un groupe, avec sélection de module et de période.*
 
-### 4.13bis Tableau de service — document officiel de masse horaire (ajout v3)
+### 4.13bis Tableau de service — document officiel de masse horaire (corrigé v3, structure réelle confirmée)
 
 **Nouveau document de référence, distinct du classeur pédagogique et de l'emploi du temps.** C'est le document produit par la Direction Régionale, qui liste et fait valider l'ensemble des affectations horaires d'un formateur sur l'année — signé par le formateur, le Directeur Pédagogique et le Directeur Régional.
 
-**Colonnes du document officiel** (référence directe fournie par le porteur de projet) : Date d'affectation, Filière, Année, Groupe/Sous-groupe, Code module, Intitulé du module, Masse horaire affectée (MH AFF), Mutation (MUT), EFP — avec un total général en bas de tableau.
+**Structure réelle du document — corrigée après réception d'un vrai exemplaire.** La première description (une seule colonne "MH AFF" par ligne) était incomplète. Le document officiel réel décompose chaque ligne en **4 valeurs numériques**, croisant deux dimensions qu'on n'avait pas encore modélisées ensemble :
 
-**Le calcul du total doit toujours passer par les assignations groupe+module, jamais par la durée de référence d'un module seul.** C'est le point qui a révélé cette lacune : un module enseigné à deux groupes différents (ex. M104 : 90h pour DES101, 75h pour DES102) compte **deux fois**, avec sa masse horaire propre à chaque groupe — pas une seule fois avec sa durée de référence nationale. Toute statistique agrégée affichée dans l'app (comme le total sur la page Modules) doit être calculée en sommant `masse_horaire_allouee` sur toutes les lignes `groupe_modules`, jamais en sommant `duree_reference` sur les modules — les deux ne représentent pas la même chose et ne doivent jamais être confondues à l'écran.
+| Colonne officielle | Signification |
+|---|---|
+| `MHT AFF P S1` | Heures **présentielles**, **semestre 1** |
+| `MHT AFF S S1` | Heures **à distance (FAD)**, **semestre 1** |
+| `MHT AFF P S2` | Heures **présentielles**, **semestre 2** |
+| `MHT AFF S S2` | Heures **à distance (FAD)**, **semestre 2** |
 
-**Ajout par rapport au document papier officiel** : contrairement au document OFPPT qui ne montre qu'un total par ligne, l'app doit décomposer chaque ligne en présentiel / FAD (§4.1bis) — utile au formateur pour son propre suivi, même si cette décomposition ne fait pas partie du format officiel transmis à la Direction.
+**Colonnes complètes du document** : Code Secteur, Formateur, Spécialité, Niveau de formation, Année scolaire (en-tête) ; puis par ligne : Filière, Groupe, Année de formation, Code module, Intitulé du module, et les 4 colonnes d'heures ci-dessus ; un total par colonne en pied de tableau, et un total général "MHT AFF S1+S2 (P+S)".
 
-**Fonctionnalité produit** : une page (ou un export depuis une page existante) qui génère ce tableau automatiquement à partir des assignations réelles `groupe_modules` du formateur, avec export dans un format proche du document officiel — évite la ressaisie manuelle dans un tableur, comme c'était visiblement le cas jusqu'ici.
+**Implication sur le modèle de données — ajout d'une dimension manquante.** La masse horaire allouée à un couple groupe+module ne se décompose pas seulement en présentiel/FAD (§4.1bis) — elle se décompose **aussi par semestre**. Un module peut être dispensé entièrement sur un semestre (ex. dans l'exemple réel, M106 n'a aucune heure en S1, tout est en S2) ou réparti sur les deux (ex. M205 : 55h+15h en S1, 40h+10h en S2). Le modèle doit donc porter, par couple groupe+module : présentiel S1, FAD S1, présentiel S2, FAD S2 — quatre valeurs, pas deux.
+
+**Règle de non-duplication du FAD partagé — confirmée par le document réel.** Sur l'exemple fourni, une séance FAD partagée entre DES101 et DES102 (M104, tronc commun) n'apparaît **que sur la ligne d'un seul des deux groupes** dans le total FAD — pas dupliquée sur les deux. C'est cohérent avec la règle déjà posée en §4.1bis ("175h et non 200h") : le total de masse horaire **affectée au formateur** (ce document) compte les heures réellement dispensées, pas les heures individuellement créditées à chaque groupe pour sa propre progression. **Ces deux totaux ne sont donc pas censés être égaux** : le total de progression par groupe (§4.1bis, chaque groupe crédité de son propre volume) peut légitimement dépasser le total de charge réelle du formateur (ce tableau), précisément à cause des séances FAD partagées.
+
+**Le calcul du total doit toujours passer par les assignations groupe+module, jamais par la durée de référence d'un module seul.** Un module enseigné à deux groupes différents compte deux fois, avec sa masse horaire propre à chaque groupe — pas une seule fois avec sa durée de référence nationale. Toute statistique agrégée affichée dans l'app (comme le total sur la page Modules) doit être calculée en sommant les masses horaires allouées sur toutes les lignes `groupe_modules`, jamais en sommant la durée de référence sur les modules.
+
+**Fonctionnalité produit** : une page qui génère ce tableau automatiquement à partir des assignations réelles `groupe_modules` du formateur, avec les 4 colonnes d'heures correctement calculées (y compris la non-duplication du FAD partagé), export dans un format proche du document officiel (PDF paysage avec cadres de signature) — évite la ressaisie manuelle dans un tableur, comme c'était visiblement le cas jusqu'ici. Les colonnes Mutation (MUT) et EFP restent à saisie manuelle, rien dans le modèle actuel ne les détermine automatiquement — sauf si un champ "Établissement" est ajouté aux paramètres du formateur pour EFP.
 
 ### 4.14 Module stage / soutenance (compétence 16 — dernière du programme)
 

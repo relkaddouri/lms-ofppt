@@ -1,4 +1,5 @@
 import type jsPDF from "jspdf";
+import { dessinerLogo, nomEtablissement, type Marque } from "@/lib/pdf-marque";
 
 /**
  * Sujet de contrôle, mise en page « document officiel ».
@@ -93,7 +94,10 @@ function decoupeEnonce(enonce: string): { nature: string | null; corps: string }
 const heureFr = (n: number) =>
   `${n.toLocaleString("fr-FR", { maximumFractionDigits: 2 })} h`;
 
-export async function construireControlePdf(c: ControlePdf): Promise<jsPDF> {
+export async function construireControlePdf(
+  c: ControlePdf,
+  marque?: Marque,
+): Promise<jsPDF> {
   // Import dynamique comme les quatre autres modules PDF : jsPDF pèse trop
   // lourd pour entrer dans le bundle d'un écran qu'on ouvre pour éditer un
   // contrôle, pas forcément pour l'exporter (conventions.md, performance).
@@ -118,15 +122,39 @@ export async function construireControlePdf(c: ControlePdf): Promise<jsPDF> {
     doc.line(c1, CADRE_Y, c1, CADRE_Y + hEnTete);
     doc.line(c2, CADRE_Y, c2, CADRE_Y + hEnTete);
 
-    // Établissement
-    doc.setTextColor(...ENCRE).setFont("helvetica", "bold").setFontSize(13);
-    doc.text("OFPPT", CADRE_X + 4, CADRE_Y + 8);
-    doc.setFont("helvetica", "normal").setFontSize(6.4).setTextColor(...ARDOISE);
-    doc.text("Office de la Formation Professionnelle", CADRE_X + 4, CADRE_Y + 12.5);
-    doc.text("et de la Promotion du Travail", CADRE_X + 4, CADRE_Y + 15.6);
+    // Établissement : logo s'il y en a un, puis le nom du centre. Le sigle
+    // « OFPPT » et son développé restent le repli tant que rien n'est réglé —
+    // c'est ce que porte le formulaire officiel vierge.
+    const centre = nomEtablissement(marque);
+    const court = centre.length <= 24;
+    const largeurLogo = dessinerLogo(doc, marque, CADRE_X + 4, CADRE_Y + 1.6, 6, 26);
+
+    // La cellule fait 21 mm de haut et doit contenir jusqu'à trois choses :
+    // le logo, le nom du centre et la filière. Les hauteurs sont donc posées
+    // en dur plutôt que cumulées, et la filière garde sa ligne au bas.
+    const hautNom = CADRE_Y + (largeurLogo > 0 ? 10.5 : 7.5);
+    const interligne = court ? 4.5 : 2.9;
+
+    doc.setTextColor(...ENCRE).setFont("helvetica", "bold").setFontSize(court ? 13 : 6.6);
+    // Deux lignes au plus : un nom plus long serait tronqué plutôt que de
+    // déborder sur la filière.
+    const lignesNom = (doc.splitTextToSize(centre, 66) as string[]).slice(0, 2);
+    doc.text(lignesNom, CADRE_X + 4, hautNom);
+
+    let bas = hautNom + lignesNom.length * interligne;
+    if (centre === "OFPPT") {
+      doc.setFont("helvetica", "normal").setFontSize(6.4).setTextColor(...ARDOISE);
+      doc.text("Office de la Formation Professionnelle", CADRE_X + 4, bas + 0.5);
+      doc.text("et de la Promotion du Travail", CADRE_X + 4, bas + 3.6);
+      bas += 6.6;
+    }
     if (c.specialiteNom) {
-      doc.setTextColor(...ENCRE).setFontSize(6.8);
-      doc.text(doc.splitTextToSize(c.specialiteNom, 66)[0], CADRE_X + 4, CADRE_Y + 19);
+      doc.setTextColor(...ENCRE).setFont("helvetica", "normal").setFontSize(6.6);
+      doc.text(
+        doc.splitTextToSize(c.specialiteNom, 66)[0],
+        CADRE_X + 4,
+        Math.max(bas + 1.6, CADRE_Y + 18.6),
+      );
     }
 
     // Épreuve
@@ -356,7 +384,8 @@ export async function construireControlePdf(c: ControlePdf): Promise<jsPDF> {
 export async function telechargerControlePdf(
   c: ControlePdf,
   nomFichier: string,
+  marque?: Marque,
 ) {
-  const doc = await construireControlePdf(c);
+  const doc = await construireControlePdf(c, marque);
   doc.save(nomFichier);
 }

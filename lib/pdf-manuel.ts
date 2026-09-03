@@ -1,4 +1,5 @@
 import type jsPDF from "jspdf";
+import { dessinerEntete, nomEtablissement, type Marque } from "@/lib/pdf-marque";
 import type { Manuel } from "@/app/actions/manuel";
 
 /**
@@ -84,10 +85,13 @@ function heures(v: number | null): string {
   return m === 0 ? `${h} h` : `${h} h ${String(m).padStart(2, "0")}`;
 }
 
-export async function construireManuelPdf(m: Manuel): Promise<jsPDF> {
+export async function construireManuelPdf(
+  m: Manuel,
+  marque?: Marque,
+): Promise<jsPDF> {
   const { default: JsPDF } = await import("jspdf");
   const doc = new JsPDF({ unit: "mm", format: "a4" });
-  let y = HAUT;
+  let y = dessinerEntete(doc, marque, X, HAUT, LARGEUR);
 
   const place = (h: number) => {
     if (y + h > BAS) {
@@ -387,7 +391,7 @@ export async function construireManuelPdf(m: Manuel): Promise<jsPDF> {
     doc.setPage(p);
     doc.setFont("helvetica", "normal").setFontSize(7.5).setTextColor(...GRIS);
     doc.text(
-      `MANUEL FORMATEUR — COMPÉTENCE ${m.numero} — ${m.filiere.toUpperCase()} — OFPPT`,
+      `MANUEL FORMATEUR — COMPÉTENCE ${m.numero} — ${m.filiere.toUpperCase()} — ${nomEtablissement(marque).toUpperCase()}`,
       X,
       285,
       { maxWidth: LARGEUR - 20 },
@@ -398,7 +402,11 @@ export async function construireManuelPdf(m: Manuel): Promise<jsPDF> {
   return doc;
 }
 
-export async function telechargerManuelPdf(m: Manuel, nomFichier: string) {
-  const doc = await construireManuelPdf(m);
+export async function telechargerManuelPdf(
+  m: Manuel,
+  nomFichier: string,
+  marque?: Marque,
+) {
+  const doc = await construireManuelPdf(m, marque);
   doc.save(nomFichier);
 }

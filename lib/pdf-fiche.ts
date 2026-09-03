@@ -1,4 +1,5 @@
 import type jsPDF from "jspdf";
+import { dessinerEntete, type Marque } from "@/lib/pdf-marque";
 
 /**
  * Fiche de préparation au format officiel OFPPT.
@@ -48,10 +49,13 @@ function minutes(n: number): string {
   return n > 0 ? `${n} minutes` : "";
 }
 
-export async function construireFichePdf(f: FichePdf): Promise<jsPDF> {
+export async function construireFichePdf(
+  f: FichePdf,
+  marque?: Marque,
+): Promise<jsPDF> {
   const { default: JsPDF } = await import("jspdf");
   const doc = new JsPDF({ unit: "mm", format: "a4" });
-  dessinerFiche(doc, f);
+  dessinerFiche(doc, f, marque);
   return doc;
 }
 
@@ -64,8 +68,10 @@ export async function construireFichePdf(f: FichePdf): Promise<jsPDF> {
  * séance : la mise en page officielle n'existe qu'ici, elle n'est pas
  * réécrite ailleurs (conventions.md).
  */
-export function dessinerFiche(doc: jsPDF, f: FichePdf): void {
-  let y = HAUT;
+export function dessinerFiche(doc: jsPDF, f: FichePdf, marque?: Marque): void {
+  // L'identité du centre passe avant le titre : c'est l'ordre du formulaire
+  // officiel, où l'établissement se lit en premier.
+  let y = dessinerEntete(doc, marque, X, HAUT, LARGEUR);
 
   function saut(hauteur: number) {
     if (y + hauteur > BAS) {
@@ -213,7 +219,11 @@ export function dessinerFiche(doc: jsPDF, f: FichePdf): void {
   ]);
 }
 
-export async function telechargerFichePdf(f: FichePdf, nomFichier: string) {
-  const doc = await construireFichePdf(f);
+export async function telechargerFichePdf(
+  f: FichePdf,
+  nomFichier: string,
+  marque?: Marque,
+) {
+  const doc = await construireFichePdf(f, marque);
   doc.save(nomFichier);
 }

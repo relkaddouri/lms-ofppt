@@ -819,33 +819,39 @@ export type Database = {
       parametres_formateur: {
         Row: {
           created_at: string
+          etablissement: string | null
           formateur_id: string
           heures_annuelles: number
           heures_hebdomadaires: number
           heures_sup_actives: boolean
           id: string
+          logo_etablissement: string | null
           plafond_sup_annuel: number
           plafond_sup_mensuel: number
           updated_at: string
         }
         Insert: {
           created_at?: string
+          etablissement?: string | null
           formateur_id?: string
           heures_annuelles?: number
           heures_hebdomadaires?: number
           heures_sup_actives?: boolean
           id?: string
+          logo_etablissement?: string | null
           plafond_sup_annuel?: number
           plafond_sup_mensuel?: number
           updated_at?: string
         }
         Update: {
           created_at?: string
+          etablissement?: string | null
           formateur_id?: string
           heures_annuelles?: number
           heures_hebdomadaires?: number
           heures_sup_actives?: boolean
           id?: string
+          logo_etablissement?: string | null
           plafond_sup_annuel?: number
           plafond_sup_mensuel?: number
           updated_at?: string
