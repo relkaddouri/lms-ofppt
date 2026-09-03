@@ -14,6 +14,41 @@ export type Database = {
   }
   public: {
     Tables: {
+      annees_scolaires: {
+        Row: {
+          created_at: string
+          date_debut: string
+          date_fin: string
+          formateur_id: string
+          id: string
+          libelle: string
+        }
+        Insert: {
+          created_at?: string
+          date_debut: string
+          date_fin: string
+          formateur_id?: string
+          id?: string
+          libelle: string
+        }
+        Update: {
+          created_at?: string
+          date_debut?: string
+          date_fin?: string
+          formateur_id?: string
+          id?: string
+          libelle?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "annees_scolaires_formateur_id_fkey"
+            columns: ["formateur_id"]
+            isOneToOne: false
+            referencedRelation: "profils"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       annonces: {
         Row: {
           contenu: string | null
@@ -685,6 +720,7 @@ export type Database = {
       groupes: {
         Row: {
           annee: number | null
+          annee_scolaire_id: string | null
           created_at: string
           formateur_id: string | null
           id: string
@@ -693,6 +729,7 @@ export type Database = {
         }
         Insert: {
           annee?: number | null
+          annee_scolaire_id?: string | null
           created_at?: string
           formateur_id?: string | null
           id?: string
@@ -701,6 +738,7 @@ export type Database = {
         }
         Update: {
           annee?: number | null
+          annee_scolaire_id?: string | null
           created_at?: string
           formateur_id?: string | null
           id?: string
@@ -708,6 +746,13 @@ export type Database = {
           specialite_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "groupes_annee_scolaire_id_fkey"
+            columns: ["annee_scolaire_id"]
+            isOneToOne: false
+            referencedRelation: "annees_scolaires"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "groupes_formateur_id_fkey"
             columns: ["formateur_id"]
@@ -726,6 +771,7 @@ export type Database = {
       }
       indisponibilites: {
         Row: {
+          annee_scolaire_id: string | null
           created_at: string
           date_debut: string
           date_fin: string
@@ -737,6 +783,7 @@ export type Database = {
           type: string
         }
         Insert: {
+          annee_scolaire_id?: string | null
           created_at?: string
           date_debut: string
           date_fin: string
@@ -748,6 +795,7 @@ export type Database = {
           type: string
         }
         Update: {
+          annee_scolaire_id?: string | null
           created_at?: string
           date_debut?: string
           date_fin?: string
@@ -758,7 +806,15 @@ export type Database = {
           motif?: string | null
           type?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "indisponibilites_annee_scolaire_id_fkey"
+            columns: ["annee_scolaire_id"]
+            isOneToOne: false
+            referencedRelation: "annees_scolaires"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       modules: {
         Row: {
@@ -807,6 +863,7 @@ export type Database = {
       }
       motifs_hebdomadaires: {
         Row: {
+          annee_scolaire_id: string | null
           created_at: string
           date_debut: string
           date_fin: string | null
@@ -815,6 +872,7 @@ export type Database = {
           libelle: string | null
         }
         Insert: {
+          annee_scolaire_id?: string | null
           created_at?: string
           date_debut: string
           date_fin?: string | null
@@ -823,6 +881,7 @@ export type Database = {
           libelle?: string | null
         }
         Update: {
+          annee_scolaire_id?: string | null
           created_at?: string
           date_debut?: string
           date_fin?: string | null
@@ -831,6 +890,13 @@ export type Database = {
           libelle?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "motifs_hebdomadaires_annee_scolaire_id_fkey"
+            columns: ["annee_scolaire_id"]
+            isOneToOne: false
+            referencedRelation: "annees_scolaires"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "motifs_hebdomadaires_formateur_id_fkey"
             columns: ["formateur_id"]
@@ -1334,6 +1400,7 @@ export type Database = {
       }
       rythmes_hebdomadaires: {
         Row: {
+          annee_scolaire_id: string | null
           created_at: string
           date_debut: string
           date_fin: string
@@ -1342,6 +1409,7 @@ export type Database = {
           id: string
         }
         Insert: {
+          annee_scolaire_id?: string | null
           created_at?: string
           date_debut: string
           date_fin: string
@@ -1350,6 +1418,7 @@ export type Database = {
           id?: string
         }
         Update: {
+          annee_scolaire_id?: string | null
           created_at?: string
           date_debut?: string
           date_fin?: string
@@ -1357,7 +1426,15 @@ export type Database = {
           heures_cible?: number
           id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "rythmes_hebdomadaires_annee_scolaire_id_fkey"
+            columns: ["annee_scolaire_id"]
+            isOneToOne: false
+            referencedRelation: "annees_scolaires"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       seance_elements_contenu: {
         Row: {
@@ -1757,6 +1834,7 @@ export type Database = {
     }
     Functions: {
       annee_scolaire: { Args: { p_date: string }; Returns: string }
+      annee_scolaire_par_defaut: { Args: never; Returns: string }
       code_operationnel_derive: {
         Args: { p_cycle: string; p_rang: number }
         Returns: string

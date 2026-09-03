@@ -176,7 +176,7 @@ L'ordre ci-dessous est arrêté : chaque atome se termine et se teste avant que 
 - [x] **7.3 — Devoirs · rendu fichier** : brancher le type de rendu « fichier » au bucket Storage `documents-stage` déjà existant, avec policies par stagiaire, colonne de chemin sur `devoirs_rendus`, formulaire de dépôt côté stagiaire et téléchargement côté formateur.
   **Test** : dépose un fichier depuis un compte stagiaire, vérifie qu'il se télécharge côté formateur et qu'un autre stagiaire ne peut pas le lire.
 
-- [ ] **7.4 — §4.15.1 · Schéma multi-année** : table `annees_scolaires` (libellé, dates de validité), `groupes.annee_scolaire_id`, et `annee_scolaire_id` sur `indisponibilites`, `rythmes_hebdomadaires`, `motifs_hebdomadaires` — les trois tables rattachées au formateur qui n'héritent d'aucun groupe. Contrainte sur `seance_groupes` interdisant qu'une séance relie deux groupes d'années différentes.
+- [x] **7.4 — §4.15.1 · Schéma multi-année** : table `annees_scolaires` (libellé, dates de validité), `groupes.annee_scolaire_id`, et `annee_scolaire_id` sur `indisponibilites`, `rythmes_hebdomadaires`, `motifs_hebdomadaires` — les trois tables rattachées au formateur qui n'héritent d'aucun groupe. Contrainte sur `seance_groupes` interdisant qu'une séance relie deux groupes d'années différentes.
   **Test** : tenter de partager une séance entre deux groupes d'années différentes doit être refusé par la base.
 
 - [ ] **7.5 — §4.15.2 · Sélecteur global** : composant dans `AppShell`, année courante persistée dans `parametres_formateur.annee_scolaire_courante` — pas un cookie, le choix doit survivre à un changement d'appareil.
