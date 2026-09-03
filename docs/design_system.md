@@ -69,6 +69,8 @@ Identité "tableau de pilotage clair" inspirée d'un dashboard SaaS professionne
 
 **Précision apportée après vérification sur les écrans livrés (23 boutons corail pleins recensés : `confirmSubmit`, `applySuggestion`, `validateAi`)** : "ne porte jamais une surface" vise les fonds décoratifs (panneaux, cartes, zones de mise en avant), pas les boutons d'action. **Un bouton `destructive` en corail plein est autorisé** — c'est précisément lui, l'unique action engageante d'un écran, qui incarne "le seul point d'attention". La règle reste stricte sur le nombre : un écran ne doit jamais afficher **plus d'un** élément corail en même temps (qu'il s'agisse d'un bouton plein, d'une bordure `danger`, d'un badge d'alerte ou d'un avatar) — si un bouton `destructive` est présent, rien d'autre sur cet écran ne doit être corail.
 
+**Précision tranchée après une zone grise sur Préparer un contrôle** : un **message de validation de champ** — un barème hors 20, un QCM à moins de deux propositions, un champ vide — **ne compte pas comme un point d'attention** au sens de cette règle. C'est de la validation fonctionnelle immédiate, attachée à un champ que l'on est en train de remplir, pas un signal narratif comme un retard, un dépassement ou une action irréversible. Un bandeau `engageant`, un bouton `destructive` et un message d'erreur de champ peuvent donc coexister sur le même écran. Ce que la règle continue d'interdire, c'est **deux signaux narratifs corail au même moment** — par exemple un retard et une suppression à confirmer.
+
 **Implication pour toute liste de personnes (avatars)** : le corail est exclu de la palette de couleurs d'avatar, précisément parce qu'une liste de plusieurs personnes ferait mécaniquement apparaître plusieurs avatars corail, ce qui violerait la règle du "un seul à la fois". Palette d'avatar : `--ofppt-ink`, `--ofppt-green`, `--ofppt-teal` uniquement, couleur stable et non permutée par personne.
 
 ## 2. Typographie
@@ -184,6 +186,13 @@ Une fiche prescrite ou un tableau de suggestions pédagogiques contient beaucoup
 - **Icônes d'action** : chaque bouton d'action (Modifier, Supprimer, Ajouter, etc.) porte une icône (lucide-react, 16px) avant le texte, espacement 6px
 - **Champ de formulaire** : rayon 9px, **bordure 1px `--border-strong`** (pas `--border`, qui est trop pâle et disparaît sur fond blanc — réservée aux cartes et séparateurs), label 14px/600 au-dessus du champ, focus en halo sarcelle 3px (`--ofppt-teal` à faible opacité)
 - **Carte** : padding 24px (pas 16px), filet interne éventuel en `--separator`
+
+**Composants composés, recensés après coup** — ils existaient dans le code sans figurer ici, ce que §12 interdit ; leur spécification est relevée sur l'implémentation en place.
+
+- **`Segments`** : bascule entre vues exclusives (les onglets de Paramètres, les filtres d'année). Piste `--wash-strong` avec bordure `--border`, rayon 11px, padding 4px ; le segment actif prend un fond `--surface` et l'ombre de repos, les autres restent en `--slate-2`. Toujours 2 à 4 options — au-delà, c'est une liste déroulante.
+- **`Interrupteur`** : bascule d'un réglage booléen, jamais d'une navigation. Piste 46×26, pastille blanche de 20px glissant de 3px à 23px, piste `--ofppt-green` à l'état actif et `--border-strong` au repos. Porte `role="switch"` et un `label` qui dit ce qu'il commande, pas son état.
+- **`Breadcrumb`** : chemin de retour sur les écrans à deux niveaux ou plus (un groupe, un module d'un groupe). Segments en `--slate-2`, séparateur `/` en `--muted`, dernier segment non cliquable.
+- **`GroupeTabs`** : navigation entre les onglets d'un groupe, avec débordement horizontal et menu « Plus » au-delà de la largeur disponible — un groupe porte plus d'onglets qu'un écran ne peut en montrer, et les tronquer en cacherait certains définitivement.
 
 ## 11. Règles UX
 

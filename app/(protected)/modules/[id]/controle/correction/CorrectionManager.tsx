@@ -16,6 +16,7 @@ import { useToast } from "@/components/ui/Toast";
 import { formatDateTime } from "@/lib/format";
 import { ChevronRight, X, Zap } from "lucide-react";
 import { libelleModule } from "@/lib/modules";
+import BandeauIa from "@/components/BandeauIa";
 
 type Suggestion = { points: number; commentaire: string };
 
@@ -76,6 +77,19 @@ export default function CorrectionManager({
   const [index, setIndex] = useState(0);
   const [suggestion, setSuggestion] = useState<Suggestion | null>(null);
   const [busyIa, setBusyIa] = useState(false);
+  // Les réponses dont la note et le commentaire viennent du modèle et n'ont
+  // pas encore été relus. Sans cela, une note produite par l'IA se
+  // enregistrerait comme une note saisie à la main — c'est précisément ce que
+  // design_system.md §8 interdit.
+  const [issuesDeLIa, setIssuesDeLIa] = useState<Set<string>>(new Set());
+
+  const oublierIa = (id: string) =>
+    setIssuesDeLIa((prev) => {
+      if (!prev.has(id)) return prev;
+      const suite = new Set(prev);
+      suite.delete(id);
+      return suite;
+    });
 
   const active = reponses[index] ?? null;
   const corrigees = reponses.filter(estCorrigee).length;
@@ -90,12 +104,20 @@ export default function CorrectionManager({
     setReponses(c?.responses ?? []);
     setIndex(0);
     setSuggestion(null);
+    setIssuesDeLIa(new Set());
   }
 
-  function modifierActive(patch: Partial<PassationDetail>) {
+  function modifierActive(patch: Partial<PassationDetail>, deLIa = false) {
     setReponses((prev) =>
       prev.map((r, i) => (i === index ? { ...r, ...patch } : r)),
     );
+    // §8 : le bandeau disparaît dès que le formateur touche au contenu. Une
+    // retouche manuelle vaut donc relecture ; l'application d'une suggestion,
+    // au contraire, pose la marque.
+    const id = reponses[index]?.question_id;
+    if (!id) return;
+    if (deLIa) setIssuesDeLIa((prev) => new Set(prev).add(id));
+    else oublierIa(id);
   }
 
   async function demanderSuggestion() {
@@ -367,6 +389,20 @@ export default function CorrectionManager({
               </div>
 
               <div className="flex flex-col gap-4 px-6 pb-[22px]">
+                {/* §8 : une correction issue du modèle reste marquée tant
+                    qu'elle n'a pas été relue — une note pèse sur une moyenne
+                    annuelle, d'où la variante engageante. */}
+                {issuesDeLIa.has(active.question_id) ? (
+                  <BandeauIa
+                    variante="engageant"
+                    meta={`Claude · ${active.points ?? 0} / ${bareme}`}
+                    onRelu={() => oublierIa(active.question_id)}
+                  >
+                    Note et commentaire proposés par l&apos;IA — relisez-les
+                    avant d&apos;enregistrer.
+                  </BandeauIa>
+                ) : null}
+
                 <div className="flex flex-wrap items-end gap-4">
                   <label
                     htmlFor="points"
@@ -515,10 +551,13 @@ export default function CorrectionManager({
                           <button
                             type="button"
                             onClick={() => {
-                              modifierActive({
-                                points: suggestion.points,
-                                commentaire: suggestion.commentaire,
-                              });
+                              modifierActive(
+                                {
+                                  points: suggestion.points,
+                                  commentaire: suggestion.commentaire,
+                                },
+                                true,
+                              );
                               setSuggestion(null);
                             }}
                             className="rounded-[9px] border border-coral bg-coral px-4 py-2 text-sm font-semibold text-white transition-colors duration-150 ease-out hover:border-coral-dark hover:bg-coral-dark"

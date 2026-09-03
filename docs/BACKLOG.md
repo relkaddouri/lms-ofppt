@@ -157,12 +157,12 @@ L'ordre ci-dessous est arrêté : chaque atome se termine et se teste avant que 
 - [x] **7.1 — Atome 3 · Tableau de service** refait sur la structure exacte du document signé : colonnes `MHT AFF P S1 / S S1 / P S2 / S S2`, cellules FAD vides sur la ligne du groupe qui partage, totaux par colonne et total général `MHT AFF S1+S2 (P+S)`, en-tête (Code Secteur, Formateur, Spécialité, Niveau, Année scolaire), cadre Formateur / Matricule / Signature / Directeur Pédagogique - Directeur d'EFP.
   **Test** : le total recalculé tombe sur 920 h et chaque colonne sur 425 / 80 / 355 / 60, comme le document signé.
 
-- [ ] **7.2 — Lot design · correctifs courts**
-  - [ ] `BandeauIa` variante `engageant` sur l'écran Correction copie — **en priorité dans ce lot** : une correction suggérée par l'IA n'y est aujourd'hui signalée nulle part, ce que §8 du design system interdit explicitement. Trou utilisateur, pas cosmétique.
-  - [ ] `prefers-reduced-motion` réellement implémenté — documenté en §12 comme « toujours respecté », absent du code.
-  - [ ] Documenter les quatre composants partagés absents de `design_system.md` : `Segments`, `Interrupteur`, `Breadcrumb`, `GroupeTabs`.
-  - [ ] Retirer les quatre jetons morts de `globals.css` : `danger`, `forest`, `info`, `neutral`.
-  - [ ] **Décision à trancher** : sur Préparer un contrôle, le bandeau `engageant` coexiste avec un barème hors 20 en corail, des pastilles et une icône de suppression. La règle du point d'attention unique (§1) l'interdit-elle, ou un message d'erreur de champ ne compte-t-il pas comme « alerte » ? Trancher, puis écrire la réponse dans `design_system.md`.
+- [x] **7.2 — Lot design · correctifs courts**
+  - [x] `BandeauIa` variante `engageant` sur l'écran Correction copie — **en priorité dans ce lot** : une correction suggérée par l'IA n'y est aujourd'hui signalée nulle part, ce que §8 du design system interdit explicitement. Trou utilisateur, pas cosmétique.
+  - [x] `prefers-reduced-motion` réellement implémenté — documenté en §12 comme « toujours respecté », absent du code.
+  - [x] Documenter les quatre composants partagés absents de `design_system.md` : `Segments`, `Interrupteur`, `Breadcrumb`, `GroupeTabs`.
+  - [x] Retirer les quatre jetons morts de `globals.css` : `danger`, `forest`, `info`, `neutral`.
+  - [x] **Décision tranchée** : sur Préparer un contrôle, le bandeau `engageant` coexiste avec un barème hors 20 en corail, des pastilles et une icône de suppression. Tranché : un message de validation de champ n'est pas un point d'attention au sens de la règle — les deux peuvent coexister. Écrit en §1 de `design_system.md`.
   **Test** : ouvrir Correction copie sur une suggestion IA et vérifier que le bandeau apparaît puis disparaît à la validation ; vérifier qu'aucune transition ne joue avec `prefers-reduced-motion: reduce`.
 
 - [ ] **7.3 — Devoirs · rendu fichier** : brancher le type de rendu « fichier » au bucket Storage `documents-stage` déjà existant, avec policies par stagiaire, colonne de chemin sur `devoirs_rendus`, formulaire de dépôt côté stagiaire et téléchargement côté formateur.

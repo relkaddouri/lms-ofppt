@@ -81,7 +81,6 @@
 
 @theme inline {
   /* Noms historiques, remappés sur la nouvelle palette */
-  --color-forest: var(--ofppt-ink);
   --color-mint: var(--mint);
   --color-separator: var(--separator);
   --color-paper: var(--paper);
@@ -90,9 +89,6 @@
   --color-slate: var(--slate);
   --color-border: var(--border);
   --color-success: var(--status-success);
-  --color-danger: var(--status-danger);
-  --color-neutral: var(--status-neutral);
-  --color-info: var(--status-info);
 
   /* Nouveaux noms de la v3 */
   --color-ofppt-ink: var(--ofppt-ink);
@@ -148,6 +144,24 @@ body {
    toute utilitaire, quelle que soit la spécificité — un `<Link>` portant
    `text-ink` ou `text-muted` ressortait donc en sarcelle, dans la barre
    latérale comme dans la navigation stagiaire. */
+/* Mouvement réduit — design_system.md §12.
+   Le système le documentait comme « toujours respecté » sans qu'une seule
+   règle l'applique. Les transitions du produit sont courtes et servent toutes
+   à signaler un changement d'état : on les ramène à une durée nulle plutôt
+   que de les supprimer, pour que l'état final reste celui qu'attend le reste
+   du code. Hors de tout layer : cette préférence prime sur n'importe quel
+   utilitaire, quelle que soit sa spécificité. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 @layer base {
   a {
     color: var(--ofppt-teal);
