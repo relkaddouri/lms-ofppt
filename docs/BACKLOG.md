@@ -150,4 +150,48 @@ contrôles et produire les fiches est le travail manuel que cette application do
 
 ---
 
+## Phase 7 — Suite validée (ordre strict)
+
+L'ordre ci-dessous est arrêté : chaque atome se termine et se teste avant que le suivant commence.
+
+- [ ] **7.1 — Atome 3 · Tableau de service** refait sur la structure exacte du document signé : colonnes `MHT AFF P S1 / S S1 / P S2 / S S2`, cellules FAD vides sur la ligne du groupe qui partage, totaux par colonne et total général `MHT AFF S1+S2 (P+S)`, en-tête (Code Secteur, Formateur, Spécialité, Niveau, Année scolaire), cadre Formateur / Matricule / Signature / Directeur Pédagogique - Directeur d'EFP.
+  **Test** : le total recalculé tombe sur 920 h et chaque colonne sur 425 / 80 / 355 / 60, comme le document signé.
+
+- [ ] **7.2 — Lot design · correctifs courts**
+  - [ ] `BandeauIa` variante `engageant` sur l'écran Correction copie — **en priorité dans ce lot** : une correction suggérée par l'IA n'y est aujourd'hui signalée nulle part, ce que §8 du design system interdit explicitement. Trou utilisateur, pas cosmétique.
+  - [ ] `prefers-reduced-motion` réellement implémenté — documenté en §12 comme « toujours respecté », absent du code.
+  - [ ] Documenter les quatre composants partagés absents de `design_system.md` : `Segments`, `Interrupteur`, `Breadcrumb`, `GroupeTabs`.
+  - [ ] Retirer les quatre jetons morts de `globals.css` : `danger`, `forest`, `info`, `neutral`.
+  - [ ] **Décision à trancher** : sur Préparer un contrôle, le bandeau `engageant` coexiste avec un barème hors 20 en corail, des pastilles et une icône de suppression. La règle du point d'attention unique (§1) l'interdit-elle, ou un message d'erreur de champ ne compte-t-il pas comme « alerte » ? Trancher, puis écrire la réponse dans `design_system.md`.
+  **Test** : ouvrir Correction copie sur une suggestion IA et vérifier que le bandeau apparaît puis disparaît à la validation ; vérifier qu'aucune transition ne joue avec `prefers-reduced-motion: reduce`.
+
+- [ ] **7.3 — Devoirs · rendu fichier** : brancher le type de rendu « fichier » au bucket Storage `documents-stage` déjà existant, avec policies par stagiaire, colonne de chemin sur `devoirs_rendus`, formulaire de dépôt côté stagiaire et téléchargement côté formateur.
+  **Test** : dépose un fichier depuis un compte stagiaire, vérifie qu'il se télécharge côté formateur et qu'un autre stagiaire ne peut pas le lire.
+
+- [ ] **7.4 — §4.15.1 · Schéma multi-année** : table `annees_scolaires` (libellé, dates de validité), `groupes.annee_scolaire_id`, et `annee_scolaire_id` sur `indisponibilites`, `rythmes_hebdomadaires`, `motifs_hebdomadaires` — les trois tables rattachées au formateur qui n'héritent d'aucun groupe. Contrainte sur `seance_groupes` interdisant qu'une séance relie deux groupes d'années différentes.
+  **Test** : tenter de partager une séance entre deux groupes d'années différentes doit être refusé par la base.
+
+- [ ] **7.5 — §4.15.2 · Sélecteur global** : composant dans `AppShell`, année courante persistée dans `parametres_formateur.annee_scolaire_courante` — pas un cookie, le choix doit survivre à un changement d'appareil.
+  **Test** : change d'année, recharge depuis une autre session, vérifie que la sélection tient.
+
+- [ ] **7.6 — §4.15.3 · Filtrage** : les ~19 points de requête identifiés (10 sur `groupes`, 9 sur les tables rattachées au formateur) filtrés par l'année sélectionnée. Les données des années passées restent intactes et consultables.
+  **Test** : bascule sur une année vide, vérifie qu'aucun écran ne montre les données de l'autre année, puis rebascule et vérifie qu'elles sont toutes revenues.
+
+- [ ] **7.7 — §4.15.4 · Duplication** : les quatre étapes dans l'ordre — groupes et assignations (les quatre valeurs semestrielles, `type_efm` et `fad_mutualisee` copiés, pas repartis de la durée de référence), séances sans date avec leurs éléments de contenu (sans rejouer la répartition), fiches de préparation en brouillon, contrôles en brouillon sans passation. Plus la fonction sœur d'`ouvrir_motif` qui date les séances dupliquées une fois le nouveau motif déclaré.
+  **Test** : duplique une année, vérifie qu'aucune séance dupliquée ne porte de date, qu'aucun contrôle n'est validé, et qu'aucune copie de stagiaire n'a suivi.
+
+- [ ] **7.8 — §4.15.5 · Interface de duplication** : liste de cases à cocher des groupes de l'année source, tous cochés par défaut — décocher avant est réversible, supprimer après ne l'est pas. Déclenchement de la duplication depuis cet écran.
+  **Test** : décoche un groupe, duplique, vérifie qu'il est absent de la nouvelle année et intact dans l'ancienne.
+
+---
+
+## Points de vigilance — pas des atomes
+
+À garder en tête à chaque changement de schéma, sans traitement immédiat.
+
+- **56 casts `as unknown as`** désactivent le typage sur les chaînes `select` de PostgREST. C'est le trou qui a laissé passer `fiches_prescrites_legacy` et `seances.groupe_id` après leur suppression : un changement de schéma se vérifie en relisant les chaînes `select`, pas en lançant `tsc`.
+- Les **colonnes générées** (`masse_horaire_allouee`, `heures_fad`, `code_operationnel`) ne sont pas marquées en lecture seule par les types Supabase générés. Une écriture dessus passe `tsc` et échoue à l'exécution.
+
+---
+
 Traite les phases dans l'ordre. Ne commence jamais une interface (Phase 3-4) avant que le schéma correspondant (Phase 1-2) soit validé — c'est ce qui a causé la dérive du premier prototype.

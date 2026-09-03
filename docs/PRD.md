@@ -416,6 +416,32 @@ Chaque grille inclut une échelle d'appréciation standardisée (16-20 très bon
 
 *Question ouverte : le document ne précise pas la formule de calcul de la "note générale" finale de stage à partir de ces trois éléments (note de rapport, note d'exposé, note du tuteur) — à clarifier avec le porteur de projet (moyenne simple, pondération différente, ou les trois conservées séparément sans note unique calculée par l'app).*
 
+### 4.15 Gestion multi-année scolaire et duplication (ajout v3)
+
+**Contexte, à comprendre avant le mécanisme.** Le produit n'avait jusqu'ici aucune notion d'année scolaire réelle — tout vivait dans une seule base continue. Or le formateur reconduit d'une année sur l'autre l'essentiel de son organisation (mêmes groupes types, mêmes modules assignés, mêmes contrôles à quelques ajustements près, mêmes fiches de préparation) — **seuls les stagiaires et leurs copies changent réellement**, puisque ce sont de nouvelles personnes chaque année. L'objectif explicite du porteur de projet : ne jamais avoir à regénérer par IA ce qui a déjà été produit l'année précédente, pour ne pas regaspiller du temps ni des appels au modèle.
+
+**Ce qui est propre à chaque année scolaire et démarre vide** (la seule chose remise à zéro) :
+- Les stagiaires inscrits
+- Leurs copies rendues, notes, présences
+
+**Ce qui est dupliqué comme point de départ réutilisable** (pas régénéré, pas recommencé de zéro) :
+- Les groupes (structure, codes) et leurs assignations aux modules — masse horaire allouée, décomposition présentiel/FAD par semestre (§4.1bis, §4.13bis), type d'EFM
+- Les séances déjà réparties par le moteur de contenu (§4.2bis) — avec leurs éléments de contenu assignés, mais **sans date** (statut "à planifier", comme une séance nouvellement produite par la répartition horaire) — pas besoin de refaire tourner la répartition, le travail est déjà fait
+- Les fiches de préparation de ces séances, comme **brouillon réutilisable** — le contenu généré l'année précédente sert de base, le formateur l'ajuste au lieu de le regénérer intégralement par IA
+- Les contrôles, comme **banque de questions réutilisable** — dupliqués en statut brouillon (jamais validé automatiquement), sans date, sans aucune copie de stagiaire rattachée, prêts à être ajustés puis validés pour la nouvelle année
+
+**Ce qui n'est pas dupliqué et doit être redéclaré** :
+- Le motif hebdomadaire (§4.9) — le rythme peut changer d'une année à l'autre, et il est de toute façon lié à des dates de validité qui n'ont pas de sens reconduites telles quelles ; une fois le nouveau motif déclaré, il date les séances dupliquées (sans date) de la nouvelle année
+- Présences, annonces, devoirs, remarques de séance, dossiers de stage — spécifiques aux stagiaires et aux dates de l'année concernée, jamais transportés d'une année à l'autre
+
+**Implication sur le modèle de données — portée minimale.** Une seule nouvelle table (`annees_scolaires` : libellé, dates de validité) et un seul champ ajouté (`groupes.annee_scolaire_id`) suffisent : tout le reste (séances, contrôles, motifs, présences...) hérite déjà de l'année par sa relation au groupe, pas besoin de dupliquer ce champ partout. Le référentiel (spécialités, programmes, compétences, modules) reste permanent et partagé entre toutes les années, comme aujourd'hui — aucun changement là-dessus.
+
+**Sélecteur d'année scolaire — global.** Un sélecteur en haut de l'application (pas seulement sur certains écrans) change la portée de tout ce qui est affiché — dashboard, groupes, calendrier, contrôles — exactement comme changer de dossier de travail. **Les données d'une année passée ne sont jamais supprimées** en changeant de sélection : elles restent consultables en lecture, intactes, aussi longtemps qu'on ne les efface pas explicitement.
+
+**Le mécanisme de duplication, déclenché par le formateur** — "Créer une nouvelle année à partir de [année précédente]" : crée la nouvelle ligne `annees_scolaires`, duplique les groupes et leurs assignations, les séances sans date avec leur contenu et leur fiche en brouillon, et les contrôles en brouillon — dans cet ordre, puisque chaque étape dépend de la précédente. Le formateur choisit ensuite librement quels groupes dupliquer (il peut ne pas vouloir reconduire un groupe qui n'existera plus, ou en ajouter un nouveau qui n'existait pas avant).
+
+*Point ouvert, à trancher techniquement lors du backlog : faut-il permettre de dupliquer sélectivement (seulement certains groupes, ou seulement certains modules d'un groupe), ou seulement une duplication complète de l'année entière en un geste ? Le porteur de projet n'a pas encore précisé ce niveau de granularité.*
+
 ---
 
 ## 5. Hors périmètre (v1)
