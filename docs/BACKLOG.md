@@ -203,6 +203,11 @@ L'ordre ci-dessous est arrêté : chaque atome se termine et se teste avant que 
 
 ---
 
+- [x] **7.11 — Génération des séances · remplissage intégral des créneaux** (§4.9) : la séquence pédagogique — éléments dans l'ordre, objectifs dans l'ordre, théorique avant pratique — est consommée créneau par créneau au lieu d'être découpée à l'avance. Une séance peut porter deux objectifs, un objectif peut se scinder sur deux séances, aucun créneau ne sort partiellement rempli.
+  **Test** : sur un motif mardi/vendredi de 5 h, chaque semaine générée totalise exactement les 10 h que le motif alloue au couple groupe+module — le critère qui compte pour la déclaration E-note.
+
+---
+
 ## Points de vigilance — pas des atomes
 
 À garder en tête à chaque changement de schéma, sans traitement immédiat.

@@ -18,7 +18,7 @@ import {
 } from "@/app/actions/motifs";
 import { JOURS } from "@/lib/motifs";
 import { marqueDe } from "@/lib/pdf-marque";
-import { slugify } from "@/lib/format";
+import { formatHeures, slugify } from "@/lib/format";
 import type { Etablissement } from "@/app/actions/etablissement";
 import GrilleMotif from "./GrilleMotif";
 
@@ -164,7 +164,11 @@ export default function EmploiDuTempsManager({
                 r.joursSautes > 0
                   ? ` · ${r.joursSautes} jour${r.joursSautes > 1 ? "s" : ""} sauté${r.joursSautes > 1 ? "s" : ""}`
                   : ""
-              }${r.restantes > 0 ? ` · ${r.restantes} encore sans date` : ""}`,
+              }${
+                r.heuresRestantes > 0
+                  ? ` · ${formatHeures(r.heuresRestantes)} encore sans créneau`
+                  : ""
+              }`,
         );
         router.refresh();
       } catch (err) {
