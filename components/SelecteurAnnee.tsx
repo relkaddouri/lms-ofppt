@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import { CalendarRange, Check, ChevronDown } from "lucide-react";
+import { CalendarPlus, CalendarRange, Check, ChevronDown } from "lucide-react";
 import { useToast } from "./ui/Toast";
 import { choisirAnneeScolaire } from "@/app/actions/annees";
 import { estEnCours, type AnneeScolaire } from "@/lib/annees";
+import NouvelleAnnee from "./NouvelleAnnee";
 
 /**
  * Sélecteur d'année scolaire — global (PRD §4.15.2).
@@ -33,6 +34,7 @@ export default function SelecteurAnnee({
   // Le libellé change avant le rechargement : sans cela, le bouton garde
   // l'ancienne année pendant une seconde et le clic semble sans effet.
   const [choisiId, setChoisiId] = useState<string | null>(null);
+  const [creation, setCreation] = useState(false);
   const boiteRef = useRef<HTMLDivElement>(null);
 
   const actifId = choisiId ?? couranteId;
@@ -82,38 +84,32 @@ export default function SelecteurAnnee({
     <div ref={boiteRef} className="relative">
       <button
         type="button"
-        onClick={() => plusieurs && setOuvert((v) => !v)}
-        disabled={!plusieurs || enCours}
-        aria-haspopup={plusieurs ? "listbox" : undefined}
-        aria-expanded={plusieurs ? ouvert : undefined}
+        onClick={() => setOuvert((v) => !v)}
+        disabled={enCours}
+        aria-haspopup="menu"
+        aria-expanded={ouvert}
         aria-label={`Année scolaire ${courante.libelle}`}
         title={
           plusieurs
             ? "Changer d'année scolaire"
-            : "Votre seule année scolaire pour l'instant"
+            : "Votre seule année scolaire — créez la suivante d'ici"
         }
-        className={`flex h-10 items-center gap-2 rounded-[10px] border border-border bg-surface px-3 text-[14px] transition-colors duration-150 ease-out focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_rgba(46,125,158,0.15)] ${
-          plusieurs
-            ? "text-ink hover:border-border-strong hover:bg-paper"
-            : "cursor-default text-slate-2"
-        }`}
+        className="flex h-10 items-center gap-2 rounded-[10px] border border-border bg-surface px-3 text-[14px] text-ink transition-colors duration-150 ease-out hover:border-border-strong hover:bg-paper focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_rgba(46,125,158,0.15)]"
       >
         <CalendarRange size={16} className="shrink-0 text-slate-2" aria-hidden />
         <span className="font-mono tracking-[-0.01em]">{courante.libelle}</span>
-        {plusieurs ? (
-          <ChevronDown
-            size={15}
-            aria-hidden
-            className={`shrink-0 text-slate-light transition-transform duration-150 ease-out ${
-              ouvert ? "rotate-180" : ""
-            }`}
-          />
-        ) : null}
+        <ChevronDown
+          size={15}
+          aria-hidden
+          className={`shrink-0 text-slate-light transition-transform duration-150 ease-out ${
+            ouvert ? "rotate-180" : ""
+          }`}
+        />
       </button>
 
       {ouvert ? (
         <div
-          role="listbox"
+          role="menu"
           aria-label="Années scolaires"
           className="absolute right-0 top-[calc(100%+6px)] z-40 flex w-[264px] flex-col gap-0.5 rounded-[12px] border border-border bg-surface p-1.5 shadow-flottant"
         >
@@ -126,8 +122,8 @@ export default function SelecteurAnnee({
               <button
                 key={a.id}
                 type="button"
-                role="option"
-                aria-selected={active}
+                role="menuitemradio"
+                aria-checked={active}
                 onClick={() => choisir(a)}
                 className={`flex items-center gap-2.5 rounded-[9px] px-2.5 py-2 text-left transition-colors duration-150 ease-out ${
                   active ? "bg-wash" : "hover:bg-paper"
@@ -153,8 +149,29 @@ export default function SelecteurAnnee({
             Changer d&apos;année change ce qui est affiché partout. Rien
             n&apos;est supprimé : une année passée reste consultable.
           </p>
+
+          {/* PRD §4.15.5 : la nouvelle année se crée d'ici, là où l'on est
+              déjà en train de penser aux années. */}
+          <button
+            type="button"
+            onClick={() => {
+              setOuvert(false);
+              setCreation(true);
+            }}
+            className="mt-0.5 flex items-center gap-2.5 rounded-[9px] border-t border-separator px-2.5 py-2.5 text-left text-[14px] font-semibold text-ink transition-colors duration-150 ease-out hover:bg-paper"
+          >
+            <CalendarPlus size={15} className="shrink-0 text-slate-2" aria-hidden />
+            Créer une nouvelle année…
+          </button>
         </div>
       ) : null}
+
+      <NouvelleAnnee
+        annees={annees}
+        sourceParDefaut={courante.id}
+        open={creation}
+        onClose={() => setCreation(false)}
+      />
     </div>
   );
 }

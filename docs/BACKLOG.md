@@ -188,7 +188,7 @@ L'ordre ci-dessous est arrêté : chaque atome se termine et se teste avant que 
 - [x] **7.7 — §4.15.4 · Duplication** : les quatre étapes dans l'ordre — groupes et assignations (les quatre valeurs semestrielles, `type_efm` et `fad_mutualisee` copiés, pas repartis de la durée de référence), séances sans date avec leurs éléments de contenu (sans rejouer la répartition), fiches de préparation en brouillon, contrôles en brouillon sans passation. Plus la fonction sœur d'`ouvrir_motif` qui date les séances dupliquées une fois le nouveau motif déclaré.
   **Test** : duplique une année, vérifie qu'aucune séance dupliquée ne porte de date, qu'aucun contrôle n'est validé, et qu'aucune copie de stagiaire n'a suivi.
 
-- [ ] **7.8 — §4.15.5 · Interface de duplication** : liste de cases à cocher des groupes de l'année source, tous cochés par défaut — décocher avant est réversible, supprimer après ne l'est pas. Déclenchement de la duplication depuis cet écran.
+- [x] **7.8 — §4.15.5 · Interface de duplication** : liste de cases à cocher des groupes de l'année source, tous cochés par défaut — décocher avant est réversible, supprimer après ne l'est pas. Déclenchement de la duplication depuis cet écran.
   **Test** : décoche un groupe, duplique, vérifie qu'il est absent de la nouvelle année et intact dans l'ancienne.
 
 ---
