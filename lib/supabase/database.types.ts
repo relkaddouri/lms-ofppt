@@ -833,6 +833,8 @@ export type Database = {
       }
       parametres_formateur: {
         Row: {
+          annee_scolaire: string | null
+          code_secteur: string | null
           created_at: string
           etablissement: string | null
           formateur_id: string
@@ -841,11 +843,16 @@ export type Database = {
           heures_sup_actives: boolean
           id: string
           logo_etablissement: string | null
+          matricule: string | null
+          niveau_formation: string | null
+          nom_formateur: string | null
           plafond_sup_annuel: number
           plafond_sup_mensuel: number
           updated_at: string
         }
         Insert: {
+          annee_scolaire?: string | null
+          code_secteur?: string | null
           created_at?: string
           etablissement?: string | null
           formateur_id?: string
@@ -854,11 +861,16 @@ export type Database = {
           heures_sup_actives?: boolean
           id?: string
           logo_etablissement?: string | null
+          matricule?: string | null
+          niveau_formation?: string | null
+          nom_formateur?: string | null
           plafond_sup_annuel?: number
           plafond_sup_mensuel?: number
           updated_at?: string
         }
         Update: {
+          annee_scolaire?: string | null
+          code_secteur?: string | null
           created_at?: string
           etablissement?: string | null
           formateur_id?: string
@@ -867,6 +879,9 @@ export type Database = {
           heures_sup_actives?: boolean
           id?: string
           logo_etablissement?: string | null
+          matricule?: string | null
+          niveau_formation?: string | null
+          nom_formateur?: string | null
           plafond_sup_annuel?: number
           plafond_sup_mensuel?: number
           updated_at?: string

@@ -7,17 +7,42 @@ import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import { useToast } from "@/components/ui/Toast";
 import { saveEtablissement, type Etablissement } from "@/app/actions/etablissement";
-import { LOGO_TAILLE_MAX, LOGO_TYPES } from "@/lib/etablissement";
+import {
+  anneeScolaireCourante,
+  LOGO_TAILLE_MAX,
+  LOGO_TYPES,
+} from "@/lib/etablissement";
 
 /**
- * Identité du centre de formation.
+ * Identité du centre de formation et du formateur.
  *
- * Elle sert deux fois : en tête de chaque document produit (classeur, fiches,
- * contrôles, tableau de service) et dans la colonne EFP du tableau de service,
- * qui restait vide faute de donnée. Le logo est déposé ici plutôt que livré
- * avec le code — un autre centre en a un autre, et le formateur n'a pas à
- * demander une mise en production pour changer une image.
+ * Le nom et le logo servent deux fois : en tête de chaque document produit
+ * (classeur, fiches, contrôles, tableau de service) et dans la colonne EFP du
+ * tableau de service. Le logo est déposé ici plutôt que livré avec le code —
+ * un autre centre en a un autre, et le formateur n'a pas à demander une mise
+ * en production pour changer une image.
+ *
+ * Les cinq champs suivants ne servent qu'au tableau de service, dont le format
+ * officiel impose un bloc d'en-tête que rien dans le schéma ne détermine
+ * (PRD §4.13bis).
  */
+
+const CHAMPS_ENTETE = [
+  {
+    cle: "nomFormateur",
+    libelle: "Nom du formateur",
+    exemple: "Prénom NOM",
+    aide: "Tel qu'il apparaît sous la signature. À défaut, l'adresse du compte.",
+  },
+  { cle: "matricule", libelle: "Matricule", exemple: "17980", aide: null },
+  { cle: "codeSecteur", libelle: "Code secteur", exemple: "Pôle DIA", aide: null },
+  {
+    cle: "niveauFormation",
+    libelle: "Niveau de formation",
+    exemple: "TS",
+    aide: "Abrégé comme sur le document : TS, T, S.",
+  },
+] as const;
 export default function ParametresEtablissementForm({
   initial,
 }: {
@@ -27,6 +52,13 @@ export default function ParametresEtablissementForm({
   const [enCours, startTransition] = useTransition();
   const [nom, setNom] = useState(initial.nom ?? "");
   const [logo, setLogo] = useState<string | null>(initial.logo);
+  const [entete, setEntete] = useState({
+    nomFormateur: initial.nomFormateur ?? "",
+    matricule: initial.matricule ?? "",
+    codeSecteur: initial.codeSecteur ?? "",
+    niveauFormation: initial.niveauFormation ?? "",
+    anneeScolaire: initial.anneeScolaire ?? "",
+  });
   const fichierRef = useRef<HTMLInputElement>(null);
 
   function choisirLogo(fichier: File | undefined) {
@@ -48,7 +80,15 @@ export default function ParametresEtablissementForm({
   function enregistrer() {
     startTransition(async () => {
       try {
-        await saveEtablissement({ nom: nom.trim() || null, logo });
+        await saveEtablissement({
+          nom: nom.trim() || null,
+          logo,
+          nomFormateur: entete.nomFormateur.trim() || null,
+          matricule: entete.matricule.trim() || null,
+          codeSecteur: entete.codeSecteur.trim() || null,
+          niveauFormation: entete.niveauFormation.trim() || null,
+          anneeScolaire: entete.anneeScolaire.trim() || null,
+        });
         toast("Établissement enregistré.");
       } catch (e) {
         toast(e instanceof Error ? e.message : "Enregistrement impossible.", "error");
@@ -140,12 +180,55 @@ export default function ParametresEtablissementForm({
         </div>
       </Card>
 
+      <Card className="flex flex-col gap-5">
+        <div className="flex flex-col gap-1">
+          <h2 className="font-display text-[17px] font-semibold text-ink">
+            En-tête du tableau de service
+          </h2>
+          <span className="text-[13.5px] text-slate-light">
+            Le bloc d&apos;identité du document officiel. La filière et la
+            spécialité, elles, viennent de vos groupes.
+          </span>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          {CHAMPS_ENTETE.map((c) => (
+            <Input
+              key={c.cle}
+              label={c.libelle}
+              value={entete[c.cle]}
+              onChange={(e) =>
+                setEntete((v) => ({ ...v, [c.cle]: e.target.value }))
+              }
+              placeholder={c.exemple}
+              hint={c.aide ?? undefined}
+            />
+          ))}
+          <Input
+            label="Année scolaire"
+            value={entete.anneeScolaire}
+            onChange={(e) =>
+              setEntete((v) => ({ ...v, anneeScolaire: e.target.value }))
+            }
+            placeholder={anneeScolaireCourante()}
+            hint={`Format ${anneeScolaireCourante()}. Elle ne se déduit pas de la date : un tableau se rédige aussi bien avant la rentrée qu'en cours d'année.`}
+          />
+        </div>
+      </Card>
+
       <div className="flex justify-end gap-2.5">
         <Button
           variant="secondary"
           onClick={() => {
             setNom(initial.nom ?? "");
             setLogo(initial.logo);
+            setEntete({
+              nomFormateur: initial.nomFormateur ?? "",
+              matricule: initial.matricule ?? "",
+              codeSecteur: initial.codeSecteur ?? "",
+              niveauFormation: initial.niveauFormation ?? "",
+              anneeScolaire: initial.anneeScolaire ?? "",
+            });
           }}
           disabled={enCours}
         >
