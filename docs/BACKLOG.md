@@ -168,7 +168,7 @@ L'ordre ci-dessous est arrêté : chaque atome se termine et se teste avant que 
 - [x] **7.2bis — §4.7 · le barème total dépend du type** : un CC se barème sur 20, un EFM sur 40. Le seuil est aujourd'hui écrit en dur à 20 dans huit endroits — l'invite de génération, le rattrapage automatique du total, les deux validations de l'écran, l'affichage du compteur, la liste des copies et l'écran de correction. Un EFM correct à 40 points est donc signalé comme faux, et l'IA reçoit la consigne de totaliser 20.
   **Test** : prépare un EFM, vérifie que 40 points sont acceptés sans avertissement et que 20 en déclenche un ; puis l'inverse sur un CC.
 
-- [ ] **7.2ter — §4.7 · calibration pédagogique de la génération** : deux règles absentes de l'invite.
+- [x] **7.2ter — §4.7 · calibration pédagogique de la génération** : deux règles absentes de l'invite.
   - Le barème d'une question suit sa difficulté réelle — une question de raisonnement à plusieurs étapes vaut nettement plus qu'une restitution directe — et le modèle **justifie explicitement** ce choix pour chaque question, au lieu de produire des chiffres qui tombent juste au total.
   - La courbe de difficulté vise **60 % du total sur des questions accessibles** (le socle que toute la classe doit pouvoir atteindre : 12/20 pour un CC, 24/40 pour un EFM) et **40 % sur des questions discriminantes**, destinées à distinguer les meilleurs — pas à faire échouer la majorité. Vaut pour les trois formats.
   **Test** : génère un contrôle, vérifie que la répartition des points suit bien 60/40 et que chaque question porte sa justification de barème.

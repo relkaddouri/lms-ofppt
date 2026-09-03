@@ -1078,8 +1078,10 @@ export type Database = {
           bareme: number
           controle_id: string
           corrige: string | null
+          difficulte: string | null
           enonce: string | null
           id: string
+          justification_bareme: string | null
           options: Json | null
           position: number
           type: string
@@ -1088,8 +1090,10 @@ export type Database = {
           bareme?: number
           controle_id: string
           corrige?: string | null
+          difficulte?: string | null
           enonce?: string | null
           id?: string
+          justification_bareme?: string | null
           options?: Json | null
           position?: number
           type?: string
@@ -1098,8 +1102,10 @@ export type Database = {
           bareme?: number
           controle_id?: string
           corrige?: string | null
+          difficulte?: string | null
           enonce?: string | null
           id?: string
+          justification_bareme?: string | null
           options?: Json | null
           position?: number
           type?: string

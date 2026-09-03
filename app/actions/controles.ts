@@ -31,6 +31,14 @@ const COLONNES_CONTROLE =
 export type TypeQuestion = "qcm" | "ouverte" | "exercice";
 export type OptionQcm = { texte: string; correcte: boolean };
 
+/**
+ * Place d'une question dans la courbe de difficulté (PRD §4.7).
+ *
+ * `null` sur une question saisie à la main : la calibration vient de la
+ * génération, la supposer accessible fausserait le calcul du socle.
+ */
+export type Difficulte = "accessible" | "discriminant" | null;
+
 export type Question = {
   id: string;
   controle_id: string;
@@ -40,6 +48,9 @@ export type Question = {
   /** QCM uniquement : propositions à cocher. */
   options: OptionQcm[];
   corrige: string | null;
+  difficulte: Difficulte;
+  /** Pourquoi ce barème correspond à cette difficulté. */
+  justification_bareme: string | null;
   position: number;
 };
 
@@ -51,6 +62,8 @@ export type QuestionInput = {
   bareme: number;
   options: OptionQcm[];
   corrige: string | null;
+  difficulte?: Difficulte;
+  justification_bareme?: string | null;
 };
 
 /** Ligne prête pour la base, propositions normalisées. */
@@ -74,6 +87,8 @@ function versLigneQuestion(q: QuestionInput, controleId: string, i: number) {
     bareme: q.bareme,
     options,
     corrige: q.corrige,
+    difficulte: q.difficulte ?? null,
+    justification_bareme: q.justification_bareme ?? null,
     position: i,
   };
 }
@@ -132,7 +147,9 @@ export async function getControle(id: string): Promise<ControleDetail | null> {
 
   const { data: questions, error: errQ } = await supabase
     .from("questions_controle")
-    .select("id, controle_id, type, enonce, bareme, options, corrige, position")
+    .select(
+      "id, controle_id, type, enonce, bareme, options, corrige, difficulte, justification_bareme, position",
+    )
     .eq("controle_id", id)
     .order("position");
 

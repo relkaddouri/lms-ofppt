@@ -16,6 +16,7 @@ import {
   type FormatControle,
   type TypeQuestion,
   type OptionQcm,
+  type Difficulte,
 } from "@/app/actions/controles";
 import CopiesManager from "./CopiesManager";
 import ContenuCouvert from "./ContenuCouvert";
@@ -43,7 +44,7 @@ import {
 } from "lucide-react";
 import { getEtablissement } from "@/app/actions/etablissement";
 import { marqueDe } from "@/lib/pdf-marque";
-import { baremeAttendu } from "@/lib/controles";
+import { baremeAttendu, socleAccessible } from "@/lib/controles";
 
 type DraftQuestion = {
   id: string;
@@ -52,6 +53,10 @@ type DraftQuestion = {
   bareme: number;
   options: OptionQcm[];
   corrige: string;
+  /** Place dans la courbe de difficulté (PRD §4.7), null si non calibrée. */
+  difficulte: Difficulte;
+  /** Pourquoi ce barème correspond à cette difficulté. */
+  justification: string;
 };
 
 const LIBELLE_QUESTION: Record<TypeQuestion, string> = {
@@ -78,6 +83,10 @@ function newQuestion(): DraftQuestion {
     bareme: 0,
     options: [],
     corrige: "",
+    // Une question ajoutée à la main n'est pas calibrée : la supposer
+    // accessible fausserait le calcul du socle.
+    difficulte: null,
+    justification: "",
   };
 }
 
@@ -203,6 +212,17 @@ export default function ControleManager({
   // PRD §4.7 : 20 points pour un contrôle continu, 40 pour une épreuve de fin
   // de module. Le seuil suit donc le type choisi, il n'est plus constant.
   const totalAttendu = baremeAttendu(type);
+  // §4.7 : 60 % du total doivent porter sur des questions accessibles — le
+  // socle que toute la classe doit pouvoir atteindre. Les 40 % restants
+  // distinguent les meilleurs, ils ne servent pas à faire échouer la majorité.
+  const socleAttendu = socleAccessible(type);
+  const pointsAccessibles = questions
+    .filter((q) => q.difficulte === "accessible")
+    .reduce((t, q) => t + (Number(q.bareme) || 0), 0);
+  const pointsDiscriminants = questions
+    .filter((q) => q.difficulte === "discriminant")
+    .reduce((t, q) => t + (Number(q.bareme) || 0), 0);
+  const questionsNonCalibrees = questions.filter((q) => q.difficulte === null).length;
   const totalBareme = questions.reduce(
     (s, q) => s + (Number(q.bareme) || 0),
     0,
@@ -229,6 +249,8 @@ export default function ControleManager({
           bareme: Number(q.bareme) || 0,
           options: Array.isArray(q.options) ? q.options : [],
           corrige: q.corrige ?? "",
+          difficulte: q.difficulte ?? null,
+          justification: q.justification_bareme ?? "",
         })),
       );
       setNotice(null);
@@ -291,6 +313,8 @@ export default function ControleManager({
                     bareme: q.bareme,
                     options: q.options,
                     corrige: q.corrige,
+                    difficulte: q.difficulte,
+                    justification_bareme: q.justification || null,
                   })),
                 },
               }
@@ -308,14 +332,20 @@ export default function ControleManager({
       setDuree(genDuree);
       setStatut("brouillon");
       ecrireQuestions(
-        (data.questions ?? []).map((q: Partial<DraftQuestion>) => ({
-          id: crypto.randomUUID(),
-          type: q.type ?? "ouverte",
-          enonce: q.enonce ?? "",
-          bareme: Number(q.bareme) || 0,
-          options: Array.isArray(q.options) ? q.options : [],
-          corrige: q.corrige ?? "",
-        })),
+        (
+          data.questions ?? []
+        ).map(
+          (q: Partial<DraftQuestion> & { justification_bareme?: string | null }) => ({
+            id: crypto.randomUUID(),
+            type: q.type ?? "ouverte",
+            enonce: q.enonce ?? "",
+            bareme: Number(q.bareme) || 0,
+            options: Array.isArray(q.options) ? q.options : [],
+            corrige: q.corrige ?? "",
+            difficulte: q.difficulte ?? null,
+            justification: q.justification_bareme ?? "",
+          }),
+        ),
       );
       setIssuDuModele(true);
       setAvertissements(
@@ -363,6 +393,8 @@ export default function ControleManager({
           bareme: Number(q.bareme) || 0,
           options: q.options,
           corrige: q.corrige || null,
+          difficulte: q.difficulte,
+          justification_bareme: q.justification || null,
         })),
       };
       if (activeId) {
@@ -895,6 +927,55 @@ export default function ControleManager({
                             </button>
                           </div>
 
+                          {/* §4.7 : le barème suit la difficulté, et la
+                              raison de ce choix se relit — c'est elle qui
+                              permet de contester un chiffre plutôt que de le
+                              subir. */}
+                          <div className="flex flex-wrap items-center gap-2.5">
+                            <span className="flex gap-1 rounded-[9px] border border-border bg-wash-strong p-1">
+                              {(
+                                [
+                                  ["accessible", "Accessible"],
+                                  ["discriminant", "Discriminant"],
+                                ] as const
+                              ).map(([niveau, libelle]) => {
+                                const actif = q.difficulte === niveau;
+                                return (
+                                  <button
+                                    key={niveau}
+                                    type="button"
+                                    role="radio"
+                                    aria-checked={actif}
+                                    onClick={() =>
+                                      updateQuestion(q.id, {
+                                        difficulte: actif ? null : niveau,
+                                      })
+                                    }
+                                    className={`rounded-[7px] px-2.5 py-1 text-[12.5px] font-semibold transition-colors duration-150 ease-out ${
+                                      actif
+                                        ? "bg-surface text-ink shadow-[0_1px_2px_rgba(46,59,78,0.12)]"
+                                        : "text-slate-light hover:text-ink"
+                                    }`}
+                                  >
+                                    {libelle}
+                                  </button>
+                                );
+                              })}
+                            </span>
+
+                            <input
+                              value={q.justification}
+                              onChange={(e) =>
+                                updateQuestion(q.id, {
+                                  justification: e.target.value,
+                                })
+                              }
+                              placeholder="Pourquoi ce barème pour cette difficulté…"
+                              aria-label={`Justification du barème de la question ${i + 1}`}
+                              className="min-w-[220px] flex-1 rounded-[9px] border border-border bg-surface px-3 py-[7px] text-[13.5px] text-body outline-none transition-colors duration-150 ease-out placeholder:text-slate-light focus:border-teal focus:shadow-[0_0_0_3px_rgba(46,125,158,0.15)]"
+                            />
+                          </div>
+
                         {q.type === "qcm" ? (
                           <div className="mt-3">
                             <p className="text-xs text-slate">
@@ -1063,6 +1144,73 @@ export default function ControleManager({
                         sur {totalAttendu} points
                       </span>
                     </div>
+                  </div>
+
+                  {/* §4.7 : la courbe de difficulté. Un contrôle bien conçu
+                      laisse toute la classe atteindre le socle, et réserve une
+                      minorité de points aux questions qui distinguent les
+                      meilleurs — jamais l'inverse. */}
+                  <div className="flex flex-col gap-2.5 border-t border-separator pt-5">
+                    <div className="flex flex-wrap items-baseline justify-between gap-3">
+                      <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-slate-light">
+                        Courbe de difficulté
+                      </span>
+                      <span className="font-mono text-[13px] text-slate-2">
+                        socle attendu {socleAttendu} pts · 60 %
+                      </span>
+                    </div>
+
+                    <div className="flex h-2.5 overflow-hidden rounded-full bg-wash-strong">
+                      <span
+                        className="bg-green"
+                        style={{
+                          width: `${totalBareme ? (pointsAccessibles / totalBareme) * 100 : 0}%`,
+                        }}
+                      />
+                      <span
+                        className="bg-teal"
+                        style={{
+                          width: `${totalBareme ? (pointsDiscriminants / totalBareme) * 100 : 0}%`,
+                        }}
+                      />
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 text-[13.5px]">
+                      <span className="flex items-center gap-2 text-slate-2">
+                        <span aria-hidden className="h-2 w-2 rounded-full bg-green" />
+                        Accessible{" "}
+                        <span className="font-mono text-ink">
+                          {pointsAccessibles} pts
+                        </span>
+                      </span>
+                      <span className="flex items-center gap-2 text-slate-2">
+                        <span aria-hidden className="h-2 w-2 rounded-full bg-teal" />
+                        Discriminant{" "}
+                        <span className="font-mono text-ink">
+                          {pointsDiscriminants} pts
+                        </span>
+                      </span>
+                      {questionsNonCalibrees > 0 ? (
+                        <span className="flex items-center gap-2 text-slate-light">
+                          <span
+                            aria-hidden
+                            className="h-2 w-2 rounded-full bg-border-strong"
+                          />
+                          {questionsNonCalibrees} question
+                          {questionsNonCalibrees > 1 ? "s" : ""} à classer
+                        </span>
+                      ) : null}
+                    </div>
+
+                    <p className="text-[13.5px] text-slate-light">
+                      {questionsNonCalibrees === questions.length
+                        ? "Aucune question n'est classée : la courbe se calibre à la génération, ou à la main sur chaque question."
+                        : Math.abs(pointsAccessibles - socleAttendu) <= totalAttendu * 0.1
+                          ? `Répartition conforme : toute la classe peut viser ${socleAttendu} points.`
+                          : pointsAccessibles < socleAttendu
+                            ? `Socle trop mince — ${pointsAccessibles} points accessibles au lieu de ${socleAttendu}. Une partie de la classe n'atteindra pas la moyenne.`
+                            : `Socle trop large — ${pointsAccessibles} points accessibles au lieu de ${socleAttendu}. Le contrôle distinguera mal les meilleurs.`}
+                    </p>
                   </div>
 
                   <dl className="grid gap-4 border-t border-separator pt-5 [grid-template-columns:repeat(auto-fit,minmax(150px,1fr))]">

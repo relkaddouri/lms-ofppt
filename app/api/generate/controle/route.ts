@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { appelerLlm, chargerConfigLlm, ErreurLlm } from "@/lib/llm";
 import { verifierQuota, QUOTA_GENERATION } from "@/lib/rate-limit";
 import { NextResponse } from "next/server";
-import { baremeAttendu } from "@/lib/controles";
+import { baremeAttendu, socleAccessible } from "@/lib/controles";
 
 type OptionGeneree = { texte: string; correcte: boolean };
 
@@ -12,6 +12,10 @@ type QuestionGeneree = {
   bareme: number;
   options?: OptionGeneree[];
   corrige?: string;
+  /** Place dans la courbe de difficulté (PRD §4.7). */
+  difficulte?: "accessible" | "discriminant";
+  /** Pourquoi ce barème correspond à cette difficulté. */
+  justification_bareme?: string;
 };
 
 type ControleGenere = {
@@ -100,6 +104,10 @@ export async function POST(request: Request) {
   // constante — demander 20 au modèle pour un EFM produisait un barème faux,
   // que le rattrapage ci-dessous ramenait ensuite vers la mauvaise valeur.
   const totalAttendu = baremeAttendu(estEfm ? "EFM" : "CC");
+  // §4.7 : le socle que toute la classe doit pouvoir atteindre — 60 % du
+  // total, soit 12/20 ou 24/40 — porté par des questions accessibles ; le
+  // reste distingue les meilleurs.
+  const socle = socleAccessible(estEfm ? "EFM" : "CC");
 
   if (!moduleId) {
     return NextResponse.json({ error: "moduleId requis" }, { status: 400 });
@@ -220,6 +228,26 @@ export async function POST(request: Request) {
       : "- Entre 8 et 14 questions, en variant les types autorisés.",
     `- N'utilise que ces types : ${regles.types.map((t) => `"${t}"`).join(", ")}.`,
     `- Le barème DOIT totaliser exactement ${totalAttendu} points.`,
+    "",
+    "Calibration du barème — deux règles non négociables :",
+    "1. Le nombre de points d'une question suit sa difficulté réelle. Une",
+    "   restitution directe vaut peu (1 à 2 points) ; une question de",
+    "   raisonnement à plusieurs étapes, mobilisant plusieurs notions, vaut",
+    "   nettement plus (5 à 8 points). Un barème ne se choisit jamais pour",
+    "   tomber sur le total : il se choisit pour la question, et c'est la",
+    "   répartition d'ensemble qui tombe juste.",
+    "   Pour CHAQUE question, renseigne `justification_bareme` : une phrase",
+    "   qui dit pourquoi ce nombre de points correspond à cette difficulté.",
+    "2. Répartis les questions sur deux niveaux, dans le champ `difficulte` :",
+    `   - "accessible" : le socle. Ces questions doivent totaliser environ`,
+    `     ${socle} points sur ${totalAttendu}, soit 60 % — c'est ce que toute la`,
+    "     classe doit pouvoir obtenir en ayant suivi le module. Questions",
+    "     fondamentales, sans piège.",
+    `   - "discriminant" : les ${totalAttendu - socle} points restants, soit 40 %.`,
+    "     Ces questions distinguent les meilleurs stagiaires. Elles ne servent",
+    "     PAS à faire échouer la majorité de la classe.",
+    "   Un contrôle de difficulté homogène, ou dont la répartition est",
+    "   aléatoire, est un contrôle raté.",
     "- Des consignes claires et brèves pour le stagiaire.",
     "",
     "Réponds UNIQUEMENT en JSON, sans markdown, avec exactement cette structure :",
@@ -231,6 +259,8 @@ export async function POST(request: Request) {
       "type": "qcm",
       "enonce": "Qu'est-ce que l'UX Design ?",
       "bareme": 1,
+      "difficulte": "accessible",
+      "justification_bareme": "Restitution directe d'une définition vue en cours : 1 point.",
       "options": [
         { "texte": "La conception de l'interface graphique", "correcte": false },
         { "texte": "La qualité de l'interaction entre l'utilisateur et le produit", "correcte": true },
@@ -241,6 +271,8 @@ export async function POST(request: Request) {
       "type": "ouverte",
       "enonce": "Définissez ce qu'est un persona et à quoi il sert.",
       "bareme": 3,
+      "difficulte": "accessible",
+      "justification_bareme": "Définition plus une mise en contexte : deux éléments attendus, 3 points.",
       "corrige": "corrigé détaillé"
     }
   ]
@@ -324,10 +356,22 @@ export async function POST(request: Request) {
       );
     }
 
+    const difficulte =
+      q.difficulte === "accessible" || q.difficulte === "discriminant"
+        ? q.difficulte
+        : null;
+    if (!difficulte) {
+      avertissements.push(
+        `Question ${i + 1} : le niveau de difficulté n'est pas renseigné, à classer à la relecture.`,
+      );
+    }
+
     return {
       type,
       enonce,
       bareme: Number(q.bareme) || 0,
+      difficulte,
+      justification_bareme: String(q.justification_bareme ?? "").trim() || null,
       options: type === "qcm" ? options : [],
       corrige:
         type === "qcm"
@@ -347,6 +391,7 @@ export async function POST(request: Request) {
 
     let ecart = Math.round((totalAttendu - totalBrut) * 2) / 2;
     const pas = ecart > 0 ? 0.5 : -0.5;
+    const retouchees = new Set<number>();
     let garde = 0;
     while (Math.abs(ecart) >= 0.5 && garde < 400) {
       for (const { i } of ordre) {
@@ -354,10 +399,15 @@ export async function POST(request: Request) {
         const suivant = questions[i].bareme + pas;
         if (suivant < 0.5) continue;
         questions[i].bareme = suivant;
+        retouchees.add(i);
         ecart -= pas;
       }
       garde += 1;
     }
+    // Une justification qui annonce « 1 point » sous une question qui en vaut
+    // maintenant 1,5 est pire qu'une absence de justification : elle se retire
+    // avec le barème qu'elle expliquait.
+    for (const i of retouchees) questions[i].justification_bareme = null;
     avertissements.push(
       `Barème rééquilibré de ${totalBrut} à ${questions.reduce((s, q) => s + q.bareme, 0)} points. Vérifiez la répartition.`,
     );
@@ -365,11 +415,25 @@ export async function POST(request: Request) {
 
   const totalBareme = questions.reduce((s, q) => s + q.bareme, 0);
 
+  // §4.7 : le socle doit peser environ 60 % du total. On ne corrige pas la
+  // répartition — la difficulté d'une question ne se réécrit pas depuis un
+  // calcul — mais on la signale quand elle s'en écarte nettement.
+  const pointsAccessibles = questions
+    .filter((q) => q.difficulte === "accessible")
+    .reduce((s, q) => s + q.bareme, 0);
+  if (totalBareme > 0 && Math.abs(pointsAccessibles - socle) > totalAttendu * 0.1) {
+    avertissements.push(
+      `Socle accessible : ${pointsAccessibles} points sur ${totalBareme}, attendu autour de ${socle}. Rééquilibrez la difficulté avant de valider.`,
+    );
+  }
+
   return NextResponse.json({
     titre: genere.titre,
     consignes: genere.consignes,
     questions,
     totalBareme,
+    pointsAccessibles,
+    socleAttendu: socle,
     avertissements,
   });
 }
