@@ -19,6 +19,7 @@ import {
 import type { GroupeModuleInfo } from "@/app/actions/groupes";
 import { ClipboardList, Plus, Trash2 } from "lucide-react";
 import { libelleModule } from "@/lib/modules";
+import RendusDevoir from "./RendusDevoir";
 
 const TYPES: { valeur: TypeRendu; label: string; aide: string }[] = [
   { valeur: "texte", label: "Réponse écrite", aide: "Le stagiaire rédige dans l'application." },
@@ -144,6 +145,8 @@ export default function DevoirsManager({
                   </Button>
                 </div>
               </div>
+
+              <RendusDevoir devoirId={d.id} nbRendus={d.nbRendus} />
 
               {d.description ? (
                 <p className="mt-2 whitespace-pre-line text-sm text-slate">

@@ -218,10 +218,29 @@ Fonctionnalités de l'espace stagiaire :
 - Progression trackée par couple groupe+module, séance par séance (contenu prévu vs contenu réalisé, statut)
 - **Le seuil des 30h déclenche un rappel, jamais une génération automatique.** Quand le cumul d'heures dispensées sur un couple groupe+module atteint le seuil (typiquement 30h, ramené proportionnellement sur les modules de durée totale inférieure — voir point ouvert ci-dessous), l'app affiche simplement une alerte du type *"CC1 à préparer pour ce module"* (ou CC2 selon que le premier a déjà été fait). **L'app ne génère rien de son propre chef.**
 - La préparation du contrôle reste **entièrement à l'initiative et sous le contrôle du formateur**, via l'interface décrite en §4.7 : le formateur ouvre l'interface de préparation, voit ce qui a été réellement vu par les stagiaires jusqu'à maintenant dans ce module, et **décide lui-même** du format (théorique, pratique, ou synthèse théorique+pratique) et du contenu — l'IA assiste la préparation à la demande, elle ne l'automatise pas.
-- Contrainte réglementaire à respecter dans le modèle : **minimum 2 contrôles continus (CC) et 1 épreuve de fin de module (EFM), locale ou régionale, par module**
+- Contrainte réglementaire à respecter dans le modèle : **minimum 2 contrôles continus (CC) et 1 épreuve de fin de module (EFM), locale ou régionale, par module** — c'est un plancher, pas une valeur fixe (voir §4.6bis pour la configuration réelle par module).
 - Dashboard d'avancement par groupe et par module (repris et amélioré depuis la v1 déjà testée — cartes de statistiques clés, pas seulement un graphique)
 
 *Point encore ouvert : le calcul exact du seuil proportionnel (30h sur un module standard, ramené à combien sur un module de 25h) reste à définir précisément — mais ce point ne concerne plus que le déclenchement du rappel, pas une génération, ce qui réduit l'enjeu de s'y tromper.*
+
+### 4.6bis Nombre et durée des contrôles — configurable par module, pas fixe (corrigé v3)
+
+**Correction importante par rapport à une hypothèse précédente.** Le temps d'évaluation d'un module n'est **pas** un forfait fixe de 10h (2 CC × 2h30 + 1 EFM × 5h) appliqué uniformément à tous les modules. Sur un gros module (masse horaire ≥ 90h par exemple), 2 CC ne suffisent pas à évaluer correctement la progression — il en faut typiquement 3.
+
+**Le modèle doit donc permettre, pour chaque module, de configurer** :
+- Le **nombre de CC** (2 au minimum réglementaire, plus si le formateur le juge nécessaire — typiquement 3 sur les modules de grande masse horaire)
+- La **durée de chaque CC** (les exemples vus jusqu'ici sont à 2h30 chacun, mais ce n'est pas nécessairement figé non plus)
+- La **durée de l'EFM** (5h dans les exemples vus)
+
+**Le temps total d'évaluation réservé, avant répartition théorique/pratique sur les éléments (§2b.2 du backlog), se calcule donc ainsi** :
+
+```
+temps_evaluation = (nombre_CC × duree_CC) + duree_EFM
+```
+
+Exemple donné par le porteur de projet : 3 CC de 2h30 chacun (7h30) + 1 EFM de 5h = **12h30** de temps d'évaluation total, à réserver avant de répartir le reste sur les éléments de compétence — au lieu des 10h fixes utilisées précédemment.
+
+**Ce paramétrage vit au niveau du module** (ou de l'assignation groupe+module, à trancher techniquement — un module de grande taille aura probablement le même besoin sur tous les groupes qui le suivent, donc plutôt au niveau du module lui-même que de chaque assignation séparément, sauf avis contraire). Une valeur par défaut raisonnable (2 CC de 2h30 + 1 EFM de 5h) peut être proposée automatiquement selon la masse horaire du module, mais reste ajustable par le formateur avant de lancer la répartition horaire.
 
 ### 4.7 Préparation de contrôles assistée par IA
 

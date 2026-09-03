@@ -173,7 +173,7 @@ L'ordre ci-dessous est arrêté : chaque atome se termine et se teste avant que 
   - La courbe de difficulté vise **60 % du total sur des questions accessibles** (le socle que toute la classe doit pouvoir atteindre : 12/20 pour un CC, 24/40 pour un EFM) et **40 % sur des questions discriminantes**, destinées à distinguer les meilleurs — pas à faire échouer la majorité. Vaut pour les trois formats.
   **Test** : génère un contrôle, vérifie que la répartition des points suit bien 60/40 et que chaque question porte sa justification de barème.
 
-- [ ] **7.3 — Devoirs · rendu fichier** : brancher le type de rendu « fichier » au bucket Storage `documents-stage` déjà existant, avec policies par stagiaire, colonne de chemin sur `devoirs_rendus`, formulaire de dépôt côté stagiaire et téléchargement côté formateur.
+- [x] **7.3 — Devoirs · rendu fichier** : brancher le type de rendu « fichier » au bucket Storage `documents-stage` déjà existant, avec policies par stagiaire, colonne de chemin sur `devoirs_rendus`, formulaire de dépôt côté stagiaire et téléchargement côté formateur.
   **Test** : dépose un fichier depuis un compte stagiaire, vérifie qu'il se télécharge côté formateur et qu'un autre stagiaire ne peut pas le lire.
 
 - [ ] **7.4 — §4.15.1 · Schéma multi-année** : table `annees_scolaires` (libellé, dates de validité), `groupes.annee_scolaire_id`, et `annee_scolaire_id` sur `indisponibilites`, `rythmes_hebdomadaires`, `motifs_hebdomadaires` — les trois tables rattachées au formateur qui n'héritent d'aucun groupe. Contrainte sur `seance_groupes` interdisant qu'une séance relie deux groupes d'années différentes.

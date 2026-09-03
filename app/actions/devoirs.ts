@@ -2,6 +2,7 @@
 
 import { createClient, getUser } from "@/lib/supabase/server";
 import { libelleModule } from "@/lib/modules";
+import { BUCKET_RENDUS } from "@/lib/devoirs";
 import { revalidatePath } from "next/cache";
 
 export type TypeRendu = "texte" | "lien" | "fichier";
@@ -21,15 +22,27 @@ export type Devoir = {
   nbStagiaires: number;
 };
 
+export type FichierRendu = {
+  chemin: string;
+  nom: string;
+  taille: number | null;
+};
+
 export type MonRendu = {
   id: string;
   contenu: string | null;
   statut: "brouillon" | "rendu";
   date_rendu: string | null;
+  fichier: FichierRendu | null;
 };
 
 export type DevoirStagiaire = Omit<Devoir, "nbRendus" | "nbStagiaires"> & {
   monRendu: MonRendu | null;
+  /**
+   * Le dépôt se fait depuis le navigateur, sous la session du stagiaire : le
+   * chemin dépend de son identifiant, que le client ne doit pas deviner.
+   */
+  stagiaireId: string;
 };
 
 /** Devoirs d'un groupe, vus par le formateur. */
@@ -99,7 +112,7 @@ export async function getMesDevoirs(): Promise<DevoirStagiaire[]> {
   const { data, error } = await supabase
     .from("devoirs")
     .select(
-      "id, groupe_id, seance_id, module_id, titre, description, date_echeance, type_rendu, modules(nom, competences(code_operationnel)), devoirs_rendus(id, contenu, statut, date_rendu, stagiaire_id)",
+      "id, groupe_id, seance_id, module_id, titre, description, date_echeance, type_rendu, modules(nom, competences(code_operationnel)), devoirs_rendus(id, contenu, statut, date_rendu, stagiaire_id, fichier_chemin, fichier_nom, fichier_taille)",
     )
     .order("date_echeance", { nullsFirst: false });
 
@@ -115,6 +128,9 @@ export async function getMesDevoirs(): Promise<DevoirStagiaire[]> {
         | {
             id: string;
             contenu: string | null;
+            fichier_chemin: string | null;
+            fichier_nom: string | null;
+            fichier_taille: number | null;
             statut: "brouillon" | "rendu";
             date_rendu: string | null;
             stagiaire_id: string;
@@ -137,12 +153,20 @@ export async function getMesDevoirs(): Promise<DevoirStagiaire[]> {
       moduleNom: d.modules
       ? libelleModule(d.modules.competences?.code_operationnel, d.modules.nom)
       : null,
+      stagiaireId: moi.id,
       monRendu: mien
         ? {
             id: mien.id,
             contenu: mien.contenu,
             statut: mien.statut,
             date_rendu: mien.date_rendu,
+            fichier: mien.fichier_chemin
+              ? {
+                  chemin: mien.fichier_chemin,
+                  nom: mien.fichier_nom ?? "rendu",
+                  taille: mien.fichier_taille,
+                }
+              : null,
           }
         : null,
     };
@@ -195,6 +219,7 @@ export async function enregistrerRendu(
   devoirId: string,
   contenu: string,
   remettre: boolean,
+  fichier: FichierRendu | null = null,
 ) {
   const user = await getUser();
   if (!user) throw new Error("Authentification requise.");
@@ -207,8 +232,17 @@ export async function enregistrerRendu(
     .maybeSingle();
   if (!moi) throw new Error("Aucune fiche stagiaire pour ce compte.");
 
-  if (remettre && !contenu.trim()) {
+  // Un fichier déposé vaut rendu : exiger en plus du texte reviendrait à
+  // refuser une remise complète.
+  if (remettre && !contenu.trim() && !fichier) {
     throw new Error("Un devoir vide ne peut pas être remis.");
+  }
+
+  // Le chemin porte la règle des policies : il doit désigner ce devoir et ce
+  // stagiaire, pas un autre. Le vérifier ici évite d'enregistrer une ligne qui
+  // pointerait vers un objet que le stagiaire ne pourrait pas relire.
+  if (fichier && !fichier.chemin.startsWith(`${devoirId}/${moi.id}/`)) {
+    throw new Error("Le fichier déposé ne correspond pas à ce devoir.");
   }
 
   const { error } = await supabase.from("devoirs_rendus").upsert(
@@ -216,6 +250,9 @@ export async function enregistrerRendu(
       devoir_id: devoirId,
       stagiaire_id: moi.id,
       contenu: contenu.trim() || null,
+      fichier_chemin: fichier?.chemin ?? null,
+      fichier_nom: fichier?.nom ?? null,
+      fichier_taille: fichier?.taille ?? null,
       statut: remettre ? "rendu" : "brouillon",
       date_rendu: remettre ? new Date().toISOString() : null,
       updated_at: new Date().toISOString(),
@@ -225,4 +262,82 @@ export async function enregistrerRendu(
 
   if (error) throw new Error(error.message);
   revalidatePath("/espace-stagiaire/devoirs");
+}
+
+export type RenduRecu = {
+  id: string;
+  stagiaire: string;
+  statut: "brouillon" | "rendu";
+  date_rendu: string | null;
+  contenu: string | null;
+  fichier: FichierRendu | null;
+};
+
+/**
+ * Les rendus déposés sur un devoir, vus par le formateur.
+ *
+ * Le compte affiché sur la carte dit combien de copies sont arrivées ; il ne
+ * dit pas de qui, ni ce qu'elles contiennent. Les policies ne renvoient que
+ * les rendus des devoirs dont le formateur a le groupe.
+ */
+export async function getRendusDevoir(devoirId: string): Promise<RenduRecu[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("devoirs_rendus")
+    .select(
+      "id, statut, date_rendu, contenu, fichier_chemin, fichier_nom, fichier_taille, stagiaires(nom, prenom)",
+    )
+    .eq("devoir_id", devoirId)
+    .order("date_rendu", { nullsFirst: false });
+
+  if (error) throw new Error(error.message);
+
+  return (data ?? []).map((row) => {
+    const r = row as unknown as {
+      id: string;
+      statut: "brouillon" | "rendu";
+      date_rendu: string | null;
+      contenu: string | null;
+      fichier_chemin: string | null;
+      fichier_nom: string | null;
+      fichier_taille: number | null;
+      stagiaires: { nom: string | null; prenom: string | null } | null;
+    };
+    return {
+      id: r.id,
+      stagiaire:
+        [r.stagiaires?.prenom, r.stagiaires?.nom].filter(Boolean).join(" ") ||
+        "Stagiaire",
+      statut: r.statut,
+      date_rendu: r.date_rendu,
+      contenu: r.contenu,
+      fichier: r.fichier_chemin
+        ? {
+            chemin: r.fichier_chemin,
+            nom: r.fichier_nom ?? "rendu",
+            taille: r.fichier_taille,
+          }
+        : null,
+    };
+  });
+}
+
+/**
+ * Lien de téléchargement temporaire pour un rendu.
+ *
+ * Le bucket est privé : un chemin ne suffit pas à lire l'objet. La signature
+ * est demandée sous la session de l'appelant, donc les policies décident —
+ * le formateur du groupe et l'auteur du rendu, personne d'autre.
+ */
+export async function lienRendu(chemin: string): Promise<string> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.storage
+    .from(BUCKET_RENDUS)
+    .createSignedUrl(chemin, 60 * 5);
+
+  if (error || !data?.signedUrl) {
+    throw new Error(error?.message ?? "Fichier introuvable.");
+  }
+  return data.signedUrl;
 }

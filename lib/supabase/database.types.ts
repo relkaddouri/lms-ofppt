@@ -395,6 +395,9 @@ export type Database = {
           created_at: string
           date_rendu: string | null
           devoir_id: string
+          fichier_chemin: string | null
+          fichier_nom: string | null
+          fichier_taille: number | null
           id: string
           stagiaire_id: string
           statut: string
@@ -405,6 +408,9 @@ export type Database = {
           created_at?: string
           date_rendu?: string | null
           devoir_id: string
+          fichier_chemin?: string | null
+          fichier_nom?: string | null
+          fichier_taille?: number | null
           id?: string
           stagiaire_id: string
           statut?: string
@@ -415,6 +421,9 @@ export type Database = {
           created_at?: string
           date_rendu?: string | null
           devoir_id?: string
+          fichier_chemin?: string | null
+          fichier_nom?: string | null
+          fichier_taille?: number | null
           id?: string
           stagiaire_id?: string
           statut?: string
@@ -1772,6 +1781,7 @@ export type Database = {
         Args: { p_controle_id: string; p_details: Json }
         Returns: Json
       }
+      est_mon_stagiaire: { Args: { p_stagiaire_id: string }; Returns: boolean }
       get_sujet_pour_passation: {
         Args: { p_controle_id: string }
         Returns: {
@@ -1820,6 +1830,7 @@ export type Database = {
         Args: { p_controle_id: string }
         Returns: boolean
       }
+      peut_acceder_devoir: { Args: { p_devoir_id: string }; Returns: boolean }
       peut_acceder_groupe: { Args: { p_groupe_id: string }; Returns: boolean }
       peut_acceder_module: { Args: { p_module_id: string }; Returns: boolean }
       peut_acceder_question: {
@@ -1828,6 +1839,7 @@ export type Database = {
       }
       peut_acceder_seance: { Args: { p_seance_id: string }; Returns: boolean }
       peut_acceder_stage: { Args: { p_stage_id: string }; Returns: boolean }
+      peut_lire_devoir: { Args: { p_devoir_id: string }; Returns: boolean }
       poser_question_support: {
         Args: { p_support_id: string; p_texte: string }
         Returns: string
