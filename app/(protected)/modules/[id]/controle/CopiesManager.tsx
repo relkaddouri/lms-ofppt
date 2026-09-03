@@ -24,12 +24,15 @@ export default function CopiesManager({
   moduleNom,
   moduleId,
   groupeId,
+  totalAttendu,
 }: {
   controleId: string;
   controleTitre: string;
   moduleNom: string;
   moduleId: string;
   groupeId: string;
+  /** 20 pour un CC, 40 pour un EFM (PRD §4.7). */
+  totalAttendu: number;
 }) {
   const [passations, setPassations] = useState<Passation[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -78,7 +81,7 @@ export default function CopiesManager({
           email: selected.email,
           dateRemise: formatDateTime(selected.submitted_at),
           note: Number(selected.note) || 0,
-          total: 20,
+          total: totalAttendu,
           questions: (selected.responses ?? []).map((d) => ({
             enonce: d.enonce,
             bareme: d.bareme,
@@ -136,7 +139,7 @@ export default function CopiesManager({
                         {p.nom_complet}
                       </span>
                       <Badge tone={noteTone(Number(p.note) || 0)}>
-                        {Number(p.note) || 0} / 20
+                        {Number(p.note) || 0} / {totalAttendu}
                       </Badge>
                     </div>
                     <p className="mt-0.5 text-xs text-slate">
@@ -183,7 +186,7 @@ export default function CopiesManager({
 
               <p className="mt-4 font-display text-4xl font-bold text-ink">
                 {Number(selected.note) || 0}{" "}
-                <span className="text-lg text-slate">/ 20</span>
+                <span className="text-lg text-slate">/ {totalAttendu}</span>
               </p>
 
               <div className="mt-5 space-y-4">

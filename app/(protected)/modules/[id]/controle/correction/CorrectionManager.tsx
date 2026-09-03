@@ -17,6 +17,7 @@ import { formatDateTime } from "@/lib/format";
 import { ChevronRight, X, Zap } from "lucide-react";
 import { libelleModule } from "@/lib/modules";
 import BandeauIa from "@/components/BandeauIa";
+import { baremeAttendu } from "@/lib/controles";
 
 type Suggestion = { points: number; commentaire: string };
 
@@ -82,6 +83,12 @@ export default function CorrectionManager({
   // enregistrerait comme une note saisie à la main — c'est précisément ce que
   // design_system.md §8 interdit.
   const [issuesDeLIa, setIssuesDeLIa] = useState<Set<string>>(new Set());
+
+  // PRD §4.7 : la note se lit sur le total du contrôle corrigé — 20 pour un
+  // contrôle continu, 40 pour une épreuve de fin de module.
+  const totalAttendu = baremeAttendu(
+    controles.find((c) => c.id === controleId)?.type,
+  );
 
   const oublierIa = (id: string) =>
     setIssuesDeLIa((prev) => {
@@ -151,7 +158,7 @@ export default function CorrectionManager({
     startTransition(async () => {
       try {
         await corrigerPassation(copie.id, reponses);
-        toast(`Copie de ${copie.nom_complet} enregistrée — ${note} / 20`);
+        toast(`Copie de ${copie.nom_complet} enregistrée — ${note} / ${totalAttendu}`);
         if (puisSuivante && index < reponses.length - 1) {
           setIndex(index + 1);
           setSuggestion(null);
@@ -237,7 +244,7 @@ export default function CorrectionManager({
               }`}
             >
               {note}{" "}
-              <span className="text-[15px] text-muted">/ 20</span>
+              <span className="text-[15px] text-muted">/ {totalAttendu}</span>
             </span>
           </div>
           <Button
@@ -260,7 +267,7 @@ export default function CorrectionManager({
           >
             {copies.map((c, i) => (
               <option key={c.id} value={c.id}>
-                {i + 1}. {c.nom_complet} — {Number(c.note) || 0} / 20
+                {i + 1}. {c.nom_complet} — {Number(c.note) || 0} / {totalAttendu}
               </option>
             ))}
           </select>

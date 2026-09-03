@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Clock, FileCheck2 } from "lucide-react";
 import { getMesControles } from "@/app/actions/controles-stagiaire";
 import { formatDate } from "@/lib/format";
+import { baremeAttendu, noteSur20 } from "@/lib/controles";
 import EnConstruction from "../EnConstruction";
 
 export const metadata = { title: "Contrôles" };
@@ -21,9 +22,15 @@ export default async function ControlesPage() {
 
   // La moyenne ne porte que sur les copies notées : une épreuve à venir ne
   // vaut pas zéro.
+  //
+  // Chaque note se lit sur le total de son contrôle — 20 pour un contrôle
+  // continu, 40 pour une épreuve de fin de module (PRD §4.7). Les additionner
+  // telles quelles donnerait un chiffre faux : un 31/40 pèserait plus lourd
+  // qu'un 19/20 alors qu'il vaut moins. La moyenne passe donc par l'échelle
+  // sur 20, celle sous laquelle un stagiaire lit sa scolarité.
   const notes = controles
-    .map((c) => c.note)
-    .filter((n): n is number => n !== null);
+    .filter((c) => c.note !== null)
+    .map((c) => noteSur20(c.note as number, baremeAttendu(c.type)));
   const moyenne =
     notes.length > 0
       ? Math.round((notes.reduce((s, n) => s + n, 0) / notes.length) * 10) / 10
@@ -103,12 +110,16 @@ export default async function ControlesPage() {
                 className={`font-mono text-base font-medium ${
                   note === null
                     ? "text-muted"
-                    : note >= 10
+                    : note >= baremeAttendu(c.type) / 2
                       ? "text-green-dark"
                       : "text-coral-dark"
                 }`}
               >
-                {note === null ? "—" : `${note.toLocaleString("fr-FR")}/20`}
+                {/* Chaque note reste affichée sur son propre total : la
+                    ramener sur 20 masquerait le barème de l'épreuve. */}
+                {note === null
+                  ? "—"
+                  : `${note.toLocaleString("fr-FR")}/${baremeAttendu(c.type)}`}
               </span>
               <span
                 className={`whitespace-nowrap rounded-full border px-2 py-px text-[11px] font-semibold ${

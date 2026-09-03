@@ -43,6 +43,7 @@ import {
 } from "lucide-react";
 import { getEtablissement } from "@/app/actions/etablissement";
 import { marqueDe } from "@/lib/pdf-marque";
+import { baremeAttendu } from "@/lib/controles";
 
 type DraftQuestion = {
   id: string;
@@ -199,6 +200,9 @@ export default function ControleManager({
   const [confirmSuppression, setConfirmSuppression] = useState(false);
   const toast = useToast();
 
+  // PRD §4.7 : 20 points pour un contrôle continu, 40 pour une épreuve de fin
+  // de module. Le seuil suit donc le type choisi, il n'est plus constant.
+  const totalAttendu = baremeAttendu(type);
   const totalBareme = questions.reduce(
     (s, q) => s + (Number(q.bareme) || 0),
     0,
@@ -318,7 +322,7 @@ export default function ControleManager({
         Array.isArray(data.avertissements) ? data.avertissements : [],
       );
       setNotice(
-        `Contrôle généré — barème total : ${data.totalBareme ?? "?"} pts (vérifiez qu'il tombe sur 20).`,
+        `Contrôle généré — barème total : ${data.totalBareme ?? "?"} pts (vérifiez qu'il tombe sur ${totalAttendu}).`,
       );
     } catch (err) {
       toast(err instanceof Error ? err.message : "Erreur inattendue", "error");
@@ -332,8 +336,9 @@ export default function ControleManager({
       toast("Le titre est requis.", "error");
       return;
     }
-    // Le barème hors 20 n'est pas bloquant, mais il demande une confirmation explicite.
-    if (totalBareme !== 20) {
+    // Un barème hors du total attendu n'est pas bloquant, mais il demande une
+    // confirmation explicite.
+    if (totalBareme !== totalAttendu) {
       setConfirmBareme(true);
       return;
     }
@@ -381,9 +386,9 @@ export default function ControleManager({
       toast("Enregistrez d'abord le contrôle avant de le valider.", "error");
       return;
     }
-    if (totalBareme !== 20) {
+    if (totalBareme !== totalAttendu) {
       toast(
-        `Le barème doit totaliser 20 points (actuellement : ${totalBareme}).`,
+        `Le barème doit totaliser ${totalAttendu} points (actuellement : ${totalBareme}).`,
         "error",
       );
       return;
@@ -598,6 +603,7 @@ export default function ControleManager({
               moduleNom={moduleNom}
               moduleId={moduleId}
               groupeId={groupeId ?? ""}
+              totalAttendu={totalAttendu}
             />
           </div>
         ) : (
@@ -718,9 +724,9 @@ export default function ControleManager({
                     </span>
                     <span
                       className={`font-mono text-[15px] font-medium ${
-                        totalBareme > 20
+                        totalBareme > totalAttendu
                           ? "text-coral-dark"
-                          : totalBareme === 20
+                          : totalBareme === totalAttendu
                             ? "text-green-dark"
                             : "text-ink"
                       }`}
@@ -728,7 +734,7 @@ export default function ControleManager({
                       {totalBareme}
                     </span>
                     <span className="font-mono text-[13px] text-muted">
-                      / 20
+                      / {totalAttendu}
                     </span>
                   </span>
                 </div>
@@ -1007,18 +1013,18 @@ export default function ControleManager({
                       </Button>
                       <span
                         className={`text-[13.5px] ${
-                          totalBareme === 20
+                          totalBareme === totalAttendu
                             ? "text-green-dark"
-                            : totalBareme > 20
+                            : totalBareme > totalAttendu
                               ? "text-coral-dark"
                               : "text-slate-light"
                         }`}
                       >
-                        {totalBareme === 20
+                        {totalBareme === totalAttendu
                           ? "Barème complet."
-                          : totalBareme > 20
-                            ? "Barème supérieur à 20 points."
-                            : `Il reste ${20 - totalBareme} points à répartir.`}
+                          : totalBareme > totalAttendu
+                            ? `Barème supérieur à ${totalAttendu} points.`
+                            : `Il reste ${totalAttendu - totalBareme} points à répartir.`}
                       </span>
                     </div>
                   </div>
@@ -1044,9 +1050,9 @@ export default function ControleManager({
                       </span>
                       <span
                         className={`font-display text-[40px] font-bold leading-none tracking-[-0.03em] ${
-                          totalBareme > 20
+                          totalBareme > totalAttendu
                             ? "text-coral-dark"
-                            : totalBareme === 20
+                            : totalBareme === totalAttendu
                               ? "text-green-dark"
                               : "text-ink"
                         }`}
@@ -1054,7 +1060,7 @@ export default function ControleManager({
                         {totalBareme}
                       </span>
                       <span className="font-mono text-[13px] text-slate-light">
-                        sur 20 points
+                        sur {totalAttendu} points
                       </span>
                     </div>
                   </div>
@@ -1102,7 +1108,7 @@ export default function ControleManager({
 
                   {(() => {
                     const relu = !issuDuModele;
-                    const conforme = totalBareme === 20;
+                    const conforme = totalBareme === totalAttendu;
                     const bon = relu && conforme;
                     return (
                       <div
@@ -1127,7 +1133,7 @@ export default function ControleManager({
                             ? "Les questions générées par l'IA n'ont pas encore été marquées comme relues."
                             : conforme
                               ? "Contenu relu et barème conforme — prêt pour validation."
-                              : `Contenu relu, mais le barème totalise ${totalBareme} points au lieu de 20.`}
+                              : `Contenu relu, mais le barème totalise ${totalBareme} points au lieu de ${totalAttendu}.`}
                         </span>
                       </div>
                     );
@@ -1240,8 +1246,8 @@ export default function ControleManager({
         onClose={() => setConfirmBareme(false)}
         onConfirm={() => void enregistrer()}
         busy={busy}
-        title="Barème hors 20 points"
-        message={`Le barème total est de ${totalBareme} points (attendu : 20). Enregistrer quand même ?`}
+        title={`Barème hors ${totalAttendu} points`}
+        message={`Le barème total est de ${totalBareme} points (attendu : ${totalAttendu}). Enregistrer quand même ?`}
         confirmLabel="Enregistrer quand même"
       />
 

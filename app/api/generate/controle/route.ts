@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { appelerLlm, chargerConfigLlm, ErreurLlm } from "@/lib/llm";
 import { verifierQuota, QUOTA_GENERATION } from "@/lib/rate-limit";
 import { NextResponse } from "next/server";
+import { baremeAttendu } from "@/lib/controles";
 
 type OptionGeneree = { texte: string; correcte: boolean };
 
@@ -95,6 +96,10 @@ export async function POST(request: Request) {
   const format = formatValide(formatRecu);
   const regles = CONSIGNES_FORMAT[format];
   const estEfm = typeRecu === "EFM";
+  // PRD §4.7 : un CC se barème sur 20, un EFM sur 40. Le total n'est pas une
+  // constante — demander 20 au modèle pour un EFM produisait un barème faux,
+  // que le rattrapage ci-dessous ramenait ensuite vers la mauvaise valeur.
+  const totalAttendu = baremeAttendu(estEfm ? "EFM" : "CC");
 
   if (!moduleId) {
     return NextResponse.json({ error: "moduleId requis" }, { status: 400 });
@@ -214,7 +219,7 @@ export async function POST(request: Request) {
       ? "- Entre 3 et 6 mises en situation, de difficulté croissante."
       : "- Entre 8 et 14 questions, en variant les types autorisés.",
     `- N'utilise que ces types : ${regles.types.map((t) => `"${t}"`).join(", ")}.`,
-    "- Le barème DOIT totaliser exactement 20 points.",
+    `- Le barème DOIT totaliser exactement ${totalAttendu} points.`,
     "- Des consignes claires et brèves pour le stagiaire.",
     "",
     "Réponds UNIQUEMENT en JSON, sans markdown, avec exactement cette structure :",
@@ -335,12 +340,12 @@ export async function POST(request: Request) {
   // que de laisser le formateur rééquilibrer douze barèmes à la main, on répartit
   // l'écart sur les questions les plus lourdes, par demi-points, et on le dit.
   const totalBrut = questions.reduce((s, q) => s + q.bareme, 0);
-  if (totalBrut !== 20 && totalBrut > 0) {
+  if (totalBrut !== totalAttendu && totalBrut > 0) {
     const ordre = questions
       .map((q, i) => ({ i, bareme: q.bareme }))
       .sort((a, b) => b.bareme - a.bareme);
 
-    let ecart = Math.round((20 - totalBrut) * 2) / 2;
+    let ecart = Math.round((totalAttendu - totalBrut) * 2) / 2;
     const pas = ecart > 0 ? 0.5 : -0.5;
     let garde = 0;
     while (Math.abs(ecart) >= 0.5 && garde < 400) {
