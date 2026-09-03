@@ -7,7 +7,12 @@ import Badge from "@/components/ui/Badge";
 import { inputStyles as inputClass } from "@/components/ui/Input";
 import { useToast } from "@/components/ui/Toast";
 import { formatHeures } from "@/lib/format";
-import { proposerRepartition, arrondi } from "@/lib/repartition";
+import {
+  proposerRepartition,
+  arrondi,
+  PAS,
+  LIGNES_EVALUATION,
+} from "@/lib/repartition";
 import {
   saveRepartition,
   genererPlanSeances,
@@ -89,7 +94,6 @@ export default function RepartitionManager({
       plan.masseHoraire,
       plan.pctTheorique,
       plan.pctPratique,
-      plan.pctEvaluation,
     );
     const m = new Map(parts.map((p) => [p.suggestion_pedagogique_id, p]));
     setLignes((ls) =>
@@ -212,6 +216,21 @@ export default function RepartitionManager({
             {formatHeures(totalReparti)} / {formatHeures(plan.masseHoraire)}
           </span>
         </div>
+        <p className="text-[12.5px] text-slate-light">
+          Dont {formatHeures(plan.heuresEvaluation)} réservées à l&apos;évaluation
+          — deux contrôles continus et une épreuve de fin de module — soit{" "}
+          {formatHeures(plan.masseHoraire - plan.heuresEvaluation)} à répartir sur
+          les objectifs, par blocs de {formatHeures(PAS)}.
+          {plan.heuresNonPlacables > 0 ? (
+            <>
+              {" "}
+              <span className="text-coral-dark">
+                {formatHeures(plan.heuresNonPlacables)} ne tiennent dans aucun
+                bloc de {formatHeures(PAS)} et restent à placer à la main.
+              </span>
+            </>
+          ) : null}
+        </p>
         <span className="h-[9px] overflow-hidden rounded-full bg-wash">
           <span
             className={`block h-full rounded-full transition-[width] duration-150 ease-out ${
@@ -289,7 +308,7 @@ export default function RepartitionManager({
                     <input
                       type="number"
                       min={0}
-                      step={0.5}
+                      step={PAS}
                       aria-label={`Heures théoriques ${l.code}`}
                       value={l.heures_theoriques}
                       onChange={(e) =>
@@ -302,7 +321,7 @@ export default function RepartitionManager({
                     <input
                       type="number"
                       min={0}
-                      step={0.5}
+                      step={PAS}
                       aria-label={`Heures pratiques ${l.code}`}
                       value={l.heures_pratiques}
                       onChange={(e) =>
@@ -326,6 +345,33 @@ export default function RepartitionManager({
                 </tr>
               );
             })}
+
+            {/* PRD §4.7 : deux contrôles continus et une épreuve de fin de
+                module sont obligatoires. Leurs heures étaient retirées du
+                total sans que le formateur les voie — il constatait un écart
+                sans en connaître la cause. Elles ont maintenant leur ligne. */}
+            {LIGNES_EVALUATION.map((e, i) => (
+              <tr
+                key={e.cle}
+                className={`border-b border-border last:border-0 bg-paper-alt ${
+                  i === 0 ? "border-t-2 border-t-border-strong" : ""
+                }`}
+              >
+                <td className="px-3 py-2">
+                  <span className="font-mono text-xs text-slate">
+                    {e.cle.toUpperCase()}
+                  </span>{" "}
+                  <span className="text-ink">{e.libelle}</span>{" "}
+                  <Badge tone="neutral">évaluation — réservé</Badge>
+                </td>
+                <td className="px-3 py-2 text-right text-slate-light">—</td>
+                <td className="px-3 py-2 text-right text-slate-light">—</td>
+                <td className="px-3 py-2 text-right font-medium text-ink">
+                  {formatHeures(e.heures)}
+                </td>
+                <td className="px-3 py-2 text-xs text-slate">présentiel</td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>

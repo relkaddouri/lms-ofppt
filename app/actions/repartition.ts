@@ -30,8 +30,10 @@ export type PlanificationModule = {
   masseHoraire: number;
   pctTheorique: number;
   pctPratique: number;
-  pctEvaluation: number;
+  /** Dix heures fixes : deux contrôles continus et une épreuve de fin de module. */
   heuresEvaluation: number;
+  /** Ce qui ne tient dans aucun bloc de 2 h 30, quand la masse n'en est pas un multiple. */
+  heuresNonPlacables: number;
   lignes: LigneRepartition[];
   /** Vrai tant que le formateur n'a rien enregistré : ce qu'il voit est une proposition. */
   proposition: boolean;
@@ -131,15 +133,15 @@ export async function getPlanification(
   const comp = c.modules.competences;
   const pctT = Number(comp?.pct_theorique ?? 60);
   const pctP = Number(comp?.pct_pratique ?? 34);
-  const pctE = Number(comp?.pct_evaluation ?? 6);
   const masse = Number(c.masse_horaire_allouee) || 0;
 
-  const { parts, heuresEvaluation } = proposerRepartition(
+  // Le temps d'évaluation ne se déduit plus d'un pourcentage : il est fixe et
+  // réservé avant tout partage (PRD §4.7).
+  const { parts, heuresEvaluation, heuresNonPlacables } = proposerRepartition(
     objectifs,
     masse,
     pctT,
     pctP,
-    pctE,
   );
 
   const enregistre = new Map(
@@ -165,8 +167,8 @@ export async function getPlanification(
     masseHoraire: masse,
     pctTheorique: pctT,
     pctPratique: pctP,
-    pctEvaluation: pctE,
     heuresEvaluation,
+    heuresNonPlacables,
     proposition: enregistre.size === 0,
     lignes: objectifs.map((o) => {
       const enr = enregistre.get(o.id);
