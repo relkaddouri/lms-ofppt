@@ -198,6 +198,11 @@ L'ordre ci-dessous est arrêté : chaque atome se termine et se teste avant que 
 
 ---
 
+- [x] **7.10 — Emploi du temps · export PDF** (§4.9) : le bouton était présent et inerte depuis la refonte. Le document reprend la section I.B du cahier du formateur — jours en colonnes, créneaux en lignes, groupe dans la case — avec le motif en vigueur puis les précédents, chacun daté de sa période de validité.
+  **Test** : exporter un motif à plusieurs créneaux, dont un partagé entre deux groupes, et vérifier que la grille du PDF reproduit celle de l'écran.
+
+---
+
 ## Points de vigilance — pas des atomes
 
 À garder en tête à chaque changement de schéma, sans traitement immédiat.

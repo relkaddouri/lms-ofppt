@@ -17,6 +17,9 @@ import {
   type MotifHebdomadaire,
 } from "@/app/actions/motifs";
 import { JOURS } from "@/lib/motifs";
+import { marqueDe } from "@/lib/pdf-marque";
+import { slugify } from "@/lib/format";
+import type { Etablissement } from "@/app/actions/etablissement";
 import GrilleMotif from "./GrilleMotif";
 
 const VIDE_CRENEAU = {
@@ -36,9 +39,15 @@ const VIDE_CRENEAU = {
 export default function EmploiDuTempsManager({
   motifs,
   groupes,
+  etablissement,
+  anneeScolaire,
+  emailCompte,
 }: {
   motifs: MotifHebdomadaire[];
   groupes: Groupe[];
+  etablissement: Etablissement;
+  anneeScolaire: string | null;
+  emailCompte: string;
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -46,6 +55,44 @@ export default function EmploiDuTempsManager({
 
   const courant = motifs.find((m) => m.courant) ?? null;
   const precedents = motifs.filter((m) => !m.courant);
+
+  function exporter() {
+    startTransition(async () => {
+      try {
+        const { telechargerEmploiDuTempsPdf } = await import(
+          "@/lib/pdf-emploi-du-temps"
+        );
+        await telechargerEmploiDuTempsPdf(
+          {
+            marque: marqueDe(etablissement),
+            formateur: etablissement.nomFormateur ?? emailCompte,
+            anneeScolaire,
+            edite: formatDate(maintenant()),
+          },
+          motifs.map((m) => ({
+            libelle: m.libelle,
+            date_debut: m.date_debut,
+            date_fin: m.date_fin,
+            courant: m.courant,
+            creneaux: m.creneaux.map((c) => ({
+              jour_semaine: c.jour_semaine,
+              heure_debut: c.heure_debut,
+              heure_fin: c.heure_fin,
+              groupeNom: c.groupeNom,
+            })),
+          })),
+          `emploi-du-temps-${slugify(anneeScolaire ?? maintenant(), "emploi-du-temps")}.pdf`,
+        );
+        toast(
+          motifs.length > 1
+            ? `Emploi du temps exporté — ${motifs.length} rythmes`
+            : "Emploi du temps exporté",
+        );
+      } catch (e) {
+        toast(e instanceof Error ? e.message : "Export impossible.", "error");
+      }
+    });
+  }
 
   const [nouveauMotif, setNouveauMotif] = useState(false);
   const [formMotif, setFormMotif] = useState({
@@ -142,7 +189,17 @@ export default function EmploiDuTempsManager({
           </p>
         </div>
         <div className="flex flex-wrap gap-2.5">
-          <Button variant="secondary" icon={Download} disabled>
+          <Button
+            variant="secondary"
+            icon={Download}
+            onClick={exporter}
+            disabled={enCours || motifs.length === 0}
+            title={
+              motifs.length === 0
+                ? "Déclarez d'abord un rythme hebdomadaire"
+                : undefined
+            }
+          >
             Exporter en PDF
           </Button>
           <Button icon={CalendarPlus} onClick={() => setNouveauMotif(true)}>

@@ -315,6 +315,23 @@ Exemple donné par le porteur de projet : 3 CC de 2h30 chacun (7h30) + 1 EFM de 
 3. Il attribue les séances générées au module en cours, dans l'ordre de la répartition horaire déjà prévue (§4.1, masse horaire allouée par module)
 4. **Priorisation entre modules d'un même groupe** : à masse horaire équivalente, les modules à EFM régional (§4.1) devraient être proposés en premier dans la séquence, puisque leur échéance externe est fixe et non négociable — l'app doit au moins **signaler visuellement** quels modules du groupe sont à EFMR pour aider le formateur à choisir l'ordre, sans nécessairement l'imposer automatiquement en v1
 
+**Règle non négociable — remplissage complet de chaque créneau, ajout v3.** Chaque créneau du motif doit être **entièrement occupé** par une séance, jamais partiellement. Ce n'est pas une question d'esthétique : le formateur doit déclarer sur la plateforme officielle OFPPT (E-note) le nombre d'heures réellement travaillées par semaine et par module — si l'app génère une séance de 2h30 dans un créneau de 5h, les 2h30 restantes du créneau n'existent nulle part, ni dans l'app ni dans la déclaration réelle. Le total d'heures généré sur une semaine pour un couple groupe+module doit correspondre exactement à ce que le motif alloue à ce couple sur cette semaine.
+
+**Mécanisme de remplissage — les objectifs se combinent pour occuper un créneau, jamais l'inverse.** La séquence de contenu à placer suit l'ordre pédagogique : les éléments de compétence dans leur ordre (A, B, C, D…), et à l'intérieur de chaque élément, les objectifs dans leur ordre (X.1 avant X.2…), et à l'intérieur de chaque objectif, le **théorique avant la pratique**. Cette séquence de blocs (chacun un multiple de 2h30, §4.6bis) est ensuite **découpée en séances qui remplissent exactement les créneaux du motif, dans l'ordre chronologique** :
+
+- Si un bloc de contenu est plus court que le créneau disponible, le **bloc suivant de la séquence vient compléter la même séance** — même s'il appartient à un autre objectif ou un autre élément. Une séance peut donc légitimement porter du contenu de deux objectifs différents.
+- Si un bloc est plus long que l'espace restant dans le créneau courant, il se **scinde sur le créneau suivant**.
+- Aucun créneau ne doit jamais rester partiellement rempli en sortie de cet algorithme.
+
+**Exemple concret, donné par le porteur de projet, à partir de la table de répartition horaire de M202 (A.1 = 5h théorique + 2h30 pratique, A.2 = 2h30 théorique + 2h30 pratique...)** sur un motif mardi/vendredi de 5h chacun à partir du 07/09/2026 :
+
+| Créneau | Contenu correct (rempli intégralement) |
+|---|---|
+| 07/09, 13h30–18h30 (5h) | A.1 théorique — 5h entières, un seul bloc suffit à remplir le créneau |
+| 08/09, 8h30–13h30 (5h) | A.1 pratique (2h30) **+** A.2 théorique (2h30) — deux blocs de deux objectifs différents, combinés pour remplir le créneau |
+
+**Implication d'affichage** : une séance qui combine deux objectifs doit clairement montrer les deux dans son contenu (objectif pédagogique, éléments de contenu couverts) — cohérent avec le fait qu'une séance peut déjà être liée à plusieurs éléments de contenu (§4.2bis), ce n'est pas une exception à gérer à part.
+
 **Prévisions calculées à partir de cette génération** :
 
 - **Par module** : une date de fin prévisionnelle (ex. "M110 se termine le [date]"), déduite de sa masse horaire restante divisée par le rythme hebdomadaire réel qui lui est consacré
