@@ -3,16 +3,21 @@
 import { useState } from "react";
 import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
+import type { AnneeScolaire } from "@/lib/annees";
 
 export default function AppShell({
   email,
   role,
   notifications = 0,
+  annees = [],
+  anneeCouranteId = null,
   children,
 }: {
   email: string | null;
   role: string | null;
   notifications?: number;
+  annees?: AnneeScolaire[];
+  anneeCouranteId?: string | null;
   children: React.ReactNode;
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -35,6 +40,8 @@ export default function AppShell({
         <Topbar
           email={email}
           notifications={notifications}
+          annees={annees}
+          anneeCouranteId={anneeCouranteId}
           onMenuClick={() => setSidebarOpen(true)}
         />
         <main className="mx-auto w-full max-w-[1200px] flex-1">

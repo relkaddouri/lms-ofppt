@@ -4,15 +4,21 @@ import { useState } from "react";
 import { Bell, Menu, Search } from "lucide-react";
 import Avatar from "./ui/Avatar";
 import PanneauNotifications from "./PanneauNotifications";
+import SelecteurAnnee from "./SelecteurAnnee";
+import type { AnneeScolaire } from "@/lib/annees";
 
 export default function Topbar({
   email,
   notifications = 0,
+  annees,
+  anneeCouranteId,
   onMenuClick,
 }: {
   email: string | null;
   /** Compteur du badge de la cloche. Zéro tant qu'aucune source ne l'alimente. */
   notifications?: number;
+  annees: AnneeScolaire[];
+  anneeCouranteId: string | null;
   onMenuClick: () => void;
 }) {
   const [panneau, setPanneau] = useState(false);
@@ -36,6 +42,11 @@ export default function Topbar({
       </div>
 
       <div className="flex items-center gap-2.5">
+        {/* PRD §4.15.2 : la portée de tout l'écran se change ici, comme on
+            change de dossier de travail. Il précède les actions parce qu'il
+            les conditionne toutes. */}
+        <SelecteurAnnee annees={annees} couranteId={anneeCouranteId} />
+
         {/* La recherche est dans la maquette : elle reste visible, inerte,
             jusqu'à son atome (lot 3 de la revue). */}
         <button

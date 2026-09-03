@@ -909,6 +909,7 @@ export type Database = {
       parametres_formateur: {
         Row: {
           annee_scolaire: string | null
+          annee_scolaire_courante: string | null
           code_secteur: string | null
           created_at: string
           etablissement: string | null
@@ -927,6 +928,7 @@ export type Database = {
         }
         Insert: {
           annee_scolaire?: string | null
+          annee_scolaire_courante?: string | null
           code_secteur?: string | null
           created_at?: string
           etablissement?: string | null
@@ -945,6 +947,7 @@ export type Database = {
         }
         Update: {
           annee_scolaire?: string | null
+          annee_scolaire_courante?: string | null
           code_secteur?: string | null
           created_at?: string
           etablissement?: string | null
@@ -961,7 +964,15 @@ export type Database = {
           plafond_sup_mensuel?: number
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "parametres_formateur_annee_scolaire_courante_fkey"
+            columns: ["annee_scolaire_courante"]
+            isOneToOne: false
+            referencedRelation: "annees_scolaires"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       parametres_llm: {
         Row: {
@@ -1835,6 +1846,10 @@ export type Database = {
     Functions: {
       annee_scolaire: { Args: { p_date: string }; Returns: string }
       annee_scolaire_par_defaut: { Args: never; Returns: string }
+      choisir_annee_scolaire: {
+        Args: { p_annee_id: string }
+        Returns: undefined
+      }
       code_operationnel_derive: {
         Args: { p_cycle: string; p_rang: number }
         Returns: string

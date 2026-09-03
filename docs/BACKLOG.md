@@ -179,7 +179,7 @@ L'ordre ci-dessous est arrêté : chaque atome se termine et se teste avant que 
 - [x] **7.4 — §4.15.1 · Schéma multi-année** : table `annees_scolaires` (libellé, dates de validité), `groupes.annee_scolaire_id`, et `annee_scolaire_id` sur `indisponibilites`, `rythmes_hebdomadaires`, `motifs_hebdomadaires` — les trois tables rattachées au formateur qui n'héritent d'aucun groupe. Contrainte sur `seance_groupes` interdisant qu'une séance relie deux groupes d'années différentes.
   **Test** : tenter de partager une séance entre deux groupes d'années différentes doit être refusé par la base.
 
-- [ ] **7.5 — §4.15.2 · Sélecteur global** : composant dans `AppShell`, année courante persistée dans `parametres_formateur.annee_scolaire_courante` — pas un cookie, le choix doit survivre à un changement d'appareil.
+- [x] **7.5 — §4.15.2 · Sélecteur global** : composant dans `AppShell`, année courante persistée dans `parametres_formateur.annee_scolaire_courante` — pas un cookie, le choix doit survivre à un changement d'appareil.
   **Test** : change d'année, recharge depuis une autre session, vérifie que la sélection tient.
 
 - [ ] **7.6 — §4.15.3 · Filtrage** : les ~19 points de requête identifiés (10 sur `groupes`, 9 sur les tables rattachées au formateur) filtrés par l'année sélectionnée. Les données des années passées restent intactes et consultables.

@@ -1,5 +1,6 @@
 import { getUser, getCurrentUserRole } from "@/lib/supabase/server";
 import { getCompteurNotifications } from "@/app/actions/dashboard";
+import { getAnneeCourante, getAnneesScolaires } from "@/app/actions/annees";
 import { redirect } from "next/navigation";
 import AppShell from "@/components/AppShell";
 
@@ -23,13 +24,19 @@ export default async function ProtectedLayout({
     redirect("/espace-stagiaire/fil");
   }
 
-  const notifications = await getCompteurNotifications();
+  const [notifications, annees, courante] = await Promise.all([
+    getCompteurNotifications(),
+    getAnneesScolaires(),
+    getAnneeCourante(),
+  ]);
 
   return (
     <AppShell
       email={user.email ?? null}
       role={role}
       notifications={notifications}
+      annees={annees}
+      anneeCouranteId={courante?.id ?? null}
     >
       {children}
     </AppShell>
