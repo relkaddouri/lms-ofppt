@@ -2,6 +2,7 @@
 
 import { createClient, getUser } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { getPortee } from "@/app/actions/annees";
 
 export type Groupe = {
   id: string;
@@ -32,9 +33,15 @@ export async function getPeriodesGroupes(): Promise<
 > {
   const supabase = await createClient();
 
+  // PRD §4.15 : les bornes servent à décider si un groupe est encore actif.
+  // Les calculer sur toutes les années donnerait la période d'un groupe
+  // homonyme d'une autre année.
+  const { groupeIds } = await getPortee();
+
   const { data, error } = await supabase
     .from("seance_groupes")
     .select("groupe_id, seances!inner(date)")
+    .in("groupe_id", groupeIds)
     .not("seances.date", "is", null);
 
   if (error) throw new Error(error.message);
@@ -60,12 +67,17 @@ export async function getPeriodesGroupes(): Promise<
 export async function getGroupes(): Promise<Groupe[]> {
   const supabase = await createClient();
   const periodes = await getPeriodesGroupes();
+  // PRD §4.15 : la liste ne montre que les groupes de l'année sélectionnée.
+  // Ceux des années passées restent lisibles — on y revient en changeant
+  // d'année, pas en les voyant tous mélangés.
+  const { groupeIds } = await getPortee();
   // Colonnes explicites plutôt que `*` (conventions.md).
   const { data, error } = await supabase
     .from("groupes")
     .select(
       "id, nom, annee, specialites(nom), stagiaires(count)",
     )
+    .in("id", groupeIds)
     .order("nom");
 
   if (error) throw new Error(error.message);

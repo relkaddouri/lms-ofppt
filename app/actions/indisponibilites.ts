@@ -2,6 +2,7 @@
 
 import { createClient, getUser } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { getPortee } from "@/app/actions/annees";
 import {
   TYPES_INDISPONIBILITE,
   type Indisponibilite,
@@ -18,9 +19,15 @@ export async function getIndisponibilites(
   // Une période chevauche la fenêtre dès qu'elle commence avant sa fin et
   // finit après son début : borner sur la seule date de début raterait les
   // vacances qui ont commencé la semaine d'avant.
+  // PRD §4.15 : les fériés et absences appartiennent à une année scolaire.
+  // Cette table pend du formateur et d'aucun groupe : elle porte donc le champ
+  // et se borne par lui.
+  const { anneeId } = await getPortee();
+
   const { data, error } = await supabase
     .from("indisponibilites")
     .select("id, type, date_debut, date_fin, demi_journee, libelle, motif")
+    .eq("annee_scolaire_id", anneeId ?? "")
     .lte("date_debut", fin)
     .gte("date_fin", debut)
     .order("date_debut");
@@ -42,9 +49,12 @@ export async function getIndisponibilitesAVenir(
 ): Promise<Indisponibilite[]> {
   const supabase = await createClient();
 
+  const { anneeId } = await getPortee();
+
   const { data, error } = await supabase
     .from("indisponibilites")
     .select("id, type, date_debut, date_fin, demi_journee, libelle, motif")
+    .eq("annee_scolaire_id", anneeId ?? "")
     .gte("date_fin", depuis)
     .order("date_debut")
     .limit(60);

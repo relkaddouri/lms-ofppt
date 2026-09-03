@@ -2,6 +2,7 @@
 
 import { createClient, getUser } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { getPortee } from "@/app/actions/annees";
 
 export type CreneauMotif = {
   id: string;
@@ -33,11 +34,17 @@ export type MotifHebdomadaire = {
 export async function getMotifs(): Promise<MotifHebdomadaire[]> {
   const supabase = await createClient();
 
+  // PRD §4.15 : le rythme hebdomadaire ne se reconduit pas d'une année sur
+  // l'autre, il se redéclare. Les motifs des années passées restent en base
+  // mais ne se mélangent pas à celui en cours.
+  const { anneeId } = await getPortee();
+
   const { data, error } = await supabase
     .from("motifs_hebdomadaires")
     .select(
       "id, libelle, date_debut, date_fin, creneaux_motif(id, jour_semaine, heure_debut, heure_fin, groupe_id, groupes(nom))",
     )
+    .eq("annee_scolaire_id", anneeId ?? "")
     .order("date_debut", { ascending: false });
 
   if (error) throw new Error(error.message);
@@ -145,10 +152,13 @@ export async function genererSeances(
   const user = await getUser();
   if (!user) throw new Error("Authentification requise.");
 
+  const { anneeId: porteeId } = await getPortee();
+
   const [motifRes, seancesRes, indispoRes] = await Promise.all([
     supabase
       .from("motifs_hebdomadaires")
       .select("id, date_fin, creneaux_motif(jour_semaine, heure_debut, heure_fin, groupe_id)")
+      .eq("annee_scolaire_id", porteeId ?? "")
       .lte("date_debut", dateDebut)
       .order("date_debut", { ascending: false })
       .limit(1),
@@ -160,7 +170,8 @@ export async function genererSeances(
       .order("created_at"),
     supabase
       .from("indisponibilites")
-      .select("date_debut, date_fin, demi_journee"),
+      .select("date_debut, date_fin, demi_journee")
+      .eq("annee_scolaire_id", porteeId ?? ""),
   ]);
 
   if (motifRes.error) throw new Error(motifRes.error.message);

@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import type { CycleModule } from "@/lib/modules";
 import { revalidatePath } from "next/cache";
+import { getPortee } from "@/app/actions/annees";
 
 export type Module = {
   id: string;
@@ -27,6 +28,11 @@ export type Module = {
 
 export async function getModules(): Promise<Module[]> {
   const supabase = await createClient();
+  // PRD §4.15 : le module reste du référentiel, permanent et partagé entre
+  // les années — mais les heures qui lui sont allouées appartiennent à une
+  // année précise. Le total et le nombre de groupes se bornent donc à
+  // l'année sélectionnée, l'existence du module non.
+  const { groupeIds } = await getPortee();
 
   // Colonnes explicites plutôt que `*` (conventions.md), et le code
   // opérationnel de la compétence, qui est ce que le formateur lit en premier.
@@ -39,7 +45,8 @@ export async function getModules(): Promise<Module[]> {
       .order("nom"),
     supabase
       .from("groupe_modules")
-      .select("module_id, masse_horaire_allouee"),
+      .select("module_id, masse_horaire_allouee")
+      .in("groupe_id", groupeIds),
   ]);
 
   if (modulesRes.error) throw new Error(modulesRes.error.message);
@@ -120,6 +127,8 @@ export type ModuleDetail = {
 
 export async function getModuleDetail(moduleId: string): Promise<ModuleDetail | null> {
   const supabase = await createClient();
+  // Les groupes listés sur la fiche du module sont ceux de l'année en cours.
+  const { groupeIds } = await getPortee();
 
   const [mod, fiche, groupes, controles] = await Promise.all([
     supabase
@@ -137,6 +146,7 @@ export async function getModuleDetail(moduleId: string): Promise<ModuleDetail | 
       .from("groupe_modules")
       .select("groupes(id, nom)")
       .eq("module_id", moduleId)
+      .in("groupe_id", groupeIds)
       .order("created_at"),
     supabase
       .from("controles")

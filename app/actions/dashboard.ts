@@ -5,6 +5,7 @@ import { getProgressionTousGroupes } from "@/app/actions/progression";
 import { getPeriodesGroupes } from "@/app/actions/groupes";
 import { cumule } from "@/lib/progression";
 import { maintenant } from "@/lib/format";
+import { getPortee } from "@/app/actions/annees";
 
 export type GroupeProgression = {
   id: string;
@@ -48,20 +49,32 @@ export async function getDashboardData(): Promise<{
 }> {
   const supabase = await createClient();
 
+  // PRD §4.15 : le tableau de bord ne compte que l'année sélectionnée. Sans
+  // cette borne, les stagiaires et les séances de toutes les années passées
+  // s'additionneraient dans les mêmes compteurs.
+  const { groupeIds } = await getPortee();
+
   const [groupesRes, seancesRes, stagiairesRes, modulesRes, controlesRes] =
     await Promise.all([
-      supabase.from("groupes").select("id, nom"),
+      supabase.from("groupes").select("id, nom").in("id", groupeIds),
       supabase
         .from("seances")
         .select(
-          "statut, date, duree_prevue, duree_realisee, updated_at, created_at",
-        ),
-      supabase.from("stagiaires").select("id", { count: "exact", head: true }),
+          "statut, date, duree_prevue, duree_realisee, updated_at, created_at, seance_groupes!inner(groupe_id)",
+        )
+        .in("seance_groupes.groupe_id", groupeIds),
+      supabase
+        .from("stagiaires")
+        .select("id", { count: "exact", head: true })
+        .in("groupe_id", groupeIds),
+      // Les modules sont du référentiel : permanents et partagés entre les
+      // années (PRD §4.15), leur compte ne se borne pas.
       supabase.from("modules").select("id", { count: "exact", head: true }),
       supabase
         .from("controles")
         .select("id", { count: "exact", head: true })
-        .eq("statut", "brouillon"),
+        .eq("statut", "brouillon")
+        .in("groupe_id", groupeIds),
     ]);
 
   if (groupesRes.error) throw new Error(groupesRes.error.message);

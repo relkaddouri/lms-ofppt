@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { libelleModule } from "@/lib/modules";
+import { getPortee } from "@/app/actions/annees";
 
 export type SeanceAvecFiche = {
   seanceId: string;
@@ -35,11 +36,15 @@ export type GroupeClasseur = {
 export async function getGroupesClasseur(): Promise<GroupeClasseur[]> {
   const supabase = await createClient();
 
+  // PRD §4.15 : le classeur est un document d'une année, pas de la carrière.
+  const { groupeIds } = await getPortee();
+
   const { data, error } = await supabase
     .from("groupes")
     .select(
       "id, nom, annee, specialites(nom), groupe_modules(module_id, modules(nom, competences(code_operationnel)))",
     )
+    .in("id", groupeIds)
     .order("nom");
   if (error) throw new Error(error.message);
 

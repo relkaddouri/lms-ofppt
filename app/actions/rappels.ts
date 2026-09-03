@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { calculerRappel, type Rappel } from "@/lib/rappels";
+import { getPortee } from "@/app/actions/annees";
 
 export type RappelCouple = {
   groupe_id: string;
@@ -25,11 +26,16 @@ export async function getRappelsControle(
 ): Promise<RappelCouple[]> {
   const supabase = await createClient();
 
+  // PRD §4.15 : un rappel porte sur l'année en cours. Borner les couples à la
+  // source suffit : tout ce qui suit se déduit de leurs identifiants.
+  const { groupeIds: portee } = await getPortee();
+
   let couples = supabase
     .from("groupe_modules")
     .select(
       "groupe_id, module_id, masse_horaire_allouee, groupes(nom), modules(nom, competences(code_operationnel))",
-    );
+    )
+    .in("groupe_id", portee);
   if (groupeId) couples = couples.eq("groupe_id", groupeId);
 
   const { data: lignes, error } = await couples;

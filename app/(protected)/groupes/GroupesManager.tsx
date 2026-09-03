@@ -17,16 +17,6 @@ import { formatDate } from "@/lib/format";
 import { Plus, Search, X } from "lucide-react";
 import { anneeDuCycle, libelleAnnee, libelleModule } from "@/lib/modules";
 
-/** Année de formation : septembre ouvre l'année suivante, comme en base. */
-function anneeDeFormation(): string {
-  const maintenant = new Date();
-  const debut =
-    maintenant.getMonth() >= 8
-      ? maintenant.getFullYear()
-      : maintenant.getFullYear() - 1;
-  return `${debut} — ${debut + 1}`;
-}
-
 /** Numéro court d'un groupe : les chiffres de fin de son nom. */
 function numeroDe(nom: string): string {
   return nom.match(/(\d{2,4})$/)?.[1] ?? nom.slice(0, 2).toUpperCase();
@@ -36,10 +26,16 @@ export default function GroupesManager({
   groupes,
   modules,
   specialites,
+  anneeLibelle,
 }: {
   groupes: Groupe[];
   modules: Module[];
   specialites: Specialite[];
+  /**
+   * L'année scolaire sélectionnée, telle qu'affichée en bandeau. Déduite de la
+   * date du jour, elle contredisait le sélecteur (PRD §4.15).
+   */
+  anneeLibelle: string;
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -117,7 +113,7 @@ export default function GroupesManager({
       <header className="flex flex-wrap items-end justify-between gap-6">
         <div className="flex flex-col gap-2">
           <span className="font-mono text-[11.5px] uppercase tracking-[0.12em] text-slate-light">
-            Année de formation {anneeDeFormation()}
+            Année de formation {anneeLibelle}
           </span>
           <h1 className="font-display text-[34px] font-bold leading-tight tracking-[-0.02em] text-ink">
             Groupes

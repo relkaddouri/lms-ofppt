@@ -3,6 +3,7 @@
 import { createClient, getUser } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { dateLocale } from "@/lib/format";
+import { getAnneeCourante, getPortee } from "@/app/actions/annees";
 import {
   construireSemaines,
   construireBilan,
@@ -33,15 +34,26 @@ export async function getBilanHeures(reference?: string): Promise<BilanHeures> {
   const supabase = await createClient();
   const user = await getUser();
 
+  // PRD §4.15 : le bilan porte sur l'année sélectionnée, et ses bornes sont
+  // celles de cette année — pas celles déduites de la date du jour. Consulter
+  // 2025/2026 en septembre 2026 doit montrer 2025/2026, pas la fenêtre en
+  // cours. La déduction reste le repli, pour un compte sans année déclarée.
+  const portee = await getPortee();
+  const annee = await getAnneeCourante();
   const maintenant = reference ? new Date(`${reference}T12:00:00Z`) : new Date();
-  const { debut, fin } = anneeFormation(maintenant);
+  const { debut, fin } = annee
+    ? { debut: annee.dateDebut, fin: annee.dateFin }
+    : anneeFormation(maintenant);
 
   const [seancesRes, rythmesRes, parametres] = await Promise.all([
     // Seules les séances faites comptent : une séance planifiée n'a été
     // dispensée par personne.
     supabase
       .from("seances")
-      .select("date, heure_debut, heure_fin, duree_realisee, duree_prevue")
+      .select(
+        "date, heure_debut, heure_fin, duree_realisee, duree_prevue, seance_groupes!inner(groupe_id)",
+      )
+      .in("seance_groupes.groupe_id", portee.groupeIds)
       .eq("statut", "fait")
       .not("date", "is", null)
       .gte("date", debut)
@@ -49,6 +61,7 @@ export async function getBilanHeures(reference?: string): Promise<BilanHeures> {
     supabase
       .from("rythmes_hebdomadaires")
       .select("date_debut, date_fin, heures_cible")
+      .eq("annee_scolaire_id", portee.anneeId ?? "")
       .order("date_debut"),
     getParametresFormateur(),
   ]);

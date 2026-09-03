@@ -9,20 +9,12 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { getDashboardData } from "@/app/actions/dashboard";
 import { getUser } from "@/lib/supabase/server";
+import { getAnneeCourante } from "@/app/actions/annees";
 import DashboardCharts from "./DashboardCharts";
 import { formatDate, maintenant } from "@/lib/format";
 
 export const metadata = { title: "Tableau de bord" };
 
-/** Année de formation : septembre ouvre l'année suivante, comme en base. */
-function anneeDeFormation(): string {
-  const maintenant = new Date();
-  const debut =
-    maintenant.getMonth() >= 8
-      ? maintenant.getFullYear()
-      : maintenant.getFullYear() - 1;
-  return `${debut} — ${debut + 1}`;
-}
 
 /**
  * Numéro court d'un groupe : les chiffres de fin de son nom.
@@ -102,19 +94,27 @@ function prenomDe(email: string | null): string | null {
 }
 
 export default async function DashboardPage() {
-  const [{ stats, groupes, evolution }, user] = await Promise.all([
+  const [{ stats, groupes, evolution }, user, annee] = await Promise.all([
     getDashboardData(),
     getUser(),
+    getAnneeCourante(),
   ]);
   const enAttente = stats.controlesEnAttente;
   const prenom = prenomDe(user?.email ?? null);
+
+  // PRD §4.15 : le bandeau annonce l'année sélectionnée. Le déduire de la date
+  // du jour le faisait contredire le sélecteur — on consultait 2025/2026 sous
+  // un titre « 2026 — 2027 ».
+  const libelleBandeau = annee
+    ? annee.libelle.replace("/", " — ")
+    : "non déclarée";
 
   return (
     <div className="flex flex-col gap-8 px-6 py-10 md:px-10 md:pb-14">
       <header className="flex flex-wrap items-end justify-between gap-8">
         <div className="flex flex-col gap-2">
           <span className="font-mono text-[11.5px] uppercase tracking-[0.12em] text-slate-light">
-            Année de formation {anneeDeFormation()}
+            Année de formation {libelleBandeau}
           </span>
           <h1 className="font-display text-[34px] font-bold leading-tight tracking-[-0.02em] text-ink">
             Tableau de bord

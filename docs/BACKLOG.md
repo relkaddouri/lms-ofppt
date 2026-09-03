@@ -182,7 +182,7 @@ L'ordre ci-dessous est arrêté : chaque atome se termine et se teste avant que 
 - [x] **7.5 — §4.15.2 · Sélecteur global** : composant dans `AppShell`, année courante persistée dans `parametres_formateur.annee_scolaire_courante` — pas un cookie, le choix doit survivre à un changement d'appareil.
   **Test** : change d'année, recharge depuis une autre session, vérifie que la sélection tient.
 
-- [ ] **7.6 — §4.15.3 · Filtrage** : les ~19 points de requête identifiés (10 sur `groupes`, 9 sur les tables rattachées au formateur) filtrés par l'année sélectionnée. Les données des années passées restent intactes et consultables.
+- [x] **7.6 — §4.15.3 · Filtrage** : les ~19 points de requête identifiés (10 sur `groupes`, 9 sur les tables rattachées au formateur) filtrés par l'année sélectionnée. Les données des années passées restent intactes et consultables.
   **Test** : bascule sur une année vide, vérifie qu'aucun écran ne montre les données de l'autre année, puis rebascule et vérifie qu'elles sont toutes revenues.
 
 - [ ] **7.7 — §4.15.4 · Duplication** : les quatre étapes dans l'ordre — groupes et assignations (les quatre valeurs semestrielles, `type_efm` et `fad_mutualisee` copiés, pas repartis de la durée de référence), séances sans date avec leurs éléments de contenu (sans rejouer la répartition), fiches de préparation en brouillon, contrôles en brouillon sans passation. Plus la fonction sœur d'`ouvrir_motif` qui date les séances dupliquées une fois le nouveau motif déclaré.

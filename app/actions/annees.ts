@@ -66,3 +66,37 @@ export async function choisirAnneeScolaire(anneeId: string): Promise<void> {
   // reste valable.
   revalidatePath("/", "layout");
 }
+
+/**
+ * La portée de l'année sélectionnée : son identifiant et ses groupes.
+ *
+ * Presque tout ce qui s'affiche pend d'un groupe, directement ou par
+ * `seance_groupes` : la liste des groupes de l'année suffit donc à borner un
+ * agrégat, sans que chaque table porte le champ. Les trois tables datées du
+ * formateur — indisponibilités, rythmes, motifs — se bornent, elles, par
+ * l'identifiant de l'année, qu'elles portent.
+ *
+ * Une liste vide n'est pas une absence de portée : elle veut dire « aucun
+ * groupe cette année », et un agrégat doit alors être vide, pas complet. Les
+ * appelants doivent donc filtrer sur `groupeIds` même quand il est vide.
+ */
+export type Portee = {
+  anneeId: string | null;
+  groupeIds: string[];
+};
+
+export async function getPortee(): Promise<Portee> {
+  const supabase = await createClient();
+  const annee = await getAnneeCourante();
+
+  if (!annee) return { anneeId: null, groupeIds: [] };
+
+  const { data, error } = await supabase
+    .from("groupes")
+    .select("id")
+    .eq("annee_scolaire_id", annee.id);
+
+  if (error) throw new Error(error.message);
+
+  return { anneeId: annee.id, groupeIds: (data ?? []).map((g) => g.id) };
+}

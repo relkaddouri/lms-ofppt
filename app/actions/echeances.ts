@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { maintenant } from "@/lib/format";
+import { getPortee } from "@/app/actions/annees";
 import {
   echeancesDe,
   trierEcheances,
@@ -17,17 +18,23 @@ import {
 export async function getEcheances(): Promise<Echeance[]> {
   const supabase = await createClient();
 
+  // PRD §4.15 : les échéances réglementaires d'une année passée sont éteintes,
+  // elles n'ont pas à alerter sur l'année en cours.
+  const { groupeIds } = await getPortee();
+
   const [controlesRes, seancesRes] = await Promise.all([
     supabase
       .from("controles")
       .select(
         "id, titre, type, date_prevue, date_administration, groupe_id, module_id, groupes(nom), modules(nom)",
-      ),
-    // Toutes les séances datées : c'est en elles que se lit « la deuxième
-    // séance suivante ».
+      )
+      .in("groupe_id", groupeIds),
+    // Toutes les séances datées de l'année : c'est en elles que se lit « la
+    // deuxième séance suivante ».
     supabase
       .from("seances")
-      .select("module_id, date, seance_groupes(groupe_id)")
+      .select("module_id, date, seance_groupes!inner(groupe_id)")
+      .in("seance_groupes.groupe_id", groupeIds)
       .not("date", "is", null)
       .order("date"),
   ]);

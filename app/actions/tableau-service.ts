@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import type { LigneService, TableauService } from "@/lib/tableau-service";
+import { getPortee } from "@/app/actions/annees";
 
 /**
  * Toutes les affectations horaires du formateur, dans l'ordre du document.
@@ -13,11 +14,16 @@ import type { LigneService, TableauService } from "@/lib/tableau-service";
 export async function getTableauService(): Promise<TableauService> {
   const supabase = await createClient();
 
+  // Le tableau porte l'année scolaire en en-tête : il ne peut pas additionner
+  // les affectations de plusieurs années sous ce titre-là (PRD §4.15).
+  const { groupeIds } = await getPortee();
+
   const { data, error } = await supabase
     .from("groupe_modules")
     .select(
       "groupe_id, module_id, presentiel_s1, fad_s1, presentiel_s2, fad_s2, fad_mutualisee, groupes!inner(nom, annee, specialites(nom)), modules!inner(nom, competences(code_operationnel))",
-    );
+    )
+    .in("groupe_id", groupeIds);
   if (error) throw new Error(error.message);
 
   const specialites = new Set<string>();

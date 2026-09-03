@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { getPortee } from "@/app/actions/annees";
 
 export type SeanceCalendrier = {
   id: string;
@@ -57,12 +58,19 @@ export async function getCalendrier(
 ): Promise<Calendrier> {
   const supabase = await createClient();
 
+  // PRD §4.15 : la grille montre la semaine de l'année sélectionnée. Deux
+  // années peuvent couvrir les mêmes semaines de calendrier — septembre 2026
+  // existe dans 2025/2026 comme dans 2026/2027 — et les superposer rendrait
+  // la grille illisible.
+  const { groupeIds } = await getPortee();
+
   const [seancesRes, controlesRes, sansDateRes] = await Promise.all([
     supabase
       .from("seances")
       .select(
-        "id, date, heure_debut, heure_fin, statut, nature, est_fad, objectif_operationnel, seance_groupes(groupe_id, groupes(nom)), modules(nom, competences(code_operationnel))",
+        "id, date, heure_debut, heure_fin, statut, nature, est_fad, objectif_operationnel, seance_groupes!inner(groupe_id, groupes(nom)), modules(nom, competences(code_operationnel))",
       )
+      .in("seance_groupes.groupe_id", groupeIds)
       .not("date", "is", null)
       .gte("date", debut)
       .lte("date", fin)
@@ -75,14 +83,16 @@ export async function getCalendrier(
       .select(
         "id, module_id, titre, type, type_efm, date_prevue, date_administration, date_envoi_propositions, groupes(nom), modules(nom, competences(code_operationnel))",
       )
+      .in("groupe_id", groupeIds)
       .order("date_prevue", { nullsFirst: false }),
     // Ce qui reste à poser dans le calendrier : sans ce compte, une grille
     // vide laisse croire qu'il n'y a rien à faire.
     supabase
       .from("seances")
       .select(
-        "module_id, duree_prevue, duree_realisee, seance_groupes(groupe_id, groupes(nom)), modules(nom, competences(code_operationnel))",
+        "module_id, duree_prevue, duree_realisee, seance_groupes!inner(groupe_id, groupes(nom)), modules(nom, competences(code_operationnel))",
       )
+      .in("seance_groupes.groupe_id", groupeIds)
       .is("date", null),
   ]);
 
