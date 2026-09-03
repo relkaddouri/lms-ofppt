@@ -13,7 +13,29 @@ import Card from "@/components/ui/Card";
 import Button, { buttonStyles } from "@/components/ui/Button";
 import Input, { inputStyles } from "@/components/ui/Input";
 import { useToast } from "@/components/ui/Toast";
+import Interrupteur from "@/components/ui/Interrupteur";
 import { ArrowRight, BookOpen, Check, Clock, Pencil, X } from "lucide-react";
+
+/**
+ * Les quatre cases du tableau de service officiel (PRD §4.13bis) : présentiel
+ * ou distance, croisés avec le semestre. Un module peut se donner entièrement
+ * sur un semestre — les cases de l'autre restent à zéro.
+ */
+const CHAMPS = [
+  { cle: "presentiel_s1", libelle: "Présentiel S1" },
+  { cle: "fad_s1", libelle: "FAD S1" },
+  { cle: "presentiel_s2", libelle: "Présentiel S2" },
+  { cle: "fad_s2", libelle: "FAD S2" },
+] as const;
+
+type CleHeures = (typeof CHAMPS)[number]["cle"];
+
+const SAISIE_VIDE: Record<CleHeures, string> = {
+  presentiel_s1: "0",
+  fad_s1: "0",
+  presentiel_s2: "0",
+  fad_s2: "0",
+};
 
 export default function GroupeModulesManager({
   groupeId,
@@ -25,29 +47,46 @@ export default function GroupeModulesManager({
   const router = useRouter();
   const toast = useToast();
   const [enEdition, setEnEdition] = useState<string | null>(null);
-  const [valeur, setValeur] = useState("");
-  const [valeurFad, setValeurFad] = useState("0");
+  const [saisie, setSaisie] = useState(SAISIE_VIDE);
+  const [mutualisee, setMutualisee] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const total = modules.reduce((s, m) => s + m.masse_horaire_allouee, 0);
 
-  function ouvrirEditionFad(m: GroupeModuleInfo) {
-    setValeurFad(String(m.heures_fad));
-  }
-
   function ouvrirEdition(m: GroupeModuleInfo) {
     setEnEdition(m.module_id);
-    setValeur(String(m.masse_horaire_allouee));
-    ouvrirEditionFad(m);
+    setSaisie({
+      presentiel_s1: String(m.presentiel_s1),
+      fad_s1: String(m.fad_s1),
+      presentiel_s2: String(m.presentiel_s2),
+      fad_s2: String(m.fad_s2),
+    });
+    setMutualisee(m.fad_mutualisee);
   }
 
-  const nombre = Number(valeur);
-  const erreur =
-    valeur.trim() === ""
-      ? "Saisissez un nombre d'heures."
-      : !Number.isFinite(nombre) || nombre < 0
-        ? "La masse horaire doit être un nombre positif."
-        : null;
+  const chiffres = {
+    presentiel_s1: Number(saisie.presentiel_s1),
+    fad_s1: Number(saisie.fad_s1),
+    presentiel_s2: Number(saisie.presentiel_s2),
+    fad_s2: Number(saisie.fad_s2),
+  };
+  const totalSaisi =
+    chiffres.presentiel_s1 +
+    chiffres.fad_s1 +
+    chiffres.presentiel_s2 +
+    chiffres.fad_s2;
+  const fadSaisie = chiffres.fad_s1 + chiffres.fad_s2;
+
+  const erreur = CHAMPS.some(
+    (c) =>
+      saisie[c.cle].trim() === "" ||
+      !Number.isFinite(chiffres[c.cle]) ||
+      chiffres[c.cle] < 0,
+  )
+    ? "Chaque case attend un nombre d'heures positif."
+    : mutualisee && fadSaisie === 0
+      ? "Sans heures à distance, il n'y a rien à partager."
+      : null;
 
   async function changerTypeEfm(moduleId: string, type: TypeEfmModule) {
     setBusy(true);
@@ -72,7 +111,10 @@ export default function GroupeModulesManager({
     if (erreur) return;
     setBusy(true);
     try {
-      await setMasseHoraire(groupeId, moduleId, nombre, Number(valeurFad) || 0);
+      await setMasseHoraire(groupeId, moduleId, {
+        ...chiffres,
+        fad_mutualisee: mutualisee,
+      });
       setEnEdition(null);
       toast("Masse horaire enregistrée");
       router.refresh();
@@ -198,47 +240,62 @@ export default function GroupeModulesManager({
                 </div>
 
                 {edition ? (
-                  <div className="flex w-full max-w-[460px] flex-wrap items-start gap-3">
-                    <div className="flex-1">
-                      <Input
-                        type="number"
-                        min={0}
-                        step={1}
-                        autoFocus
-                        value={valeur}
-                        onChange={(e) => setValeur(e.target.value)}
-                        error={erreur}
-                        label={
-                          <span className="text-xs text-slate">
-                            Masse horaire (heures)
-                          </span>
-                        }
-                      />
+                  <div className="flex w-full max-w-[520px] flex-col gap-3">
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                      {CHAMPS.map((c, i) => (
+                        <Input
+                          key={c.cle}
+                          type="number"
+                          min={0}
+                          step={1}
+                          autoFocus={i === 0}
+                          value={saisie[c.cle]}
+                          onChange={(e) =>
+                            setSaisie((s) => ({ ...s, [c.cle]: e.target.value }))
+                          }
+                          label={
+                            <span className="text-xs text-slate">{c.libelle}</span>
+                          }
+                        />
+                      ))}
                     </div>
-                    <div className="w-[140px]">
-                      <Input
-                        type="number"
-                        min={0}
-                        step={1}
-                        value={valeurFad}
-                        onChange={(e) => setValeurFad(e.target.value)}
-                        label={
-                          <span className="text-xs text-slate">
-                            dont FAD (heures)
-                          </span>
-                        }
-                        hint={
-                          <span className="text-xs text-slate-light">
-                            Présentiel :{" "}
-                            {Math.max(
-                              0,
-                              (Number(valeur) || 0) - (Number(valeurFad) || 0),
-                            )}{" "}
-                            h
-                          </span>
-                        }
+
+                    {/* PRD §4.13bis : sur le document officiel, la part à
+                        distance d'un module de tronc commun partagé n'est
+                        portée que par une seule des deux lignes de groupe. */}
+                    <label className="flex items-center gap-3">
+                      <Interrupteur
+                        actif={mutualisee}
+                        onChange={setMutualisee}
+                        label="Part à distance partagée avec un autre groupe"
+                        disabled={busy}
                       />
-                    </div>
+                      <span className="text-xs text-slate">
+                        FAD partagée avec un autre groupe
+                        <span className="block text-slate-light">
+                          Le groupe reste crédité de ces heures ; votre tableau
+                          de service ne les compte qu&apos;une fois.
+                        </span>
+                      </span>
+                    </label>
+
+                    <p className="text-xs text-slate">
+                      Total :{" "}
+                      <span className="font-mono text-ink">
+                        {Number.isFinite(totalSaisi) ? totalSaisi : 0} h
+                      </span>
+                      {fadSaisie > 0 ? (
+                        <span className="text-slate-light">
+                          {" "}
+                          · {totalSaisi - fadSaisie} présentiel + {fadSaisie} FAD
+                        </span>
+                      ) : null}
+                    </p>
+                    {erreur ? (
+                      <p className="text-xs text-coral">{erreur}</p>
+                    ) : null}
+
+                    <div className="flex flex-wrap items-end gap-3">
                     <label className="flex shrink-0 flex-col gap-[7px]">
                       <span className="text-xs text-slate">Type d&apos;EFM</span>
                       <select
@@ -257,7 +314,7 @@ export default function GroupeModulesManager({
                         <option value="regional">Régional</option>
                       </select>
                     </label>
-                    <div className="mt-6 flex shrink-0 gap-2">
+                    <div className="flex shrink-0 gap-2">
                       <Button
                         size="sm"
                         icon={Check}
@@ -276,6 +333,7 @@ export default function GroupeModulesManager({
                         Annuler
                       </Button>
                     </div>
+                    </div>
                   </div>
                 ) : (
                   <div className="flex shrink-0 items-center gap-3">
@@ -287,8 +345,13 @@ export default function GroupeModulesManager({
                           {" "}
                           · {m.masse_horaire_allouee - m.heures_fad} présentiel
                           + {m.heures_fad} FAD
+                          {m.fad_mutualisee ? " partagée" : ""}
                         </span>
                       ) : null}
+                    </span>
+                    <span className="font-mono text-xs text-slate-light">
+                      S1 {m.presentiel_s1 + m.fad_s1} h · S2{" "}
+                      {m.presentiel_s2 + m.fad_s2} h
                     </span>
                     <Button
                       variant="secondary"

@@ -248,7 +248,10 @@ export async function assignModulesToGroupe(
       aAjouter.map((module_id) => ({
         groupe_id: groupeId,
         module_id,
-        masse_horaire_allouee: dureeParModule.get(module_id) ?? 0,
+        // `masse_horaire_allouee` est calculée depuis les quatre valeurs
+        // semestrielles : elle ne s'écrit plus. La durée de référence part
+        // en présentiel du premier semestre, à répartir ensuite.
+        presentiel_s1: dureeParModule.get(module_id) ?? 0,
       })),
     );
     if (error) throw new Error(error.message);
@@ -268,40 +271,70 @@ export async function assignModulesToGroupe(
 export type TypeEfmModule = "local" | "regional" | null;
 
 /**
- * Masse horaire d'un couple groupe+module, et sa part à distance.
+ * Les quatre valeurs horaires d'un couple groupe+module (PRD §4.13bis).
  *
- * Le présentiel ne se saisit pas : c'est la différence (PRD §4.1bis). La
- * contrainte de base refuse une part FAD supérieure au total, on la vérifie
- * ici pour rendre un message lisible plutôt qu'une erreur Postgres.
+ * Le tableau de service officiel croise deux dimensions : présentiel ou
+ * distance, premier ou second semestre. La masse horaire totale et la part à
+ * distance ne se saisissent plus, elles se calculent à partir de ces quatre
+ * valeurs.
  */
+export type HeuresSemestres = {
+  presentiel_s1: number;
+  fad_s1: number;
+  presentiel_s2: number;
+  fad_s2: number;
+  /**
+   * Part à distance dispensée conjointement avec un autre groupe : le groupe
+   * reste crédité de ces heures pour sa progression, mais la charge du
+   * formateur ne les compte qu'une fois.
+   */
+  fad_mutualisee: boolean;
+};
+
 export async function setMasseHoraire(
   groupeId: string,
   moduleId: string,
-  heures: number,
-  heuresFad = 0,
+  heures: HeuresSemestres,
 ) {
-  if (!Number.isFinite(heures) || heures < 0) {
-    throw new Error("La masse horaire doit être un nombre positif.");
+  const champs: [keyof HeuresSemestres, string][] = [
+    ["presentiel_s1", "le présentiel du 1er semestre"],
+    ["fad_s1", "la part à distance du 1er semestre"],
+    ["presentiel_s2", "le présentiel du 2e semestre"],
+    ["fad_s2", "la part à distance du 2e semestre"],
+  ];
+  for (const [cle, libelle] of champs) {
+    const valeur = heures[cle] as number;
+    if (!Number.isFinite(valeur) || valeur < 0) {
+      throw new Error(`Renseignez ${libelle} : un nombre positif est attendu.`);
+    }
   }
-  if (!Number.isFinite(heuresFad) || heuresFad < 0) {
-    throw new Error("La part à distance doit être un nombre positif.");
-  }
-  if (heuresFad > heures) {
+
+  // Marquer une FAD partagée alors qu'il n'y a aucune heure à distance
+  // laisserait un drapeau sans effet, qu'on retrouverait sans comprendre.
+  if (heures.fad_mutualisee && heures.fad_s1 + heures.fad_s2 === 0) {
     throw new Error(
-      "La part à distance ne peut pas dépasser la masse horaire totale.",
+      "Sans heures à distance, il n'y a rien à partager avec un autre groupe.",
     );
   }
 
   const supabase = await createClient();
   const { error } = await supabase
     .from("groupe_modules")
-    .update({ masse_horaire_allouee: heures, heures_fad: heuresFad })
+    .update({
+      presentiel_s1: heures.presentiel_s1,
+      fad_s1: heures.fad_s1,
+      presentiel_s2: heures.presentiel_s2,
+      fad_s2: heures.fad_s2,
+      fad_mutualisee: heures.fad_mutualisee,
+    })
     .eq("groupe_id", groupeId)
     .eq("module_id", moduleId);
 
   if (error) throw new Error(error.message);
 
   revalidatePath(`/groupes/${groupeId}`);
+  revalidatePath("/tableau-service");
+  revalidatePath("/modules");
 }
 
 /**
@@ -337,9 +370,15 @@ export type GroupeModuleInfo = {
   module_id: string;
   nom: string;
   duree_reference: number;
+  /** Somme des quatre valeurs semestrielles, calculée en base. */
   masse_horaire_allouee: number;
-  /** Part à distance ; le présentiel est la différence, jamais ressaisi. */
+  /** Somme des deux parts à distance, calculée en base. */
   heures_fad: number;
+  presentiel_s1: number;
+  fad_s1: number;
+  presentiel_s2: number;
+  fad_s2: number;
+  fad_mutualisee: boolean;
   code_operationnel: string | null;
   type_efm: TypeEfmModule;
   hasFiche: boolean;
@@ -354,7 +393,7 @@ export async function getGroupeModules(
   const { data, error } = await supabase
     .from("groupe_modules")
     .select(
-      "module_id, masse_horaire_allouee, heures_fad, type_efm, modules(nom, duree_reference, competences(code_operationnel))",
+      "module_id, masse_horaire_allouee, heures_fad, presentiel_s1, fad_s1, presentiel_s2, fad_s2, fad_mutualisee, type_efm, modules(nom, duree_reference, competences(code_operationnel))",
     )
     .eq("groupe_id", groupeId)
     .order("created_at");
@@ -412,6 +451,11 @@ export async function getGroupeModules(
       duree_reference: Number(mod?.duree_reference) || 0,
       masse_horaire_allouee: Number(r.masse_horaire_allouee) || 0,
       heures_fad: Number(r.heures_fad) || 0,
+      presentiel_s1: Number(r.presentiel_s1) || 0,
+      fad_s1: Number(r.fad_s1) || 0,
+      presentiel_s2: Number(r.presentiel_s2) || 0,
+      fad_s2: Number(r.fad_s2) || 0,
+      fad_mutualisee: r.fad_mutualisee === true,
       code_operationnel: mod?.competences?.code_operationnel ?? null,
       type_efm: (r.type_efm as TypeEfmModule) ?? null,
       hasFiche: hasFiche.has(r.module_id),

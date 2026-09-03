@@ -609,29 +609,44 @@ export type Database = {
       groupe_modules: {
         Row: {
           created_at: string
+          fad_mutualisee: boolean
+          fad_s1: number
+          fad_s2: number
           formateur_id: string | null
           groupe_id: string
-          heures_fad: number
-          masse_horaire_allouee: number
+          heures_fad: number | null
+          masse_horaire_allouee: number | null
           module_id: string
+          presentiel_s1: number
+          presentiel_s2: number
           type_efm: string | null
         }
         Insert: {
           created_at?: string
+          fad_mutualisee?: boolean
+          fad_s1?: number
+          fad_s2?: number
           formateur_id?: string | null
           groupe_id: string
-          heures_fad?: number
-          masse_horaire_allouee: number
+          heures_fad?: number | null
+          masse_horaire_allouee?: number | null
           module_id: string
+          presentiel_s1?: number
+          presentiel_s2?: number
           type_efm?: string | null
         }
         Update: {
           created_at?: string
+          fad_mutualisee?: boolean
+          fad_s1?: number
+          fad_s2?: number
           formateur_id?: string | null
           groupe_id?: string
-          heures_fad?: number
-          masse_horaire_allouee?: number
+          heures_fad?: number | null
+          masse_horaire_allouee?: number | null
           module_id?: string
+          presentiel_s1?: number
+          presentiel_s2?: number
           type_efm?: string | null
         }
         Relationships: [
