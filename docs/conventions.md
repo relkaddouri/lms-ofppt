@@ -20,6 +20,19 @@ Ce fichier fixe les règles de code que **tout atome doit respecter**, quel que 
 - **Une seule source de vérité pour tout mapping** (route → libellé, statut → couleur, rôle → permissions). Si ce mapping doit être utilisé à plusieurs endroits, centralise-le dans un fichier unique et importe-le, ne le réécris jamais localement.
 - **Une seule implémentation par fonctionnalité transverse** (export PDF, envoi d'email, appel à un modèle IA) dans un module dédié, importé partout où c'est nécessaire — jamais deux façons différentes de faire la même chose dans deux fichiers.
 
+## Fichiers « use server » — vérifié automatiquement
+
+- **Un module `"use server"` n'exporte que des fonctions `async`.** Une constante, un objet, une fonction synchrone y sont refusés par Next — mais à l'exécution, jamais à la compilation : `tsc --noEmit` reste vert et **l'application entière renvoie 500**, `/login` compris, ce qui envoie chercher la panne au mauvais endroit. Les types (`export type`, `export interface`) sont effacés à la compilation et restent autorisés.
+- **Toute valeur ou fonction synchrone partagée entre le serveur et le client va dans `lib/<sujet>.ts`**, jamais dans le fichier d'action — y compris un simple calcul dérivé d'un type, comme le total d'une ligne.
+- **Cette règle a échoué quatre fois en s'appuyant sur la mémoire** (`JOURS`, `LOGO_TAILLE_MAX`, `heuresPortees`). Elle est donc vérifiée par un script, pas par la vigilance :
+
+  ```bash
+  npm run verifie:actions   # ou npm run verifie, qui enchaîne tsc
+  ```
+
+  `scripts/verifie-actions.mjs` parcourt les fichiers dont la première ligne utile est la directive — une action « inline » dans le corps d'une fonction ne compte pas — et sort en erreur au premier export interdit.
+- **Le crochet `.githooks/pre-commit` lance ce script à chaque commit.** À activer une fois par clone : `git config core.hooksPath .githooks`.
+
 ## Sécurité (non négociable, même en phase de prototype)
 
 - **Toute policy RLS Supabase restreint l'accès au propriétaire de la donnée** (`user_id = auth.uid()` ou équivalent) — jamais `using (true)` sur une table contenant des données appartenant à un utilisateur précis, même "temporairement" en phase de test.

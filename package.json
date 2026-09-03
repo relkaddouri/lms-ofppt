@@ -5,7 +5,9 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "verifie:actions": "node scripts/verifie-actions.mjs",
+    "verifie": "node scripts/verifie-actions.mjs && tsc --noEmit"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.121.0",

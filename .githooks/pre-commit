@@ -1,0 +1,12 @@
+#!/bin/sh
+# Refuse un commit qui laisserait un export non-async dans un module
+# « use server » : Next renvoie alors 500 sur toute l'application, avec un
+# tsc vert. Quatre occurrences avant que ce crochet existe.
+#
+# Activation, une fois par clone :
+#   git config core.hooksPath .githooks
+
+node scripts/verifie-actions.mjs || {
+  echo "Commit interrompu. Corrigez, ou forcez avec --no-verify si vous savez ce que vous faites."
+  exit 1
+}
