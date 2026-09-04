@@ -190,6 +190,12 @@ Le même module a donc une masse horaire différente selon le groupe — probabl
 
 **Format de la fiche — tranché : format officiel synthétique.** La fiche générée doit suivre strictement la définition du cahier du formateur officiel : *"Elle ne doit en aucun cas comprendre des détails du cours. C'est un schéma de la leçon, composé de mots clés, d'idées clés, d'exemples, d'éléments importants à ne pas oublier."* Concrètement, la génération IA produit un **aide-mémoire structuré** — mots-clés, idées clés, exemples, points de vigilance, construit autour des éléments de contenu assignés (§4.2bis) — et non un déroulé minuté détaillé. Le modèle "Fiche préparation : cours théoriques" donné en exemple initial (blocs minutés de 5-15 minutes avec contenu et stratégie pédagogique détaillés pour chacun) **ne sert donc plus de gabarit de génération** — il reste utile comme référence de structure globale (durée de séance, date, objectif) mais pas pour le niveau de détail du contenu pédagogique lui-même.
 
+**Principe pédagogique fondateur — ajout v3, non négociable.** L'objectif pédagogique de la fiche doit être formulé selon les principes de la **pédagogie active** et de l'**Approche Par Compétences (APC)** — jamais un objectif de simple transmission passive de connaissance. **Tout le reste de la fiche existe pour servir cet objectif** : le contenu, les méthodes, le déroulement (§4.3ter) ne sont pas des sections indépendantes juxtaposées, ils sont subordonnés à l'atteinte de cet objectif précis.
+
+**Variété obligatoire des méthodes actives.** La génération IA ne doit jamais s'appuyer sur une seule méthode de pédagogie active répétée séance après séance (ex. toujours "questions-réponses") — elle doit **varier** les méthodes mobilisées (étude de cas, travail en sous-groupes, brainstorming, jeu de rôle, résolution de problème, démonstration suivie de pratique guidée, etc.) selon ce qui convient le mieux au contenu de la séance, et en tenant compte des méthodes déjà utilisées dans les séances récentes du même module pour ne pas tomber dans la répétition.
+
+**Continuité obligatoire avec les séances précédentes — renforcé v3.** Ce n'est pas seulement une question d'éviter les répétitions de contenu (déjà couvert ci-dessus) : la génération doit activement **prendre appui sur les compétences déjà développées** dans les séances précédentes du même groupe+module pour construire la suite logique de la progression pédagogique. Si 5 séances ont déjà eu lieu, la 6ème doit s'appuyer explicitement sur ce que ces 5 séances ont construit chez les stagiaires — pas repartir sur une base neutre comme si c'était la première séance du module.
+
 Implication pour le prompt de génération IA (§7, à préciser lors du backlog) : contraindre explicitement le modèle à produire un schéma court plutôt qu'un texte développé, avec une limite de longueur/densité pour éviter qu'il "déborde" vers un cours complet malgré la consigne — et à ne jamais s'écarter des éléments de contenu assignés à la séance, ni en omettre, ni en inventer d'autres.
 
 ### 4.3bis Contenu pédagogique partagé entre groupes parallèles (ajout v3)
@@ -209,10 +215,41 @@ Implication pour le prompt de génération IA (§7, à préciser lors du backlog
 
 **Support de cours (§4.4) — même logique, confirmée par le porteur de projet.** Le support de cours généré pour une séance repose sur le même contenu que sa fiche de préparation — la même règle de partage s'applique entre séances parallèles (DES101/DES102) : généré une fois, pas dupliqué, modifiable depuis l'une ou l'autre séance avec répercussion immédiate sur les deux.
 
+### 4.3ter Déroulement de séance guidé — mode présentation en temps réel (ajout v3)
+
+**Changement de mission, formulé directement par le porteur de projet** : *"la mission de cette app est de m'aider dans le déroulement de la séance, pas juste [produire] une fiche comme ça."* La fiche de préparation (§4.3) reste un document de préparation en amont — mais l'app doit aussi offrir un **mode d'exécution en temps réel**, consulté pendant que la séance se déroule, pas seulement avant.
+
+**Principe d'usage** : le formateur doit pouvoir suivre ce mode "comme une présentation, avec tout devant lui" — sans avoir à deviner quoi faire ni à dépenser de l'énergie mentale à reconstruire le déroulement depuis l'aide-mémoire. Il lit ce qui s'affiche, il l'applique, il passe à la phase suivante.
+
+**Structure** : la séance est découpée en **phases successives** (ex. éléments de motivation, activité principale, synthèse — la nomenclature exacte des phases reste à définir avec le porteur de projet, probablement alignée sur un schéma de pédagogie active standard : mise en situation / activité / structuration / réinvestissement, ou équivalent). Pour chaque phase, l'écran affiche :
+- La méthode active mobilisée pour cette phase précise (ex. "Interaction active")
+- Les **instructions concrètes** à suivre
+- Les **questions précises à poser** aux stagiaires, prêtes à l'emploi
+- Tout autre élément nécessaire pour exécuter cette phase sans préparation supplémentaire
+- Une action pour marquer la phase terminée et passer à la suivante
+
+**Exigence d'UX/UI** : cet écran doit être pensé comme un mode présentation — épuré, une phase à la fois visible en priorité, navigation simple entre phases (précédent/suivant), lisible d'un coup d'œil pendant que le formateur anime sa classe. Ce n'est pas un document à relire, c'est un support d'exécution.
+
+*Point ouvert : la nomenclature exacte des phases et leur articulation avec les méthodes actives variées (§4.3) doit être précisée avec le porteur de projet avant l'implémentation — ne pas inventer une taxonomie de phases sans validation.*
+
 ### 4.4 Génération IA de support de cours (16:9)
 
 - Pour les modules où le formateur ne dispose pas de cours existant (typiquement les modules de 2ème année, selon le porteur de projet), génération d'un support de type diaporama (16:9), aligné sur le contenu de la fiche de préparation de la séance
 - Le support est consultable par les stagiaires depuis leur espace (§4.5), avec possibilité de poser des questions dessus
+
+**Cohérence stricte entre fiche et support — ajout v3, non négociable.** Tout document, vidéo, lien ou ressource **mentionné dans la fiche de préparation** doit être **effectivement présent et trouvable dans le support** — pour la partie théorique comme pour la partie pratique. Si la fiche évoque "voir la vidéo sur X" ou "document de référence Y", ce n'est jamais une référence dans le vide : le support doit contenir cette ressource ou un lien direct vers elle. La génération IA du support doit lire la fiche associée et s'assurer que toutes ses références y sont honorées.
+
+**Support riche — pas un contenu minimal.** Le support ne doit pas se limiter à du texte brut : la génération doit intégrer, quand c'est pertinent, des **schémas, images, liens vers des articles de référence** et tout élément qui approfondit et enrichit l'explication. L'objectif est un support que le stagiaire peut consulter en autonomie et qui reste utile même hors de la présence du formateur, pas juste un squelette de diaporama.
+
+**Deux documents distincts par module — support théorique et support pratique**, tranché par le porteur de projet :
+- **Support du cours** — la compilation du contenu théorique, dans l'ordre logique des séances
+- **Support de TP** ("Pratique de [Module]", ex. "Pratique de M202") — regroupe tous les travaux pratiques du module. **Génère une proposition de correction ou des pistes de correction pour chaque TP**, disponible pour le formateur au moment où il marque la séance correspondante comme terminée — pas générée à l'avance et exposée aux stagiaires avant que le TP soit fait.
+
+**Compilation au niveau du module — export complet.** Une fois un module terminé (ou à tout moment en cours de route), le formateur doit pouvoir **télécharger le support complet du module** — la compilation de toutes les séances dans l'ordre logique du programme, pas seulement consulter un support séance par séance de façon fragmentée. Distinct du classeur pédagogique (§4.13, qui regroupe les fiches de préparation) : ici il s'agit du contenu de cours et de TP destiné aux stagiaires.
+
+**Vue stagiaire — support complet ou progressif.** Le stagiaire doit pouvoir consulter soit le support complet du module (s'il est disponible), soit une vue qui reflète sa progression réelle — si 5 séances ont eu lieu, il voit un cours cohérent qui suit la logique de ce qui a été couvert jusqu'ici, pas un accès prématuré à du contenu pas encore enseigné en classe.
+
+**Regroupement des ressources liées à une séance, côté stagiaire.** Tout ce qui se rattache à une séance donnée — support de cours, support de TP, documents, liens, instructions — doit être **retrouvable au même endroit** depuis l'espace stagiaire, plutôt que dispersé. Ce qui est assigné comme devoir doit apparaître dans la vue "Devoirs" du stagiaire (§4.5) avec un lien clair vers la séance et ses ressources d'origine.
 
 ### 4.5 Espace stagiaire
 

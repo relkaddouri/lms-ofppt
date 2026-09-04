@@ -148,6 +148,31 @@ Au-delà du fil d'annonces déjà présent côté stagiaire, ce pattern s'appliq
 
 Le calendrier hebdomadaire (§4.10 du PRD) repose sur une grille de **4 créneaux fixes de 2h30** (8h30-11h00, 11h00-13h30, 13h30-16h00, 16h00-18h30), pas des blocs Matin/Soir grossiers. Une séance plus longue qu'un créneau **fusionne visuellement les lignes qu'elle occupe** — comme un événement multi-heures dans un calendrier classique (Google Calendar, Outlook) : un seul bloc étiré sur la hauteur cumulée des créneaux concernés, avec son contenu (groupe, module, horaire) centré ou en haut du bloc fusionné, jamais répété sur chaque ligne. Le bloc porte la couleur du groupe (§5.4) en fond, avec le nom du module et l'horaire en texte.
 
+### 5.6 Barre de proportion — recensée à la revue périodique du 3 septembre 2026
+
+Sept écrans l'utilisaient sans qu'elle figure ici, avec trois hauteurs et trois couleurs de piste différentes pour le même objet. Convention unique, désormais :
+
+- **Piste** `--wash`, coins `999px`, `overflow-hidden`.
+- **Hauteur** : `6px` quand la barre accompagne une ligne ou une valeur ; `10px` quand elle est le sujet de sa carte (avancement d'une répartition, courbe de difficulté d'un contrôle).
+- **Remplissage** : `--ofppt-teal` en cours, `--ofppt-green` une fois l'objectif atteint. Le corail est exclu — une barre mesure, elle n'alerte pas.
+- **Deux segments** quand la barre compare deux parts d'un même tout (accessible / discriminant sur la courbe de difficulté §8) : `--ofppt-green` puis `--ofppt-teal`, chaque segment repris en légende avec sa pastille et son chiffre. Jamais plus de deux segments : au-delà, c'est un tableau.
+- **Toujours accompagnée du chiffre**, jamais seule : la barre donne l'ordre de grandeur, le chiffre donne la valeur.
+
+### 5.7 Ligne réservée dans un tableau de saisie
+
+Une ligne qui occupe du total sans être modifiable — les dix heures d'évaluation d'une répartition horaire (§4.7 du PRD) — se distingue par un fond `--paper-alt`, un filet supérieur `--border-strong` qui la sépare du bloc saisissable, un badge « réservé », et un tiret `--slate-light` à la place de chaque champ. Elle n'est jamais absente ni simplement soustraite du total : un formateur doit voir ce qui lui est retiré, pas le déduire d'un total qui ne tombe pas juste.
+
+### 5.8 Bandeau de contenu partagé — recensé le 4 septembre 2026
+
+Quand un écran modifie des données qu'un **autre écran, absent de la vue, affiche aussi**, il le dit en permanence — pas seulement au moment de lier.
+
+- Bandeau discret en tête du contenu concerné : fond `--tint-teal`, bordure `--tint-teal-strong`, icône 16px en `--ofppt-teal`, texte 13,5px. Pas de corail : le partage est un fait, pas une alerte.
+- Il nomme **les groupes concernés**, jamais un décompte anonyme (« partagé avec DES102 », pas « partagé avec 1 groupe »).
+- Le côté miroir porte l'action de détachement ; le côté source ne la porte pas — on quitte un partage depuis la séance qui suit, pas depuis celle qui est suivie.
+- Un rapprochement automatique s'affiche comme **proposition à confirmer**, jamais comme lien déjà établi. Quand plusieurs candidats sont indiscernables, l'écran le dit et donne le critère qui départage (ici la date) au lieu de trancher à la place du formateur.
+
+---
+
 ## 6. Espace stagiaire — mobile-first (règles spécifiques)
 
 Le stagiaire consulte l'app quasi exclusivement depuis son téléphone (§Espace stagiaire du PRD). Ces écrans suivent des règles différentes de l'espace formateur, pensé lui pour un écran de bureau :
@@ -201,6 +226,7 @@ Une fiche prescrite ou un tableau de suggestions pédagogiques contient beaucoup
 - **Icônes d'action** : chaque bouton d'action (Modifier, Supprimer, Ajouter, etc.) porte une icône (lucide-react, 16px) avant le texte, espacement 6px
 - **Champ de formulaire** : rayon 9px, **bordure 1px `--border-strong`** (pas `--border`, qui est trop pâle et disparaît sur fond blanc — réservée aux cartes et séparateurs), label 14px/600 au-dessus du champ, focus en halo sarcelle 3px (`--ofppt-teal` à faible opacité)
 - **Carte** : padding 24px (pas 16px), filet interne éventuel en `--separator`
+- **PartageContenu** : bandeau et panneau de proposition du contenu partagé entre groupes parallèles (voir §5.8)
 
 ## 11. Règles UX
 
