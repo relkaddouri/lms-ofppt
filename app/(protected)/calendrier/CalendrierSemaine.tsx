@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
-import { BLOCS, formatHeure } from "@/lib/creneaux";
+import { CRENEAUX_JOUR, formatHeure, positionSeance } from "@/lib/creneaux";
+import { couleurGroupe } from "@/lib/couleurs-groupe";
 import { dateLocale, formatDate, formatHeures } from "@/lib/format";
 import type {
   SeanceCalendrier,
@@ -50,29 +51,8 @@ function numeroSemaine(lundi: string): number {
   );
 }
 
-/**
- * Liseré gauche d'une séance, stable pour un même groupe.
- * Quatre teintes, comme dans la maquette — le corail en est exclu : une
- * semaine chargée afficherait plusieurs séances corail à la fois.
- */
-const LISERES = [
-  "border-l-ink",
-  "border-l-teal",
-  "border-l-green",
-  "border-l-wash",
-] as const;
-
-function lisereDe(groupe: string): string {
-  let somme = 0;
-  for (let i = 0; i < groupe.length; i++) somme += groupe.charCodeAt(i);
-  return LISERES[somme % LISERES.length]!;
-}
 
 /** Une séance appartient au bloc dans lequel son heure de début tombe. */
-function blocDe(s: SeanceCalendrier): "matin" | "soir" {
-  if (!s.heure_debut) return "matin";
-  return s.heure_debut < BLOCS.soir.debut ? "matin" : "soir";
-}
 
 export default function CalendrierSemaine({
   lundi,
@@ -103,22 +83,40 @@ export default function CalendrierSemaine({
     return { nom, date, estAujourdhui: date === aujourdhui };
   });
 
-  const parJourBloc = new Map<string, SeanceCalendrier[]>();
+  // Chaque séance est placée sur la grille des quatre créneaux, et occupe
+  // autant de lignes que sa durée — une séance de 5 h en couvre deux
+  // (design_system.md §5.5). Celles qui ne s'alignent sur aucun créneau sont
+  // mises de côté et listées sous la grille plutôt que forcées dedans.
+  const placees = new Map<string, { seance: SeanceCalendrier; span: number }[]>();
+  const horsGrille: SeanceCalendrier[] = [];
   for (const s of seances) {
-    const cle = `${s.date}|${blocDe(s)}`;
-    parJourBloc.set(cle, [...(parJourBloc.get(cle) ?? []), s]);
+    const pos = positionSeance(s.heure_debut, s.heure_fin);
+    if (!pos) {
+      horsGrille.push(s);
+      continue;
+    }
+    const cle = `${s.date}|${pos.index}`;
+    placees.set(cle, [...(placees.get(cle) ?? []), { seance: s, span: pos.span }]);
   }
+
+  const groupesVus = [
+    ...new Map(seances.map((s) => [s.groupe_id, s.groupeNom])).entries(),
+  ].sort((a, b) => a[1].localeCompare(b[1], "fr"));
 
   /**
    * Indisponibilités couvrant un jour, éventuellement restreintes à un bloc.
    * Une déclaration « journée entière » vaut pour les deux blocs.
    */
-  const indispoDuJour = (date: string, bloc?: "matin" | "soir") =>
+  const indispoDuJour = (date: string, creneau?: number) =>
     indisponibilites.filter(
       (i) =>
         i.date_debut <= date &&
         date <= i.date_fin &&
-        (bloc === undefined || i.demi_journee === null || i.demi_journee === bloc),
+        (creneau === undefined ||
+          i.demi_journee === null ||
+          // Les deux premiers créneaux sont le matin, les deux suivants
+          // l'après-midi : une demi-journée déclarée en couvre deux.
+          i.demi_journee === (creneau < 2 ? "matin" : "soir")),
     );
 
   const libelleIndispo = (i: Indisponibilite) =>
@@ -256,6 +254,27 @@ export default function CalendrierSemaine({
         </div>
       ) : null}
 
+      {groupesVus.length > 0 ? (
+        <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
+          <span className="font-mono text-[10.5px] uppercase tracking-[0.12em] text-slate-light">
+            Groupes
+          </span>
+          {groupesVus.map(([id, nom]) => {
+            const c = couleurGroupe(id);
+            return (
+              <span key={id} className="flex items-center gap-2 text-[13.5px] text-body">
+                <span
+                  aria-hidden
+                  className="h-3.5 w-3.5 shrink-0 rounded-[4px] border border-l-[3px]"
+                  style={{ background: c.fond, borderColor: c.trait }}
+                />
+                {nom}
+              </span>
+            );
+          })}
+        </div>
+      ) : null}
+
       <div className="mt-4">
         <div className="overflow-x-auto">
           {/* `table-fixed` donne aux six jours la même largeur : sans lui, le
@@ -319,146 +338,166 @@ export default function CalendrierSemaine({
               </tr>
             </thead>
             <tbody>
-              {(["matin", "soir"] as const).map((bloc) => {
-                const b = BLOCS[bloc];
-                return (
-                  <tr key={bloc} className="border-t border-border first:border-t-0">
-                    <th scope="row" className="bg-paper px-3 py-3 text-left align-top">
-                      <span className="block text-sm font-medium text-ink">
-                        {b.label}
-                      </span>
-                      <span className="mt-0.5 block whitespace-nowrap text-xs text-slate">
-                        {formatHeure(b.debut)} – {formatHeure(b.fin)}
-                      </span>
-                      <span className="mt-2 flex items-center gap-1.5 text-[11px] text-slate/70">
-                        <span className="h-px w-3 border-t border-dashed border-slate/50" />
-                        pause {formatHeure(b.pause.debut)}
-                      </span>
-                    </th>
+              {CRENEAUX_JOUR.map((creneau, ligne) => (
+                <tr key={creneau.debut} className="border-t border-border first:border-t-0">
+                  <th scope="row" className="bg-paper px-3 py-3 text-left align-top">
+                    <span className="block whitespace-nowrap font-mono text-[13px] text-ink">
+                      {formatHeure(creneau.debut)}
+                    </span>
+                    <span className="mt-0.5 block whitespace-nowrap font-mono text-[12px] text-slate-light">
+                      {formatHeure(creneau.fin)}
+                    </span>
+                  </th>
 
-                    {jours.map((j) => {
-                      const liste = parJourBloc.get(`${j.date}|${bloc}`) ?? [];
-                      const ctrls = bloc === "matin" ? controlesDuJour(j.date) : [];
-                      const indispos = indispoDuJour(j.date, bloc);
-                      const vide =
-                        liste.length === 0 &&
-                        ctrls.length === 0 &&
-                        indispos.length === 0;
-                      return (
-                        <td
-                          key={j.date}
-                          className={`h-28 border-l border-border p-1.5 align-top ${
-                            indispos.length > 0
-                              ? "bg-[repeating-linear-gradient(135deg,var(--paper)_0px,var(--paper)_7px,var(--surface)_7px,var(--surface)_14px)]"
-                              : j.estAujourdhui
-                                ? "bg-wash/20"
-                                : ""
-                          }`}
-                        >
-                          <div className="space-y-1.5">
-                            {/* Le motif hachuré porte l'indisponibilité ; le
-                                libellé la nomme, la couleur seule ne suffit
-                                jamais (design_system.md). */}
-                            {indispos
-                              .filter((i) => i.demi_journee !== null)
-                              .map((i) => (
-                                <p
-                                  key={i.id}
-                                  className="rounded-[7px] border border-border bg-wash px-[7px] py-px text-[11.5px] font-semibold text-slate-2"
-                                >
-                                  {libelleIndispo(i)} (
-                                  {i.demi_journee === "matin" ? "matin" : "après-midi"})
-                                </p>
-                              ))}
+                  {jours.map((j) => {
+                    // Une séance longue occupe la cellule de son premier
+                    // créneau et déborde sur les suivantes : celles-ci ne
+                    // doivent alors pas être dessinées (`rowSpan`).
+                    const couverte = [1, 2, 3].some((recul) => {
+                      const amont = placees.get(`${j.date}|${ligne - recul}`) ?? [];
+                      return amont.some((x) => x.span > recul);
+                    });
+                    if (couverte) return null;
 
-                            {ctrls.map((c) => (
-                              <Link
-                                key={c.id}
-                                href={`/modules/${c.module_id}/controle`}
-                                title={`${c.groupeNom} — ${c.titre ?? c.moduleNom}`}
-                                className={`block rounded-lg px-2 py-1.5 transition-colors ${
-                                  c.confirmee
-                                    ? "border-2 border-solid border-ink bg-wash hover:bg-wash-strong"
-                                    : "border border-dashed border-slate/60 bg-surface hover:border-ink/60"
-                                }`}
+                    const ici = placees.get(`${j.date}|${ligne}`) ?? [];
+                    const span = ici.reduce((m, x) => Math.max(m, x.span), 1);
+                    const ctrls = ligne === 0 ? controlesDuJour(j.date) : [];
+                    const indispos = indispoDuJour(j.date, ligne);
+
+                    return (
+                      <td
+                        key={j.date}
+                        rowSpan={span}
+                        className={`border-l border-border p-1.5 align-top ${
+                          span > 1 ? "" : "h-[92px]"
+                        } ${
+                          indispos.length > 0
+                            ? "bg-[repeating-linear-gradient(135deg,var(--paper)_0px,var(--paper)_7px,var(--surface)_7px,var(--surface)_14px)]"
+                            : j.estAujourdhui
+                              ? "bg-wash/20"
+                              : ""
+                        }`}
+                      >
+                        <div className="flex h-full flex-col gap-1.5">
+                          {/* Le motif hachuré porte l'indisponibilité ; le
+                              libellé la nomme, la couleur seule ne suffit
+                              jamais (design_system.md). */}
+                          {indispos
+                            .filter((i) => i.demi_journee !== null)
+                            .map((i) => (
+                              <p
+                                key={i.id}
+                                className="rounded-[7px] border border-border bg-wash px-[7px] py-px text-[11.5px] font-semibold text-slate-2"
                               >
-                                <span className="block text-[10px] font-semibold uppercase tracking-wide text-ink">
-                                  {c.type === "EFM"
-                                    ? c.type_efm === "regional"
-                                      ? "EFM régional"
-                                      : "EFM local"
-                                    : "Contrôle continu"}
-                                </span>
-                                <span className="mt-0.5 block truncate text-xs text-ink">
-                                  {c.groupeNom}
-                                </span>
-                              </Link>
+                                {libelleIndispo(i)} (
+                                {i.demi_journee === "matin" ? "matin" : "après-midi"})
+                              </p>
                             ))}
 
-                            {liste.map((s) => {
-                              const fait = s.statut === "fait";
-                              const tp = s.nature === "pratique";
-                              return (
-                                <Link
-                                  key={s.id}
-                                  href={`/groupes/${s.groupe_id}/seances/${s.id}`}
-                                  title={[
-                                    s.groupeNom,
-                                    libelleModule(
-                                      s.codeOperationnel,
-                                      s.moduleNom,
-                                    ),
-                                    s.objectif,
-                                  ]
-                                    .filter(Boolean)
-                                    .join(" — ")}
-                                  className={`block rounded-[9px] border border-border border-l-[3px] bg-surface px-2.5 py-2.5 no-underline transition-colors duration-150 ease-out hover:bg-paper hover:no-underline ${lisereDe(s.groupeNom)} ${
-                                    fait ? "opacity-70" : ""
-                                  }`}
-                                >
-                                  <span className="flex items-center gap-1.5">
+                          {ctrls.map((c) => (
+                            <Link
+                              key={c.id}
+                              href={`/modules/${c.module_id}/controle`}
+                              title={`${c.groupeNom} — ${c.titre ?? c.moduleNom}`}
+                              className={`block rounded-lg px-2 py-1.5 transition-colors ${
+                                c.confirmee
+                                  ? "border-2 border-solid border-ink bg-wash hover:bg-wash-strong"
+                                  : "border border-dashed border-slate/60 bg-surface hover:border-ink/60"
+                              }`}
+                            >
+                              <span className="block text-[10px] font-semibold uppercase tracking-wide text-ink">
+                                {c.type === "EFM"
+                                  ? c.type_efm === "regional"
+                                    ? "EFM régional"
+                                    : "EFM local"
+                                  : "Contrôle continu"}
+                              </span>
+                              <span className="mt-0.5 block truncate text-xs text-ink">
+                                {c.groupeNom}
+                              </span>
+                            </Link>
+                          ))}
+
+                          {ici.map(({ seance: s, span: n }) => {
+                            const fait = s.statut === "fait";
+                            const couleur = couleurGroupe(s.groupe_id);
+                            return (
+                              <Link
+                                key={s.id}
+                                href={`/groupes/${s.groupe_id}/seances/${s.id}`}
+                                title={[
+                                  s.groupeNom,
+                                  libelleModule(s.codeOperationnel, s.moduleNom),
+                                  s.objectif,
+                                ]
+                                  .filter(Boolean)
+                                  .join(" — ")}
+                                style={{
+                                  background: couleur.fond,
+                                  borderColor: couleur.trait,
+                                }}
+                                className={`flex flex-1 flex-col rounded-[9px] border border-l-[3px] px-2.5 py-2 no-underline transition-opacity duration-150 ease-out hover:opacity-90 hover:no-underline ${
+                                  fait ? "opacity-60" : ""
+                                }`}
+                              >
+                                <span className="flex items-center gap-1.5">
+                                  <span
+                                    className="truncate font-mono text-[10.5px]"
+                                    style={{ color: couleur.trait, opacity: 0.85 }}
+                                  >
+                                    {s.heure_debut ? formatHeure(s.heure_debut) : "—"}
+                                    {s.heure_fin ? `–${formatHeure(s.heure_fin)}` : ""}
+                                  </span>
+                                  {n > 1 ? (
                                     <span
-                                      className={`h-1.5 w-1.5 shrink-0 rounded-full ${
-                                        fait
-                                          ? "bg-muted"
-                                          : tp
-                                            ? "bg-teal"
-                                            : "bg-green"
-                                      }`}
-                                      aria-hidden
-                                    />
-                                    <span className="truncate font-mono text-[10.5px] text-slate-light">
-                                      {s.heure_debut
-                                        ? formatHeure(s.heure_debut)
-                                        : "—"}
-                                      {s.heure_fin
-                                        ? `–${formatHeure(s.heure_fin)}`
-                                        : ""}
+                                      className="ml-auto shrink-0 font-mono text-[10px]"
+                                      style={{ color: couleur.trait, opacity: 0.7 }}
+                                    >
+                                      {n * 2.5} h
                                     </span>
-                                  </span>
-                                  <span className="mt-1 block truncate text-xs font-semibold text-ink">
-                                    {s.groupeNom}
-                                    {s.codeOperationnel
-                                      ? ` · ${s.codeOperationnel}`
-                                      : ""}
-                                  </span>
-                                  <span className="mt-0.5 line-clamp-2 text-[11px] leading-snug text-slate">
-                                    {s.objectif ?? libelleModule(s.codeOperationnel, s.moduleNom)}
-                                  </span>
-                                </Link>
-                              );
-                            })}
-                          </div>
-                          {vide ? <span className="sr-only">libre</span> : null}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                );
-              })}
+                                  ) : null}
+                                </span>
+                                <span
+                                  className="mt-1 block truncate text-xs font-semibold"
+                                  style={{ color: couleur.trait }}
+                                >
+                                  {s.groupeNom}
+                                  {s.codeOperationnel ? ` · ${s.codeOperationnel}` : ""}
+                                </span>
+                                <span className="mt-0.5 line-clamp-3 text-[11px] leading-snug text-slate-2">
+                                  {s.objectif ??
+                                    libelleModule(s.codeOperationnel, s.moduleNom)}
+                                </span>
+                              </Link>
+                            );
+                          })}
+                        </div>
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
+
+        {horsGrille.length > 0 ? (
+          <p className="mt-3 rounded-[10px] border border-border-strong bg-paper px-4 py-3 text-[13.5px] text-slate-2">
+            {horsGrille.length} séance{horsGrille.length > 1 ? "s" : ""} ne
+            tombe{horsGrille.length > 1 ? "nt" : ""} sur aucun créneau de 2 h 30
+            et n&apos;apparaî{horsGrille.length > 1 ? "ssent" : "t"} pas dans la
+            grille :{" "}
+            {horsGrille
+              .map(
+                (s) =>
+                  `${s.groupeNom} ${formatHeure(s.heure_debut ?? "")}${
+                    s.heure_fin ? `–${formatHeure(s.heure_fin)}` : ""
+                  }`,
+              )
+              .join(", ")}
+            . Ajustez leurs horaires depuis la séance pour les y faire entrer.
+          </p>
+        ) : null}
 
         {/* Deux cartes de synthèse, comme dans la maquette : le volume dispensé
             et sa répartition par groupe sur la semaine affichée. */}
@@ -538,7 +577,13 @@ export default function CalendrierSemaine({
                     <span className="flex min-w-0 items-center gap-2.5">
                       <span
                         aria-hidden
-                        className={`h-2 w-2 shrink-0 rotate-45 border-l-[3px] ${lisereDe(nom)}`}
+                        className="h-3 w-3 shrink-0 rounded-[3px] border border-l-[3px]"
+                        style={(() => {
+                          const c = couleurGroupe(
+                            groupesVus.find(([, n]) => n === nom)?.[0] ?? nom,
+                          );
+                          return { background: c.fond, borderColor: c.trait };
+                        })()}
                       />
                       <span className="truncate text-[14.5px] text-body">{nom}</span>
                     </span>

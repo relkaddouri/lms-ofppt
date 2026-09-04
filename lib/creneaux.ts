@@ -65,3 +65,58 @@ export function formatHeure(valeur: string | null | undefined): string {
   const [hh, mm] = valeur.slice(0, 5).split(":");
   return mm === "00" ? `${Number(hh)} h` : `${Number(hh)} h ${mm}`;
 }
+
+/**
+ * Les quatre créneaux fixes de la grille calendrier (PRD §4.10).
+ *
+ * Base commune à toute la semaine, en blocs de 2 h 30 : c'est la granularité
+ * réelle des créneaux déclarés dans le motif hebdomadaire. Les deux blocs
+ * « Matin » et « Soir » de 5 h qui les remplaçaient ne pouvaient pas
+ * représenter un vendredi scindé entre deux groupes.
+ */
+export const CRENEAUX_JOUR = [
+  { debut: "08:30", fin: "11:00" },
+  { debut: "11:00", fin: "13:30" },
+  { debut: "13:30", fin: "16:00" },
+  { debut: "16:00", fin: "18:30" },
+] as const;
+
+/** Minutes depuis minuit, pour « HH:MM » comme pour « HH:MM:SS ». */
+function minutes(h: string): number {
+  const [a, b] = h.split(":");
+  return Number(a) * 60 + Number(b);
+}
+
+export type Position = {
+  /** Index du premier créneau occupé, 0 à 3. */
+  index: number;
+  /** Nombre de créneaux couverts — 2 pour une séance de 5 h. */
+  span: number;
+};
+
+/**
+ * Place une séance sur la grille des quatre créneaux.
+ *
+ * Renvoie `null` quand les horaires ne s'alignent sur aucun créneau — une
+ * séance de 1 h, ou commençant à 9 h 15. Le cas ne se produit pas avec les
+ * séances générées, toutes calées sur des multiples de 2 h 30, mais une
+ * séance saisie à la main peut sortir de la grille : mieux vaut le signaler
+ * que de l'y forcer et afficher une durée fausse.
+ */
+export function positionSeance(
+  debut: string | null,
+  fin: string | null,
+): Position | null {
+  if (!debut) return null;
+
+  const d = minutes(debut);
+  const f = fin ? minutes(fin) : d + 150;
+
+  const index = CRENEAUX_JOUR.findIndex((c) => minutes(c.debut) === d);
+  if (index < 0) return null;
+
+  const dernier = CRENEAUX_JOUR.findIndex((c) => minutes(c.fin) === f);
+  if (dernier < index) return null;
+
+  return { index, span: dernier - index + 1 };
+}

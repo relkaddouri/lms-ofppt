@@ -72,6 +72,26 @@
   --forest: var(--ofppt-ink);
 
   /* Élévation — toujours teintée --ofppt-ink, jamais du noir pur. */
+  /* Palette catégorielle par groupe — design_system.md §5.4.
+     Distincte de la palette de marque : elle distingue des groupes dans une
+     grille, elle ne signale jamais un statut. Le corail en est exclu, sa
+     présence devant rester rare et signifiante (§1).
+     Les fonds sont précalculés plutôt qu'obtenus par un modificateur
+     d'opacité : sur un alias de variable, Tailwind laisse tomber le canal
+     alpha et la teinte ressort pleine. */
+  --groupe-1-fond: #eaebed;
+  --groupe-1-trait: #2e3b4e;
+  --groupe-2-fond: #e6eff3;
+  --groupe-2-trait: #245f79;
+  --groupe-3-fond: #e8f1eb;
+  --groupe-3-trait: #2c6c46;
+  --groupe-4-fond: #ede9f5;
+  --groupe-4-trait: #5b4b8a;
+  --groupe-5-fond: #fbf0dd;
+  --groupe-5-trait: #8a6416;
+  --groupe-6-fond: #f2f4f7;
+  --groupe-6-trait: #3f4e62;
+
   --ombre-repos: 0 1px 2px rgba(46, 59, 78, 0.05);
   --ombre-detachee: 0 2px 8px rgba(46, 59, 78, 0.06);
   --ombre-flottant: 0 10px 28px rgba(46, 59, 78, 0.14);
