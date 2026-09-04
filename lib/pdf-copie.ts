@@ -1,5 +1,6 @@
 import type jsPDF from "jspdf";
 import { dessinerEntete, type Marque } from "@/lib/pdf-marque";
+import { COULEURS, installerPolices, police } from "@/lib/pdf-theme";
 
 /**
  * Copie corrigée d'un contrôle, en vectoriel.
@@ -38,9 +39,9 @@ const LARGEUR = 182;
 const HAUT = 18;
 const BAS = 280;
 
-const ENCRE: [number, number, number] = [17, 24, 39];
-const GRIS: [number, number, number] = [110, 116, 126];
-const TRAIT: [number, number, number] = [200, 203, 208];
+const ENCRE = COULEURS.encre;
+const GRIS = COULEURS.ardoise;
+const TRAIT = COULEURS.bordureForte;
 
 export async function construireCopiePdf(
   c: Copie,
@@ -48,6 +49,7 @@ export async function construireCopiePdf(
 ): Promise<jsPDF> {
   const { default: JsPDF } = await import("jspdf");
   const doc = new JsPDF({ unit: "mm", format: "a4" });
+  await installerPolices(doc);
   // Une copie corrigée est un document d'archive : elle porte l'identité du
   // centre au même titre que le contrôle dont elle sort.
   let y = dessinerEntete(doc, marque, X, HAUT, LARGEUR);
@@ -60,7 +62,8 @@ export async function construireCopiePdf(
   }
 
   function paragraphe(texte: string, taille = 9, gris = false, indent = 0) {
-    doc.setFont("helvetica", "normal").setFontSize(taille);
+    police(doc, "corps");
+    doc.setFontSize(taille);
     doc.setTextColor(...(gris ? GRIS : ENCRE));
     const lignes = doc.splitTextToSize(texte, LARGEUR - indent);
     for (const l of lignes) {
@@ -73,12 +76,14 @@ export async function construireCopiePdf(
   // ── En-tête ──────────────────────────────────────────────────────────────
   // Le titre peut tenir sur plusieurs lignes : on mesure au lieu de supposer,
   // sinon la ligne d'identification vient se poser par-dessus.
-  doc.setFont("helvetica", "bold").setFontSize(14).setTextColor(...ENCRE);
+  police(doc, "titre", 14);
+  doc.setTextColor(...ENCRE);
   const lignesTitre = doc.splitTextToSize(c.titre, LARGEUR - 46);
   lignesTitre.forEach((l: string, i: number) => doc.text(l, X, y + i * 6));
   y += lignesTitre.length * 6 + 2;
 
-  doc.setFont("helvetica", "normal").setFontSize(9).setTextColor(...GRIS);
+  police(doc, "corps", 9);
+  doc.setTextColor(...GRIS);
   const meta = [
     c.stagiaire,
     c.contexte ?? null,
@@ -92,9 +97,11 @@ export async function construireCopiePdf(
   const xNote = X + LARGEUR - largeurNote;
   doc.setDrawColor(...TRAIT).setLineWidth(0.4);
   doc.rect(xNote, HAUT - 5, largeurNote, 16);
-  doc.setFont("helvetica", "normal").setFontSize(8).setTextColor(...GRIS);
+  police(doc, "corps", 8);
+  doc.setTextColor(...GRIS);
   doc.text("Note", xNote + largeurNote / 2, HAUT - 0.5, { align: "center" });
-  doc.setFont("helvetica", "bold").setFontSize(14).setTextColor(...ENCRE);
+  police(doc, "titre", 14);
+  doc.setTextColor(...ENCRE);
   doc.text(
     `${c.note.toLocaleString("fr-FR")} / ${c.total}`,
     xNote + largeurNote / 2,
@@ -111,11 +118,12 @@ export async function construireCopiePdf(
   c.questions.forEach((q, i) => {
     place(20);
 
-    doc.setFont("helvetica", "bold").setFontSize(9.5).setTextColor(...ENCRE);
+    police(doc, "corpsGras", 9.5);
+    doc.setTextColor(...ENCRE);
     const entete = `Question ${i + 1}`;
     doc.text(entete, X, y);
+    police(doc, "corpsGras");
     doc
-      .setFont("helvetica", "bold")
       .setTextColor(...ENCRE)
       .text(
         `${q.points.toLocaleString("fr-FR")} / ${q.bareme}`,
@@ -154,7 +162,8 @@ export async function construireCopiePdf(
   const pages = doc.getNumberOfPages();
   for (let p = 1; p <= pages; p++) {
     doc.setPage(p);
-    doc.setFont("helvetica", "normal").setFontSize(7.5).setTextColor(...GRIS);
+    police(doc, "corps", 7.5);
+    doc.setTextColor(...GRIS);
     doc.text(`${c.stagiaire} — ${c.titre}`, X, 289, { maxWidth: LARGEUR - 30 });
     doc.text(`Page ${p} / ${pages}`, X + LARGEUR, 289, { align: "right" });
   }

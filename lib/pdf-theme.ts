@@ -130,7 +130,10 @@ export function police(doc: jsPDF, role: RolePolice, taille?: number): void {
   if (connues[face.famille]) {
     doc.setFont(face.famille, face.style);
   } else {
-    doc.setFont("helvetica", role === "corpsGras" || role === "titre" ? "bold" : "normal");
+    doc.setFont(
+      "helvetica",
+      role === "corpsGras" || role === "titre" ? "bold" : "normal",
+    );
   }
   if (taille !== undefined) doc.setFontSize(taille);
 }

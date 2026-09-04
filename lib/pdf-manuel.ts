@@ -1,6 +1,11 @@
 import type jsPDF from "jspdf";
-import { dessinerEntete, nomEtablissement, type Marque } from "@/lib/pdf-marque";
+import {
+  dessinerEntete,
+  nomEtablissement,
+  type Marque,
+} from "@/lib/pdf-marque";
 import type { Manuel } from "@/app/actions/manuel";
+import { COULEURS, installerPolices, police } from "@/lib/pdf-theme";
 
 /**
  * Manuel de formateur — « Guide de soutien pédagogique ».
@@ -18,16 +23,17 @@ const LARGEUR = 178;
 const HAUT = 22;
 const BAS = 275;
 
-const ENCRE: [number, number, number] = [17, 24, 39];
-const GRIS: [number, number, number] = [110, 116, 126];
-const TRAIT: [number, number, number] = [150, 155, 162];
-const FOND: [number, number, number] = [236, 239, 242];
+const ENCRE = COULEURS.encre;
+const GRIS = COULEURS.ardoise;
+const TRAIT = COULEURS.bordureForte;
+const FOND = COULEURS.lavis;
 
 /** Texte générique de la section 2.1, identique sur tous les modules. */
 const STRATEGIE: { titre: string; intro?: string; puces: string[] }[] = [
   {
     titre: "2.1.1. Rôles et fonctions des formateurs",
-    intro: "Les formateurs doivent adapter leur enseignement en tenant compte :",
+    intro:
+      "Les formateurs doivent adapter leur enseignement en tenant compte :",
     puces: [
       "d'une approche intégrée des objets de formation ;",
       "du rythme individuel et de la façon d'apprendre des apprenants ;",
@@ -91,6 +97,7 @@ export async function construireManuelPdf(
 ): Promise<jsPDF> {
   const { default: JsPDF } = await import("jspdf");
   const doc = new JsPDF({ unit: "mm", format: "a4" });
+  await installerPolices(doc);
   let y = dessinerEntete(doc, marque, X, HAUT, LARGEUR);
 
   const place = (h: number) => {
@@ -103,13 +110,15 @@ export async function construireManuelPdf(
   function titre(texte: string, taille = 13, espaceAvant = 8) {
     y += espaceAvant;
     place(12);
-    doc.setFont("helvetica", "bold").setFontSize(taille).setTextColor(...ENCRE);
+    police(doc, "corpsGras");
+    doc.setFontSize(taille).setTextColor(...ENCRE);
     doc.text(texte, X, y);
     y += taille * 0.45 + 2;
   }
 
   function corps(texte: string, taille = 9.5, indent = 0) {
-    doc.setFont("helvetica", "normal").setFontSize(taille).setTextColor(...ENCRE);
+    police(doc, "corps");
+    doc.setFontSize(taille).setTextColor(...ENCRE);
     for (const bloc of texte.split("\n")) {
       if (!bloc.trim()) {
         y += 2;
@@ -124,7 +133,8 @@ export async function construireManuelPdf(
   }
 
   function puces(liste: string[], taille = 9) {
-    doc.setFont("helvetica", "normal").setFontSize(taille).setTextColor(...ENCRE);
+    police(doc, "corps");
+    doc.setFontSize(taille).setTextColor(...ENCRE);
     for (const item of liste) {
       const lignes = doc.splitTextToSize(item, LARGEUR - 8);
       lignes.forEach((l: string, i: number) => {
@@ -141,9 +151,9 @@ export async function construireManuelPdf(
   function encadre(entete: string, contenu: string) {
     if (!contenu?.trim()) return;
     y += 4;
-    doc.setFont("helvetica", "bold").setFontSize(9);
+    police(doc, "corpsGras", 9);
     const hEntete = 7;
-    doc.setFont("helvetica", "normal").setFontSize(9);
+    police(doc, "corps", 9);
     const lignes = doc.splitTextToSize(contenu, LARGEUR - 6);
     const hCorps = lignes.length * 4.1 + 4;
     place(hEntete + hCorps);
@@ -152,26 +162,36 @@ export async function construireManuelPdf(
     doc.rect(X, y, LARGEUR, hEntete, "F");
     doc.setDrawColor(...TRAIT).setLineWidth(0.2);
     doc.rect(X, y, LARGEUR, hEntete);
-    doc.setFont("helvetica", "bold").setFontSize(9).setTextColor(...ENCRE);
+    police(doc, "corpsGras", 9);
+    doc.setTextColor(...ENCRE);
     doc.text(entete, X + 3, y + 4.8);
     y += hEntete;
 
     doc.rect(X, y, LARGEUR, hCorps);
-    doc.setFont("helvetica", "normal").setFontSize(9);
-    lignes.forEach((l: string, i: number) => doc.text(l, X + 3, y + 5 + i * 4.1));
+    police(doc, "corps", 9);
+    lignes.forEach((l: string, i: number) =>
+      doc.text(l, X + 3, y + 5 + i * 4.1),
+    );
     y += hCorps;
   }
 
   /** Ligne de tableau à colonnes libres. */
   function ligne(
-    cells: { texte: string; largeur: number; gras?: boolean; fond?: boolean; centre?: boolean }[],
+    cells: {
+      texte: string;
+      largeur: number;
+      gras?: boolean;
+      fond?: boolean;
+      centre?: boolean;
+    }[],
     taille = 8.5,
   ) {
     doc.setFontSize(taille);
     const h = Math.max(
       7,
       ...cells.map(
-        (c) => doc.splitTextToSize(c.texte || " ", c.largeur - 3).length * 3.9 + 3,
+        (c) =>
+          doc.splitTextToSize(c.texte || " ", c.largeur - 3).length * 3.9 + 3,
       ),
     );
     place(h);
@@ -183,10 +203,7 @@ export async function construireManuelPdf(
       }
       doc.setDrawColor(...TRAIT).setLineWidth(0.2);
       doc.rect(x, y, c.largeur, h);
-      doc
-        .setFont("helvetica", c.gras ? "bold" : "normal")
-        .setFontSize(taille)
-        .setTextColor(...ENCRE);
+      doc.setFontSize(taille).setTextColor(...ENCRE);
       const lignes = doc.splitTextToSize(c.texte || "", c.largeur - 3);
       lignes.forEach((l: string, i: number) =>
         doc.text(l, c.centre ? x + c.largeur / 2 : x + 1.5, y + 4.2 + i * 3.9, {
@@ -199,22 +216,25 @@ export async function construireManuelPdf(
   }
 
   // ══ Page de garde ═══════════════════════════════════════════════════════
-  doc.setFont("helvetica", "bold").setFontSize(11).setTextColor(...GRIS);
+  police(doc, "titre", 11);
+  doc.setTextColor(...GRIS);
   doc.text("Office de la Formation Professionnelle", X, 40);
   doc.text("et de la Promotion du Travail", X, 46);
 
-  doc.setFont("helvetica", "bold").setFontSize(26).setTextColor(...ENCRE);
+  police(doc, "titre", 26);
+  doc.setTextColor(...ENCRE);
   doc.text("Guide de soutien", X, 92);
   doc.text("pédagogique", X, 105);
 
-  doc.setFont("helvetica", "normal").setFontSize(15);
+  police(doc, "corps", 15);
   doc.text(`Compétence N°${m.numero}`, X, 124);
-  doc.setFont("helvetica", "bold").setFontSize(15);
-  doc.splitTextToSize(m.nom, LARGEUR).forEach((l: string, i: number) =>
-    doc.text(l, X, 134 + i * 8),
-  );
+  police(doc, "titre", 15);
+  doc
+    .splitTextToSize(m.nom, LARGEUR)
+    .forEach((l: string, i: number) => doc.text(l, X, 134 + i * 8));
 
-  doc.setFont("helvetica", "normal").setFontSize(10).setTextColor(...GRIS);
+  police(doc, "corps", 10);
+  doc.setTextColor(...GRIS);
   doc.text(`Secteur : Digital & IA`, X, 175);
   doc.text(`${m.filiere} — Technicien Spécialisé`, X, 182);
   if (m.groupeNom) {
@@ -245,7 +265,12 @@ export async function construireManuelPdf(
   titre("OBJECTIF OPÉRATIONNEL", 11);
   const lEl = 70;
   ligne([
-    { texte: "ÉLÉMENTS DE LA COMPÉTENCE", largeur: lEl, gras: true, fond: true },
+    {
+      texte: "ÉLÉMENTS DE LA COMPÉTENCE",
+      largeur: lEl,
+      gras: true,
+      fond: true,
+    },
     {
       texte: "CRITÈRES PARTICULIERS DE PERFORMANCE",
       largeur: LARGEUR - lEl,
@@ -268,7 +293,11 @@ export async function construireManuelPdf(
   y = HAUT;
   titre("1.2 Suggestions pédagogiques", 12, 0);
 
-  const c1 = 34, c2 = 40, c3 = 44, c4 = 44, c5 = LARGEUR - c1 - c2 - c3 - c4;
+  const c1 = 34,
+    c2 = 40,
+    c3 = 44,
+    c4 = 44,
+    c5 = LARGEUR - c1 - c2 - c3 - c4;
   ligne([
     { texte: "ÉLÉMENTS DE LA COMPÉTENCE", largeur: c1, gras: true, fond: true },
     { texte: "APPRENTISSAGES DE BASE", largeur: c2, gras: true, fond: true },
@@ -325,7 +354,10 @@ export async function construireManuelPdf(
     y += 2;
   }
 
-  const o1 = 74, o2 = 22, o3 = 22, o4 = 22;
+  const o1 = 74,
+    o2 = 22,
+    o3 = 22,
+    o4 = 22;
   const o5 = (LARGEUR - o1 - o2 - o3 - o4) / 3;
   ligne([
     { texte: "Objectif d'apprentissage", largeur: o1, gras: true, fond: true },
@@ -360,7 +392,11 @@ export async function construireManuelPdf(
   if (m.groupeNom) {
     const evaluation = (m.masseHoraire ?? 0) - totalT - totalP;
     ligne([
-      { texte: "Évaluation (contrôles continus et EFM)", largeur: o1, gras: true },
+      {
+        texte: "Évaluation (contrôles continus et EFM)",
+        largeur: o1,
+        gras: true,
+      },
       { texte: "", largeur: o2 },
       { texte: "", largeur: o3 },
       { texte: heures(evaluation), largeur: o4, gras: true, centre: true },
@@ -370,8 +406,20 @@ export async function construireManuelPdf(
     ]);
     ligne([
       { texte: "TOTAL", largeur: o1, gras: true, fond: true },
-      { texte: heures(totalT), largeur: o2, gras: true, fond: true, centre: true },
-      { texte: heures(totalP), largeur: o3, gras: true, fond: true, centre: true },
+      {
+        texte: heures(totalT),
+        largeur: o2,
+        gras: true,
+        fond: true,
+        centre: true,
+      },
+      {
+        texte: heures(totalP),
+        largeur: o3,
+        gras: true,
+        fond: true,
+        centre: true,
+      },
       {
         texte: heures(m.masseHoraire),
         largeur: o4,
@@ -389,7 +437,8 @@ export async function construireManuelPdf(
   const pages = doc.getNumberOfPages();
   for (let p = 2; p <= pages; p++) {
     doc.setPage(p);
-    doc.setFont("helvetica", "normal").setFontSize(7.5).setTextColor(...GRIS);
+    police(doc, "corps", 7.5);
+    doc.setTextColor(...GRIS);
     doc.text(
       `MANUEL FORMATEUR — COMPÉTENCE ${m.numero} — ${m.filiere.toUpperCase()} — ${nomEtablissement(marque).toUpperCase()}`,
       X,

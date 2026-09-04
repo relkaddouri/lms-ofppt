@@ -1,5 +1,6 @@
 import type jsPDF from "jspdf";
 import { dessinerEntete, type Marque } from "@/lib/pdf-marque";
+import { COULEURS, installerPolices, police } from "@/lib/pdf-theme";
 import {
   dessinerFiche,
   ENCRE,
@@ -30,7 +31,7 @@ export type EnteteClasseur = {
 
 export type FicheDatee = { date: string | null; fiche: FichePdf };
 
-const GRIS: [number, number, number] = [107, 114, 128];
+const GRIS = COULEURS.ardoise;
 
 function pageDeGarde(
   doc: jsPDF,
@@ -42,11 +43,13 @@ function pageDeGarde(
   // majuscules : sur une page de garde, le logo du centre a sa place.
   let y = dessinerEntete(doc, marque, X, 52, LARGEUR, 16) + 6;
 
-  doc.setFont("helvetica", "bold").setFontSize(24).setTextColor(...ENCRE);
+  police(doc, "titre", 24);
+  doc.setTextColor(...ENCRE);
   doc.text("Classeur pédagogique", X, y);
   y += 10;
 
-  doc.setFont("helvetica", "normal").setFontSize(12).setTextColor(...GRIS);
+  police(doc, "corps", 12);
+  doc.setTextColor(...GRIS);
   doc.text(`Du ${entete.debut} au ${entete.fin}`, X, y);
   y += 16;
 
@@ -65,9 +68,11 @@ function pageDeGarde(
   ];
 
   for (const [libelle, valeur] of champs) {
-    doc.setFont("helvetica", "normal").setFontSize(10).setTextColor(...GRIS);
+    police(doc, "corps", 10);
+    doc.setTextColor(...GRIS);
     doc.text(libelle, X, y);
-    doc.setFont("helvetica", "bold").setFontSize(11).setTextColor(...ENCRE);
+    police(doc, "titre", 11);
+    doc.setTextColor(...ENCRE);
     doc.text(valeur, X + 40, y);
     y += 9;
   }
@@ -76,11 +81,13 @@ function pageDeGarde(
 
   // Sommaire : sans lui, retrouver la séance du 14 dans trente pages se fait
   // au pouce mouillé.
-  doc.setFont("helvetica", "bold").setFontSize(11).setTextColor(...ENCRE);
+  police(doc, "titre", 11);
+  doc.setTextColor(...ENCRE);
   doc.text("Sommaire", X, y);
   y += 7;
 
-  doc.setFont("helvetica", "normal").setFontSize(9).setTextColor(...ENCRE);
+  police(doc, "corps", 9);
+  doc.setTextColor(...ENCRE);
   fiches.forEach((f, i) => {
     if (y > 270) {
       doc.addPage();
@@ -102,7 +109,8 @@ function paginer(doc: jsPDF, entete: EnteteClasseur): void {
   const total = doc.getNumberOfPages();
   for (let p = 1; p <= total; p++) {
     doc.setPage(p);
-    doc.setFont("helvetica", "normal").setFontSize(8).setTextColor(...GRIS);
+    police(doc, "corps", 8);
+    doc.setTextColor(...GRIS);
     if (p > 1) {
       doc.text(`${entete.groupe} · ${entete.module}`, X, 290);
     }
@@ -117,6 +125,7 @@ export async function construireClasseurPdf(
 ): Promise<jsPDF> {
   const { default: JsPDF } = await import("jspdf");
   const doc = new JsPDF({ unit: "mm", format: "a4" });
+  await installerPolices(doc);
 
   pageDeGarde(doc, entete, fiches, marque);
 

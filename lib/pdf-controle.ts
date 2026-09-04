@@ -1,5 +1,6 @@
 import type jsPDF from "jspdf";
 import { dessinerLogo, nomEtablissement, type Marque } from "@/lib/pdf-marque";
+import { COULEURS, installerPolices, police } from "@/lib/pdf-theme";
 
 /**
  * Sujet de contrôle, mise en page « document officiel ».
@@ -50,14 +51,18 @@ const X = CADRE_X + PAD;
 const LARGEUR = CADRE_L - PAD * 2;
 const BAS_CONTENU = CADRE_Y + CADRE_H - 12;
 
-const ENCRE: [number, number, number] = [22, 36, 31];
-const ARDOISE: [number, number, number] = [107, 114, 128];
-const TRAIT: [number, number, number] = [120, 128, 134];
-const CLAIR: [number, number, number] = [205, 210, 214];
-const PAPIER: [number, number, number] = [246, 247, 249];
-const FORET: [number, number, number] = [14, 59, 46];
+const ENCRE = COULEURS.encre;
+const ARDOISE = COULEURS.ardoise;
+const TRAIT = COULEURS.bordureForte;
+const CLAIR = COULEURS.bordure;
+const PAPIER = COULEURS.papier;
+// Le vert du design system remplace un vert forêt inventé sur place.
+const FORET = COULEURS.vert;
 
-const LIBELLE_TYPE = { CC: "CONTRÔLE CONTINU", EFM: "ÉPREUVE DE FIN DE MODULE" } as const;
+const LIBELLE_TYPE = {
+  CC: "CONTRÔLE CONTINU",
+  EFM: "ÉPREUVE DE FIN DE MODULE",
+} as const;
 const LIBELLE_FORMAT = {
   theorique: "Théorique",
   pratique: "Pratique",
@@ -65,8 +70,26 @@ const LIBELLE_FORMAT = {
 } as const;
 
 const ROMAINS = [
-  "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X",
-  "XI", "XII", "XIII", "XIV", "XV", "XVI", "XVII", "XVIII", "XIX", "XX",
+  "I",
+  "II",
+  "III",
+  "IV",
+  "V",
+  "VI",
+  "VII",
+  "VIII",
+  "IX",
+  "X",
+  "XI",
+  "XII",
+  "XIII",
+  "XIV",
+  "XV",
+  "XVI",
+  "XVII",
+  "XVIII",
+  "XIX",
+  "XX",
 ];
 const romain = (n: number) => ROMAINS[n - 1] ?? String(n);
 
@@ -83,7 +106,10 @@ export function nettoieEnonce(enonce: string): string {
 }
 
 /** Sépare « QCM : Entourez… » en une nature courte et le corps de l'énoncé. */
-function decoupeEnonce(enonce: string): { nature: string | null; corps: string } {
+function decoupeEnonce(enonce: string): {
+  nature: string | null;
+  corps: string;
+} {
   const m = enonce.match(
     /^(QCM|Question courte|Questions courtes|Exercice d['’]application|Exercice|Étude de cas)\s*[:—–-]?\s*(.*)$/i,
   );
@@ -102,11 +128,22 @@ export async function construireControlePdf(
   // lourd pour entrer dans le bundle d'un écran qu'on ouvre pour éditer un
   // contrôle, pas forcément pour l'exporter (conventions.md, performance).
   const { default: JsPDF } = await import("jspdf");
-  const doc = new JsPDF({ orientation: "p", unit: "mm", format: "a4", compress: true });
-  doc.setFont("helvetica", "normal");
+  const doc = new JsPDF({
+    orientation: "p",
+    unit: "mm",
+    format: "a4",
+    compress: true,
+  });
+  await installerPolices(doc);
+  police(doc, "corps");
 
-  const totalBareme = c.questions.reduce((s, q) => s + (Number(q.bareme) || 0), 0);
-  const annee = (c.datePrevue ? new Date(c.datePrevue) : new Date()).getFullYear();
+  const totalBareme = c.questions.reduce(
+    (s, q) => s + (Number(q.bareme) || 0),
+    0,
+  );
+  const annee = (
+    c.datePrevue ? new Date(c.datePrevue) : new Date()
+  ).getFullYear();
   let y = 0;
 
   // ------------------------------------------------------- cadre et en-tête
@@ -127,7 +164,14 @@ export async function construireControlePdf(
     // c'est ce que porte le formulaire officiel vierge.
     const centre = nomEtablissement(marque);
     const court = centre.length <= 24;
-    const largeurLogo = dessinerLogo(doc, marque, CADRE_X + 4, CADRE_Y + 1.6, 6, 26);
+    const largeurLogo = dessinerLogo(
+      doc,
+      marque,
+      CADRE_X + 4,
+      CADRE_Y + 1.6,
+      6,
+      26,
+    );
 
     // La cellule fait 21 mm de haut et doit contenir jusqu'à trois choses :
     // le logo, le nom du centre et la filière. Les hauteurs sont donc posées
@@ -135,7 +179,9 @@ export async function construireControlePdf(
     const hautNom = CADRE_Y + (largeurLogo > 0 ? 10.5 : 7.5);
     const interligne = court ? 4.5 : 2.9;
 
-    doc.setTextColor(...ENCRE).setFont("helvetica", "bold").setFontSize(court ? 13 : 6.6);
+    police(doc, "titre");
+    doc.setFontSize(court ? 13 : 6.6);
+    doc.setTextColor(...ENCRE);
     // Deux lignes au plus : un nom plus long serait tronqué plutôt que de
     // déborder sur la filière.
     const lignesNom = (doc.splitTextToSize(centre, 66) as string[]).slice(0, 2);
@@ -143,13 +189,19 @@ export async function construireControlePdf(
 
     let bas = hautNom + lignesNom.length * interligne;
     if (centre === "OFPPT") {
-      doc.setFont("helvetica", "normal").setFontSize(6.4).setTextColor(...ARDOISE);
-      doc.text("Office de la Formation Professionnelle", CADRE_X + 4, bas + 0.5);
+      police(doc, "corps", 6.4);
+      doc.setTextColor(...ARDOISE);
+      doc.text(
+        "Office de la Formation Professionnelle",
+        CADRE_X + 4,
+        bas + 0.5,
+      );
       doc.text("et de la Promotion du Travail", CADRE_X + 4, bas + 3.6);
       bas += 6.6;
     }
     if (c.specialiteNom) {
-      doc.setTextColor(...ENCRE).setFont("helvetica", "normal").setFontSize(6.6);
+      police(doc, "corps", 6.6);
+      doc.setTextColor(...ENCRE);
       doc.text(
         doc.splitTextToSize(c.specialiteNom, 66)[0],
         CADRE_X + 4,
@@ -159,14 +211,16 @@ export async function construireControlePdf(
 
     // Épreuve
     const milieu = c1 + (c2 - c1) / 2;
-    doc.setTextColor(...ENCRE).setFont("helvetica", "bold").setFontSize(10);
+    police(doc, "titre", 10);
+    doc.setTextColor(...ENCRE);
     for (const [i, ligne] of doc
       .splitTextToSize(LIBELLE_TYPE[c.type], c2 - c1 - 8)
       .entries()) {
       doc.text(ligne, milieu, CADRE_Y + 9 + i * 5, { align: "center" });
     }
     if (c.type === "EFM" && c.typeEfm) {
-      doc.setFont("helvetica", "normal").setFontSize(7).setTextColor(...ARDOISE);
+      police(doc, "corps", 7);
+      doc.setTextColor(...ARDOISE);
       doc.text(
         c.typeEfm === "regional" ? "Régional" : "Local",
         milieu,
@@ -177,11 +231,13 @@ export async function construireControlePdf(
 
     // Session
     const x3 = c2 + 4;
-    doc.setFont("helvetica", "normal").setFontSize(7.2).setTextColor(...ARDOISE);
+    police(doc, "corps", 7.2);
+    doc.setTextColor(...ARDOISE);
     doc.text("Session", x3, CADRE_Y + 6);
     doc.text("Durée", x3, CADRE_Y + 12);
     doc.text("Barème", x3, CADRE_Y + 18);
-    doc.setFont("helvetica", "bold").setFontSize(8).setTextColor(...ENCRE);
+    police(doc, "corpsGras", 8);
+    doc.setTextColor(...ENCRE);
     const droite = CADRE_X + CADRE_L - 4;
     doc.text(String(annee), droite, CADRE_Y + 6, { align: "right" });
     doc.text(heureFr(c.dureeHeures), droite, CADRE_Y + 12, { align: "right" });
@@ -202,16 +258,21 @@ export async function construireControlePdf(
   y = CADRE_Y + 21;
 
   // --------------------------------------------------------- bandeau module
-  doc.setFillColor(...PAPIER).setDrawColor(...TRAIT).setLineWidth(0.4);
+  doc
+    .setFillColor(...PAPIER)
+    .setDrawColor(...TRAIT)
+    .setLineWidth(0.4);
   doc.rect(CADRE_X, y, CADRE_L, 13, "FD");
-  doc.setTextColor(...ENCRE).setFont("helvetica", "bold").setFontSize(9.5);
+  police(doc, "corpsGras", 9.5);
+  doc.setTextColor(...ENCRE);
   const intitule = c.moduleCode
     ? `${c.moduleCode} — ${c.moduleNom}`
     : c.moduleNom;
   doc.text(doc.splitTextToSize(intitule, LARGEUR)[0], PAGE_L / 2, y + 5.5, {
     align: "center",
   });
-  doc.setFont("helvetica", "normal").setFontSize(7.4).setTextColor(...ARDOISE);
+  police(doc, "corps", 7.4);
+  doc.setTextColor(...ARDOISE);
   doc.text(
     `Épreuve ${LIBELLE_FORMAT[c.format].toLowerCase()}${c.groupeNom ? ` · Groupe ${c.groupeNom}` : ""}`,
     PAGE_L / 2,
@@ -226,10 +287,16 @@ export async function construireControlePdf(
   doc.setDrawColor(...TRAIT).setLineWidth(0.4);
   doc.line(CADRE_X, y + hId, CADRE_X + CADRE_L, y + hId);
   doc.line(xNote, y, xNote, y + hId);
-  doc.line(CADRE_X + (xNote - CADRE_X) / 2, y, CADRE_X + (xNote - CADRE_X) / 2, y + hId);
+  doc.line(
+    CADRE_X + (xNote - CADRE_X) / 2,
+    y,
+    CADRE_X + (xNote - CADRE_X) / 2,
+    y + hId,
+  );
   doc.line(CADRE_X, y + hId / 2, xNote, y + hId / 2);
 
-  doc.setFont("helvetica", "normal").setFontSize(8).setTextColor(...ARDOISE);
+  police(doc, "corps", 8);
+  doc.setTextColor(...ARDOISE);
   const demi = (xNote - CADRE_X) / 2;
   const champs: [string, number, number][] = [
     ["Nom", CADRE_X + 4, y + 6.5],
@@ -239,31 +306,37 @@ export async function construireControlePdf(
   ];
   for (const [libelle, cx, cy] of champs) doc.text(`${libelle} :`, cx, cy);
   if (c.groupeNom) {
-    doc.setTextColor(...ENCRE).setFont("helvetica", "bold");
+    police(doc, "corpsGras");
+    doc.setTextColor(...ENCRE);
     doc.text(c.groupeNom, CADRE_X + 20, y + 16.5);
-    doc.setFont("helvetica", "normal").setTextColor(...ARDOISE);
+    police(doc, "corps");
+    doc.setTextColor(...ARDOISE);
   }
 
   // Case note, réservée au correcteur
   doc.setFontSize(7).setTextColor(...ARDOISE);
   doc.text("Note", xNote + 15, y + 6, { align: "center" });
-  doc.setFont("helvetica", "bold").setFontSize(12).setTextColor(...ENCRE);
+  police(doc, "titre", 12);
+  doc.setTextColor(...ENCRE);
   doc.text(`/ ${totalBareme}`, xNote + 15, y + 15, { align: "center" });
   y += hId;
 
   // -------------------------------------------------------------- consignes
   if (c.consignes?.trim()) {
-    doc.setFont("helvetica", "normal").setFontSize(8.2);
+    police(doc, "corps", 8.2);
     const lignes = doc.splitTextToSize(c.consignes.trim(), LARGEUR - 6);
     const h = lignes.length * 4.2 + 9;
     doc.setDrawColor(...TRAIT).setLineWidth(0.4);
     doc.line(CADRE_X, y + h, CADRE_X + CADRE_L, y + h);
     doc.setFillColor(...FORET);
     doc.rect(CADRE_X, y, 1.5, h, "F");
-    doc.setFont("helvetica", "bold").setFontSize(7.6).setTextColor(...ENCRE);
+    police(doc, "corpsGras", 7.6);
+    doc.setTextColor(...ENCRE);
     doc.text("CONSIGNES", X, y + 5.5);
-    doc.setFont("helvetica", "normal").setFontSize(8.2);
-    lignes.forEach((l: string, i: number) => doc.text(l, X, y + 10.5 + i * 4.2));
+    police(doc, "corps", 8.2);
+    lignes.forEach((l: string, i: number) =>
+      doc.text(l, X, y + 10.5 + i * 4.2),
+    );
     y += h;
   }
 
@@ -278,7 +351,7 @@ export async function construireControlePdf(
     const num = `${romain(index + 1)}.`;
     const retrait = 9;
 
-    doc.setFont("helvetica", "normal").setFontSize(9);
+    police(doc, "corps", 9);
     const lignes = doc.splitTextToSize(corps, LARGEUR - retrait);
 
     // Un QCM se compose en cases à cocher : il n'a pas besoin de lignes
@@ -287,7 +360,8 @@ export async function construireControlePdf(
       ? options.map((o) => doc.splitTextToSize(o.texte, LARGEUR - retrait - 8))
       : [];
     const hReponse = estQcm
-      ? lignesOptions.reduce((s, l) => s + Math.max(6, l.length * 4.2 + 2), 0) + 2
+      ? lignesOptions.reduce((s, l) => s + Math.max(6, l.length * 4.2 + 2), 0) +
+        2
       : Math.max(20, Math.min(92, 14 + bareme * 7));
     const hQuestion = 6.5 + lignes.length * 4.5 + 3 + hReponse + 9;
     const hPageVide = BAS_CONTENU - (CADRE_Y + 29);
@@ -296,7 +370,8 @@ export async function construireControlePdf(
     assurerPlace(hQuestion <= hPageVide ? hQuestion : 6.5 + 2 * 4.5 + 8);
 
     // Ligne de titre : « I. QCM ................ 4 pts »
-    doc.setFont("helvetica", "bold").setFontSize(9.5).setTextColor(...ENCRE);
+    police(doc, "corpsGras", 9.5);
+    doc.setTextColor(...ENCRE);
     doc.text(num, X, y);
     const libelle =
       nature ??
@@ -307,13 +382,14 @@ export async function construireControlePdf(
           : "Question");
     doc.text(libelle, X + retrait, y);
     const pts = `${bareme} pts`;
-    doc.setFont("helvetica", "normal").setFontSize(9);
+    police(doc, "corps", 9);
     const xFin = CADRE_X + CADRE_L - PAD;
     const largeurPts = doc.getTextWidth(pts);
-    doc.setFont("helvetica", "bold").setFontSize(9.5);
+    police(doc, "corpsGras", 9.5);
     const debutPoints = X + retrait + doc.getTextWidth(libelle) + 2;
     const finPoints = xFin - largeurPts - 2;
-    doc.setFont("helvetica", "normal").setFontSize(9).setTextColor(...CLAIR);
+    police(doc, "corps", 9);
+    doc.setTextColor(...CLAIR);
     if (finPoints > debutPoints) {
       const unPoint = doc.getTextWidth(".");
       const n = Math.floor((finPoints - debutPoints) / unPoint);
@@ -323,7 +399,8 @@ export async function construireControlePdf(
     doc.text(pts, xFin, y, { align: "right" });
     y += 6.5;
 
-    doc.setFont("helvetica", "normal").setFontSize(9).setTextColor(...ENCRE);
+    police(doc, "corps", 9);
+    doc.setTextColor(...ENCRE);
     for (const ligne of lignes) {
       assurerPlace(5);
       doc.text(ligne, X + retrait, y);
@@ -336,7 +413,8 @@ export async function construireControlePdf(
     if (estQcm) {
       // Propositions à cocher. La bonne réponse n'est évidemment pas révélée :
       // ce document est le sujet remis au stagiaire.
-      doc.setFont("helvetica", "normal").setFontSize(9).setTextColor(...ENCRE);
+      police(doc, "corps", 9);
+      doc.setTextColor(...ENCRE);
       options.forEach((_, j) => {
         const lignesOpt = lignesOptions[j];
         const xCase = X + retrait;
@@ -367,9 +445,13 @@ export async function construireControlePdf(
     const yPied = CADRE_Y + CADRE_H - 7;
     doc.setDrawColor(...TRAIT).setLineWidth(0.4);
     doc.line(CADRE_X, yPied - 4, CADRE_X + CADRE_L, yPied - 4);
-    doc.setFont("helvetica", "normal").setFontSize(7).setTextColor(...ARDOISE);
+    police(doc, "corps", 7);
+    doc.setTextColor(...ARDOISE);
     doc.text(
-      doc.splitTextToSize(`${c.moduleCode ?? ""} ${c.moduleNom}`.trim(), CADRE_L - 40)[0],
+      doc.splitTextToSize(
+        `${c.moduleCode ?? ""} ${c.moduleNom}`.trim(),
+        CADRE_L - 40,
+      )[0],
       X,
       yPied,
     );

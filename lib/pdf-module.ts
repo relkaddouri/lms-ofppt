@@ -1,6 +1,17 @@
 import type jsPDF from "jspdf";
-import { dessinerEntete, nomEtablissement, type Marque } from "@/lib/pdf-marque";
-import { dessinerSupport, numeroterPages, BAS, HAUT, LARGEUR, X } from "@/lib/pdf-support";
+import {
+  dessinerEntete,
+  nomEtablissement,
+  type Marque,
+} from "@/lib/pdf-marque";
+import {
+  dessinerSupport,
+  numeroterPages,
+  BAS,
+  HAUT,
+  LARGEUR,
+  X,
+} from "@/lib/pdf-support";
 import { COULEURS, installerPolices, police } from "@/lib/pdf-theme";
 import type { Support } from "@/lib/support";
 
@@ -116,8 +127,12 @@ function couverture(doc: jsPDF, c: CompilationModule, marque?: Marque) {
   // L'identité, en deux colonnes : libellé en gris, valeur en encre.
   const identite: [string, string][] = [
     ["Groupe", c.groupeNom],
-    ...(c.anneeScolaire ? ([["Année scolaire", c.anneeScolaire]] as [string, string][]) : []),
-    ...(c.formateur ? ([["Formateur", c.formateur]] as [string, string][]) : []),
+    ...(c.anneeScolaire
+      ? ([["Année scolaire", c.anneeScolaire]] as [string, string][])
+      : []),
+    ...(c.formateur
+      ? ([["Formateur", c.formateur]] as [string, string][])
+      : []),
     ...(nomEtablissement(marque)
       ? ([["EFP", nomEtablissement(marque)!]] as [string, string][])
       : []),

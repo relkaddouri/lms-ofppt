@@ -1,5 +1,6 @@
 import type jsPDF from "jspdf";
 import { dessinerLogo, nomEtablissement, type Marque } from "@/lib/pdf-marque";
+import { COULEURS, installerPolices, police } from "@/lib/pdf-theme";
 
 /**
  * Tableau de service — le document de masse horaire de la Direction Régionale.
@@ -40,10 +41,10 @@ export type EnteteService = {
   matricule: string | null;
 };
 
-const ENCRE: [number, number, number] = [17, 24, 39];
-const GRIS: [number, number, number] = [107, 114, 128];
-const TRAIT: [number, number, number] = [140, 140, 140];
-const FOND: [number, number, number] = [238, 240, 243];
+const ENCRE = COULEURS.encre;
+const GRIS = COULEURS.ardoise;
+const TRAIT = COULEURS.bordureForte;
+const FOND = COULEURS.lavis;
 
 const X = 12;
 const BAS = 172;
@@ -65,7 +66,10 @@ const COLONNES: Colonne[] = [
 const LARGEUR = COLONNES.reduce((t, c) => t + c.largeur, 0);
 
 const XS = COLONNES.reduce<number[]>((acc, c) => {
-  acc.push((acc[acc.length - 1] ?? X) + (acc.length ? COLONNES[acc.length - 1].largeur : 0));
+  acc.push(
+    (acc[acc.length - 1] ?? X) +
+      (acc.length ? COLONNES[acc.length - 1].largeur : 0),
+  );
   return acc;
 }, []);
 
@@ -74,7 +78,8 @@ const HAUTEUR_ENTETE = 11;
 function enTeteColonnes(doc: jsPDF, y: number): number {
   doc.setFillColor(...FOND);
   doc.rect(X, y, LARGEUR, HAUTEUR_ENTETE, "F");
-  doc.setFont("helvetica", "bold").setFontSize(6.6).setTextColor(...ENCRE);
+  police(doc, "corpsGras", 6.6);
+  doc.setTextColor(...ENCRE);
 
   COLONNES.forEach((c, i) => {
     // « MHT AFF P S1 » et « Année de Formation » ne tiennent pas sur une ligne
@@ -116,9 +121,11 @@ function identite(doc: jsPDF, e: EnteteService, y: number): number {
     doc.rect(X, haut, lLibelle, hLigne);
     doc.rect(X + lLibelle, haut, lValeur, hLigne);
 
-    doc.setFont("helvetica", "bold").setFontSize(6.4).setTextColor(...ENCRE);
+    police(doc, "corpsGras", 6.4);
+    doc.setTextColor(...ENCRE);
     doc.text(libelle, X + 1.5, haut + 3.4);
-    doc.setFont("helvetica", "normal").setTextColor(...ENCRE);
+    police(doc, "corps");
+    doc.setTextColor(...ENCRE);
     doc.text(
       (doc.splitTextToSize(valeur, lValeur - 3) as string[])[0] ?? "",
       X + lLibelle + 1.5,
@@ -129,7 +136,8 @@ function identite(doc: jsPDF, e: EnteteService, y: number): number {
   const bas = y + champs.length * hLigne;
 
   // Titre au centre, logo à droite : la disposition du document officiel.
-  doc.setFont("helvetica", "bold").setFontSize(11).setTextColor(...ENCRE);
+  police(doc, "titre", 11);
+  doc.setTextColor(...ENCRE);
   doc.text(
     `Tableau de service pour l'année ${e.anneeScolaire ?? ""}`.trim(),
     X + LARGEUR / 2,
@@ -137,9 +145,17 @@ function identite(doc: jsPDF, e: EnteteService, y: number): number {
     { align: "center" },
   );
 
-  const largeurLogo = dessinerLogo(doc, e.marque, X + LARGEUR - 52, y + 2, 15, 52);
+  const largeurLogo = dessinerLogo(
+    doc,
+    e.marque,
+    X + LARGEUR - 52,
+    y + 2,
+    15,
+    52,
+  );
   if (largeurLogo === 0) {
-    doc.setFont("helvetica", "bold").setFontSize(8).setTextColor(...GRIS);
+    police(doc, "corpsGras", 8);
+    doc.setTextColor(...GRIS);
     doc.text(
       doc.splitTextToSize(nomEtablissement(e.marque), 52) as string[],
       X + LARGEUR,
@@ -157,7 +173,11 @@ function signatures(doc: jsPDF, e: EnteteService, y: number): void {
     { titre: "Formateur", largeur: 46, valeur: e.formateur },
     { titre: "Matricule", largeur: 34, valeur: e.matricule ?? "" },
     { titre: "Signature", largeur: 40, valeur: "" },
-    { titre: "Directeur Pédagogique - Directeur d'EFP", largeur: LARGEUR - 120, valeur: "" },
+    {
+      titre: "Directeur Pédagogique - Directeur d'EFP",
+      largeur: LARGEUR - 120,
+      valeur: "",
+    },
   ];
 
   const hTitre = 6;
@@ -171,7 +191,8 @@ function signatures(doc: jsPDF, e: EnteteService, y: number): void {
     doc.rect(x, y, c.largeur, hTitre);
     doc.rect(x, y + hTitre, c.largeur, hCorps);
 
-    doc.setFont("helvetica", "bold").setFontSize(6.8).setTextColor(...ENCRE);
+    police(doc, "corpsGras", 6.8);
+    doc.setTextColor(...ENCRE);
     doc.text(
       (doc.splitTextToSize(c.titre, c.largeur - 3) as string[])[0] ?? "",
       x + c.largeur / 2,
@@ -180,14 +201,17 @@ function signatures(doc: jsPDF, e: EnteteService, y: number): void {
     );
 
     if (c.valeur) {
-      doc.setFont("helvetica", "normal").setFontSize(7.5);
-      doc.text(c.valeur, x + c.largeur / 2, y + hTitre + 7, { align: "center" });
+      police(doc, "corps", 7.5);
+      doc.text(c.valeur, x + c.largeur / 2, y + hTitre + 7, {
+        align: "center",
+      });
     }
     x += c.largeur;
   }
 
   // La mention manuscrite du document, laissée à compléter.
-  doc.setFont("helvetica", "normal").setFontSize(7.5).setTextColor(...ENCRE);
+  police(doc, "corps", 7.5);
+  doc.setTextColor(...ENCRE);
   doc.text(
     "Fait à ………………………………  le ……/……/…………",
     X + LARGEUR - (LARGEUR - 120) / 2 - 0,
@@ -202,6 +226,7 @@ export async function construireTableauServicePdf(
 ): Promise<jsPDF> {
   const { default: JsPDF } = await import("jspdf");
   const doc = new JsPDF({ unit: "mm", format: "a4", orientation: "landscape" });
+  await installerPolices(doc);
 
   let y = identite(doc, e, 12);
   y = enTeteColonnes(doc, y);
@@ -224,10 +249,19 @@ export async function construireTableauServicePdf(
     }
     anneePrecedente = l.annee;
 
-    doc.setFont("helvetica", "normal").setFontSize(7);
-    const filiere = doc.splitTextToSize(l.filiere, COLONNES[0].largeur - 3) as string[];
-    const module = doc.splitTextToSize(l.module, COLONNES[4].largeur - 3) as string[];
-    const hauteur = Math.max(6.5, Math.max(filiere.length, module.length) * 3.2 + 3);
+    police(doc, "corps", 7);
+    const filiere = doc.splitTextToSize(
+      l.filiere,
+      COLONNES[0].largeur - 3,
+    ) as string[];
+    const module = doc.splitTextToSize(
+      l.module,
+      COLONNES[4].largeur - 3,
+    ) as string[];
+    const hauteur = Math.max(
+      6.5,
+      Math.max(filiere.length, module.length) * 3.2 + 3,
+    );
 
     if (y + hauteur > BAS) {
       doc.addPage();
@@ -253,7 +287,9 @@ export async function construireTableauServicePdf(
       const texte = cellules[i];
       if (!texte.length) return;
       if (c.nombre) {
-        doc.text(texte as string, XS[i] + c.largeur - 2, y + 4.2, { align: "right" });
+        doc.text(texte as string, XS[i] + c.largeur - 2, y + 4.2, {
+          align: "right",
+        });
       } else {
         doc.text(texte, XS[i] + 2, y + 4.2);
       }
@@ -285,12 +321,15 @@ export async function construireTableauServicePdf(
   doc.setDrawColor(...TRAIT).setLineWidth(0.3);
   doc.rect(X, y, LARGEUR, 7);
   doc.line(XS[5], y, XS[5], y + 7);
-  doc.setFont("helvetica", "bold").setFontSize(8).setTextColor(...ENCRE);
+  police(doc, "corpsGras", 8);
+  doc.setTextColor(...ENCRE);
   doc.text("Total", XS[5] - 2, y + 4.7, { align: "right" });
   [total.pS1, total.sS1, total.pS2, total.sS2].forEach((v, i) => {
     const c = 5 + i;
     doc.line(XS[c], y, XS[c], y + 7);
-    doc.text(String(v), XS[c] + COLONNES[c].largeur - 2, y + 4.7, { align: "right" });
+    doc.text(String(v), XS[c] + COLONNES[c].largeur - 2, y + 4.7, {
+      align: "right",
+    });
   });
   y += 7;
 
@@ -300,7 +339,8 @@ export async function construireTableauServicePdf(
   doc.setDrawColor(...TRAIT).setLineWidth(0.3);
   doc.rect(XS[5], y, LARGEUR + X - XS[5], 7);
   doc.line(XS[8], y, XS[8], y + 7);
-  doc.setFont("helvetica", "bold").setFontSize(8).setTextColor(...ENCRE);
+  police(doc, "corpsGras", 8);
+  doc.setTextColor(...ENCRE);
   doc.text("MHT AFF S1+S2 (P+S)", XS[8] - 2, y + 4.7, { align: "right" });
   doc.text(String(general), X + LARGEUR - 2, y + 4.7, { align: "right" });
   y += 7;
@@ -310,7 +350,8 @@ export async function construireTableauServicePdf(
   const pages = doc.getNumberOfPages();
   for (let p = 1; p <= pages; p++) {
     doc.setPage(p);
-    doc.setFont("helvetica", "normal").setFontSize(7).setTextColor(...GRIS);
+    police(doc, "corps", 7);
+    doc.setTextColor(...GRIS);
     doc.text(`${p} / ${pages}`, X + LARGEUR, 202, { align: "right" });
   }
 

@@ -3,6 +3,7 @@ import { dessinerEntete, type Marque } from "@/lib/pdf-marque";
 import { JOURS } from "@/lib/motifs";
 import { CRENEAUX_JOUR, positionSeance } from "@/lib/creneaux";
 import { COULEURS_GROUPE_RVB, rangGroupe } from "@/lib/couleurs-groupe";
+import { COULEURS, installerPolices, police } from "@/lib/pdf-theme";
 
 /**
  * Emploi du temps — section I.B du cahier du formateur.
@@ -41,10 +42,10 @@ export type EnteteEmploi = {
   edite: string;
 };
 
-const ENCRE: [number, number, number] = [17, 24, 39];
-const GRIS: [number, number, number] = [107, 114, 128];
-const TRAIT: [number, number, number] = [140, 140, 140];
-const FOND: [number, number, number] = [238, 240, 243];
+const ENCRE = COULEURS.encre;
+const GRIS = COULEURS.ardoise;
+const TRAIT = COULEURS.bordureForte;
+const FOND = COULEURS.lavis;
 
 const X = 14;
 const LARGEUR = 269;
@@ -77,9 +78,11 @@ function periode(m: MotifPdf): string {
 const H_LIGNE = 11;
 
 function dessinerMotif(doc: jsPDF, m: MotifPdf, y: number): number {
-  doc.setFont("helvetica", "bold").setFontSize(10).setTextColor(...ENCRE);
+  police(doc, "titre", 10);
+  doc.setTextColor(...ENCRE);
   doc.text(m.libelle?.trim() || "Rythme hebdomadaire", X, y);
-  doc.setFont("helvetica", "normal").setFontSize(8.5).setTextColor(...GRIS);
+  police(doc, "corps", 8.5);
+  doc.setTextColor(...GRIS);
   doc.text(periode(m), X + LARGEUR, y, { align: "right" });
   y += 4;
 
@@ -92,11 +95,15 @@ function dessinerMotif(doc: jsPDF, m: MotifPdf, y: number): number {
     const pos = positionSeance(c.heure_debut, c.heure_fin);
     if (!pos) continue;
     const cle = `${c.jour_semaine}|${pos.index}`;
-    places.set(cle, [...(places.get(cle) ?? []), { creneau: c, span: pos.span }]);
+    places.set(cle, [
+      ...(places.get(cle) ?? []),
+      { creneau: c, span: pos.span },
+    ]);
   }
 
   if (m.creneaux.length === 0) {
-    doc.setFont("helvetica", "italic").setFontSize(9).setTextColor(...GRIS);
+    police(doc, "corps", 9);
+    doc.setTextColor(...GRIS);
     doc.text("Aucun créneau déclaré.", X, y + 5);
     return y + 10;
   }
@@ -105,7 +112,8 @@ function dessinerMotif(doc: jsPDF, m: MotifPdf, y: number): number {
   const hEntete = 8;
   doc.setFillColor(...FOND);
   doc.rect(X, y, LARGEUR, hEntete, "F");
-  doc.setFont("helvetica", "bold").setFontSize(8).setTextColor(...ENCRE);
+  police(doc, "corpsGras", 8);
+  doc.setTextColor(...ENCRE);
   doc.text("Créneau", X + 2, y + 5.4);
   JOURS.forEach((j, i) => {
     doc.text(j.long, X + L_CRENEAU + i * L_JOUR + L_JOUR / 2, y + 5.4, {
@@ -124,7 +132,8 @@ function dessinerMotif(doc: jsPDF, m: MotifPdf, y: number): number {
   CRENEAUX_JOUR.forEach((c, i) => {
     const yl = yGrille + i * H_LIGNE;
     doc.rect(X, yl, LARGEUR, H_LIGNE);
-    doc.setFont("helvetica", "normal").setFontSize(8).setTextColor(...ENCRE);
+    police(doc, "corps", 8);
+    doc.setTextColor(...ENCRE);
     doc.text(heure(c.debut), X + 2, yl + 4.6);
     doc.text(heure(c.fin), X + 2, yl + 8.4);
   });
@@ -154,7 +163,8 @@ function dessinerMotif(doc: jsPDF, m: MotifPdf, y: number): number {
       doc.setDrawColor(...couleur.trait).setLineWidth(0.3);
       doc.rect(xCase + 0.4, yc + 0.4, L_JOUR - 0.8, hc - 0.8);
 
-      doc.setFont("helvetica", "bold").setFontSize(8).setTextColor(...couleur.trait);
+      police(doc, "corpsGras", 8);
+      doc.setTextColor(...couleur.trait);
       const noms = doc.splitTextToSize(
         ici.map((x) => x.creneau.groupeNom).join(" · "),
         L_JOUR - 3,
@@ -164,7 +174,7 @@ function dessinerMotif(doc: jsPDF, m: MotifPdf, y: number): number {
       doc.text(lignesTexte, xCase + L_JOUR / 2, haut, { align: "center" });
 
       if (span > 1) {
-        doc.setFont("helvetica", "normal").setFontSize(6.5);
+        police(doc, "corps", 6.5);
         doc.setTextColor(...couleur.trait);
         doc.text(`${span * 2.5} h`, xCase + L_JOUR / 2, haut + 4.4, {
           align: "center",
@@ -182,12 +192,15 @@ export async function construireEmploiDuTempsPdf(
 ): Promise<jsPDF> {
   const { default: JsPDF } = await import("jspdf");
   const doc = new JsPDF({ unit: "mm", format: "a4", orientation: "landscape" });
+  await installerPolices(doc);
 
   let y = dessinerEntete(doc, e.marque, X, 14, LARGEUR, 14);
 
-  doc.setFont("helvetica", "bold").setFontSize(16).setTextColor(...ENCRE);
+  police(doc, "titre", 16);
+  doc.setTextColor(...ENCRE);
   doc.text("Emploi du temps", X, y);
-  doc.setFont("helvetica", "normal").setFontSize(9).setTextColor(...GRIS);
+  police(doc, "corps", 9);
+  doc.setTextColor(...GRIS);
   doc.text(
     [e.formateur, e.anneeScolaire, `édité le ${e.edite}`]
       .filter(Boolean)
@@ -197,7 +210,8 @@ export async function construireEmploiDuTempsPdf(
     { align: "right" },
   );
   y += 4;
-  doc.setFont("helvetica", "normal").setFontSize(8).setTextColor(...GRIS);
+  police(doc, "corps", 8);
+  doc.setTextColor(...GRIS);
   doc.text("Section I.B du cahier du formateur", X, y);
   y += 8;
 
@@ -215,14 +229,16 @@ export async function construireEmploiDuTempsPdf(
   }
 
   if (motifs.length === 0) {
-    doc.setFont("helvetica", "italic").setFontSize(10).setTextColor(...GRIS);
+    police(doc, "corps", 10);
+    doc.setTextColor(...GRIS);
     doc.text("Aucun rythme hebdomadaire déclaré.", X, y + 6);
   }
 
   const pages = doc.getNumberOfPages();
   for (let p = 1; p <= pages; p++) {
     doc.setPage(p);
-    doc.setFont("helvetica", "normal").setFontSize(7).setTextColor(...GRIS);
+    police(doc, "corps", 7);
+    doc.setTextColor(...GRIS);
     doc.text(`${p} / ${pages}`, X + LARGEUR, 200, { align: "right" });
   }
 

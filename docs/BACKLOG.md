@@ -271,6 +271,12 @@ L'ordre ci-dessous est arrêté : chaque atome se termine et se teste avant que 
 
 ---
 
+- [x] **7.24 — Les dix générateurs PDF portent l'identité de l'app** (design §3) : `lib/pdf-theme.ts` porte la palette du §1 et les quatre fontes du design system, lues une fois puis gardées. Les générateurs nomment un **rôle** — titre, corps, corpsGras, mono — jamais une fonte. Les TTF vivent dans `public/polices` (640 Ko), chargés au moment d'un export et mis en cache par le navigateur ; si la lecture échoue, le document sort en Helvetica plutôt que de ne pas sortir.
+  **Constat de départ** : dix générateurs, zéro conforme. Tous sur Helvetica, et **cinq définitions différentes de `GRIS`, quatre de `TRAIT`, trois de `FOND`**, aucune tirée du design system — le Tableau de service compris, dont seule la mise en page était soignée.
+  **Test** : les sept générateurs sont exécutés sur des données d'exemple et le PDF produit est inspecté — `/BaseFont /Sora`, `/SourceSans3` et `/PlexMono` présents dans les sept. Plus aucune constante de couleur locale dans `lib/pdf-*.ts`, et le seul `helvetica` restant est le repli assumé de `pdf-theme.ts`.
+
+---
+
 ## Points de vigilance — pas des atomes
 
 À garder en tête à chaque changement de schéma, sans traitement immédiat.

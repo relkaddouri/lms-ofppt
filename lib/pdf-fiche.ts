@@ -1,6 +1,7 @@
 import type jsPDF from "jspdf";
 import { dessinerEntete, type Marque } from "@/lib/pdf-marque";
 import { definitionPhase, type PhaseFiche } from "@/lib/phases";
+import { COULEURS, installerPolices, police } from "@/lib/pdf-theme";
 
 /**
  * Fiche de préparation au format officiel OFPPT.
@@ -34,9 +35,9 @@ export const LARGEUR = 182;
 export const HAUT = 16;
 export const BAS = 282;
 
-export const ENCRE: [number, number, number] = [17, 24, 39];
-export const TRAIT: [number, number, number] = [80, 80, 80];
-const FOND: [number, number, number] = [238, 240, 243];
+export const ENCRE = COULEURS.encre;
+export const TRAIT = COULEURS.bordureForte;
+const FOND = COULEURS.lavis;
 
 function minutes(n: number): string {
   return n > 0 ? `${n} minutes` : "";
@@ -48,6 +49,7 @@ export async function construireFichePdf(
 ): Promise<jsPDF> {
   const { default: JsPDF } = await import("jspdf");
   const doc = new JsPDF({ unit: "mm", format: "a4" });
+  await installerPolices(doc);
   dessinerFiche(doc, f, marque);
   return doc;
 }
@@ -82,7 +84,12 @@ export function dessinerFiche(doc: jsPDF, f: FichePdf, marque?: Marque): void {
 
   /** Une ligne de tableau : cellules de largeurs données, bordées. */
   function ligne(
-    cellules: { texte: string; largeur: number; gras?: boolean; fond?: boolean }[],
+    cellules: {
+      texte: string;
+      largeur: number;
+      gras?: boolean;
+      fond?: boolean;
+    }[],
     tailleTexte = 9,
   ) {
     const hauteur = Math.max(
@@ -100,10 +107,8 @@ export function dessinerFiche(doc: jsPDF, f: FichePdf, marque?: Marque): void {
       doc.setDrawColor(...TRAIT).setLineWidth(0.2);
       doc.rect(x, y, c.largeur, hauteur);
 
-      doc
-        .setFont("helvetica", c.gras ? "bold" : "normal")
-        .setFontSize(tailleTexte)
-        .setTextColor(...ENCRE);
+      police(doc, c.gras ? "corpsGras" : "corps", tailleTexte);
+      doc.setTextColor(...ENCRE);
       const lignes = doc.splitTextToSize(c.texte || "", c.largeur - 4);
       lignes.forEach((l: string, i: number) => {
         doc.text(l, x + 2, y + 4 + i * (tailleTexte * 0.42));
@@ -126,7 +131,8 @@ export function dessinerFiche(doc: jsPDF, f: FichePdf, marque?: Marque): void {
   }
 
   // ── Titre ────────────────────────────────────────────────────────────────
-  doc.setFont("helvetica", "bold").setFontSize(13).setTextColor(...ENCRE);
+  police(doc, "titre", 13);
+  doc.setTextColor(...ENCRE);
   doc.text(`Fiche préparation : ${f.nature}`, X, y);
   y += 7;
 
@@ -145,19 +151,24 @@ export function dessinerFiche(doc: jsPDF, f: FichePdf, marque?: Marque): void {
   const lCase = 8;
   const lFiliere = 52;
   const lGroupe = LARGEUR - lFiliere - 3 * (lAnnee + lCase);
-  ligne([
-    { texte: `Filière : ${f.filiere}`, largeur: lFiliere },
-    { texte: "1ère année", largeur: lAnnee },
-    { texte: f.annee === 1 ? "X" : "", largeur: lCase },
-    { texte: "2ème année", largeur: lAnnee },
-    { texte: f.annee === 2 ? "X" : "", largeur: lCase },
-    { texte: "3ème année", largeur: lAnnee },
-    { texte: f.annee === 3 ? "X" : "", largeur: lCase },
-    { texte: `Groupe : ${f.groupe}`, largeur: lGroupe },
-  ], 8);
+  ligne(
+    [
+      { texte: `Filière : ${f.filiere}`, largeur: lFiliere },
+      { texte: "1ère année", largeur: lAnnee },
+      { texte: f.annee === 1 ? "X" : "", largeur: lCase },
+      { texte: "2ème année", largeur: lAnnee },
+      { texte: f.annee === 2 ? "X" : "", largeur: lCase },
+      { texte: "3ème année", largeur: lAnnee },
+      { texte: f.annee === 3 ? "X" : "", largeur: lCase },
+      { texte: `Groupe : ${f.groupe}`, largeur: lGroupe },
+    ],
+    8,
+  );
 
   ligne([{ texte: `Module : ${f.module}`, largeur: LARGEUR }]);
-  ligne([{ texte: `Objectifs de la séance : ${f.objectifs}`, largeur: LARGEUR }]);
+  ligne([
+    { texte: `Objectifs de la séance : ${f.objectifs}`, largeur: LARGEUR },
+  ]);
   ligne([{ texte: `Modalité : ${f.modalite}`, largeur: LARGEUR }]);
   if (f.methodeActive) {
     ligne([{ texte: `Méthode active : ${f.methodeActive}`, largeur: LARGEUR }]);
