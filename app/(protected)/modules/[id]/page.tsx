@@ -194,7 +194,7 @@ export default async function ModuleDetailPage({
           Deux documents distincts, comme le veut le programme : le cours
           qu&apos;on révise, et les travaux pratiques qu&apos;on fait.
         </p>
-        <div className="mt-4 grid gap-4 md:grid-cols-2">
+        <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
           {documents.map((doc) => {
             const { redigees, total } = avancement(doc);
             const Icone = doc.genre === "pratique" ? Wrench : BookOpen;

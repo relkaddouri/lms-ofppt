@@ -32,7 +32,7 @@ export default function EcheancesReglementaires({
         Échéances réglementaires
       </h2>
 
-      <ul className="mt-3 grid gap-1.5 sm:grid-cols-2">
+      <ul className="mt-3 grid grid-cols-1 gap-1.5 md:grid-cols-2">
         {visibles.map((e, i) => {
           const retard = e.etat === "depasse";
           const presse = e.etat === "imminent";

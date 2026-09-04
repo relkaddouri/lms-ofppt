@@ -231,7 +231,7 @@ export default function ModulesManager({
       </div>
 
       <div className="overflow-hidden rounded-[14px] border border-border bg-surface shadow-repos">
-        <div className="hidden border-b border-border bg-paper-alt px-6 py-3.5 md:grid md:grid-cols-[minmax(0,2.4fr)_minmax(120px,1fr)_minmax(96px,0.9fr)_52px] md:items-center md:gap-4">
+        <div className="hidden border-b border-border bg-paper-alt px-6 py-3.5 md:grid grid-cols-1 md:grid-cols-[minmax(0,2.4fr)_minmax(120px,1fr)_minmax(96px,0.9fr)_52px] md:items-center md:gap-4">
           {["Module", "Durée de référence", "Groupes", ""].map((c, i) => (
             <span
               key={c || i}

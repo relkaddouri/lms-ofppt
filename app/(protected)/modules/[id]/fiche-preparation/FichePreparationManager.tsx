@@ -105,7 +105,7 @@ export default function FichePreparationManager({
       </div>
 
       {seance ? (
-        <div className="mt-6 grid gap-6 xl:grid-cols-[1fr_220px]">
+        <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-[1fr_220px]">
           <section className="rounded-[14px] border border-border bg-surface p-4">
             <FicheSeance
               contexte={{

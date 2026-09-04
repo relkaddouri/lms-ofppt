@@ -61,7 +61,7 @@ export default function EfmRegionalForm({
         </span>
       </div>
 
-      <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
+      <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-[1fr_1fr_auto]">
         <div>
           <label
             className="block text-xs text-slate"

@@ -361,6 +361,15 @@ L'espace formateur était pensé desktop-only ; il doit désormais fonctionner s
 
 ---
 
+- [x] **8.7 — Configuration, et deux défauts systémiques** (design §3bis) : l'atome devait traiter paramètres et stage ; il a surtout mis au jour deux règles cassées à l'échelle de l'application.
+  - **`Segments` — trois onglets qui poussaient la page à 436px.** Le composant sert aussi le parcours de contrôle. Les libellés ne se coupent pas en deux ; quand ils ne tiennent pas, c'est la gouttière qui défile. `basis-0 grow shrink-0` plutôt que `flex-1`, pour que l'ordre des classes ne puisse pas décider du résultat.
+  - **21 bascules à 640px passées à 768**, sur 14 fichiers. Le §3bis fixe la limite à 768 : entre les deux largeurs, ces formulaires affichaient deux à quatre colonnes sur un écran tenu pour mobile. Les `sm:block` et `sm:inline` du Topbar et de la carte de stage ne sont pas des colonnes — laissés tels quels.
+  - **26 grilles sans colonne de base.** `grid gap-4 md:grid-cols-2` ne déclare aucune colonne sous 768px : la grille en crée une seule, dimensionnée sur le contenu. C'est ce qui faisait sortir la fiche d'un module à 583px, avec un titre de 462px dans une carte de 358. Toutes portent désormais `grid-cols-1` explicite.
+  - **Modules d'un groupe** — badge d'heures, ventilation S1/S2 et bouton refusaient de rétrécir : ils passent à la ligne.
+  **Test** : douze écrans mesurés à 390px, `scrollWidth === clientWidth` sur les douze — modules, paramètres, calendrier, stage, fiche de groupe, progression, tableau de bord, emploi du temps, tableau de service, classeur, liste des modules, liste des groupes.
+
+---
+
 ## Points de vigilance — pas des atomes
 
 À garder en tête à chaque changement de schéma, sans traitement immédiat.

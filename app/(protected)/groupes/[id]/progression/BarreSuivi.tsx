@@ -109,7 +109,7 @@ export default function BarreSuivi({
       </div>
 
       {vue === "tableau" ? (
-        <div className="grid gap-5 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
           {colonnes.map((c) => (
             <section
               key={c.cle}

@@ -129,7 +129,7 @@ export default function IndisponibilitesPanel({
 
       {ouvert ? (
         <div className="mt-3 space-y-3 rounded-lg border border-border bg-paper p-3">
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <label className="block">
               <span className="mb-1 block text-xs text-slate">Nature</span>
               <select
@@ -195,7 +195,7 @@ export default function IndisponibilitesPanel({
               />
             </label>
 
-            <label className="block sm:col-span-2">
+            <label className="block md:col-span-2">
               <span className="mb-1 block text-xs text-slate">
                 Libellé (facultatif)
               </span>
@@ -207,7 +207,7 @@ export default function IndisponibilitesPanel({
             </label>
 
             {type === "absence" ? (
-              <label className="block sm:col-span-2">
+              <label className="block md:col-span-2">
                 <span className="mb-1 block text-xs text-slate">
                   Motif (facultatif)
                 </span>

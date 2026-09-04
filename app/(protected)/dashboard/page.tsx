@@ -184,7 +184,7 @@ export default async function DashboardPage() {
         ))}
       </div>
 
-      <div className="grid gap-5 xl:grid-cols-[1.35fr_1fr]">
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1.35fr_1fr]">
         <section className="flex flex-col gap-5 rounded-[14px] border border-border bg-surface p-6 shadow-repos">
           <div className="flex items-start justify-between gap-4">
             <div className="flex flex-col gap-1">

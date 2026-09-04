@@ -675,7 +675,7 @@ export default function CalendrierSemaine({
 
         {/* Deux cartes de synthèse, comme dans la maquette : le volume dispensé
             et sa répartition par groupe sur la semaine affichée. */}
-        <div className="mt-6 grid gap-5 lg:grid-cols-[1.2fr_1fr]">
+        <div className="mt-6 grid grid-cols-1 gap-5 lg:grid-cols-[1.2fr_1fr]">
           <section className="flex flex-col gap-5 rounded-[14px] border border-border bg-surface p-6 shadow-repos">
             <div className="flex flex-col gap-1">
               <h2 className="font-display text-[17px] font-semibold text-ink">
@@ -686,7 +686,7 @@ export default function CalendrierSemaine({
               </span>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
               {[
                 ["Cette semaine", bilan.semaineCourante?.heures ?? 0],
                 ["Ce mois", heuresDuMois],
@@ -771,7 +771,7 @@ export default function CalendrierSemaine({
           </section>
         </div>
 
-        <div className="mt-6 grid gap-4 lg:grid-cols-2">
+        <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
           <IndisponibilitesPanel
             indisponibilites={indisponibilitesAVenir}
             semaine={{ debut: lundi, fin: decale(lundi, 6) }}

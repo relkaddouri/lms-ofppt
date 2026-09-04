@@ -241,7 +241,7 @@ export default function GroupeModulesManager({
 
                 {edition ? (
                   <div className="flex w-full max-w-[520px] flex-col gap-3">
-                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
                       {CHAMPS.map((c, i) => (
                         <Input
                           key={c.cle}
@@ -336,7 +336,10 @@ export default function GroupeModulesManager({
                     </div>
                   </div>
                 ) : (
-                  <div className="flex shrink-0 items-center gap-3">
+                  // Trois blocs qui refusaient de rétrécir — badge d'heures,
+                  // ventilation S1/S2 et bouton — poussaient la page à 583px.
+                  // Ils passent à la ligne sous 768px (§3bis).
+                  <div className="flex flex-wrap items-center gap-2 md:shrink-0 md:flex-nowrap md:gap-3">
                     <span className="inline-flex items-center gap-1.5 rounded-full bg-wash px-3 py-1 font-mono text-sm font-medium text-ink">
                       <Clock size={16} aria-hidden />
                       {m.masse_horaire_allouee} h
