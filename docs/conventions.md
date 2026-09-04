@@ -33,6 +33,23 @@ Ce fichier fixe les règles de code que **tout atome doit respecter**, quel que 
   `scripts/verifie-actions.mjs` parcourt les fichiers dont la première ligne utile est la directive — une action « inline » dans le corps d'une fonction ne compte pas — et sort en erreur au premier export interdit.
 - **Le crochet `.githooks/pre-commit` lance ce script à chaque commit.** À activer une fois par clone : `git config core.hooksPath .githooks`.
 
+## Ce qui part au commit — vérifié automatiquement
+
+- **Ne jamais utiliser `git add -A`, ni `git add .`, ni `git commit -a`.** Stager les fichiers un par un : `git add lib/format.ts app/actions/fiches.ts`. Un `add -A` prend tout ce qui traîne dans l'arbre, y compris ce qu'on n'a pas écrit et ce qu'on ne regarde pas.
+- **Relire `git diff --staged` avant chaque commit**, sans exception. La liste des fichiers ne suffit pas : les trois incidents de ce projet étaient tous invisibles au niveau du nom de fichier et n'apparaissaient que dans le diff.
+- **Trois occurrences, trois formes différentes** :
+  1. `app/actions/seance.ts` — un fichier mort remis dans l'arbre par un `add -A`, doublon de sept symboles de `seances.ts`, importé par personne.
+  2. `docs/design_system.md` — trois sections (§5.6, §5.7, §5.8) perdues, le fichier ayant été remplacé par une copie plus ancienne. Committé sans que la disparition se voie.
+  3. Le même fichier, une seconde fois, deux jours plus tard.
+- **Vérifié par un script, pas par la vigilance** — comme la règle `"use server"`, et pour la même raison :
+
+  ```bash
+  npm run verifie:stage   # ou npm run verifie, qui enchaîne les deux gardes et tsc
+  ```
+
+  `scripts/verifie-stage.mjs` refuse un commit quand : un fichier de code est **ajouté sans qu'aucun autre ne l'importe** ; un document Markdown **perd un titre** présent dans la version committée ; un fichier perd plus de 40 lignes pour moins d'un tiers d'ajouts, ce qui n'est plus une modification mais un remplacement.
+- **Le crochet `.githooks/pre-commit` le lance à chaque commit.** Contournement volontaire et explicite : `PEDAGO_STAGE_OK=1 git commit …` — jamais `--no-verify`, qui désactive aussi le garde-fou `"use server"`.
+
 ## Sécurité (non négociable, même en phase de prototype)
 
 - **Toute policy RLS Supabase restreint l'accès au propriétaire de la donnée** (`user_id = auth.uid()` ou équivalent) — jamais `using (true)` sur une table contenant des données appartenant à un utilisateur précis, même "temporairement" en phase de test.
