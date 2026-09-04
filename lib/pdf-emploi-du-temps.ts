@@ -1,6 +1,8 @@
 import type jsPDF from "jspdf";
 import { dessinerEntete, type Marque } from "@/lib/pdf-marque";
 import { JOURS } from "@/lib/motifs";
+import { CRENEAUX_JOUR, positionSeance } from "@/lib/creneaux";
+import { COULEURS_GROUPE_RVB, rangGroupe } from "@/lib/couleurs-groupe";
 
 /**
  * Emploi du temps — section I.B du cahier du formateur.
@@ -20,6 +22,8 @@ export type CreneauPdf = {
   heure_debut: string;
   heure_fin: string;
   groupeNom: string;
+  /** Sert à retrouver la couleur du groupe, la même qu'à l'écran. */
+  groupeId: string;
 };
 
 export type MotifPdf = {
@@ -41,7 +45,6 @@ const ENCRE: [number, number, number] = [17, 24, 39];
 const GRIS: [number, number, number] = [107, 114, 128];
 const TRAIT: [number, number, number] = [140, 140, 140];
 const FOND: [number, number, number] = [238, 240, 243];
-const TEINTE: [number, number, number] = [232, 242, 247];
 
 const X = 14;
 const LARGEUR = 269;
@@ -70,6 +73,9 @@ function periode(m: MotifPdf): string {
  * une grille d'heures fixes laisserait des rangées vides sur un document
  * qu'on affiche.
  */
+/** Hauteur d'une ligne de créneau, la même pour les quatre. */
+const H_LIGNE = 11;
+
 function dessinerMotif(doc: jsPDF, m: MotifPdf, y: number): number {
   doc.setFont("helvetica", "bold").setFontSize(10).setTextColor(...ENCRE);
   doc.text(m.libelle?.trim() || "Rythme hebdomadaire", X, y);
@@ -77,11 +83,19 @@ function dessinerMotif(doc: jsPDF, m: MotifPdf, y: number): number {
   doc.text(periode(m), X + LARGEUR, y, { align: "right" });
   y += 4;
 
-  const lignes = [
-    ...new Set(m.creneaux.map((c) => `${c.heure_debut}|${c.heure_fin}`)),
-  ].sort();
+  // Quatre lignes fixes de 2 h 30 : un créneau de 5 h occupe deux lignes d'un
+  // seul tenant, il n'a pas sa propre rangée. Prendre les créneaux déclarés
+  // comme lignes donnait la même hauteur à 2 h 30 et à 5 h — la grille
+  // affichée au mur ne se lisait plus.
+  const places = new Map<string, { creneau: CreneauPdf; span: number }[]>();
+  for (const c of m.creneaux) {
+    const pos = positionSeance(c.heure_debut, c.heure_fin);
+    if (!pos) continue;
+    const cle = `${c.jour_semaine}|${pos.index}`;
+    places.set(cle, [...(places.get(cle) ?? []), { creneau: c, span: pos.span }]);
+  }
 
-  if (lignes.length === 0) {
+  if (m.creneaux.length === 0) {
     doc.setFont("helvetica", "italic").setFontSize(9).setTextColor(...GRIS);
     doc.text("Aucun créneau déclaré.", X, y + 5);
     return y + 10;
@@ -102,47 +116,64 @@ function dessinerMotif(doc: jsPDF, m: MotifPdf, y: number): number {
   doc.rect(X, y, LARGEUR, hEntete);
   y += hEntete;
 
-  // ── Une ligne par créneau horaire ───────────────────────────────────
-  const hLigne = 11;
-  for (const ligne of lignes) {
-    const [debut, fin] = ligne.split("|");
+  // ── Le cadre : quatre lignes, colonnes des jours ────────────────────
+  const yGrille = y;
+  const hTotale = CRENEAUX_JOUR.length * H_LIGNE;
 
-    doc.setDrawColor(...TRAIT).setLineWidth(0.2);
-    doc.rect(X, y, LARGEUR, hLigne);
+  doc.setDrawColor(...TRAIT).setLineWidth(0.2);
+  CRENEAUX_JOUR.forEach((c, i) => {
+    const yl = yGrille + i * H_LIGNE;
+    doc.rect(X, yl, LARGEUR, H_LIGNE);
     doc.setFont("helvetica", "normal").setFontSize(8).setTextColor(...ENCRE);
-    doc.text(heure(debut), X + 2, y + 4.6);
-    doc.text(heure(fin), X + 2, y + 8.4);
-    doc.line(X + L_CRENEAU, y, X + L_CRENEAU, y + hLigne);
+    doc.text(heure(c.debut), X + 2, yl + 4.6);
+    doc.text(heure(c.fin), X + 2, yl + 8.4);
+  });
+  doc.line(X + L_CRENEAU, yGrille, X + L_CRENEAU, yGrille + hTotale);
+  JOURS.forEach((_, i) => {
+    const xCase = X + L_CRENEAU + i * L_JOUR;
+    doc.line(xCase, yGrille, xCase, yGrille + hTotale);
+  });
 
-    JOURS.forEach((j, i) => {
-      const xCase = X + L_CRENEAU + i * L_JOUR;
-      doc.line(xCase, y, xCase, y + hLigne);
+  // ── Les cases occupées, d'un seul tenant sur leur hauteur réelle ────
+  JOURS.forEach((j, i) => {
+    const xCase = X + L_CRENEAU + i * L_JOUR;
+    CRENEAUX_JOUR.forEach((_, ligne) => {
+      const ici = places.get(`${j.valeur}|${ligne}`) ?? [];
+      if (ici.length === 0) return;
 
-      const occupants = m.creneaux.filter(
-        (c) =>
-          c.jour_semaine === j.valeur &&
-          c.heure_debut === debut &&
-          c.heure_fin === fin,
-      );
-      if (occupants.length === 0) return;
+      const span = ici.reduce((mx, x) => Math.max(mx, x.span), 1);
+      const yc = yGrille + ligne * H_LIGNE;
+      const hc = span * H_LIGNE;
 
-      // Une case occupée se teinte : sur un document affiché, la couleur se
-      // lit avant le texte.
-      doc.setFillColor(...TEINTE);
-      doc.rect(xCase + 0.5, y + 0.5, L_JOUR - 1, hLigne - 1, "F");
-      doc.setFont("helvetica", "bold").setFontSize(8).setTextColor(...ENCRE);
+      // La case porte la couleur de son groupe — la même palette qu'à l'écran
+      // (design_system.md §5.4) — et se referme sur toute sa hauteur : un bloc
+      // de 5 h doit se voir deux fois plus haut qu'un bloc de 2 h 30.
+      const couleur = COULEURS_GROUPE_RVB[rangGroupe(ici[0].creneau.groupeId)];
+      doc.setFillColor(...couleur.fond);
+      doc.rect(xCase + 0.4, yc + 0.4, L_JOUR - 0.8, hc - 0.8, "F");
+      doc.setDrawColor(...couleur.trait).setLineWidth(0.3);
+      doc.rect(xCase + 0.4, yc + 0.4, L_JOUR - 0.8, hc - 0.8);
+
+      doc.setFont("helvetica", "bold").setFontSize(8).setTextColor(...couleur.trait);
       const noms = doc.splitTextToSize(
-        occupants.map((o) => o.groupeNom).join(" · "),
+        ici.map((x) => x.creneau.groupeNom).join(" · "),
         L_JOUR - 3,
       ) as string[];
-      const haut = y + (hLigne - noms.length * 3.4) / 2 + 2.6;
-      doc.text(noms.slice(0, 3), xCase + L_JOUR / 2, haut, { align: "center" });
+      const lignesTexte = [...noms.slice(0, 3)];
+      const haut = yc + (hc - lignesTexte.length * 3.4) / 2 + 2.6;
+      doc.text(lignesTexte, xCase + L_JOUR / 2, haut, { align: "center" });
+
+      if (span > 1) {
+        doc.setFont("helvetica", "normal").setFontSize(6.5);
+        doc.setTextColor(...couleur.trait);
+        doc.text(`${span * 2.5} h`, xCase + L_JOUR / 2, haut + 4.4, {
+          align: "center",
+        });
+      }
     });
+  });
 
-    y += hLigne;
-  }
-
-  return y;
+  return yGrille + hTotale;
 }
 
 export async function construireEmploiDuTempsPdf(
@@ -175,8 +206,7 @@ export async function construireEmploiDuTempsPdf(
 
   for (const m of [...courant, ...precedents]) {
     // Une grille ne se coupe pas entre deux pages : elle se lit d'un bloc.
-    const hauteur =
-      12 + new Set(m.creneaux.map((c) => `${c.heure_debut}|${c.heure_fin}`)).size * 11;
+    const hauteur = 12 + CRENEAUX_JOUR.length * H_LIGNE;
     if (y + hauteur > BAS) {
       doc.addPage();
       y = 16;

@@ -192,6 +192,23 @@ Le même module a donc une masse horaire différente selon le groupe — probabl
 
 Implication pour le prompt de génération IA (§7, à préciser lors du backlog) : contraindre explicitement le modèle à produire un schéma court plutôt qu'un texte développé, avec une limite de longueur/densité pour éviter qu'il "déborde" vers un cours complet malgré la consigne — et à ne jamais s'écarter des éléments de contenu assignés à la séance, ni en omettre, ni en inventer d'autres.
 
+### 4.3bis Contenu pédagogique partagé entre groupes parallèles (ajout v3)
+
+**Constat du porteur de projet** : quand deux groupes suivent le même module au même point du programme avec un contenu identique — typiquement DES101 et DES102 en tronc commun sur un module comme M104 — regénérer une fiche de préparation séparée par IA pour chaque groupe est un pur gaspillage. Le contenu pédagogique (objectif, éléments de contenu couverts, aide-mémoire) est **strictement le même** pour les deux groupes à ce point du parcours, même si leurs séances ont des dates et horaires différents (ex. le motif place DES101 le vendredi 8h30-11h00 et DES102 le vendredi 11h00-13h30, séparément).
+
+**Règle** : pour deux séances de groupes parallèles couvrant le même contenu au même point du programme, **la fiche de préparation est un contenu partagé** — générée une fois, pas dupliquée ni régénérée séparément pour chaque groupe. Modifier la fiche depuis l'une des deux séances la met à jour pour l'autre également.
+
+**Ce qui reste propre à chaque séance, jamais partagé** :
+- **Présences** — évidemment distinctes, ce sont des élèves physiquement présents à des moments différents
+- **Remarques de séance** — spécifiques à ce qui s'est réellement passé dans cette séance précise
+- Les **dates, horaires et statut** (faite/à faire) de chaque séance, qui restent des instances distinctes
+
+**Ce qui reste délibérément séparé, à l'inverse de la fiche — exception explicite** : les **contrôles** (CC/EFM) continuent d'être générés en **versions différentes pour chaque groupe**, même sur un contenu identique. Ce n'est pas un oubli, c'est voulu — ne jamais appliquer la logique de partage de la fiche aux contrôles.
+
+*Point ouvert, à trancher techniquement lors du backlog : le mécanisme exact de partage (une fiche liée à plusieurs séances via une relation plusieurs-à-plusieurs, ou une séance "source" et une séance "miroir" qui pointe vers la fiche de la première) dépend de l'état réel du schéma — la même question s'était posée pour le partage de séance FAD (§4.1bis) et avait été tranchée après mesure de l'impact réel sur le code existant. À traiter avec la même rigueur.*
+
+**Support de cours (§4.4) — même logique, confirmée par le porteur de projet.** Le support de cours généré pour une séance repose sur le même contenu que sa fiche de préparation — la même règle de partage s'applique entre séances parallèles (DES101/DES102) : généré une fois, pas dupliqué, modifiable depuis l'une ou l'autre séance avec répercussion immédiate sur les deux.
+
 ### 4.4 Génération IA de support de cours (16:9)
 
 - Pour les modules où le formateur ne dispose pas de cours existant (typiquement les modules de 2ème année, selon le porteur de projet), génération d'un support de type diaporama (16:9), aligné sur le contenu de la fiche de préparation de la séance

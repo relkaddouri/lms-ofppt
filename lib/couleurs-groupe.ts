@@ -20,6 +20,35 @@ export const COULEURS_GROUPE: CouleurGroupe[] = [
 ];
 
 /**
+ * Les mêmes couleurs en composantes, pour les documents PDF.
+ *
+ * jsPDF ne sait pas lire une variable CSS : les valeurs sont donc écrites deux
+ * fois, ici et dans `globals.css`. Elles doivent le rester à l'identique — un
+ * groupe qui change de couleur entre l'écran et le document imprimé perdrait
+ * ce que la couleur sert à établir.
+ */
+export const COULEURS_GROUPE_RVB: {
+  fond: [number, number, number];
+  trait: [number, number, number];
+}[] = [
+  { fond: [234, 235, 237], trait: [46, 59, 78] },
+  { fond: [230, 239, 243], trait: [36, 95, 121] },
+  { fond: [232, 241, 235], trait: [44, 108, 70] },
+  { fond: [237, 233, 245], trait: [91, 75, 138] },
+  { fond: [251, 240, 221], trait: [138, 100, 22] },
+  { fond: [242, 244, 247], trait: [63, 78, 98] },
+];
+
+/** Rang d'un groupe dans la palette, de 0 à 5. */
+export function rangGroupe(id: string): number {
+  let somme = 0;
+  for (let i = 0; i < id.length; i++) {
+    somme = (somme * 31 + id.charCodeAt(i)) >>> 0;
+  }
+  return somme % COULEURS_GROUPE.length;
+}
+
+/**
  * Couleur d'un groupe, déduite de son identifiant.
  *
  * Déterministe : un même groupe porte la même couleur d'une session à
@@ -29,9 +58,5 @@ export const COULEURS_GROUPE: CouleurGroupe[] = [
  * immédiate.
  */
 export function couleurGroupe(id: string): CouleurGroupe {
-  let somme = 0;
-  for (let i = 0; i < id.length; i++) {
-    somme = (somme * 31 + id.charCodeAt(i)) >>> 0;
-  }
-  return COULEURS_GROUPE[somme % COULEURS_GROUPE.length];
+  return COULEURS_GROUPE[rangGroupe(id)];
 }

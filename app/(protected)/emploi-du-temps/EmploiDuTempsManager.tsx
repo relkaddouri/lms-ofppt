@@ -79,6 +79,7 @@ export default function EmploiDuTempsManager({
               heure_debut: c.heure_debut,
               heure_fin: c.heure_fin,
               groupeNom: c.groupeNom,
+              groupeId: c.groupe_id,
             })),
           })),
           `emploi-du-temps-${slugify(anneeScolaire ?? maintenant(), "emploi-du-temps")}.pdf`,
