@@ -1,4 +1,4 @@
-# Design System — Pédago (v3 — confirmée par Claude Design)
+# Design System — LMS OFPPT (v3 — confirmée par Claude Design)
 
 **Cette version remplace les palettes/typographies estimées des versions précédentes par les valeurs réelles extraites des 20 écrans produits dans `docs/new_design/`.** Toute divergence trouvée par la suite entre ce fichier et un écran livré doit être signalée, pas silencieusement arbitrée.
 
@@ -67,9 +67,9 @@ Identité "tableau de pilotage clair" inspirée d'un dashboard SaaS professionne
 
 > *"Le corail ne porte jamais une surface : il souligne un seul point d'attention par écran — un retard, un dépassement, une action irréversible."*
 
-**Précision apportée après vérification sur les écrans livrés (23 boutons corail pleins recensés : `confirmSubmit`, `applySuggestion`, `validateAi`)** : "ne porte jamais une surface" vise les fonds décoratifs (panneaux, cartes, zones de mise en avant), pas les boutons d'action. **Un bouton `destructive` en corail plein est autorisé** — c'est précisément lui, l'unique action engageante d'un écran, qui incarne "le seul point d'attention". La règle reste stricte sur le nombre : un écran ne doit jamais afficher **plus d'un** élément corail en même temps (qu'il s'agisse d'un bouton plein, d'une bordure `danger`, d'un badge d'alerte ou d'un avatar) — si un bouton `destructive` est présent, rien d'autre sur cet écran ne doit être corail.
+**Précision apportée après vérification sur les écrans livrés (23 boutons corail pleins recensés : `confirmSubmit`, `applySuggestion`, `validateAi`)** : "ne porte jamais une surface" vise les fonds décoratifs (panneaux, cartes, zones de mise en avant), pas les boutons d'action. **Un bouton `destructive` en corail plein est autorisé** — c'est précisément lui, l'unique action engageante d'un écran, qui incarne "le seul point d'attention". La règle reste stricte sur le nombre : un écran ne doit jamais afficher **plus d'un** élément corail *contextuel* en même temps (qu'il s'agisse d'un bouton plein, d'une bordure `danger`, d'un badge d'alerte ou d'un avatar) — si un bouton `destructive` est présent, rien d'autre de contextuel sur cet écran ne doit être corail.
 
-**Précision tranchée après une zone grise sur Préparer un contrôle** : un **message de validation de champ** — un barème hors 20, un QCM à moins de deux propositions, un champ vide — **ne compte pas comme un point d'attention** au sens de cette règle. C'est de la validation fonctionnelle immédiate, attachée à un champ que l'on est en train de remplir, pas un signal narratif comme un retard, un dépassement ou une action irréversible. Un bandeau `engageant`, un bouton `destructive` et un message d'erreur de champ peuvent donc coexister sur le même écran. Ce que la règle continue d'interdire, c'est **deux signaux narratifs corail au même moment** — par exemple un retard et une suppression à confirmer.
+**Exemption explicite : la marque.** Le losange corail du logo (`MarqueOfppt`) ne compte pas dans cette règle — c'est un élément structurel permanent, présent sur tous les écrans par construction, pas un signal contextuel d'attention. La règle du "un seul à la fois" s'applique uniquement aux éléments qui *signalent quelque chose sur cet écran précis* (un retard, une action destructive, une alerte) — le logo n'en fait jamais partie, même s'il est visuellement corail en permanence.
 
 **Implication pour toute liste de personnes (avatars)** : le corail est exclu de la palette de couleurs d'avatar, précisément parce qu'une liste de plusieurs personnes ferait mécaniquement apparaître plusieurs avatars corail, ce qui violerait la règle du "un seul à la fois". Palette d'avatar : `--ofppt-ink`, `--ofppt-green`, `--ofppt-teal` uniquement, couleur stable et non permutée par personne.
 
@@ -99,7 +99,6 @@ Identité "tableau de pilotage clair" inspirée d'un dashboard SaaS professionne
 | Niveau | Valeur | Usage |
 |---|---|---|
 | Repos | `0 1px 2px rgba(46,59,78,.05)` | Carte au repos (le plus courant, valeur par défaut) |
-| Carte détachée | `0 2px 8px rgba(46,59,78,.06)` | Carte isolée sur un fond vide, sans voisine pour la cadrer — carte de connexion, carte de définition de mot de passe. Confirmé dans `Connexion.dc.html` |
 | Flottant | `0 10px 28px rgba(46,59,78,.14)` | Menu déroulant ouvert, popover |
 | Panneau latéral | `-18px 0 44px rgba(46,59,78,.18)` | Panneau qui glisse depuis la droite (notifications, filtres) |
 | Barre/feuille ancrée | `0 -4px 16px rgba(46,59,78,.06)` | Barre de navigation mobile fixe en bas, feuille modale mobile |
@@ -113,8 +112,6 @@ Identité "tableau de pilotage clair" inspirée d'un dashboard SaaS professionne
 Repris directement du modèle de référence : chaque ligne représentant une personne (stagiaire, formateur) affiche un avatar (ou initiales sur fond `--mint` si pas de photo), le nom en `--ofppt-ink` gras sur la première ligne, et l'information secondaire (email, ou groupe) en `--slate` plus petit juste en dessous. Ce motif s'applique à toute liste de personnes dans l'app : liste de stagiaires, liste de formateurs si multi-comptes.
 
 La colonne de progression réutilise le même principe qu'une colonne "Score" : un pourcentage simple, aligné à droite, en `IBM Plex Mono`, jamais une barre graphique complexe — la clarté du chiffre prime.
-
-**Précision apportée à la revue périodique** : cette règle vise **une colonne dans une liste de personnes**, là où une barre par ligne transformerait une liste en histogramme illisible. Elle n'interdit pas la barre de proportion décrite en §5.4, qui porte sur **un seul objet** — la progression d'un module, la charge d'une semaine, la couverture d'un référentiel. Vérifié : les sept barres du produit sont toutes dans ce second cas, aucune liste de personnes n'en porte.
 
 ## 5. Nouveaux patterns inspirés des captures de référence
 
@@ -132,15 +129,24 @@ Une icône cloche dans la barre supérieure, avec un badge rond `--ofppt-coral` 
 
 Au-delà du fil d'annonces déjà présent côté stagiaire, ce pattern s'applique à tout contexte de discussion contextuelle (ex. commentaires internes sur une copie, échange formateur-formateur sur un groupe partagé). Chaque entrée : avatar, nom, une étiquette pilule optionnelle indiquant la visibilité ("Privé" en `--ofppt-coral` clair, "Équipe" en `--ofppt-teal` clair) et le rôle de l'auteur en texte `--slate`, le message, puis une rangée d'actions discrètes (réagir, marquer comme lu, menu "..."). Une réaction existante s'affiche en pastille arrondie avec l'emoji/icône et un compteur. La mention `@nom` dans un message est cliquable et surlignée en fond `--mint`, texte `--ofppt-ink`. Champ de saisie en bas avec les actions (lien, mention, bascule de visibilité) sur une ligne dédiée sous le texte, jamais mélangées au texte.
 
-### 5.4 Barre de proportion — recensée à la revue périodique
+### 5.4 Palette catégorielle par groupe — calendrier et emploi du temps (ajout v3)
 
-Sept écrans l'utilisaient sans qu'elle figure ici, avec trois hauteurs et trois couleurs de piste différentes pour le même objet. Convention unique, désormais :
+**Distincte de la palette de marque/statut** (section 1) — celle-ci sert uniquement à distinguer visuellement des groupes différents dans une grille (calendrier, emploi du temps), jamais à signaler un statut ou une alerte. Ne jamais réutiliser `--ofppt-coral` dans cette palette : sa présence doit rester rare et signifiante (règle du point d'attention unique, §1), pas diluée en identifiant de groupe parmi d'autres.
 
-- **Piste** `--wash`, coins `999px`, `overflow-hidden`.
-- **Hauteur** : `6px` quand la barre accompagne une ligne ou une valeur (suivi des heures, progression d'un module dans une liste) ; `10px` quand elle est le sujet de sa carte (avancement d'une répartition, courbe de difficulté d'un contrôle).
-- **Remplissage** : `--ofppt-teal` en cours, `--ofppt-green` une fois l'objectif atteint. Le corail est exclu — une barre n'est pas un point d'attention, elle mesure.
-- **Deux segments** quand la barre compare deux parts d'un même tout (accessible / discriminant sur la courbe de difficulté §8) : `--ofppt-green` puis `--ofppt-teal`, sans écart entre eux, chaque segment repris en légende avec sa pastille et son chiffre. Jamais plus de deux segments : au-delà, c'est un tableau.
-- **Toujours accompagnée du chiffre**, jamais seule : la barre donne l'ordre de grandeur, le chiffre donne la valeur.
+| Rang | Fond | Bordure/texte |
+|---|---|---|
+| 1 | `--ofppt-ink` à 10% d'opacité | `--ofppt-ink` |
+| 2 | `--ofppt-teal` à 12% d'opacité | `--ofppt-teal-dark` |
+| 3 | `--ofppt-green` à 12% d'opacité | `--ofppt-green-dark` |
+| 4 | violet neutre `#EDE9F5` | `#5B4B8A` |
+| 5 | ambre neutre `#FBF0DD` | `#8A6416` |
+| 6 | `--wash-strong` | `--body` |
+
+**Attribution déterministe** : la couleur d'un groupe se calcule depuis son identifiant (ex. un hash simple modulo le nombre de couleurs de la palette), jamais assignée au hasard à l'affichage — un même groupe doit toujours porter la même couleur, session après session, écran après écran. Si plus de 6 groupes existent simultanément, la palette boucle (rang 7 = rang 1).
+
+### 5.5 Grille calendrier à créneaux fusionnables (ajout v3)
+
+Le calendrier hebdomadaire (§4.10 du PRD) repose sur une grille de **4 créneaux fixes de 2h30** (8h30-11h00, 11h00-13h30, 13h30-16h00, 16h00-18h30), pas des blocs Matin/Soir grossiers. Une séance plus longue qu'un créneau **fusionne visuellement les lignes qu'elle occupe** — comme un événement multi-heures dans un calendrier classique (Google Calendar, Outlook) : un seul bloc étiré sur la hauteur cumulée des créneaux concernés, avec son contenu (groupe, module, horaire) centré ou en haut du bloc fusionné, jamais répété sur chaque ligne. Le bloc porte la couleur du groupe (§5.4) en fond, avec le nom du module et l'horaire en texte.
 
 ## 6. Espace stagiaire — mobile-first (règles spécifiques)
 
@@ -157,7 +163,7 @@ Le stagiaire consulte l'app quasi exclusivement depuis son téléphone (§Espace
 
 Le calendrier (formateur) doit distinguer visuellement plusieurs états qui ont un sens réglementaire différent (PRD §4.9-4.10) — une différence de couleur ou de style de bordure suffit, mais elle doit être systématique :
 
-- **Bloc matin/soir** : représenté comme un rectangle unique de la durée du bloc (8h30-13h30 ou 13h30-18h30), avec une fine ligne pointillée `--border` à l'endroit de la pause interne (10h45 ou 15h45) — visuellement "un bloc qui respire", pas une vraie coupure.
+- **Bloc de créneau** : une séance occupe la hauteur d'un ou plusieurs créneaux fixes de 2h30 (grille détaillée en §5.5) — jamais représentée comme un simple rectangle matin/soir de 5h, cette description est obsolète depuis la correction v3 de la grille calendrier.
 - **Date de contrôle estimée par l'app** (CC1, CC2, EFM local) : bordure **en pointillés** `--blueprint`-équivalent (`--ofppt-ink` à 60% d'opacité), fond `--mint` très clair — signale "prévision, pas encore fixée".
 - **Date de contrôle confirmée manuellement** (EFM régional saisi) : bordure **pleine** `--ofppt-ink`, fond `--surface` — signale "date ferme".
 - Ne jamais utiliser la même représentation pour ces deux états : c'est la règle la plus importante de cette section, parce qu'un formateur qui confondrait une estimation avec une date confirmée par la Direction Régionale prendrait une vraie décision sur une mauvaise information.
@@ -166,11 +172,8 @@ Le calendrier (formateur) doit distinguer visuellement plusieurs états qui ont 
 
 Toute donnée produite par l'IA (fiche de préparation, questions de contrôle, corrigé, correction suggérée) doit être visuellement marquée **tant qu'elle n'a pas été relue et validée par le formateur** :
 
-- **Variante `informatif` — le défaut.** Bandeau discret en haut du bloc concerné : icône étoile + texte "Généré par l'IA — à relire", fond `--mint` avec bordure fine `--border-strong` (l'opacité sur `--ofppt-ink` des premières versions ne se transpose pas en v4 : `--ink` étant un alias de variable, Tailwind laisse tomber le canal alpha et la bordure ressortait pleine). Il informe, il n'alerte pas : un contenu généré n'est pas une erreur, c'est un brouillon. C'est le traitement de la fiche de préparation et du support de séance.
-- **Variante `engageant`.** Fond `--tint-alert` avec bordure `--tint-alert-strong`, texte `--ofppt-coral-dark`, icône éclair, l'origine du contenu en mono (« Claude · 6 questions ») et un bouton plein corail "Marquer comme relu". C'est le rendu de `Préparer un contrôle.dc.html`.
-  - **Règle d'usage, stricte** : `engageant` est réservé au contenu généré qui **pèse directement sur une note** — questions et barème d'un contrôle, corrigé, correction suggérée d'une copie. Partout ailleurs, `informatif`. Un support de cours mal généré se réécrit ; un barème mal généré fausse une moyenne annuelle : seul le second justifie la teinte d'alerte.
-  - Le bouton plein corail de cette variante est le seul admis avec l'action destructive. Il ne contredit pas la règle du point d'attention unique de §4 : le bandeau et son bouton portent **le même sujet** — la relecture de ce contenu-là. Ce que la règle interdit, c'est deux alertes *différentes* en corail au même moment, pas une alerte et son action.
-- Ce bandeau **disparaît** dès que le formateur modifie ou valide explicitement le contenu (bouton "Valider", "Marquer comme relu", ou simple édition du texte) — à ce moment, le contenu devient visuellement identique à un contenu saisi manuellement
+- Bandeau discret en haut du bloc concerné : icône étoile/éclair + texte "Généré par l'IA — à relire", fond `--signal`-équivalent (`--mint` avec bordure `--ofppt-ink` fine)
+- Ce bandeau **disparaît** dès que le formateur modifie ou valide explicitement le contenu (bouton "Valider" ou simple édition du texte) — à ce moment, le contenu devient visuellement identique à un contenu saisi manuellement
 - Cette règle découle directement des enseignements de l'audit précédent : ne jamais laisser une note ou un contenu généré passer pour définitif sans passage humain visible
 
 ## 9. Données de référence denses (programme OFPPT) — divulgation progressive
@@ -187,7 +190,7 @@ Une fiche prescrite ou un tableau de suggestions pédagogiques contient beaucoup
 
 - **Bouton** : rayon 9px, padding 11×20px, 5 variantes —
   - *Primaire* : fond `--ofppt-ink`, texte blanc
-  - *Secondaire* : fond `--surface`, bordure 1px `--border-strong` (#C9D2DC), texte `--ofppt-ink` (#2E3B4E — confirmé dans la planche de style, et non `--body`)
+  - *Secondaire* : fond `--surface`, bordure 1px `--border-strong` (#C9D2DC), texte `--body`
   - *Ghost* : pas de bordure (réservé aux actions d'icône) — pas de bordure, contrairement aux autres variantes
   - *Danger* (signal, pas engagement définitif — ex. "Signaler un retard") : contour corail, bordure `#F0BDB8`, texte `--ofppt-coral`
   - *Destructive* (l'action la plus engageante de l'écran — ex. confirmer une suppression, valider une proposition IA) : fond `--ofppt-coral` plein, texte blanc — devient alors l'unique élément corail autorisé sur cet écran (voir règle du corail en §1)
@@ -198,16 +201,6 @@ Une fiche prescrite ou un tableau de suggestions pédagogiques contient beaucoup
 - **Icônes d'action** : chaque bouton d'action (Modifier, Supprimer, Ajouter, etc.) porte une icône (lucide-react, 16px) avant le texte, espacement 6px
 - **Champ de formulaire** : rayon 9px, **bordure 1px `--border-strong`** (pas `--border`, qui est trop pâle et disparaît sur fond blanc — réservée aux cartes et séparateurs), label 14px/600 au-dessus du champ, focus en halo sarcelle 3px (`--ofppt-teal` à faible opacité)
 - **Carte** : padding 24px (pas 16px), filet interne éventuel en `--separator`
-
-**Composants composés, recensés après coup** — ils existaient dans le code sans figurer ici, ce que §12 interdit ; leur spécification est relevée sur l'implémentation en place.
-
-- **`Segments`** : bascule entre vues exclusives (les onglets de Paramètres, les filtres d'année). Piste `--wash-strong` avec bordure `--border`, rayon 11px, padding 4px ; le segment actif prend un fond `--surface` et l'ombre de repos, les autres restent en `--slate-2`. Toujours 2 à 4 options — au-delà, c'est une liste déroulante.
-- **`Interrupteur`** : bascule d'un réglage booléen, jamais d'une navigation. Piste 46×26, pastille blanche de 20px glissant de 3px à 23px, piste `--ofppt-green` à l'état actif et `--border-strong` au repos. Porte `role="switch"` et un `label` qui dit ce qu'il commande, pas son état.
-- **`Breadcrumb`** : chemin de retour sur les écrans à deux niveaux ou plus (un groupe, un module d'un groupe). Segments en `--slate-2`, séparateur `/` en `--muted`, dernier segment non cliquable.
-- **`GroupeTabs`** : navigation entre les onglets d'un groupe, avec débordement horizontal et menu « Plus » au-delà de la largeur disponible — un groupe porte plus d'onglets qu'un écran ne peut en montrer, et les tronquer en cacherait certains définitivement.
-- **`SelecteurAnnee`** : change la portée de toute l'application, comme on change de dossier de travail (PRD §4.15). Bouton de la barre supérieure portant l'année en `IBM Plex Mono`, menu à droite listant les années de la plus récente à la plus ancienne, l'année en cours signalée en `--ofppt-green`. Il reste ouvrable avec une seule année déclarée : c'est de là que se crée la suivante. Changer d'année recharge la page — une portée globale ne se rafraîchit pas par morceaux.
-- **`NouvelleAnnee`** : modale de duplication. Cases à cocher, **toutes cochées par défaut**, chacune annonçant ce que le groupe emporte — décocher avant est réversible, supprimer après ne l'est pas. Ce qui n'est pas repris est écrit dans la modale, jamais découvert après coup.
-- **`RendusDevoir`** : liste dépliable des copies déposées sous un devoir. Fermée par défaut — la plupart des devoirs se consultent sans le détail — et ne charge ses données qu'à l'ouverture.
 
 ## 11. Règles UX
 
@@ -226,10 +219,6 @@ Une fiche prescrite ou un tableau de suggestions pédagogiques contient beaucoup
 - **Focus clavier toujours visible** (contour `--ofppt-ink` 2px minimum) sur tout élément interactif ; contraste texte/fond conforme AA sur tout le texte.
 - **La préparation d'un contrôle suit un parcours guidé en étapes visibles** (contenu couvert → choix du format → assistance IA → relecture/validation), jamais un formulaire unique avec tout mélangé — chaque étape affiche où l'utilisateur en est (ex. indicateur "Étape 2 sur 4"), cohérent avec le fait que le formateur garde la main à chaque étape (PRD §4.7).
 - **Un module porte toujours son code opérationnel court en évidence** (ex. `M106`) dans `IBM Plex Mono`, avec le nom complet de la compétence juste à côté en texte normal — jamais l'un sans l'autre, le formateur pense en codes courts au quotidien mais a besoin du nom complet pour lever toute ambiguïté.
-
-### Ligne réservée dans un tableau de saisie
-
-Une ligne qui occupe du total sans être modifiable — les dix heures d'évaluation d'une répartition horaire (§4.7 du PRD) — se distingue par un fond `--paper-alt`, un filet supérieur `--border-strong` qui la sépare du bloc saisissable, un badge « réservé », et un tiret `--slate-light` à la place de chaque champ. Elle n'est jamais absente ni simplement soustraite du total : un formateur doit voir ce qui lui est retiré, pas le déduire d'un total qui ne tombe pas juste.
 
 ## 12. Gouvernance des futurs composants
 
@@ -258,7 +247,5 @@ Transitions courtes uniquement (150-200ms, `ease-out`) sur les changements d'ét
 Un composant partagé porte un nom français métier s'il est spécifique au domaine (`RailDeProgression`, `BandeauIa`), un nom anglais générique s'il est purement technique/réutilisable (`Button`, `Modal`, `KebabMenu`) — cohérent avec la convention déjà établie dans `conventions.md` (français pour le métier, anglais pour la technique).
 
 ### Revue périodique
-
-**Dernière revue : 3 septembre 2026**, après treize atomes — au-delà des huit à dix prévus. Elle a produit : la précision de §4 sur la barre en liste de personnes, le recensement de la barre de proportion (§5.4) et de la ligne réservée (§11), et l'ajout de `SelecteurAnnee`, `NouvelleAnnee` et `RendusDevoir` en §10. Trois hauteurs et trois couleurs de piste coexistaient pour la même barre : elles ont été alignées dans le code au passage.
 
 Comme pour `conventions.md`, relis ce fichier face au code réel tous les 8-10 composants ajoutés — pas seulement au moment de l'écrire. Un design system qui n'est jamais confronté au code dérive silencieusement, exactement comme on l'a vu avec le token `--mist` jamais défini mais utilisé 18 fois.

@@ -185,7 +185,7 @@ export async function genererSeances(
     supabase
       .from("seances")
       .select(
-        "id, module_id, duree_prevue, nature, suggestion_pedagogique_id, contenu_prevu, objectif_operationnel, est_fad, lien_teams, seance_groupes!inner(groupe_id), seance_elements_contenu(element_contenu_id)",
+        "id, module_id, created_at, duree_prevue, nature, suggestion_pedagogique_id, contenu_prevu, objectif_operationnel, est_fad, lien_teams, seance_groupes!inner(groupe_id), seance_elements_contenu(element_contenu_id), suggestions_pedagogiques(ordre, elements_competence(lettre, ordre))",
       )
       .eq("seance_groupes.groupe_id", groupeId)
       .is("date", null)
@@ -273,8 +273,41 @@ export async function genererSeances(
     curseur.setUTCDate(curseur.getUTCDate() + 1);
   }
 
+  // ── L'ordre pédagogique, explicitement ────────────────────────────────
+  //
+  // `created_at` ne suffit pas : un module entier s'insère en un seul lot, où
+  // toutes les lignes partagent l'horodatage de la transaction. L'ordre à
+  // l'intérieur d'un module tenait donc à la chance. Il se lit maintenant du
+  // référentiel — élément, puis objectif, puis théorique avant pratique
+  // (PRD §4.9) — l'horodatage ne départageant plus que les modules entre eux.
+  const rang = (s: (typeof aPlacer)[number]) => {
+    const sp = s.suggestions_pedagogiques as unknown as {
+      ordre: number | null;
+      elements_competence: { lettre: string | null; ordre: number | null } | null;
+    } | null;
+    return {
+      lot: String(s.created_at ?? ""),
+      lettre: sp?.elements_competence?.lettre ?? "",
+      ordreElement: sp?.elements_competence?.ordre ?? 0,
+      ordreObjectif: sp?.ordre ?? 0,
+      nature: s.nature === "pratique" ? 1 : 0,
+    };
+  };
+
+  const ordonnees = [...aPlacer].sort((a, b) => {
+    const x = rang(a);
+    const y = rang(b);
+    return (
+      x.lot.localeCompare(y.lot) ||
+      x.ordreElement - y.ordreElement ||
+      x.lettre.localeCompare(y.lettre) ||
+      x.ordreObjectif - y.ordreObjectif ||
+      x.nature - y.nature
+    );
+  });
+
   // ── Le remplissage lui-même, pur et testable à part ────────────────────
-  const blocs: BlocContenu[] = aPlacer.map((s) => ({
+  const blocs: BlocContenu[] = ordonnees.map((s) => ({
     seanceId: s.id,
     suggestionId: s.suggestion_pedagogique_id ?? null,
     code: s.objectif_operationnel ?? "",

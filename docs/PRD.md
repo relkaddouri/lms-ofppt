@@ -353,6 +353,19 @@ Exemple donné par le porteur de projet : 3 CC de 2h30 chacun (7h30) + 1 EFM de 
 - Déclaration d'absence (ex. maladie) qui se reflète visuellement dans le calendrier — impacte potentiellement le recalcul de la progression prévue et régénère les projections de fin de module (§4.9 ci-dessus)
 - Distinction séances présentiel / à distance visible dans le calendrier
 
+**Grille à 4 créneaux fixes — corrigé v3, remplace la grille grossière Matin/Soir.** La vue calendrier hebdomadaire ne doit plus afficher seulement deux blocs "Matin (8h30-13h30)" et "Soir (13h30-18h30)" de 5h chacun — c'est une grille trop grossière qui ne reflète pas la vraie granularité des créneaux déclarés dans le motif hebdomadaire (§4.9), où un jour peut être scindé en créneaux de 2h30 (ex. le vendredi, DES101 puis DES102). La grille doit reposer sur **4 créneaux fixes de 2h30 chacun**, base commune à toute la semaine :
+
+```
+8h30 – 11h00
+11h00 – 13h30
+13h30 – 16h00
+16h00 – 18h30
+```
+
+**Une séance plus longue qu'un seul créneau doit visuellement fusionner les lignes qu'elle occupe**, comme un événement de plusieurs heures dans un calendrier classique — une séance de 5h (ex. 8h30-13h30) doit s'afficher comme un seul bloc visuel étiré sur la hauteur des deux créneaux 8h30-11h00 et 11h00-13h30, pas comme deux blocs séparés ni confinée à la hauteur d'un seul créneau. Une séance de 2h30 occupe la hauteur d'un seul créneau.
+
+**Couleur distincte par groupe.** Chaque groupe doit être visuellement identifiable par sa propre couleur dans le calendrier — DDOUX201, DES101, DES102 ne doivent jamais avoir le même traitement visuel, pour qu'on distingue au premier coup d'œil à quel groupe appartient une séance sans avoir à lire le texte. Voir `design_system.md` pour la palette exacte à utiliser (nouvelle palette catégorielle, distincte de la palette de marque/statut).
+
 **Calendrier des contrôles par module.**
 
 Pour chaque module en cours, l'app affiche une **estimation des dates prévisionnelles de CC1, CC2, et EFM**, calculée à partir des séances réellement générées par le motif hebdomadaire (§4.9 ci-dessus), pas d'une simple estimation de rythme moyen. Le comportement diffère selon le type d'EFM du module :
