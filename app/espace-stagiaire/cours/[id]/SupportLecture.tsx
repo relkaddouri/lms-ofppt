@@ -1,4 +1,5 @@
-import type { Support } from "@/app/api/generate/support/route";
+import type { Support } from "@/lib/support";
+import { FigureSupport, ListeRessources } from "@/components/RessourcesSupport";
 
 /**
  * Le support tel que le stagiaire le lit.
@@ -49,6 +50,7 @@ export default function SupportLecture({ support }: { support: Support }) {
             ))}
           </ul>
         </Bloc>
+        <ListeRessources ressources={support.ressources ?? []} />
       </div>
     );
   }
@@ -67,6 +69,7 @@ export default function SupportLecture({ support }: { support: Support }) {
               </li>
             ))}
           </ul>
+          {sec.schema ? <FigureSupport schema={sec.schema} /> : null}
           {sec.exemple ? (
             <p className="mt-3 rounded-lg bg-paper p-3 text-sm leading-relaxed text-slate">
               <span className="font-medium text-ink">Exemple — </span>
@@ -89,6 +92,8 @@ export default function SupportLecture({ support }: { support: Support }) {
           </ul>
         </section>
       ) : null}
+
+      <ListeRessources ressources={support.ressources ?? []} />
     </div>
   );
 }

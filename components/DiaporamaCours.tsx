@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Button from "@/components/ui/Button";
-import type { SupportTheorique } from "@/app/api/generate/support/route";
+import type { SupportTheorique } from "@/lib/support";
 import {
   ChevronLeft,
   ChevronRight,
@@ -21,6 +21,7 @@ type Diapo =
       notions: string[];
       exemple: string | null;
     }
+  | { type: "schema"; titre: string; etapes: string[]; legende: string | null }
   | { type: "retenir"; points: string[] };
 
 /**
@@ -59,6 +60,17 @@ function decouper(support: SupportTheorique, sousTitre: string): Diapo[] {
         exemple: k === paquets.length - 1 ? sec.exemple : null,
       });
     });
+
+    // La figure prend sa propre diapositive : la coller sous les notions
+    // reconstitue le mur de texte que le découpage vient d'éviter.
+    if (sec.schema) {
+      diapos.push({
+        type: "schema",
+        titre: sec.schema.titre,
+        etapes: sec.schema.etapes,
+        legende: sec.schema.legende,
+      });
+    }
   });
 
   if (support.aRetenir.length > 0) {
@@ -220,6 +232,44 @@ export default function DiaporamaCours({
                     {d.exemple}
                   </p>
                 </div>
+              ) : null}
+            </div>
+          ) : d.type === "schema" ? (
+            <div className="flex h-full flex-col justify-center bg-surface px-[6cqw] py-[6cqh]">
+              <h2
+                className="font-display font-bold leading-tight text-ink"
+                style={{ fontSize: "3cqw" }}
+              >
+                {d.titre}
+              </h2>
+              <ol className="mt-[5cqh] flex flex-wrap items-center gap-[1.4cqw]">
+                {d.etapes.map((e, i) => (
+                  <li key={i} className="flex items-center gap-[1.4cqw]">
+                    <span
+                      className="rounded-[0.8cqw] border-[0.15cqw] border-ink bg-wash px-[2cqw] py-[1.6cqh] leading-snug text-ink"
+                      style={{ fontSize: "1.9cqw" }}
+                    >
+                      {e}
+                    </span>
+                    {i < d.etapes.length - 1 ? (
+                      <span
+                        aria-hidden
+                        className="font-bold text-ink/50"
+                        style={{ fontSize: "2.2cqw" }}
+                      >
+                        →
+                      </span>
+                    ) : null}
+                  </li>
+                ))}
+              </ol>
+              {d.legende ? (
+                <p
+                  className="mt-[4cqh] leading-snug text-ink/70"
+                  style={{ fontSize: "1.7cqw" }}
+                >
+                  {d.legende}
+                </p>
               ) : null}
             </div>
           ) : (

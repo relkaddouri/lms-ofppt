@@ -2,7 +2,7 @@
 
 import { createClient, getUser } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
-import type { Support } from "@/app/api/generate/support/route";
+import type { Support } from "@/lib/support";
 import { libelleModule } from "@/lib/modules";
 
 export type SupportListe = {

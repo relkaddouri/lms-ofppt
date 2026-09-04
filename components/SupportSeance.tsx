@@ -10,7 +10,8 @@ import Badge from "@/components/ui/Badge";
 import { inputStyles as inputClass } from "@/components/ui/Input";
 import { slugify } from "@/lib/format";
 import DiaporamaCours from "@/components/DiaporamaCours";
-import type { Support } from "@/app/api/generate/support/route";
+import type { Support } from "@/lib/support";
+import { ListeRessources } from "@/components/RessourcesSupport";
 import { Download, Save, Sparkles } from "lucide-react";
 import { getEtablissement } from "@/app/actions/etablissement";
 import { marqueDe } from "@/lib/pdf-marque";
@@ -278,6 +279,36 @@ export default function SupportSeance({
                 }
                 className={`${inputClass} mt-1`}
               />
+              <label className="mt-2 block text-xs text-slate">
+                Schéma — une étape par ligne, vide si la section n&apos;en a pas
+                besoin
+              </label>
+              <textarea
+                rows={3}
+                value={(sec.schema?.etapes ?? []).join("\n")}
+                onChange={(e) => {
+                  const etapes = e.target.value.split("\n").filter((l) => l.trim());
+                  setSupport({
+                    ...support,
+                    sections: support.sections.map((x, k) =>
+                      k === i
+                        ? {
+                            ...x,
+                            schema:
+                              etapes.length >= 2
+                                ? {
+                                    titre: x.schema?.titre || x.titre,
+                                    etapes,
+                                    legende: x.schema?.legende ?? null,
+                                  }
+                                : null,
+                          }
+                        : x,
+                    ),
+                  });
+                }}
+                className={`${inputClass} mt-1`}
+              />
               <label className="mt-2 block text-xs text-slate">Exemple</label>
               <textarea
                 rows={2}
@@ -305,6 +336,20 @@ export default function SupportSeance({
                 setSupport({ ...support, aRetenir: e.target.value.split("\n") })
               }
               className={`${inputClass} mt-1`}
+            />
+          </div>
+          <div className="pt-1">
+            <ListeRessources
+              ressources={support.ressources ?? []}
+              formateur
+              onRetirer={(k) =>
+                setSupport({
+                  ...support,
+                  ressources: (support.ressources ?? []).filter(
+                    (_, j) => j !== k,
+                  ),
+                })
+              }
             />
           </div>
         </div>
@@ -398,6 +443,20 @@ export default function SupportSeance({
                 </div>
               ))}
             </div>
+          </div>
+          <div className="pt-1">
+            <ListeRessources
+              ressources={support.ressources ?? []}
+              formateur
+              onRetirer={(k) =>
+                setSupport({
+                  ...support,
+                  ressources: (support.ressources ?? []).filter(
+                    (_, j) => j !== k,
+                  ),
+                })
+              }
+            />
           </div>
         </div>
       )}

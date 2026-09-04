@@ -3,6 +3,16 @@ import { appelerLlm, chargerConfigLlm, ErreurLlm } from "@/lib/llm";
 import { dureeHeures } from "@/lib/creneaux";
 import { verifierQuota, QUOTA_GENERATION } from "@/lib/rate-limit";
 import { NextResponse } from "next/server";
+import {
+  ressourceHonoree,
+  ressourcesDeLaFiche,
+  type RessourceSupport,
+  type SchemaSupport,
+  type Support,
+  type SupportPratique,
+  type SupportTheorique,
+} from "@/lib/support";
+import { sourceContenu } from "@/app/actions/partage";
 
 /**
  * Support remis au stagiaire.
@@ -12,33 +22,7 @@ import { NextResponse } from "next/server";
  * Les confondre produirait un cours sans exercice ou un TP sans notions.
  */
 
-export type SectionCours = {
-  titre: string;
-  notions: string[];
-  exemple: string | null;
-};
 
-export type SupportTheorique = {
-  type: "theorique";
-  titre: string;
-  introduction: string;
-  sections: SectionCours[];
-  aRetenir: string[];
-};
-
-export type CritereTp = { critere: string; points: number };
-
-export type SupportPratique = {
-  type: "pratique";
-  titre: string;
-  contexte: string;
-  objectif: string;
-  consignes: string[];
-  livrable: string;
-  criteres: CritereTp[];
-};
-
-export type Support = SupportTheorique | SupportPratique;
 
 /**
  * Normalise une liste renvoyée par le modèle.
@@ -55,6 +39,118 @@ function liste(v: unknown, max = 12): string[] {
     )
     .filter(Boolean)
     .slice(0, max);
+}
+
+/**
+ * Normalise les ressources et vérifie que leurs liens mènent quelque part.
+ *
+ * Un modèle produit volontiers une URL plausible qui n'existe pas. Un lien
+ * mort dans un support remis à une classe se découvre devant la classe : la
+ * vérification coûte une requête et se fait ici, une fois.
+ */
+async function ressourcesVerifiees(
+  brut: unknown,
+  annoncees: string[],
+): Promise<RessourceSupport[]> {
+  const liste = (Array.isArray(brut) ? brut : [])
+    .map((r) => {
+      const o = (r ?? {}) as Record<string, unknown>;
+      const url = String(o.url ?? "").trim();
+      return {
+        titre: String(o.titre ?? "").trim(),
+        url: /^https?:\/\//.test(url) ? url : null,
+        pourquoi: String(o.pourquoi ?? "").trim(),
+        origine: annoncees.some(
+          (a) => a === url || (a.length > 3 && String(o.titre ?? "").includes(a)),
+        )
+          ? ("fiche" as const)
+          : ("proposee" as const),
+        joignable: null as boolean | null,
+      };
+    })
+    .filter((r) => r.titre)
+    .slice(0, 8);
+
+  await Promise.all(
+    liste.map(async (r) => {
+      if (!r.url) return;
+      try {
+        const ctrl = new AbortController();
+        const minuteur = setTimeout(() => ctrl.abort(), 4000);
+        // Certains serveurs refusent HEAD : un GET interrompu dit la même
+        // chose sans télécharger la page entière.
+        const rep = await fetch(r.url, {
+          method: "GET",
+          redirect: "follow",
+          signal: ctrl.signal,
+        });
+        clearTimeout(minuteur);
+        r.joignable = rep.ok;
+      } catch {
+        r.joignable = false;
+      }
+    }),
+  );
+
+  return liste;
+}
+
+function schema(v: unknown): SchemaSupport | null {
+  const o = (v ?? {}) as Record<string, unknown>;
+  const etapes = liste(o.etapes, 8);
+  if (etapes.length < 2) return null;
+  return {
+    titre: String(o.titre ?? "").trim() || "Schéma",
+    etapes,
+    legende: o.legende ? String(o.legende).trim() : null,
+  };
+}
+
+/**
+ * Contrôle §4.4 : le support tient-il les promesses de la fiche ?
+ *
+ * La consigne ne suffit pas — c'est le principe retenu partout ici : ce que
+ * le PRD déclare non négociable se vérifie après coup, on ne se contente pas
+ * de le demander au modèle.
+ */
+function coherence(
+  support: Support,
+  annoncees: string[],
+  sansFiche: boolean,
+): string[] {
+  const dits: string[] = [];
+
+  if (sansFiche) {
+    dits.push(
+      "Aucune fiche de préparation n'existe pour cette séance : le support n'a rien pu honorer. Générez la fiche d'abord.",
+    );
+    return dits;
+  }
+
+  const orphelines = annoncees.filter((a) => !ressourceHonoree(a, support));
+  if (orphelines.length > 0) {
+    dits.push(
+      `La fiche annonce ${orphelines.length} ressource${orphelines.length > 1 ? "s" : ""} que le support ne reprend pas : ${orphelines.join(" · ")}.`,
+    );
+  }
+
+  const mortes = support.ressources.filter((r) => r.joignable === false);
+  if (mortes.length > 0) {
+    dits.push(
+      `${mortes.length} lien${mortes.length > 1 ? "s" : ""} ne répond${mortes.length > 1 ? "ent" : ""} pas : ${mortes.map((r) => r.titre).join(" · ")}. Corrigez ou retirez avant de remettre le document.`,
+    );
+  }
+
+  const aVerifier = support.ressources.filter(
+    (r) => r.origine === "proposee" && r.url && r.joignable !== false,
+  );
+  if (aVerifier.length > 0) {
+    dits.push(
+      `${aVerifier.length} ressource${aVerifier.length > 1 ? "s" : ""} proposée${aVerifier.length > 1 ? "s" : ""} par le modèle : le lien répond, son contenu reste à vérifier.`,
+    );
+  }
+
+  return dits;
 }
 
 export async function POST(request: Request) {
@@ -112,10 +208,14 @@ export async function POST(request: Request) {
 
   // Ce qui a déjà été traité avec ce groupe : le support enchaîne, il ne
   // recommence pas.
+  //
+  // Le filtre portait ici le même nom de colonne fautif que la génération de
+  // fiche — une expression TypeScript recopiée dans une chaîne PostgREST. La
+  // requête échouait à chaque appel et « déjà traité » était toujours vide.
   const { data: precedentes } = await supabase
     .from("seances")
     .select("contenu_realise, seance_groupes!inner(groupe_id)")
-    .eq("seance_groupes.seance_groupes[0]!.groupe_id", s.seance_groupes[0]!.groupe_id)
+    .eq("seance_groupes.groupe_id", s.seance_groupes[0]!.groupe_id)
     .eq("module_id", s.module_id)
     .eq("statut", "fait")
     .not("contenu_realise", "is", null);
@@ -125,6 +225,33 @@ export async function POST(request: Request) {
       .map((p) => p.contenu_realise)
       .filter(Boolean)
       .join(" ; ") || null;
+
+  // §4.4 : le support doit honorer ce que la fiche annonce. Il faut donc
+  // commencer par la lire — celle de la séance source quand la séance est un
+  // miroir (§4.3bis), sans quoi deux groupes parallèles auraient une fiche
+  // commune et des supports qui ne la suivent pas.
+  const idFiche = await sourceContenu(seanceId);
+  const { data: ficheRow } = await supabase
+    .from("fiches_preparation")
+    .select("contenu")
+    .eq("seance_id", idFiche)
+    .order("version", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  let fiche: {
+    objectifs?: string;
+    methodeActive?: string;
+    fichiers?: string;
+    phases?: { cle: string; instructions: string[]; questions: string[]; points: string[] }[];
+  } | null = null;
+  try {
+    fiche = ficheRow?.contenu ? JSON.parse(ficheRow.contenu) : null;
+  } catch {
+    fiche = null;
+  }
+
+  const annoncees = fiche ? ressourcesDeLaFiche(fiche) : [];
 
   const obj = s.suggestions_pedagogiques;
 
@@ -142,9 +269,52 @@ export async function POST(request: Request) {
     "",
     dejaVu ? `Déjà traité avec ce groupe : ${dejaVu}` : "Première séance du module.",
     "",
+    fiche
+      ? [
+          "FICHE DE PRÉPARATION DE CETTE SÉANCE — le support la sert, il ne",
+          "raconte pas autre chose :",
+          fiche.objectifs ? `  Objectif : ${fiche.objectifs}` : null,
+          fiche.methodeActive ? `  Méthode active : ${fiche.methodeActive}` : null,
+          ...(fiche.phases ?? []).flatMap((ph) => [
+            `  [${ph.cle}] ${ph.instructions.join(" · ")}`,
+            ph.points.length ? `    points : ${ph.points.join(" · ")}` : null,
+          ]),
+        ]
+          .filter(Boolean)
+          .join("\n")
+      : "Aucune fiche de préparation n'est encore enregistrée pour cette séance.",
+    "",
+    annoncees.length
+      ? [
+          "RESSOURCES ANNONCÉES PAR LA FICHE — chacune doit se retrouver dans",
+          "le support, nommée et accessible. Une référence que le stagiaire ne",
+          "peut pas atteindre est une promesse non tenue :",
+          ...annoncees.map((r) => `  — ${r}`),
+        ].join("\n")
+      : null,
+    annoncees.length ? "" : null,
   ]
     .filter((l): l is string => l !== null)
     .join("\n");
+
+  const consignesRiches = [
+    "",
+    "RESSOURCES — le support n'est pas un texte nu. Cite dans `ressources`",
+    "les documents, vidéos et articles de référence qui approfondissent la",
+    "notion. Deux règles :",
+    "  · toute ressource annoncée par la fiche ci-dessus y figure, avec son",
+    "    URL quand elle en a une — c'est la raison d'être de cette liste ;",
+    "  · une ressource que tu ajoutes de toi-même vient d'une source stable",
+    "    et connue (documentation officielle, organisme de référence,",
+    "    ouvrage). Si tu n'es pas certain de l'URL exacte, laisse `url` à",
+    "    null et nomme la source dans le titre — un lien inventé fait perdre",
+    "    plus de temps qu'une référence sans lien.",
+    "",
+    "SCHÉMAS — quand une notion se comprend mieux en figure (un processus, une",
+    "structure, une comparaison), donne-lui un `schema` : des étapes nommées,",
+    "dans l'ordre de lecture. Pas de schéma décoratif : seulement là où la",
+    "figure dit ce que le paragraphe dirait mal.",
+  ];
 
   const promptTheorique = [
     contexte,
@@ -165,13 +335,19 @@ export async function POST(request: Request) {
     {
       "titre": "titre de la section",
       "notions": ["notion expliquée en une ou deux phrases", "…"],
-      "exemple": "un exemple concret tiré du métier, ou null"
+      "exemple": "un exemple concret tiré du métier, ou null",
+      "schema": { "titre": "…", "etapes": ["…", "…"], "legende": "…" }
     }
   ],
-  "aRetenir": ["l'essentiel en une ligne", "…"]
+  "aRetenir": ["l'essentiel en une ligne", "…"],
+  "ressources": [
+    { "titre": "…", "url": "https://… ou null", "pourquoi": "ce que le stagiaire y trouve" }
+  ]
 }`,
     "",
     "Entre 3 et 5 sections, 2 à 4 notions chacune, 3 à 5 points à retenir.",
+    "`schema` vaut null sur les sections où une figure n'apporterait rien.",
+    ...consignesRiches,
   ].join("\n");
 
   const promptPratique = [
@@ -194,10 +370,14 @@ export async function POST(request: Request) {
   "objectif": "ce que le stagiaire doit être capable de faire à la fin, en une phrase",
   "consignes": ["étape ou consigne numérotée", "…"],
   "livrable": "ce qui est rendu, sous quelle forme",
-  "criteres": [{ "critere": "ce qui est évalué", "points": 5 }]
+  "criteres": [{ "critere": "ce qui est évalué", "points": 5 }],
+  "ressources": [
+    { "titre": "…", "url": "https://… ou null", "pourquoi": "ce que le stagiaire y trouve" }
+  ]
 }`,
     "",
     "Entre 4 et 7 consignes. Les points des critères doivent totaliser 20.",
+    ...consignesRiches,
   ].join("\n");
 
   let texte: string;
@@ -253,6 +433,7 @@ export async function POST(request: Request) {
     if (criteres.length === 0) avertissements.push("Aucun critère d'évaluation.");
 
     const support: SupportPratique = {
+      ressources: await ressourcesVerifiees(brut.ressources, annoncees),
       type: "pratique",
       titre: String(brut.titre ?? "Travaux pratiques").trim(),
       contexte: String(brut.contexte ?? "").trim(),
@@ -261,6 +442,7 @@ export async function POST(request: Request) {
       livrable: String(brut.livrable ?? "").trim(),
       criteres,
     };
+    avertissements.push(...coherence(support, annoncees, !fiche));
     return NextResponse.json({ support, avertissements });
   }
 
@@ -270,11 +452,13 @@ export async function POST(request: Request) {
         titre?: unknown;
         notions?: unknown;
         exemple?: unknown;
+        schema?: unknown;
       };
       return {
         titre: String(o.titre ?? "").trim(),
         notions: liste(o.notions, 6),
         exemple: o.exemple ? String(o.exemple).trim() : null,
+        schema: schema(o.schema),
       };
     })
     .filter((sec) => sec.titre && sec.notions.length > 0);
@@ -282,11 +466,13 @@ export async function POST(request: Request) {
   if (sections.length === 0) avertissements.push("Le cours ne contient aucune section.");
 
   const support: SupportTheorique = {
+    ressources: await ressourcesVerifiees(brut.ressources, annoncees),
     type: "theorique",
     titre: String(brut.titre ?? "Support de cours").trim(),
     introduction: String(brut.introduction ?? "").trim(),
     sections,
     aRetenir: liste(brut.aRetenir, 8),
   };
+  avertissements.push(...coherence(support, annoncees, !fiche));
   return NextResponse.json({ support, avertissements });
 }

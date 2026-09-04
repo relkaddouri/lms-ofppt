@@ -244,6 +244,13 @@ L'ordre ci-dessous est arrêté : chaque atome se termine et se teste avant que 
 
 ---
 
+- [x] **7.19 — Support : cohérence avec la fiche, et contenu riche** (§4.4, design §5.10) : la génération du support lit d'abord la fiche de la séance — celle de la source quand la séance est un miroir — et doit honorer chaque ressource qu'elle annonce, qu'elle vienne du champ « fichiers de travail » ou d'une URL semée dans les phases. La vérification est faite après coup et nomme ce qui manque, plutôt que de faire confiance à la consigne. Le support gagne des ressources externes typées par origine (fiche / proposée) et des figures — des étapes nommées, pas des images. Chaque lien est appelé à la génération : celui qui ne répond pas est signalé au formateur et n'est ni montré au stagiaire ni imprimé.
+  **Test** : sur une génération réelle à partir d'une fiche annonçant trois ressources dont une URL, les trois sont honorées, deux figures sont produites, et le modèle laisse `url` à null sur les deux ressources qu'il ne sait pas lier plutôt que d'inventer une adresse. La détection de lien mort distingue une page réelle, une page absente d'un domaine réel, et un domaine inexistant.
+  **Corrigé au passage** : la génération de support portait le même filtre PostgREST fautif que celle de fiche — « déjà traité avec ce groupe » était toujours vide.
+  **Non fait, délibérément** : les images du §4.4. L'application ne sait pas en produire ; à trancher entre un dépôt d'images par le formateur et un service de génération.
+
+---
+
 ## Points de vigilance — pas des atomes
 
 À garder en tête à chaque changement de schéma, sans traitement immédiat.

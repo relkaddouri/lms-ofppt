@@ -1,6 +1,6 @@
 import type jsPDF from "jspdf";
 import { dessinerEntete, type Marque } from "@/lib/pdf-marque";
-import type { Support } from "@/app/api/generate/support/route";
+import type { Support } from "@/lib/support";
 
 /**
  * Support remis au stagiaire.
@@ -51,6 +51,27 @@ export async function construireSupportPdf(
       place(6);
       doc.text(l, X + indent, y);
       y += taille * 0.45;
+    }
+  }
+
+  /**
+   * Les ressources en fin de document (PRD §4.4).
+   *
+   * Un lien mort n'est pas imprimé : le stagiaire ne peut pas le corriger, et
+   * une URL qui ne répond pas sur une feuille de papier est une impasse.
+   */
+  function ressources() {
+    const vivantes = (support.ressources ?? []).filter(
+      (r) => r.joignable !== false,
+    );
+    if (vivantes.length === 0) return;
+    titre("Pour aller plus loin", 11);
+    for (const r of vivantes) {
+      puce(
+        [r.titre, r.pourquoi || null, r.url || null]
+          .filter(Boolean)
+          .join(" — "),
+      );
     }
   }
 
@@ -109,6 +130,14 @@ export async function construireSupportPdf(
     support.sections.forEach((sec, i) => {
       titre(`${i + 1}. ${sec.titre}`, 11);
       for (const n of sec.notions) puce(n);
+      // La figure se rend en une ligne d'étapes fléchées : c'est la même
+      // information qu'à l'écran, dans un document qui s'imprime en noir.
+      if (sec.schema) {
+        y += 2;
+        titre(sec.schema.titre, 9, 2);
+        puce(sec.schema.etapes.join("  →  "));
+        if (sec.schema.legende) puce(sec.schema.legende);
+      }
       if (sec.exemple) {
         y += 2;
         const lignes = doc.splitTextToSize(sec.exemple, LARGEUR - 10);
@@ -130,6 +159,8 @@ export async function construireSupportPdf(
       titre("À retenir", 11);
       for (const r of support.aRetenir) puce(r);
     }
+
+    ressources();
   } else {
     titre("Contexte", 11, 2);
     texte(support.contexte, 9.5);
@@ -205,6 +236,8 @@ export async function construireSupportPdf(
       });
       y += 8;
     }
+
+    ressources();
   }
 
   const pages = doc.getNumberOfPages();

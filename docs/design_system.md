@@ -186,6 +186,17 @@ Recensé le 4 septembre 2026 avec le déroulement guidé (PRD §4.3ter). Distinc
 
 ---
 
+### 5.10 Ressources d'un support — l'origine se voit
+
+Recensé le 4 septembre 2026 avec la cohérence fiche/support (PRD §4.4).
+
+- Une ressource **écrite par le formateur dans sa fiche** et une ressource **proposée par le modèle** ne se présentent pas pareil. La seconde porte l'étiquette « proposée — à vérifier », en neutre : c'est une information de provenance, pas une alerte.
+- Un **lien qui ne répond pas** porte une étiquette corail « lien mort », côté formateur seulement. Il n'est ni affiché au stagiaire ni imprimé : une URL morte sur une feuille de papier est une impasse que le stagiaire ne peut pas corriger.
+- Une **figure** est une suite d'étapes nommées reliées par des flèches, jamais une image : l'application n'en produit pas, et en fabriquer une reviendrait à dessiner ce qu'on ne sait pas dessiner. Même rendu à l'écran, dans le diaporama et au PDF.
+- Dans le diaporama, la figure prend **sa propre diapositive** — la coller sous les notions reconstitue le mur de texte que le découpage évite.
+
+---
+
 ## 6. Espace stagiaire — mobile-first (règles spécifiques)
 
 Le stagiaire consulte l'app quasi exclusivement depuis son téléphone (§Espace stagiaire du PRD). Ces écrans suivent des règles différentes de l'espace formateur, pensé lui pour un écran de bureau :
