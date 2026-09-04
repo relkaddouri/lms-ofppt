@@ -277,6 +277,12 @@ L'ordre ci-dessous est arrêté : chaque atome se termine et se teste avant que 
 
 ---
 
+- [x] **7.25 — Un chapitre par contenu, pas par séance** (§4.4) : la liste des documents d'un module comptait une entrée par séance et affichait donc quatre fois le même cours sur M104 — deux causes empilées, **deux groupes parallèles** suivant le même module et **un objectif étalé sur plusieurs créneaux**. Le regroupement se fait désormais sur l'objectif et la nature, à l'écran comme dans la compilation PDF, et chaque ligne dit combien de séances elle recouvre.
+  **Écarté après mesure** : mettre l'ensemble des éléments de contenu dans la clé. C'était le premier réflexe, mais le remplissage des créneaux (§4.9) coupe la séquence là où le créneau finit, pas là où l'objectif change — B.1, B.2, C.1 et C.2 restaient dupliqués. Un chapitre est un objectif, ce qu'un sommaire donne à lire.
+  **Test** : M104 passe de 40 à 8 chapitres en cours et de 24 à 8 en pratique, M202 de 9 à 7 et de 7 à 7 ; aucun objectif en double, aucune séance orpheline.
+
+---
+
 ## Points de vigilance — pas des atomes
 
 À garder en tête à chaque changement de schéma, sans traitement immédiat.

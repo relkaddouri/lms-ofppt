@@ -4,7 +4,12 @@ import { createClient } from "@/lib/supabase/server";
 import type { CycleModule } from "@/lib/modules";
 import { revalidatePath } from "next/cache";
 import { getPortee } from "@/app/actions/annees";
-import type { DocumentModule, PieceDocument } from "@/lib/documents-module";
+import {
+  cleContenu,
+  grouperParContenu,
+  type DocumentModule,
+  type PieceDocument,
+} from "@/lib/documents-module";
 import type { PieceCompilee } from "@/lib/pdf-module";
 import type { Support } from "@/lib/support";
 
@@ -364,33 +369,47 @@ export async function getDocumentsModule(
   const avecSupport = new Set((supportsRes.data ?? []).map((r) => r.seance_id));
   const avecCorrection = new Set((correctionsRes.data ?? []).map((r) => r.seance_id));
 
-  const piece = (s: (typeof seances)[number]): PieceDocument => {
-    const source = sourceDe.get(s.id) ?? s.id;
+  // Une entrée par contenu, pas par séance : deux groupes parallèles suivent
+  // le même cours, et un objectif étalé sur plusieurs créneaux reste un seul
+  // chapitre du document.
+  const cle = (s: (typeof seances)[number]) =>
+    cleContenu({
+      objectifCode: s.suggestions_pedagogiques?.code ?? null,
+      objectifLibelle: s.objectif_operationnel,
+      nature: s.nature,
+    });
+
+  const piece = (paquet: (typeof seances)[number][]): PieceDocument => {
+    const premiere = paquet[0]!;
+    const sources = paquet.map((s) => sourceDe.get(s.id) ?? s.id);
     return {
-      seanceId: s.id,
-      date: s.date,
+      seanceId: premiere.id,
+      seances: paquet.length,
+      date: premiere.date,
       titre:
-        s.suggestions_pedagogiques?.apprentissage_base ??
-        s.objectif_operationnel ??
+        premiere.suggestions_pedagogiques?.apprentissage_base ??
+        premiere.objectif_operationnel ??
         "Séance",
-      objectif: s.suggestions_pedagogiques?.code ?? null,
-      redigee: avecSupport.has(source),
-      faite: s.statut === "fait",
-      corrigee: avecCorrection.has(source),
+      objectif: premiere.suggestions_pedagogiques?.code ?? null,
+      // Rédigé dès qu'une des séances porte le support : c'est le même contenu.
+      redigee: sources.some((id) => avecSupport.has(id)),
+      // Fait quand toutes le sont — le contenu n'est couvert qu'à la dernière.
+      faite: paquet.every((s) => s.statut === "fait"),
+      corrigee: sources.some((id) => avecCorrection.has(id)),
     };
   };
 
+  const pour = (genre: "cours" | "pratique") =>
+    grouperParContenu(
+      seances.filter((s) =>
+        genre === "pratique" ? s.nature === "pratique" : s.nature !== "pratique",
+      ),
+      cle,
+    ).map(piece);
+
   return [
-    {
-      genre: "cours",
-      titre: "",
-      pieces: seances.filter((s) => s.nature !== "pratique").map(piece),
-    },
-    {
-      genre: "pratique",
-      titre: "",
-      pieces: seances.filter((s) => s.nature === "pratique").map(piece),
-    },
+    { genre: "cours", titre: "", pieces: pour("cours") },
+    { genre: "pratique", titre: "", pieces: pour("pratique") },
   ];
 }
 
@@ -450,17 +469,33 @@ export async function getCompilationModule(
     if (!dernier.has(s.seance_id)) dernier.set(s.seance_id, s.contenu as Support);
   }
 
+  // Un chapitre par contenu, comme la liste à l'écran : sans ce regroupement,
+  // la compilation de M104 imprimerait quatre fois le même cours — deux
+  // groupes parallèles × deux créneaux par objectif.
+  const paquets = grouperParContenu(retenues, (s) =>
+    cleContenu({
+      objectifCode: s.suggestions_pedagogiques?.code ?? null,
+      objectifLibelle: s.objectif_operationnel,
+      nature: s.nature,
+    }),
+  );
+
   const pieces: PieceCompilee[] = [];
-  retenues.forEach((s, i) => {
-    const support = dernier.get(sourceDe.get(s.id) ?? s.id);
+  paquets.forEach((paquet, i) => {
+    const premiere = paquet[0]!;
+    // Le support de la première séance du paquet qui en porte un : le contenu
+    // est le même, seule son écriture peut manquer sur certaines instances.
+    const support = paquet
+      .map((s) => dernier.get(sourceDe.get(s.id) ?? s.id))
+      .find(Boolean);
     if (!support) return;
     pieces.push({
       rang: i + 1,
-      date: s.date,
-      objectif: s.suggestions_pedagogiques?.code ?? null,
+      date: premiere.date,
+      objectif: premiere.suggestions_pedagogiques?.code ?? null,
       titre:
-        s.suggestions_pedagogiques?.apprentissage_base ??
-        s.objectif_operationnel ??
+        premiere.suggestions_pedagogiques?.apprentissage_base ??
+        premiere.objectif_operationnel ??
         "Séance",
       support,
     });

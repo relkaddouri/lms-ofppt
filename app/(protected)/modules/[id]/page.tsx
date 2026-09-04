@@ -205,8 +205,8 @@ export default async function ModuleDetailPage({
                       </h3>
                       <p className="font-mono text-[12.5px] text-slate-2">
                         {total === 0
-                          ? "aucune séance"
-                          : `${redigees} / ${total} séance${total > 1 ? "s" : ""} rédigée${redigees > 1 ? "s" : ""}`}
+                          ? "aucun contenu"
+                          : `${redigees} / ${total} chapitre${total > 1 ? "s" : ""} rédigé${redigees > 1 ? "s" : ""}`}
                       </p>
                     </div>
                   </div>
@@ -232,6 +232,11 @@ export default async function ModuleDetailPage({
                           <span className="min-w-0 flex-1 truncate text-sm text-ink">
                             {piece.titre}
                           </span>
+                          {piece.seances > 1 ? (
+                            <span className="shrink-0 font-mono text-[11.5px] text-slate-light">
+                              {piece.seances} séances
+                            </span>
+                          ) : null}
                           {doc.genre === "pratique" && piece.corrigee ? (
                             <Badge tone="info">grille prête</Badge>
                           ) : null}
