@@ -12,67 +12,79 @@ import { slugify } from "@/lib/format";
 import { getEtablissement } from "@/app/actions/etablissement";
 import { marqueDe } from "@/lib/pdf-marque";
 import {
-  Download,
-  Pencil,
-  Plus,
-  Save,
-  Sparkles,
-  Trash2,
-  X,
-} from "lucide-react";
+  PHASES,
+  definitionPhase,
+  phasesDepuisAncienneFiche,
+  quatrePhases,
+  type ClePhase,
+  type PhaseFiche,
+} from "@/lib/phases";
+import { Download, Pencil, Save, Sparkles, X } from "lucide-react";
 
-export type Bloc = { contenu: string; minutes: number };
-export type LigneDev = { strategie: string; contenu: string; minutes: number };
+export type { PhaseFiche };
 
 export type Fiche = {
   nature: string;
   objectifs: string;
-  /** Méthode active dominante — variée d'une séance à l'autre (PRD §4.3). */
   methodeActive: string;
   modalite: string;
   fichiers: string;
-  motivation: Bloc;
-  plan: Bloc;
-  developpement: LigneDev[];
-  evaluation: Bloc;
-  prochaine: Bloc;
+  /** Les quatre phases, dans l'ordre — PRD §4.3ter. */
+  phases: PhaseFiche[];
 };
 
-export function ficheVide(): Fiche {
+export function ficheVide(minutesSeance: number | null = null): Fiche {
   return {
     nature: "cours théorique",
     objectifs: "",
     methodeActive: "",
     modalite: "Synchrone présentiel",
     fichiers: "-",
-    motivation: { contenu: "", minutes: 10 },
-    plan: { contenu: "", minutes: 5 },
-    developpement: [],
-    evaluation: { contenu: "", minutes: 10 },
-    prochaine: { contenu: "", minutes: 5 },
+    phases: quatrePhases([], minutesSeance),
   };
 }
 
 /**
- * Une version enregistrée avant la mise au format officiel contient du
- * Markdown libre. On ne la perd pas : son texte atterrit dans le
- * développement, à charge du formateur de le répartir.
+ * Relit une fiche enregistrée, quel que soit son âge.
+ *
+ * Trois formats se sont succédé et cohabitent en base : du Markdown libre
+ * d'avant la mise au format officiel, la structure minutée
+ * (motivation/plan/développement/évaluation/prochaine), et les quatre phases.
+ * Aucun n'est perdu : le premier atterrit dans l'activité, le deuxième est
+ * converti phase par phase (§4.3ter, « remplace, ne s'ajoute pas »).
  */
-export function lireFiche(contenu: string | null): Fiche {
-  if (!contenu?.trim()) return ficheVide();
+export function lireFiche(
+  contenu: string | null,
+  minutesSeance: number | null = null,
+): Fiche {
+  const vide = ficheVide(minutesSeance);
+  if (!contenu?.trim()) return vide;
+
+  let brut: Record<string, unknown>;
   try {
-    const brut = JSON.parse(contenu) as Partial<Fiche>;
-    if (!brut || typeof brut !== "object" || !("developpement" in brut)) {
-      throw new Error("format inconnu");
-    }
-    return { ...ficheVide(), ...brut } as Fiche;
+    brut = JSON.parse(contenu) as Record<string, unknown>;
+    if (!brut || typeof brut !== "object") throw new Error("format inconnu");
   } catch {
-    const v = ficheVide();
-    v.developpement = [
-      { strategie: "À répartir", contenu: contenu.trim(), minutes: 0 },
-    ];
+    const v = ficheVide(minutesSeance);
+    const act = v.phases.find((p) => p.cle === "activite")!;
+    act.instructions = contenu.trim().split("\n").filter(Boolean).slice(0, 20);
     return v;
   }
+
+  const base: Fiche = {
+    nature: String(brut.nature ?? vide.nature),
+    objectifs: String(brut.objectifs ?? ""),
+    methodeActive: String(brut.methodeActive ?? ""),
+    modalite: String(brut.modalite ?? vide.modalite),
+    fichiers: String(brut.fichiers ?? vide.fichiers),
+    phases: vide.phases,
+  };
+
+  if (Array.isArray(brut.phases)) {
+    return { ...base, phases: quatrePhases(brut.phases, minutesSeance) };
+  }
+  const reprises = phasesDepuisAncienneFiche(brut, minutesSeance);
+  return reprises ? { ...base, phases: reprises } : base;
 }
 
 export type ContexteFiche = {
@@ -104,7 +116,9 @@ export default function FicheSeance({
 }) {
   const router = useRouter();
   const toast = useToast();
-  const [fiche, ecrireFiche] = useState<Fiche>(() => lireFiche(initial));
+  const [fiche, ecrireFiche] = useState<Fiche>(() =>
+    lireFiche(initial, contexte.minutesSeance),
+  );
   // Vrai tant que la fiche sort du modèle sans que le formateur y ait touché.
   const [issuDuModele, setIssuDuModele] = useState(false);
 
@@ -120,18 +134,13 @@ export default function FicheSeance({
   // est l'état par défaut dès qu'il y a quelque chose à lire.
   const [edition, setEdition] = useState(!initial);
 
-  const totalMinutes =
-    fiche.motivation.minutes +
-    fiche.plan.minutes +
-    fiche.developpement.reduce((s, l) => s + l.minutes, 0) +
-    fiche.evaluation.minutes +
-    fiche.prochaine.minutes;
+  const totalMinutes = fiche.phases.reduce((t, p) => t + p.minutes, 0);
 
-  function majBloc(
-    cle: "motivation" | "plan" | "evaluation" | "prochaine",
-    v: Partial<Bloc>,
-  ) {
-    setFiche((f) => ({ ...f, [cle]: { ...f[cle], ...v } }));
+  function majPhase(cle: ClePhase, v: Partial<PhaseFiche>) {
+    setFiche((f) => ({
+      ...f,
+      phases: f.phases.map((p) => (p.cle === cle ? { ...p, ...v } : p)),
+    }));
   }
 
   async function generer() {
@@ -144,7 +153,11 @@ export default function FicheSeance({
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Erreur de génération");
-      ecrireFiche({ ...ficheVide(), ...data.fiche });
+      ecrireFiche({
+        ...ficheVide(contexte.minutesSeance),
+        ...data.fiche,
+        phases: quatrePhases(data.fiche?.phases, contexte.minutesSeance),
+      });
       setIssuDuModele(true);
       setAvertissements(data.avertissements ?? []);
       toast("Fiche générée. Relisez-la avant d'enregistrer.");
@@ -156,8 +169,8 @@ export default function FicheSeance({
   }
 
   async function enregistrer() {
-    if (fiche.developpement.length === 0) {
-      toast("Le développement est vide.", "error");
+    if (fiche.phases.every((p) => p.instructions.length === 0)) {
+      toast("Aucune phase n'a d'instruction.", "error");
       return;
     }
     setBusy(true);
@@ -197,11 +210,7 @@ export default function FicheSeance({
           methodeActive: fiche.methodeActive,
           modalite: fiche.modalite,
           fichiers: fiche.fichiers,
-          motivation: fiche.motivation,
-          plan: fiche.plan,
-          developpement: fiche.developpement,
-          evaluation: fiche.evaluation,
-          prochaine: fiche.prochaine,
+          phases: fiche.phases,
         },
         `fiche-${slugify(
           [contexte.groupeNom, contexte.date ?? "", fiche.objectifs]
@@ -218,35 +227,31 @@ export default function FicheSeance({
     }
   }
 
-  const champBloc = (
+  /** Une liste éditée en texte libre, une entrée par ligne. */
+  const champListe = (
+    cle: ClePhase,
+    champ: "instructions" | "questions" | "points",
     libelle: string,
-    cle: "motivation" | "plan" | "evaluation" | "prochaine",
-  ) => (
-    <div className="grid gap-2 sm:grid-cols-[1fr_110px]">
+    aide: string,
+  ) => {
+    const phase = fiche.phases.find((p) => p.cle === cle)!;
+    return (
       <div>
         <label className="block text-xs text-slate">{libelle}</label>
         <AutoTextarea
           minRows={3}
-          value={fiche[cle].contenu}
-          onChange={(e) => majBloc(cle, { contenu: e.target.value })}
-          className="mt-1"
-        />
-      </div>
-      <div>
-        <label className="block text-xs text-slate">Durée (min)</label>
-        <input
-          type="number"
-          min={0}
-          step={5}
-          value={fiche[cle].minutes}
+          value={phase[champ].join("\n")}
           onChange={(e) =>
-            majBloc(cle, { minutes: Number(e.target.value) || 0 })
+            majPhase(cle, {
+              [champ]: e.target.value.split("\n").filter((l) => l.trim()),
+            })
           }
+          placeholder={aide}
           className="mt-1"
         />
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div>
@@ -261,7 +266,7 @@ export default function FicheSeance({
               size="sm"
               icon={X}
               onClick={() => {
-                setFiche(lireFiche(initial));
+                setFiche(lireFiche(initial, contexte.minutesSeance));
                 setEdition(false);
               }}
               disabled={busy}
@@ -326,7 +331,7 @@ export default function FicheSeance({
 
       {!edition ? (
         <div className="mt-4">
-          <dl className="grid gap-x-6 gap-y-2 sm:grid-cols-3">
+          <dl className="grid gap-x-6 gap-y-2 sm:grid-cols-4">
             {(
               [
                 ["Nature", fiche.nature],
@@ -344,83 +349,66 @@ export default function FicheSeance({
 
           {fiche.objectifs ? (
             <p className="mt-4 rounded-lg bg-wash px-3 py-2 text-sm text-ink">
-              <span className="text-slate">Objectifs : </span>
+              <span className="text-slate">Objectif : </span>
               {fiche.objectifs}
             </p>
           ) : null}
 
-          <div className="mt-4 overflow-x-auto">
-            <table className="w-full min-w-[560px] text-sm">
-              <tbody>
-                {(
-                  [
-                    [
-                      "Introduction",
-                      "Éléments de motivation",
-                      fiche.motivation,
-                    ],
-                    ["", "Plan de la séance", fiche.plan],
-                  ] as const
-                ).map(([groupe, libelle, bloc], i) => (
-                  <tr key={i} className="border-b border-border align-top">
-                    <th className="w-28 py-2 pr-3 text-left text-xs font-medium text-slate">
-                      {groupe}
-                    </th>
-                    <td className="w-44 py-2 pr-3 text-xs text-slate">
-                      {libelle}
-                    </td>
-                    <td className="whitespace-pre-line py-2 text-ink">
-                      {bloc.contenu || "—"}
-                    </td>
-                    <td className="w-20 py-2 text-right font-mono text-xs text-slate">
-                      {bloc.minutes} min
-                    </td>
-                  </tr>
-                ))}
-                {fiche.developpement.map((l, i) => (
-                  <tr
-                    key={`d${i}`}
-                    className="border-b border-border align-top"
-                  >
-                    <th className="py-2 pr-3 text-left text-xs font-medium text-slate">
-                      {i === 0 ? "Développement" : ""}
-                    </th>
-                    <td className="whitespace-pre-line py-2 pr-3 text-xs text-slate">
-                      {l.strategie}
-                    </td>
-                    <td className="whitespace-pre-line py-2 text-ink">
-                      {l.contenu}
-                    </td>
-                    <td className="py-2 text-right font-mono text-xs text-slate">
-                      {l.minutes} min
-                    </td>
-                  </tr>
-                ))}
-                {(
-                  [
-                    ["Conclusion", "Évaluation formative", fiche.evaluation],
-                    ["", "Prochaine séance", fiche.prochaine],
-                  ] as const
-                ).map(([groupe, libelle, bloc], i) => (
-                  <tr
-                    key={`c${i}`}
-                    className="border-b border-border align-top last:border-0"
-                  >
-                    <th className="py-2 pr-3 text-left text-xs font-medium text-slate">
-                      {groupe}
-                    </th>
-                    <td className="py-2 pr-3 text-xs text-slate">{libelle}</td>
-                    <td className="whitespace-pre-line py-2 text-ink">
-                      {bloc.contenu || "—"}
-                    </td>
-                    <td className="py-2 text-right font-mono text-xs text-slate">
-                      {bloc.minutes} min
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ol className="mt-4 flex flex-col gap-3">
+            {fiche.phases.map((phase, i) => {
+              const def = definitionPhase(phase.cle);
+              return (
+                <li
+                  key={phase.cle}
+                  className="overflow-hidden rounded-[10px] border border-border"
+                >
+                  <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 border-b border-separator bg-paper-alt px-4 py-2.5">
+                    <span className="font-mono text-[11.5px] text-slate-light">
+                      {i + 1}
+                    </span>
+                    <h4 className="text-sm font-semibold text-ink">
+                      {def.titre}
+                    </h4>
+                    {phase.methode ? (
+                      <span className="text-[13px] text-slate-2">
+                        {phase.methode}
+                      </span>
+                    ) : null}
+                    <span className="ml-auto font-mono text-xs text-slate">
+                      {phase.minutes} min
+                    </span>
+                  </div>
+                  <div className="flex flex-col gap-3 px-4 py-3">
+                    {(
+                      [
+                        ["Instructions", phase.instructions],
+                        ["Questions à poser", phase.questions],
+                        [def.libellePoints, phase.points],
+                      ] as const
+                    ).map(([libelle, lignes]) =>
+                      lignes.length > 0 ? (
+                        <div key={libelle}>
+                          <p className="text-xs text-slate">{libelle}</p>
+                          <ul className="mt-1 list-disc space-y-0.5 pl-5 text-sm text-ink">
+                            {lignes.map((l, k) => (
+                              <li key={k}>{l}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      ) : null,
+                    )}
+                    {phase.instructions.length === 0 &&
+                    phase.questions.length === 0 &&
+                    phase.points.length === 0 ? (
+                      <p className="text-sm text-slate">
+                        Phase vide — {def.intention}.
+                      </p>
+                    ) : null}
+                  </div>
+                </li>
+              );
+            })}
+          </ol>
         </div>
       ) : null}
 
@@ -460,7 +448,7 @@ export default function FicheSeance({
               className={`${inputClass} mt-1`}
             />
           </div>
-          <div>
+          <div className="sm:col-span-3">
             <label className="block text-xs text-slate">
               Fichiers de travail
             </label>
@@ -479,7 +467,7 @@ export default function FicheSeance({
         <>
           <div className="mt-4">
             <label className="block text-xs text-slate">
-              Objectifs de la séance
+              Objectif de la séance
             </label>
             <AutoTextarea
               minRows={2}
@@ -487,69 +475,40 @@ export default function FicheSeance({
               onChange={(e) =>
                 setFiche((f) => ({ ...f, objectifs: e.target.value }))
               }
+              placeholder="À partir de … le stagiaire produit / analyse / arbitre … en respectant …"
               className="mt-1"
             />
           </div>
 
-          <h3 className="mt-5 text-sm font-medium text-ink">Introduction</h3>
-          <div className="mt-2 space-y-3">
-            {champBloc("Éléments de motivation", "motivation")}
-            {champBloc("Plan de la séance", "plan")}
-          </div>
+          {/* Les quatre phases sont fixes : on n'en ajoute ni n'en retire. */}
+          {PHASES.map((def, i) => {
+            const phase = fiche.phases.find((p) => p.cle === def.cle)!;
+            return (
+              <section
+                key={def.cle}
+                className="mt-4 rounded-[10px] border border-border p-4"
+              >
+                <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                  <span className="font-mono text-[11.5px] text-slate-light">
+                    {i + 1}
+                  </span>
+                  <h3 className="text-sm font-semibold text-ink">
+                    {def.titre}
+                  </h3>
+                  <span className="text-[13px] text-slate-2">
+                    {def.intention}
+                  </span>
+                </div>
 
-          <div className="mt-5 flex items-center justify-between">
-            <h3 className="text-sm font-medium text-ink">Développement</h3>
-            <Button
-              variant="secondary"
-              size="sm"
-              icon={Plus}
-              onClick={() =>
-                setFiche((f) => ({
-                  ...f,
-                  developpement: [
-                    ...f.developpement,
-                    { strategie: "", contenu: "", minutes: 0 },
-                  ],
-                }))
-              }
-            >
-              Ajouter une étape
-            </Button>
-          </div>
-          <div className="mt-2 space-y-3">
-            {fiche.developpement.map((l, i) => (
-              <div key={i} className="rounded-lg border border-border p-3">
-                <div className="grid gap-2 sm:grid-cols-[170px_1fr_110px]">
+                <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_110px]">
                   <div>
                     <label className="block text-xs text-slate">
-                      Stratégie
+                      Méthode active de la phase
                     </label>
-                    <AutoTextarea
-                      minRows={3}
-                      value={l.strategie}
+                    <input
+                      value={phase.methode}
                       onChange={(e) =>
-                        setFiche((f) => ({
-                          ...f,
-                          developpement: f.developpement.map((x, k) =>
-                            k === i ? { ...x, strategie: e.target.value } : x,
-                          ),
-                        }))
-                      }
-                      className={`${inputClass} mt-1`}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-slate">Contenu</label>
-                    <AutoTextarea
-                      minRows={3}
-                      value={l.contenu}
-                      onChange={(e) =>
-                        setFiche((f) => ({
-                          ...f,
-                          developpement: f.developpement.map((x, k) =>
-                            k === i ? { ...x, contenu: e.target.value } : x,
-                          ),
-                        }))
+                        majPhase(def.cle, { methode: e.target.value })
                       }
                       className={`${inputClass} mt-1`}
                     />
@@ -562,51 +521,40 @@ export default function FicheSeance({
                       type="number"
                       min={0}
                       step={5}
-                      value={l.minutes}
+                      value={phase.minutes}
                       onChange={(e) =>
-                        setFiche((f) => ({
-                          ...f,
-                          developpement: f.developpement.map((x, k) =>
-                            k === i
-                              ? { ...x, minutes: Number(e.target.value) || 0 }
-                              : x,
-                          ),
-                        }))
+                        majPhase(def.cle, {
+                          minutes: Number(e.target.value) || 0,
+                        })
                       }
                       className={`${inputClass} mt-1`}
                     />
-                    <Button
-                      variant="danger"
-                      size="sm"
-                      icon={Trash2}
-                      className="mt-2 w-full"
-                      onClick={() =>
-                        setFiche((f) => ({
-                          ...f,
-                          developpement: f.developpement.filter(
-                            (_, k) => k !== i,
-                          ),
-                        }))
-                      }
-                    >
-                      Retirer
-                    </Button>
                   </div>
                 </div>
-              </div>
-            ))}
-            {fiche.developpement.length === 0 ? (
-              <p className="text-sm text-slate">
-                Aucune étape. Générez la fiche ou ajoutez-en une.
-              </p>
-            ) : null}
-          </div>
 
-          <h3 className="mt-5 text-sm font-medium text-ink">Conclusion</h3>
-          <div className="mt-2 space-y-3">
-            {champBloc("Évaluation formative", "evaluation")}
-            {champBloc("Prochaine séance (pédagogie inversée)", "prochaine")}
-          </div>
+                <div className="mt-3 flex flex-col gap-3">
+                  {champListe(
+                    def.cle,
+                    "instructions",
+                    "Instructions — une action par ligne",
+                    "Affichez les deux maquettes du dossier.",
+                  )}
+                  {champListe(
+                    def.cle,
+                    "questions",
+                    "Questions à poser — telles quelles",
+                    "Laquelle a été conçue avec l'utilisateur ?",
+                  )}
+                  {champListe(
+                    def.cle,
+                    "points",
+                    def.libellePoints,
+                    "Une ligne par point",
+                  )}
+                </div>
+              </section>
+            );
+          })}
         </>
       ) : null}
     </div>

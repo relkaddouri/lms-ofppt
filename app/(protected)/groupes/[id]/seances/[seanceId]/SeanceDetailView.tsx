@@ -3,7 +3,8 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Breadcrumb from "@/components/Breadcrumb";
-import Button from "@/components/ui/Button";
+import Link from "next/link";
+import Button, { buttonStyles } from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
 import Avatar from "@/components/ui/Avatar";
 import Interrupteur from "@/components/ui/Interrupteur";
@@ -25,7 +26,7 @@ import {
   type SeanceDetail,
   type RemarqueSeance,
 } from "@/app/actions/seances";
-import { Check, CheckCheck, Plus, Trash2 } from "lucide-react";
+import { Check, CheckCheck, Play, Plus, Trash2 } from "lucide-react";
 
 export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
   const router = useRouter();
@@ -243,6 +244,19 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
           </p>
           </div>
         </div>
+
+        {/* PRD §4.3ter : l'animation est un autre usage que la préparation,
+            donc un autre écran — et son entrée est en tête de page, là où on
+            la cherche en arrivant en classe. */}
+        <Link
+          href={`/groupes/${seance.groupe_id}/seances/${seance.id}/animer`}
+          className={buttonStyles("primary", "md")}
+        >
+          <Play size={16} aria-hidden />
+          {seance.phase_courante > 0 && seance.phase_courante < 4
+            ? `Reprendre — phase ${seance.phase_courante + 1} sur 4`
+            : "Animer la séance"}
+        </Link>
       </header>
 
       {/* PRD §4.1bis : une bascule, pas un formulaire. Le lien n'apparaît

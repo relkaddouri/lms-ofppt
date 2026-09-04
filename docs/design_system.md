@@ -173,6 +173,19 @@ Quand un écran modifie des données qu'un **autre écran, absent de la vue, aff
 
 ---
 
+### 5.9 Mode présentation — un écran qu'on lit debout, en animant
+
+Recensé le 4 septembre 2026 avec le déroulement guidé (PRD §4.3ter). Distinct de tous les autres écrans formateur, qui sont des écrans de bureau : celui-ci se consulte pendant qu'on anime une classe.
+
+- **Écran à part, pas un onglet.** Il sort de la navigation habituelle : en-tête réduit à l'identification de la séance, une sortie explicite, pas de barre latérale.
+- **Une seule étape visible à la fois.** Le reste se rejoint par la barre d'étapes en tête, jamais par défilement.
+- **Échelle de texte relevée** : 17px pour ce qui se lit d'un coup d'œil à distance (instructions, questions), contre 14-15px ailleurs. C'est la seule exception à l'échelle du §1.
+- **Ce qui se dit mot pour mot est cité**, encadré d'un filet gauche 3px `--ofppt-ink` — on doit pouvoir le lire tel quel sans le reformuler.
+- **La navigation reste en bas, collante.** Avancer d'une étape est l'action primaire ; elle est la seule action pleine de l'écran.
+- **L'avancement se voit sans se compter** : une piste par étape, verte quand elle est faite, sarcelle sur celle en cours.
+
+---
+
 ## 6. Espace stagiaire — mobile-first (règles spécifiques)
 
 Le stagiaire consulte l'app quasi exclusivement depuis son téléphone (§Espace stagiaire du PRD). Ces écrans suivent des règles différentes de l'espace formateur, pensé lui pour un écran de bureau :
@@ -236,7 +249,7 @@ Une fiche prescrite ou un tableau de suggestions pédagogiques contient beaucoup
 - **Confirmation obligatoire avant toute suppression.** Une modale ou un état inline explicite ("Supprimer définitivement ce stagiaire ?") avant toute action destructive, jamais de suppression en un clic.
 - **Retour visible après chaque action.** Une notification discrète (toast) confirme "Stagiaire ajouté", "Modification enregistrée" — l'utilisateur ne doit jamais se demander si son clic a fonctionné.
 - **États vides = invitation à agir, jamais un simple message.** Une liste vide affiche une icône, une phrase explicative, et le bouton d'action pour combler ce vide (ex. "Aucun stagiaire pour l'instant" + bouton "Ajouter un stagiaire"), pas juste "Aucune donnée".
-- **Toute date affiche le jour de la semaine, pas seulement la date numérique — ajout v3.** "Vendredi 07/09/2026" plutôt que "07/09/2026" seul, partout où une date compte — séance, échéance de devoir, stage, période d'un groupe, jour non travaillé, validité d'un motif. Deux exceptions : la grille du calendrier, dont les colonnes portent déjà le jour, et l'horodatage « édité le » d'un document, où le jour n'apprend rien. Un formateur pense en jours ("le vendredi je vois DES101"), pas en quantièmes du mois — lui faire recalculer mentalement le jour à partir d'une date numérique est une charge cognitive évitable. Format court accepté si l'espace est contraint : "Ven. 07/09/2026".
+- **Toute date de séance affiche le jour de la semaine, pas seulement la date numérique — ajout v3.** "Vendredi 07/09/2026" plutôt que "07/09/2026" seul, partout où une séance montre sa date (liste Progression, détail de séance, calendrier). Un formateur pense en jours ("le vendredi je vois DES101"), pas en quantièmes du mois — lui faire recalculer mentalement le jour à partir d'une date numérique est une charge cognitive évitable. Format court accepté si l'espace est contraint : "Ven. 07/09/2026".
 - **Recherche et filtres toujours visibles, jamais cachés dans un menu**, sur toute liste de plus de 8 éléments.
 - **La navigation latérale reste identique sur toutes les pages protégées** — aucune page ne doit avoir sa propre variante de menu.
 - **Formulaires : validation en ligne, pas seulement à la soumission.** Un champ email mal formé signale l'erreur dès qu'on quitte le champ, pas seulement au clic sur "Enregistrer".

@@ -247,6 +247,8 @@ export type SeanceDetail = {
    * `null` quand cette séance les porte elle-même.
    */
   contenu_source_id: string | null;
+  /** Phases du déroulement déjà terminées, 0 à 4 (PRD §4.3ter). */
+  phase_courante: number;
   /** Groupes avec qui la fiche et le support sont partagés, et de quel côté. */
   partage: { role: "source" | "miroir"; groupes: string[] } | null;
 };
@@ -297,7 +299,7 @@ export async function getSeanceDetail(
   const { data, error } = await supabase
     .from("seances")
     .select(
-      "id, module_id, contenu_source_id, date, heure_debut, heure_fin, duree_prevue, duree_realisee, statut, nature, est_fad, lien_teams, objectif_operationnel, contenu_prevu, contenu_realise, a_prevoir_prochaine_seance, modules(nom, competences(code_operationnel)), suggestions_pedagogiques(code, apprentissage_base, elements_contenu), seance_groupes!inner(groupe_id, groupes(nom, annee, specialites(nom))), tousGroupes:seance_groupes(groupe_id, groupes(nom))",
+      "id, module_id, contenu_source_id, phase_courante, date, heure_debut, heure_fin, duree_prevue, duree_realisee, statut, nature, est_fad, lien_teams, objectif_operationnel, contenu_prevu, contenu_realise, a_prevoir_prochaine_seance, modules(nom, competences(code_operationnel)), suggestions_pedagogiques(code, apprentissage_base, elements_contenu), seance_groupes!inner(groupe_id, groupes(nom, annee, specialites(nom))), tousGroupes:seance_groupes(groupe_id, groupes(nom))",
     )
     .eq("id", seanceId)
     .eq("seance_groupes.groupe_id", groupeId)
@@ -310,6 +312,7 @@ export async function getSeanceDetail(
     id: string;
     module_id: string;
     contenu_source_id: string | null;
+    phase_courante: number;
     date: string | null;
     heure_debut: string | null;
     heure_fin: string | null;
@@ -583,4 +586,24 @@ export async function majSeance(seanceId: string, input: MajSeance) {
 
   if (error) throw new Error(error.message);
   revalidatePath(`/groupes`);
+}
+
+/**
+ * Avance ou recule dans le déroulement guidé (PRD §4.3ter).
+ *
+ * L'avancement vit sur la séance et non dans la fiche : la fiche est partagée
+ * entre groupes parallèles (§4.3bis), mais deux classes ne sont jamais à la
+ * même phase au même instant.
+ */
+export async function marquerPhase(seanceId: string, phasesFaites: number) {
+  const n = Math.max(0, Math.min(4, Math.round(phasesFaites)));
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("seances")
+    .update({ phase_courante: n, updated_at: new Date().toISOString() })
+    .eq("id", seanceId);
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/groupes", "layout");
+  return n;
 }

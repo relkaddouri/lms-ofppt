@@ -1,5 +1,6 @@
 import type jsPDF from "jspdf";
 import { dessinerEntete, type Marque } from "@/lib/pdf-marque";
+import { definitionPhase, type PhaseFiche } from "@/lib/phases";
 
 /**
  * Fiche de préparation au format officiel OFPPT.
@@ -9,13 +10,6 @@ import { dessinerEntete, type Marque } from "@/lib/pdf-marque";
  * Conclusion — chacun portant sa colonne de durée. On ne réinvente rien : une
  * fiche qui ne ressemble pas au formulaire attendu est refusée en commission.
  */
-
-export type BlocFichePdf = { contenu: string; minutes: number };
-export type LigneDeveloppementPdf = {
-  strategie: string;
-  contenu: string;
-  minutes: number;
-};
 
 export type FichePdf = {
   /** « cours théorique » ou « cours pratique ». */
@@ -31,11 +25,8 @@ export type FichePdf = {
   methodeActive?: string;
   modalite: string;
   fichiers: string;
-  motivation: BlocFichePdf;
-  plan: BlocFichePdf;
-  developpement: LigneDeveloppementPdf[];
-  evaluation: BlocFichePdf;
-  prochaine: BlocFichePdf;
+  /** Les quatre phases, dans l'ordre — PRD §4.3ter. */
+  phases: PhaseFiche[];
 };
 
 export const X = 14;
@@ -175,53 +166,43 @@ export function dessinerFiche(doc: jsPDF, f: FichePdf, marque?: Marque): void {
 
   y += 4;
 
-  // ── Introduction ─────────────────────────────────────────────────────────
+  // ── Le déroulement, phase par phase ──────────────────────────────────────
+  //
+  // Une seule table de quatre lignes remplace les trois tableaux
+  // introduction / développement / conclusion : le formulaire officiel décrit
+  // un déroulement, et le déroulement compte désormais quatre phases
+  // (PRD §4.3ter), pas trois moments.
   const lLibelle = 42;
   const lDuree = 30;
   const lContenu = LARGEUR - lLibelle - lDuree;
 
-  titreTableau("Introduction");
   ligne([
-    { texte: "Éléments de motivation\nPar interaction active", largeur: lLibelle },
-    { texte: f.motivation.contenu, largeur: lContenu },
-    { texte: minutes(f.motivation.minutes), largeur: lDuree },
-  ]);
-  ligne([
-    { texte: "Plan de la séance", largeur: lLibelle },
-    { texte: f.plan.contenu, largeur: lContenu },
-    { texte: minutes(f.plan.minutes), largeur: lDuree },
-  ]);
-
-  y += 4;
-
-  // ── Développement ────────────────────────────────────────────────────────
-  ligne([
-    { texte: "Stratégies pédagogiques", largeur: lLibelle, gras: true, fond: true },
-    { texte: "Développement", largeur: lContenu, gras: true, fond: true },
+    { texte: "Phase et méthode", largeur: lLibelle, gras: true, fond: true },
+    { texte: "Déroulement", largeur: lContenu, gras: true, fond: true },
     { texte: "Durée", largeur: lDuree, gras: true, fond: true },
   ]);
-  for (const l of f.developpement) {
+
+  for (const phase of f.phases) {
+    const def = definitionPhase(phase.cle);
+    const bloc = [
+      ...phase.instructions.map((l) => `— ${l}`),
+      ...(phase.questions.length
+        ? ["Questions :", ...phase.questions.map((q) => `  « ${q} »`)]
+        : []),
+      ...(phase.points.length
+        ? [`${def.libellePoints} :`, ...phase.points.map((pt) => `  · ${pt}`)]
+        : []),
+    ].join("\n");
+
     ligne([
-      { texte: l.strategie, largeur: lLibelle },
-      { texte: l.contenu, largeur: lContenu },
-      { texte: minutes(l.minutes), largeur: lDuree },
+      {
+        texte: phase.methode ? `${def.titre}\n${phase.methode}` : def.titre,
+        largeur: lLibelle,
+      },
+      { texte: bloc || "—", largeur: lContenu },
+      { texte: minutes(phase.minutes), largeur: lDuree },
     ]);
   }
-
-  y += 4;
-
-  // ── Conclusion ───────────────────────────────────────────────────────────
-  titreTableau("Conclusion");
-  ligne([
-    { texte: "Évaluation formative", largeur: lLibelle },
-    { texte: f.evaluation.contenu, largeur: lContenu },
-    { texte: minutes(f.evaluation.minutes), largeur: lDuree },
-  ]);
-  ligne([
-    { texte: "Prochaine séance\n(pédagogie inversée)", largeur: lLibelle },
-    { texte: f.prochaine.contenu, largeur: lContenu },
-    { texte: minutes(f.prochaine.minutes), largeur: lDuree },
-  ]);
 }
 
 export async function telechargerFichePdf(

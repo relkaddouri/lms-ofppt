@@ -5,6 +5,12 @@ import { getElementsDeSeance } from "@/app/actions/couverture";
 import { verifierQuota, QUOTA_GENERATION } from "@/lib/rate-limit";
 import { NextResponse } from "next/server";
 import {
+  PHASES,
+  definitionPhase,
+  quatrePhases,
+  type PhaseFiche,
+} from "@/lib/phases";
+import {
   METHODES_ACTIVES,
   VERBES_PASSIFS,
   memeMethode,
@@ -19,33 +25,15 @@ import {
  * déroulé minuté ne sert personne — il ne survit pas aux dix premières minutes
  * réelles d'une séance — et sa longueur le rend inconsultable.
  */
-export type BlocFiche = { contenu: string; minutes: number };
-export type LigneDeveloppement = {
-  strategie: string;
-  contenu: string;
-  minutes: number;
-};
-
 export type FicheGeneree = {
   objectifs: string;
   /** La méthode active dominante de la séance (PRD §4.3, variété imposée). */
   methodeActive: string;
   modalite: string;
   fichiers: string;
-  motivation: BlocFiche;
-  plan: BlocFiche;
-  developpement: LigneDeveloppement[];
-  evaluation: BlocFiche;
-  prochaine: BlocFiche;
+  /** Les quatre phases, dans l'ordre — PRD §4.3ter. */
+  phases: PhaseFiche[];
 };
-
-function bloc(v: unknown, defaut = ""): BlocFiche {
-  const o = (v ?? {}) as Partial<BlocFiche>;
-  return {
-    contenu: String(o.contenu ?? defaut).trim(),
-    minutes: Math.max(0, Math.round(Number(o.minutes) || 0)),
-  };
-}
 
 type SuggestionRef = {
   apprentissage_base: string;
@@ -233,6 +221,15 @@ export async function POST(request: Request) {
     }
   }
 
+  // PRD §4.3ter : la structuration se nourrit des critères particuliers de
+  // performance, qui sont la définition officielle de « bien fait » — pas de
+  // notions que le modèle jugerait pertinentes.
+  const criteresParticuliers = elements.flatMap((el) =>
+    (el.criteres_particuliers_performance ?? []).map(
+      (c) => `${el.lettre}. ${c.texte}`,
+    ),
+  );
+
   const referentiel = elements.flatMap((el) => {
     const criteres = (el.criteres_particuliers_performance ?? [])
       .map((c) => c.texte)
@@ -355,22 +352,61 @@ export async function POST(request: Request) {
     "alors une formulation aussi courte. Le stagiaire produit, cherche,",
     "confronte — il n'écoute pas.",
     "",
+    "`methodeActive` nomme UNE seule méthode, jamais une énumération : c'est",
+    "elle qu'on compare aux séances passées pour garantir la variété, et une",
+    "liste de trois méthodes rendrait cette comparaison inopérante. Chaque",
+    "phase a par ailleurs sa propre `methode`, qui peut différer.",
+    "",
+    "DÉROULEMENT — quatre phases, dans cet ordre, jamais d'autres :",
+    ...PHASES.map(
+      (ph) =>
+        `  ${ph.titre} (${Math.round(ph.part * 100)} % du temps) — ${ph.intention}. ` +
+        `Sa liste \`points\` porte : ${ph.libellePoints.toLowerCase()}.`,
+    ),
+    "",
+    "Le savoir arrive en structuration, jamais avant : la mise en situation",
+    "pose un problème que les stagiaires ne savent pas encore résoudre, et",
+    "l'activité les laisse chercher. Une phase qui commence par exposer la",
+    "notion est une erreur, quelle que soit sa qualité.",
+    "",
+    criteresParticuliers.length
+      ? [
+          "La phase de STRUCTURATION se nourrit des critères particuliers de",
+          "performance du référentiel officiel ci-dessous, pas de notions",
+          "inventées. Sa liste `points` les reprend, reformulés pour la classe :",
+          ...criteresParticuliers.map((c) => `  — ${c}`),
+        ].join("\n")
+      : "La phase de STRUCTURATION nomme les notions issues du référentiel ci-dessus, jamais des notions inventées.",
+    "",
+    "Chaque phase porte sa propre méthode active dans `methode`, ses",
+    "`instructions` — ce que le formateur fait et dit, une action par ligne,",
+    "prête à exécuter sans rien reconstruire — et ses `questions`, posées",
+    "telles quelles aux stagiaires, jamais des thèmes de questions.",
+    "",
+    minutes
+      ? `Les minutes des quatre phases totalisent exactement ${minutes}.`
+      : "Reste cohérent d'une phase à l'autre sur les minutes.",
+    "",
     "Réponds UNIQUEMENT en JSON, sans markdown, avec exactement cette structure :",
     `{
   "objectifs": "ce que le stagiaire sera capable de FAIRE, en situation, en une phrase",
   "methodeActive": "la méthode active dominante de la séance",
   "modalite": "Synchrone présentiel",
   "fichiers": "supports nécessaires, ou -",
-  "motivation": { "contenu": "l'accroche : question, situation, vidéo…", "minutes": 10 },
-  "plan": { "contenu": "les points annoncés, un par ligne", "minutes": 5 },
-  "developpement": [
-    { "strategie": "Méthode active (learning by doing)", "contenu": "notion traitée et activité", "minutes": 50 }
-  ],
-  "evaluation": { "contenu": "questions de synthèse posées aux stagiaires", "minutes": 10 },
-  "prochaine": { "contenu": "notions à aborder la fois suivante", "minutes": 5 }
+  "phases": [
+    {
+      "cle": "mise_en_situation",
+      "methode": "la méthode de cette phase",
+      "minutes": 15,
+      "instructions": ["ce que fait le formateur, une action par ligne"],
+      "questions": ["la question exacte à poser"],
+      "points": ["le déclencheur"]
+    },
+    { "cle": "activite", "methode": "…", "minutes": 75, "instructions": [], "questions": [], "points": [] },
+    { "cle": "structuration", "methode": "…", "minutes": 40, "instructions": [], "questions": [], "points": [] },
+    { "cle": "reinvestissement", "methode": "…", "minutes": 20, "instructions": [], "questions": [], "points": [] }
+  ]
 }`,
-    "",
-    "Le tableau `developpement` compte 3 à 6 entrées, dans l'ordre de la séance.",
   ]
     .filter((l): l is string => l !== null)
     .join("\n");
@@ -411,37 +447,20 @@ export async function POST(request: Request) {
       );
     }
 
-    const developpement: LigneDeveloppement[] = (
-      Array.isArray(brut.developpement) ? brut.developpement : []
-    )
-      .map((l) => ({
-        strategie: String(l?.strategie ?? "").trim(),
-        contenu: String(l?.contenu ?? "").trim(),
-        minutes: Math.max(0, Math.round(Number(l?.minutes) || 0)),
-      }))
-      .filter((l) => l.contenu);
+    const phases = quatrePhases(brut.phases, minutes);
 
     const fiche: FicheGeneree = {
       objectifs: String(brut.objectifs ?? s.objectif_operationnel ?? "").trim(),
       methodeActive: String(brut.methodeActive ?? "").trim(),
       modalite: String(brut.modalite ?? "Synchrone présentiel").trim(),
       fichiers: String(brut.fichiers ?? "-").trim(),
-      motivation: bloc(brut.motivation),
-      plan: bloc(brut.plan),
-      developpement,
-      evaluation: bloc(brut.evaluation),
-      prochaine: bloc(brut.prochaine),
+      phases,
     };
 
     // conventions.md L.34 : la durée annoncée dans le prompt reste une
     // suggestion. On la vérifie ici — une fiche dont les durées ne tombent pas
     // sur le créneau sera refusée en commission.
-    const total =
-      fiche.motivation.minutes +
-      fiche.plan.minutes +
-      developpement.reduce((s, l) => s + l.minutes, 0) +
-      fiche.evaluation.minutes +
-      fiche.prochaine.minutes;
+    const total = phases.reduce((t, ph) => t + ph.minutes, 0);
 
     const avertissements: string[] = [];
     if (minutes && total !== minutes) {
@@ -449,8 +468,12 @@ export async function POST(request: Request) {
         `Les durées totalisent ${total} minutes au lieu des ${minutes} de la séance. Ajustez avant d'enregistrer.`,
       );
     }
-    if (developpement.length === 0) {
-      avertissements.push("Le développement est vide.");
+    for (const ph of phases) {
+      if (ph.instructions.length === 0) {
+        avertissements.push(
+          `La phase « ${definitionPhase(ph.cle).titre} » n'a aucune instruction.`,
+        );
+      }
     }
 
     // Les deux exigences du PRD §4.3 se vérifient ici plutôt que de faire

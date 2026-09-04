@@ -47,18 +47,25 @@ const POINTS_ENTREE =
 for (const { statut, chemin } of stages) {
   if (statut !== "A" || !CODE.test(chemin) || POINTS_ENTREE.test(chemin)) continue;
 
-  // « @/lib/format » depuis « lib/format.ts » : on cherche le chemin sans
-  // extension, tel qu'il s'écrit dans un import.
+  // Deux écritures mènent au même fichier : l'alias « @/lib/format » et le
+  // relatif « ./ModeAnimation » entre voisins d'un même dossier. Ne chercher
+  // que la première signalait à tort tout composant importé par le `page.tsx`
+  // d'à côté — le garde-fou aurait crié à chaque écran neuf.
   const sansExt = chemin.replace(/\.(ts|tsx)$/, "");
-  let cites;
-  try {
-    cites = git("grep", "-l", "-F", `@/${sansExt}`, "--", "app", "lib", "components")
-      .split("\n")
-      .filter((f) => f && f !== chemin);
-  } catch {
-    cites = []; // git grep sort en 1 quand il ne trouve rien
+  const base = sansExt.split("/").pop();
+  const formes = [`@/${sansExt}`, `/${base}"`, `/${base}'`];
+
+  const cites = new Set();
+  for (const forme of formes) {
+    try {
+      for (const f of git("grep", "-l", "-F", forme, "--", "app", "lib", "components").split("\n")) {
+        if (f && f !== chemin) cites.add(f);
+      }
+    } catch {
+      // git grep sort en 1 quand il ne trouve rien : ce n'est pas une erreur.
+    }
   }
-  if (cites.length === 0) {
+  if (cites.size === 0) {
     alertes.push(
       `${chemin} est ajouté mais aucun fichier ne l'importe.\n` +
         `    Câblage oublié, ou fichier mort ramassé par un « git add -A » ?`,

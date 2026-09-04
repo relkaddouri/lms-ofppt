@@ -1532,6 +1532,7 @@ export type Database = {
           module_id: string
           nature: string | null
           objectif_operationnel: string | null
+          phase_courante: number
           statut: string
           suggestion_pedagogique_id: string | null
           updated_at: string | null
@@ -1554,6 +1555,7 @@ export type Database = {
           module_id: string
           nature?: string | null
           objectif_operationnel?: string | null
+          phase_courante?: number
           statut?: string
           suggestion_pedagogique_id?: string | null
           updated_at?: string | null
@@ -1576,6 +1578,7 @@ export type Database = {
           module_id?: string
           nature?: string | null
           objectif_operationnel?: string | null
+          phase_courante?: number
           statut?: string
           suggestion_pedagogique_id?: string | null
           updated_at?: string | null

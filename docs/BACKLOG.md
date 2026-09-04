@@ -239,6 +239,11 @@ L'ordre ci-dessous est arrêté : chaque atome se termine et se teste avant que 
 
 ---
 
+- [x] **7.18 — Déroulement guidé : quatre phases et mode animation** (§4.3ter, design §5.9) : la fiche est structurée en mise en situation, activité, structuration, réinvestissement — schéma fixe, linéaire, sans phase conditionnelle. Il **remplace** la structure minutée (motivation/plan/développement/évaluation/prochaine), à l'écran, dans le PDF officiel et dans le classeur. La structuration se nourrit des critères particuliers de performance du référentiel, pas de notions inventées. Un écran d'animation à part (`/animer`) affiche une phase à la fois, avec ses instructions, ses questions prêtes à poser, et un bouton pour passer à la suivante ; l'avancement vit sur la séance (migration 072) et non dans la fiche, deux groupes parallèles n'étant jamais au même point.
+  **Test** : sur une génération réelle, les quatre phases sortent dans l'ordre, chacune avec sa méthode et ses instructions, les minutes tombent sur 150, et la structuration reprend mot pour mot les critères du référentiel. Les deux fiches déjà en base au format minuté se convertissent sans perdre une ligne ni une minute. La contrainte de base refuse une phase hors de 0-4.
+
+---
+
 ## Points de vigilance — pas des atomes
 
 À garder en tête à chaque changement de schéma, sans traitement immédiat.

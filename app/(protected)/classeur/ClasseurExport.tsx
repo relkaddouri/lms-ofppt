@@ -96,7 +96,7 @@ export default function ClasseurExport({
             fin: formatDateJour(fin, { court: true }),
           },
           fiches.map((s) => {
-            const f = lireFiche(s.contenu);
+            const f = lireFiche(s.contenu, s.dureeMinutes ?? null);
             return {
               date: s.date ? formatDateJour(s.date) : null,
               fiche: {
@@ -108,13 +108,10 @@ export default function ClasseurExport({
                 groupe: s.groupeNom,
                 module: s.moduleNom,
                 objectifs: f.objectifs || s.objectif || "",
+                methodeActive: f.methodeActive,
                 modalite: f.modalite,
                 fichiers: f.fichiers,
-                motivation: f.motivation,
-                plan: f.plan,
-                developpement: f.developpement,
-                evaluation: f.evaluation,
-                prochaine: f.prochaine,
+                phases: f.phases,
               },
             };
           }),
