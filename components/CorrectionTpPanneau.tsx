@@ -15,12 +15,18 @@ import { ConfirmModal } from "@/components/ui/Modal";
 import { Eye, EyeOff, Lock, Save, Sparkles } from "lucide-react";
 
 /**
- * Proposition de correction d'un TP (PRD §4.4).
+ * Grille de correction d'un TP (PRD §4.4, « proposition de correction »).
+ *
+ * Le PRD dit « correction », l'écran dit « grille » : dans une application qui
+ * note déjà des copies de contrôle toute seule, appeler « correction » un
+ * document qui ne note rien laissait croire que le TP se corrigeait aussi tout
+ * seul. Ici rien n'est noté — c'est l'outil avec lequel le formateur corrige,
+ * et il peut très bien s'en passer.
  *
  * Elle n'apparaît qu'après coup, et l'écran le dit plutôt que de masquer un
- * bouton sans explication : un formateur qui ne trouve pas la correction la
- * cherchera ailleurs. La raison est pédagogique, pas technique — les
- * stagiaires doivent avoir cherché avant qu'un corrigé existe.
+ * bouton sans explication : un formateur qui ne la trouve pas la cherchera
+ * ailleurs. La raison est pédagogique, pas technique — les stagiaires doivent
+ * avoir cherché avant qu'un corrigé existe.
  *
  * Elle est fermée aux stagiaires par défaut, y compris après la séance. Le
  * formateur l'ouvre quand il le juge bon, correction par correction — jamais
@@ -67,7 +73,7 @@ export default function CorrectionTpPanneau({
       setCorrection({ ...correctionVide(), ...data.correction });
       setIssuDuModele(true);
       setAvertissements(data.avertissements ?? []);
-      toast("Correction proposée. Relisez-la avant de corriger.");
+      toast("Grille proposée. Relisez-la avant de corriger.");
     } catch (e) {
       toast(e instanceof Error ? e.message : "Erreur inattendue", "error");
     } finally {
@@ -83,8 +89,8 @@ export default function CorrectionTpPanneau({
       setAFermer(false);
       toast(
         vers
-          ? "Correction visible par les stagiaires du groupe"
-          : "Correction refermée — les accès à venir sont bloqués",
+          ? "Corrigé visible par les stagiaires du groupe"
+          : "Corrigé refermé — les accès à venir sont bloqués",
       );
       router.refresh();
     } catch (e) {
@@ -115,9 +121,9 @@ export default function CorrectionTpPanneau({
       <div className="flex flex-wrap items-start gap-2.5 rounded-[10px] border border-border bg-paper-alt px-4 py-3.5">
         <Lock size={16} className="mt-0.5 shrink-0 text-slate" aria-hidden />
         <p className="text-[13.5px] leading-relaxed text-slate-2">
-          La correction se prépare une fois la séance marquée comme faite. Ce
-          n&apos;est pas une contrainte technique : les stagiaires doivent avoir
-          cherché avant qu&apos;un corrigé existe.
+          La grille de correction se prépare une fois la séance marquée comme
+          faite. Ce n&apos;est pas une contrainte technique : les stagiaires
+          doivent avoir cherché avant qu&apos;un corrigé existe.
         </p>
       </div>
     );
@@ -135,7 +141,7 @@ export default function CorrectionTpPanneau({
           loadingLabel="Génération…"
           disabled={!aUnEnonce}
         >
-          {correction ? "Regénérer la correction" : "Proposer une correction"}
+          {correction ? "Regénérer la grille" : "Proposer une grille"}
         </Button>
         {correction ? (
           <Button
@@ -150,7 +156,7 @@ export default function CorrectionTpPanneau({
         {version ? (
           <Badge tone="success">version {version}</Badge>
         ) : (
-          <Badge tone="neutral">aucune version</Badge>
+          <Badge tone="neutral">aucune grille</Badge>
         )}
         {version ? (
           <Button
@@ -160,34 +166,35 @@ export default function CorrectionTpPanneau({
             onClick={() => (partagee ? setAFermer(true) : basculerPartage(true))}
             disabled={busy}
           >
-            {partagee ? "Ne plus partager" : "Partager avec les stagiaires"}
+            {partagee ? "Ne plus partager" : "Partager le corrigé"}
           </Button>
         ) : null}
         <span className="ml-auto text-[13px] text-slate">
           {partagee
-            ? "Visible par les stagiaires du groupe"
-            : "Réservée au formateur"}
+            ? "Corrigé visible par les stagiaires"
+            : "Pour vous seul"}
         </span>
       </div>
 
       {version && partagee ? (
         <p className="rounded-[10px] border border-tint-teal-strong bg-tint-teal px-4 py-3 text-[13.5px] leading-relaxed text-ink">
-          Les stagiaires de ce groupe voient cette correction dans leur espace.
-          Eux seuls : un stagiaire d&apos;un autre groupe n&apos;y a pas accès,
-          même partagée.
+          Les stagiaires de ce groupe voient ce corrigé dans leur espace. Eux
+          seuls : un stagiaire d&apos;un autre groupe n&apos;y a pas accès, même
+          partagé.
         </p>
       ) : null}
 
       {!aUnEnonce ? (
         <p className="text-sm text-slate">
           Aucun énoncé de TP n&apos;est enregistré pour cette séance : il
-          n&apos;y a rien à corriger. Générez le support d&apos;abord.
+          n&apos;y a rien sur quoi bâtir une grille. Générez le support
+          d&apos;abord.
         </p>
       ) : null}
 
       {issuDuModele ? (
         <BandeauIa>
-          Correction proposée par l&apos;IA — relisez-la avant de corriger les
+          Grille proposée par l&apos;IA — relisez-la avant de corriger les
           copies.
         </BandeauIa>
       ) : null}
@@ -202,8 +209,8 @@ export default function CorrectionTpPanneau({
 
       <ConfirmModal
         open={aFermer}
-        title="Ne plus partager la correction ?"
-        message="Les stagiaires n'y auront plus accès à partir de maintenant. Ceux qui l'ont déjà ouverte ont pu la lire ou l'enregistrer : refermer ne revient pas là-dessus."
+        title="Ne plus partager le corrigé ?"
+        message="Les stagiaires n'y auront plus accès à partir de maintenant. Ceux qui l'ont déjà ouvert ont pu le lire ou l'enregistrer : refermer ne revient pas là-dessus."
         confirmLabel="Refermer"
         onConfirm={() => basculerPartage(false)}
         onClose={() => setAFermer(false)}

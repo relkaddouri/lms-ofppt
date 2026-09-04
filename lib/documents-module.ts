@@ -16,7 +16,7 @@ export type PieceDocument = {
   /** Vrai quand un support est enregistré pour cette séance. */
   redigee: boolean;
   faite: boolean;
-  /** TP seulement : une correction est enregistrée. */
+  /** TP seulement : une grille de correction est enregistrée. */
   corrigee?: boolean;
 };
 

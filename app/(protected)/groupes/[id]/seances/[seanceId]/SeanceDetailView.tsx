@@ -420,16 +420,17 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
               />
             </div>
 
-            {/* §4.4 : la correction est un document du formateur, pas du
+            {/* §4.4 : la grille est un document du formateur, pas du
                 stagiaire. Elle vit sous l'énoncé, jamais dans son cadre. */}
             {seance.nature === "pratique" ? (
               <div className="border-t border-separator px-6 py-[22px]">
                 <h3 className="font-display text-[15px] font-semibold text-ink">
-                  Proposition de correction
+                  Grille de correction
                 </h3>
                 <p className="mb-3.5 text-[13px] text-slate-light">
-                  Fermée aux stagiaires par défaut. C&apos;est vous qui
-                  l&apos;ouvrez, TP par TP.
+                  Facultative : elle vous aide à corriger, elle ne corrige rien
+                  à votre place. Fermée aux stagiaires par défaut — c&apos;est
+                  vous qui l&apos;ouvrez, TP par TP.
                 </p>
                 <CorrectionTpPanneau
                   seanceId={seance.id}

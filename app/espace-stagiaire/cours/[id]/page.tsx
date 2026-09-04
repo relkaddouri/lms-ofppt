@@ -48,14 +48,12 @@ export default async function CoursDetailPage({
         </div>
       </article>
 
-      {/* §4.4 : la correction n'apparaît que si le formateur l'a ouverte à ce
-          groupe. Elle est absente le reste du temps — pas grisée, pas
-          annoncée : un corrigé qu'on sait exister se cherche. */}
+      {/* §4.4 : le corrigé n'apparaît que si le formateur l'a ouvert à ce
+          groupe. Il est absent le reste du temps — pas grisé, pas annoncé :
+          un corrigé qu'on sait exister se cherche. */}
       {support.correction ? (
         <article className="rounded-[14px] border border-tint-teal-strong bg-tint-teal p-4 md:p-6">
-          <h2 className="text-base font-semibold text-ink">
-            Correction proposée
-          </h2>
+          <h2 className="text-base font-semibold text-ink">Corrigé</h2>
           <p className="mt-1 text-xs text-slate-2">
             Partagée par votre formateur.
           </p>

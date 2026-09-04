@@ -230,7 +230,7 @@ export default async function ModuleDetailPage({
                             {piece.titre}
                           </span>
                           {doc.genre === "pratique" && piece.corrigee ? (
-                            <Badge tone="info">corrigé</Badge>
+                            <Badge tone="info">grille prête</Badge>
                           ) : null}
                           <Badge tone={piece.redigee ? "success" : "neutral"}>
                             {piece.redigee ? "rédigé" : "à rédiger"}

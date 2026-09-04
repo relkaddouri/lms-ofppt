@@ -100,7 +100,7 @@ export async function partagerCorrection(
     .limit(1)
     .maybeSingle();
 
-  if (!derniere) throw new Error("Aucune correction à partager.");
+  if (!derniere) throw new Error("Aucune grille à partager.");
 
   const { error } = await supabase
     .from("corrections_tp")
