@@ -218,6 +218,11 @@ L'ordre ci-dessous est arrêté : chaque atome se termine et se teste avant que 
 
 ---
 
+- [x] **7.14 — Recalcul automatique du placement des séances** (§4.9) : tout changement qui déplace les créneaux — jour non travaillé déclaré ou retiré, créneau ajouté, retiré, **ou déplacé** — replace aussitôt les séances « à faire ». Le déplacement d'un créneau existant n'était même pas possible : il n'y avait que l'ajout et la suppression. Une séance faite n'est jamais touchée, et le recalcul repart du lendemain de la dernière, ce qui interdit de reposer une séance sur un créneau déjà consommé. Un groupe que le motif ne sert plus est signalé, pas vidé. Bandeau pendant le calcul, résultat nommé groupe par groupe.
+  **Test** : déplacer le créneau de DES101 du vendredi 8 h 30 au vendredi 13 h 30 replace les 32 séances sur le nouvel horaire, sans en perdre ni en dupliquer, et sans toucher aux séances faites.
+
+---
+
 ## Points de vigilance — pas des atomes
 
 À garder en tête à chaque changement de schéma, sans traitement immédiat.

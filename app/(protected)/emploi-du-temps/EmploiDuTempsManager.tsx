@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarPlus, Download, Plus, Wand2 } from "lucide-react";
+import { CalendarPlus, Check, Download, Plus, Wand2 } from "lucide-react";
 import Button from "@/components/ui/Button";
 import Input, { inputStyles } from "@/components/ui/Input";
 import Modal from "@/components/ui/Modal";
@@ -12,11 +12,14 @@ import type { Groupe } from "@/app/actions/groupes";
 import {
   ajouterCreneau,
   genererSeances,
+  modifierCreneau,
   ouvrirMotif,
   supprimerCreneau,
+  type CreneauMotif,
   type MotifHebdomadaire,
 } from "@/app/actions/motifs";
-import { JOURS } from "@/lib/motifs";
+import { JOURS, messageReplanification } from "@/lib/motifs";
+import BandeauRecalcul from "@/components/BandeauRecalcul";
 import { marqueDe } from "@/lib/pdf-marque";
 import { formatHeures, slugify } from "@/lib/format";
 import type { Etablissement } from "@/app/actions/etablissement";
@@ -104,6 +107,12 @@ export default function EmploiDuTempsManager({
     ...VIDE_CRENEAU,
     groupeId: groupes[0]?.id ?? "",
   });
+  // Déplacer un créneau existant, et non le supprimer pour le recréer : c'est
+  // le cas que le PRD §4.9 nomme, et celui qui ne recalculait rien.
+  const [creneauAModifier, setCreneauAModifier] = useState<CreneauMotif | null>(
+    null,
+  );
+  const [formModif, setFormModif] = useState(VIDE_CRENEAU);
   const [generation, setGeneration] = useState({
     groupeId: groupes[0]?.id ?? "",
     dateDebut: maintenant(),
@@ -129,8 +138,12 @@ export default function EmploiDuTempsManager({
     if (!courant) return;
     startTransition(async () => {
       try {
-        await ajouterCreneau({ motifId: courant.id, ...formCreneau });
-        toast("Créneau ajouté");
+        const recalcul = await ajouterCreneau({
+          motifId: courant.id,
+          ...formCreneau,
+        });
+        const suite = messageReplanification(recalcul);
+        toast(suite ? `Créneau ajouté — ${suite}` : "Créneau ajouté");
         router.refresh();
       } catch (err) {
         toast(err instanceof Error ? err.message : "Erreur inattendue", "error");
@@ -141,7 +154,36 @@ export default function EmploiDuTempsManager({
   function retirerCreneau(id: string) {
     startTransition(async () => {
       try {
-        await supprimerCreneau(id);
+        const recalcul = await supprimerCreneau(id);
+        const suite = messageReplanification(recalcul);
+        toast(suite ? `Créneau retiré — ${suite}` : "Créneau retiré");
+        router.refresh();
+      } catch (err) {
+        toast(err instanceof Error ? err.message : "Erreur inattendue", "error");
+      }
+    });
+  }
+
+  function ouvrirModification(c: CreneauMotif) {
+    setFormModif({
+      jour: c.jour_semaine,
+      heureDebut: c.heure_debut.slice(0, 5),
+      heureFin: c.heure_fin.slice(0, 5),
+      groupeId: c.groupe_id,
+    });
+    setCreneauAModifier(c);
+  }
+
+  function deplacerCreneau(e: React.FormEvent) {
+    e.preventDefault();
+    const cible = creneauAModifier;
+    if (!cible) return;
+    startTransition(async () => {
+      try {
+        const recalcul = await modifierCreneau({ id: cible.id, ...formModif });
+        const suite = messageReplanification(recalcul);
+        toast(suite ? `Créneau déplacé — ${suite}` : "Créneau déplacé");
+        setCreneauAModifier(null);
         router.refresh();
       } catch (err) {
         toast(err instanceof Error ? err.message : "Erreur inattendue", "error");
@@ -180,6 +222,7 @@ export default function EmploiDuTempsManager({
 
   return (
     <div className="p-8">
+      <BandeauRecalcul actif={enCours} />
       <div className="flex flex-wrap items-end justify-between gap-6">
         <div className="flex flex-col gap-2">
           <span className="font-mono text-[11.5px] uppercase tracking-[0.12em] text-slate-light">
@@ -234,6 +277,7 @@ export default function EmploiDuTempsManager({
             motif={courant}
             modifiable
             onSupprimer={retirerCreneau}
+            onModifier={ouvrirModification}
           />
 
           <form
@@ -425,6 +469,85 @@ export default function EmploiDuTempsManager({
             </Button>
             <Button type="submit" loading={enCours} loadingLabel="Création…">
               Ouvrir le motif
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      <Modal
+        open={creneauAModifier !== null}
+        onClose={() => setCreneauAModifier(null)}
+        title="Déplacer le créneau"
+        description="Les séances non encore faites de ce groupe seront replacées aussitôt."
+      >
+        <form onSubmit={deplacerCreneau} className="space-y-4">
+          <label className="flex flex-col gap-[7px]">
+            <span className="text-sm font-semibold text-ink">Jour</span>
+            <select
+              value={formModif.jour}
+              onChange={(e) =>
+                setFormModif({ ...formModif, jour: Number(e.target.value) })
+              }
+              className={inputStyles}
+            >
+              {JOURS.map((j) => (
+                <option key={j.valeur} value={j.valeur}>
+                  {j.long}
+                </option>
+              ))}
+            </select>
+          </label>
+          <div className="flex gap-3">
+            <Input
+              id="modifDebut"
+              type="time"
+              label="De"
+              value={formModif.heureDebut}
+              onChange={(e) =>
+                setFormModif({ ...formModif, heureDebut: e.target.value })
+              }
+            />
+            <Input
+              id="modifFin"
+              type="time"
+              label="À"
+              value={formModif.heureFin}
+              onChange={(e) =>
+                setFormModif({ ...formModif, heureFin: e.target.value })
+              }
+            />
+          </div>
+          <label className="flex flex-col gap-[7px]">
+            <span className="text-sm font-semibold text-ink">Groupe</span>
+            <select
+              value={formModif.groupeId}
+              onChange={(e) =>
+                setFormModif({ ...formModif, groupeId: e.target.value })
+              }
+              className={inputStyles}
+            >
+              {groupes.map((g) => (
+                <option key={g.id} value={g.id}>
+                  {g.nom}
+                </option>
+              ))}
+            </select>
+          </label>
+          <div className="flex justify-end gap-3 pt-1">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setCreneauAModifier(null)}
+            >
+              Annuler
+            </Button>
+            <Button
+              type="submit"
+              icon={Check}
+              loading={enCours}
+              loadingLabel="Recalcul…"
+            >
+              Déplacer
             </Button>
           </div>
         </form>

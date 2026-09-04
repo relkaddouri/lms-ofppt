@@ -9,6 +9,8 @@ import {
   type BlocContenu,
   type CreneauCible,
 } from "@/lib/remplissage";
+import { maintenant } from "@/lib/format";
+import type { Replanification } from "@/lib/motifs";
 
 export type CreneauMotif = {
   id: string;
@@ -111,7 +113,7 @@ export async function ajouterCreneau(input: {
   heureDebut: string;
   heureFin: string;
   groupeId: string;
-}) {
+}): Promise<Replanification> {
   if (input.heureFin <= input.heureDebut) {
     throw new Error("L'heure de fin doit suivre l'heure de début.");
   }
@@ -126,13 +128,194 @@ export async function ajouterCreneau(input: {
   });
   if (error) throw new Error(error.message);
   revalidatePath("/emploi-du-temps");
+  return replanifier([input.groupeId]);
 }
 
-export async function supprimerCreneau(id: string) {
+/**
+ * Déplace un créneau existant — horaire, jour, ou groupe.
+ *
+ * Le PRD §4.9 nomme ce cas explicitement : c'est celui qui manquait. Passer
+ * par « supprimer puis rajouter » perdait le lien avec le placement existant
+ * et, surtout, ne recalculait rien. Les deux groupes concernés sont replacés
+ * quand le créneau change de main.
+ */
+export async function modifierCreneau(input: {
+  id: string;
+  jour: number;
+  heureDebut: string;
+  heureFin: string;
+  groupeId: string;
+}): Promise<Replanification> {
+  if (input.heureFin <= input.heureDebut) {
+    throw new Error("L'heure de fin doit suivre l'heure de début.");
+  }
+
   const supabase = await createClient();
+
+  const { data: avant, error: errLecture } = await supabase
+    .from("creneaux_motif")
+    .select("groupe_id")
+    .eq("id", input.id)
+    .maybeSingle();
+  if (errLecture) throw new Error(errLecture.message);
+  if (!avant) throw new Error("Créneau introuvable.");
+
+  const { error } = await supabase
+    .from("creneaux_motif")
+    .update({
+      jour_semaine: input.jour,
+      heure_debut: input.heureDebut,
+      heure_fin: input.heureFin,
+      groupe_id: input.groupeId,
+    })
+    .eq("id", input.id);
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/emploi-du-temps");
+  return replanifier([...new Set([avant.groupe_id, input.groupeId])]);
+}
+
+export async function supprimerCreneau(id: string): Promise<Replanification> {
+  const supabase = await createClient();
+
+  // Le groupe se lit avant la suppression : après, plus rien ne dit quel
+  // calendrier vient d'être privé d'un créneau.
+  const { data: avant } = await supabase
+    .from("creneaux_motif")
+    .select("groupe_id")
+    .eq("id", id)
+    .maybeSingle();
+
   const { error } = await supabase.from("creneaux_motif").delete().eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePath("/emploi-du-temps");
+  return replanifier(avant ? [avant.groupe_id] : []);
+}
+
+/**
+ * Recalcul du placement des séances non réalisées (PRD §4.9).
+ *
+ * Tout changement qui déplace les créneaux — motif ou jour non travaillé —
+ * appelle ceci. Sans quoi le calendrier reste figé sur l'ancien placement,
+ * silencieusement faux : c'est le bug constaté sur un férié saisi à la
+ * mauvaise date puis supprimé, et de nouveau sur un créneau déplacé d'une
+ * demi-journée à l'autre.
+ *
+ * Trois garanties, dans cet ordre :
+ *
+ * 1. Une séance **faite** n'est jamais touchée — c'est un fait passé, pas une
+ *    prévision. Le recalcul repart donc du lendemain de la dernière séance
+ *    faite, ce qui interdit aussi de replacer une séance sur un créneau déjà
+ *    consommé.
+ * 2. Un groupe que le motif ne sert plus n'est **pas** libéré : détacher ses
+ *    séances de leurs dates les ferait disparaître du calendrier sans que
+ *    rien ne les y remette. Il est signalé, pas vidé.
+ * 3. Les séances « à faire » sont détachées puis replacées par le même
+ *    remplissage que la génération initiale — même ordre pédagogique, mêmes
+ *    créneaux entièrement occupés.
+ */
+export async function replanifier(
+  groupeIds: string[],
+): Promise<Replanification> {
+  const supabase = await createClient();
+  const { anneeId } = await getPortee();
+  const groupes: Replanification["groupes"] = [];
+
+  const uniques = [...new Set(groupeIds)].filter(Boolean);
+  if (uniques.length === 0) return { groupes };
+
+  const { data: nomsRes } = await supabase
+    .from("groupes")
+    .select("id, nom")
+    .in("id", uniques);
+  const noms = new Map((nomsRes ?? []).map((g) => [g.id, g.nom]));
+
+  // Le motif en vigueur : celui qui n'a pas encore de date de fin.
+  const { data: motifRes } = await supabase
+    .from("motifs_hebdomadaires")
+    .select("date_debut, creneaux_motif(groupe_id)")
+    .eq("annee_scolaire_id", anneeId ?? "")
+    .is("date_fin", null)
+    .order("date_debut", { ascending: false })
+    .limit(1);
+
+  const motif = motifRes?.[0];
+  if (!motif) return { groupes };
+
+  const servis = new Set(
+    ((motif.creneaux_motif ?? []) as { groupe_id: string }[]).map(
+      (c) => c.groupe_id,
+    ),
+  );
+
+  for (const groupeId of uniques) {
+    const nom = noms.get(groupeId) ?? "Groupe";
+
+    if (!servis.has(groupeId)) {
+      groupes.push({
+        nom,
+        liberees: 0,
+        placees: 0,
+        heuresRestantes: 0,
+        sansCreneau: true,
+      });
+      continue;
+    }
+
+    // Le lendemain de la dernière séance faite borne le recalcul par le bas.
+    const { data: derniereFaite } = await supabase
+      .from("seances")
+      .select("date, seance_groupes!inner(groupe_id)")
+      .eq("seance_groupes.groupe_id", groupeId)
+      .eq("statut", "fait")
+      .not("date", "is", null)
+      .order("date", { ascending: false })
+      .limit(1);
+
+    const apresLeFait = derniereFaite?.[0]?.date
+      ? new Date(`${derniereFaite[0].date}T12:00:00Z`)
+      : null;
+    if (apresLeFait) apresLeFait.setUTCDate(apresLeFait.getUTCDate() + 1);
+
+    const candidats = [maintenant(), motif.date_debut];
+    if (apresLeFait) candidats.push(apresLeFait.toISOString().slice(0, 10));
+    const depart = candidats.sort().at(-1)!;
+
+    const { data: aLiberer } = await supabase
+      .from("seances")
+      .select("id, seance_groupes!inner(groupe_id)")
+      .eq("seance_groupes.groupe_id", groupeId)
+      .eq("statut", "a_faire")
+      .not("date", "is", null);
+
+    const ids = (aLiberer ?? []).map((s) => s.id);
+    if (ids.length > 0) {
+      const { error } = await supabase
+        .from("seances")
+        .update({
+          date: null,
+          heure_debut: null,
+          heure_fin: null,
+          updated_at: new Date().toISOString(),
+        })
+        .in("id", ids);
+      if (error) throw new Error(error.message);
+    }
+
+    const r = await genererSeances(groupeId, depart);
+    groupes.push({
+      nom,
+      liberees: ids.length,
+      placees: r.placees,
+      heuresRestantes: r.heuresRestantes,
+      sansCreneau: false,
+    });
+  }
+
+  revalidatePath("/calendrier");
+  revalidatePath("/emploi-du-temps");
+  revalidatePath("/groupes", "layout");
+  return { groupes };
 }
 
 export type ResultatGeneration = {
@@ -280,13 +463,25 @@ export async function genererSeances(
   // l'intérieur d'un module tenait donc à la chance. Il se lit maintenant du
   // référentiel — élément, puis objectif, puis théorique avant pratique
   // (PRD §4.9) — l'horodatage ne départageant plus que les modules entre eux.
+  // Un recalcul (§4.9) rejoue la génération sur des lignes dont certaines ont
+  // été créées lors d'un passage précédent — la suite d'un bloc scindé. Leur
+  // `created_at` est postérieur à celui de leur module : s'en servir tel quel
+  // les renverrait en fin de file. Le lot d'un module est donc le plus ancien
+  // de ses horodatages, pas celui de la ligne.
+  const lotDuModule = new Map<string, string>();
+  for (const s of aPlacer) {
+    const t = String(s.created_at ?? "");
+    const vu = lotDuModule.get(s.module_id);
+    if (vu === undefined || t < vu) lotDuModule.set(s.module_id, t);
+  }
+
   const rang = (s: (typeof aPlacer)[number]) => {
     const sp = s.suggestions_pedagogiques as unknown as {
       ordre: number | null;
       elements_competence: { lettre: string | null; ordre: number | null } | null;
     } | null;
     return {
-      lot: String(s.created_at ?? ""),
+      lot: lotDuModule.get(s.module_id) ?? String(s.created_at ?? ""),
       lettre: sp?.elements_competence?.lettre ?? "",
       ordreElement: sp?.elements_competence?.ordre ?? 0,
       ordreObjectif: sp?.ordre ?? 0,

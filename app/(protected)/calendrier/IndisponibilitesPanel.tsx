@@ -17,6 +17,8 @@ import {
   type TypeIndisponibilite,
 } from "@/lib/indisponibilites";
 import { CalendarOff, Plus, Trash2 } from "lucide-react";
+import BandeauRecalcul from "@/components/BandeauRecalcul";
+import { messageReplanification } from "@/lib/motifs";
 
 const LABEL = new Map(TYPES_INDISPONIBILITE.map((t) => [t.valeur, t.label]));
 
@@ -57,7 +59,7 @@ export default function IndisponibilitesPanel({
   function enregistrer() {
     startTransition(async () => {
       try {
-        await declarerIndisponibilite({
+        const recalcul = await declarerIndisponibilite({
           type,
           date_debut: debut,
           date_fin: fin || debut,
@@ -65,7 +67,12 @@ export default function IndisponibilitesPanel({
           libelle: libelle || null,
           motif: motif || null,
         });
-        toast("Indisponibilité déclarée");
+        // Le recalcul suit la déclaration (§4.9) : le dire, sinon le calendrier
+        // change sous les yeux du formateur sans qu'il sache pourquoi.
+        const suite = messageReplanification(recalcul);
+        toast(
+          suite ? `Indisponibilité déclarée — ${suite}` : "Indisponibilité déclarée",
+        );
         reinitialiser();
         setOuvert(false);
         router.refresh();
@@ -83,8 +90,9 @@ export default function IndisponibilitesPanel({
     if (!cible) return;
     startTransition(async () => {
       try {
-        await supprimerIndisponibilite(cible.id);
-        toast("Indisponibilité retirée");
+        const recalcul = await supprimerIndisponibilite(cible.id);
+        const suite = messageReplanification(recalcul);
+        toast(suite ? `Indisponibilité retirée — ${suite}` : "Indisponibilité retirée");
         setASupprimer(null);
         router.refresh();
       } catch (e) {
@@ -98,6 +106,7 @@ export default function IndisponibilitesPanel({
 
   return (
     <section className="rounded-[14px] border border-border bg-surface p-4">
+      <BandeauRecalcul actif={enCours} />
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="flex items-center gap-1.5 text-sm font-medium text-ink">
           <CalendarOff className="h-4 w-4 text-slate" aria-hidden />

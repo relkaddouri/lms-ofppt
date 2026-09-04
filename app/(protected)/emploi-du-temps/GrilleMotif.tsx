@@ -1,6 +1,6 @@
 "use client";
 
-import { Trash2 } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 import type { MotifHebdomadaire } from "@/app/actions/motifs";
 import { JOURS } from "@/lib/motifs";
 import { CRENEAUX_JOUR, formatHeure, positionSeance } from "@/lib/creneaux";
@@ -18,10 +18,12 @@ export default function GrilleMotif({
   motif,
   modifiable = false,
   onSupprimer,
+  onModifier,
 }: {
   motif: MotifHebdomadaire;
   modifiable?: boolean;
   onSupprimer?: (id: string) => void;
+  onModifier?: (creneau: MotifHebdomadaire["creneaux"][number]) => void;
 }) {
   // Quatre créneaux fixes de 2 h 30, comme le calendrier (design_system.md
   // §5.5). Prendre les créneaux déclarés comme lignes donnait à un créneau de
@@ -147,15 +149,29 @@ export default function GrilleMotif({
                                 {n > 1 ? ` · ${n * 2.5} h` : ""}
                               </span>
                             </span>
-                            {modifiable && onSupprimer ? (
-                              <button
-                                type="button"
-                                aria-label={`Retirer ${c.groupeNom} du ${j.long} ${formatHeure(c.heure_debut)}`}
-                                onClick={() => onSupprimer(c.id)}
-                                className="ml-auto shrink-0 rounded-md p-0.5 text-coral-dark transition-colors duration-150 ease-out hover:bg-alert-wash"
-                              >
-                                <Trash2 size={13} aria-hidden />
-                              </button>
+                            {modifiable && (onModifier || onSupprimer) ? (
+                              <span className="ml-auto flex shrink-0 items-center gap-0.5">
+                                {onModifier ? (
+                                  <button
+                                    type="button"
+                                    aria-label={`Déplacer ${c.groupeNom} du ${j.long} ${formatHeure(c.heure_debut)}`}
+                                    onClick={() => onModifier(c)}
+                                    className="rounded-md p-0.5 text-slate transition-colors duration-150 ease-out hover:bg-paper hover:text-ink"
+                                  >
+                                    <Pencil size={13} aria-hidden />
+                                  </button>
+                                ) : null}
+                                {onSupprimer ? (
+                                  <button
+                                    type="button"
+                                    aria-label={`Retirer ${c.groupeNom} du ${j.long} ${formatHeure(c.heure_debut)}`}
+                                    onClick={() => onSupprimer(c.id)}
+                                    className="rounded-md p-0.5 text-coral-dark transition-colors duration-150 ease-out hover:bg-alert-wash"
+                                  >
+                                    <Trash2 size={13} aria-hidden />
+                                  </button>
+                                ) : null}
+                              </span>
                             ) : null}
                           </div>
                         );

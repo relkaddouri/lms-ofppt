@@ -3,6 +3,7 @@
 import { createClient, getUser } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { getPortee } from "@/app/actions/annees";
+import { replanifier } from "@/app/actions/motifs";
 import {
   TYPES_INDISPONIBILITE,
   type Indisponibilite,
@@ -108,6 +109,7 @@ export async function declarerIndisponibilite(input: NouvelleIndisponibilite) {
 
   if (error) throw new Error(error.message);
   revalidatePath("/calendrier");
+  return replanifierTousLesGroupes();
 }
 
 export async function supprimerIndisponibilite(id: string) {
@@ -118,4 +120,18 @@ export async function supprimerIndisponibilite(id: string) {
     .eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePath("/calendrier");
+  return replanifierTousLesGroupes();
+}
+
+/**
+ * Un jour non travaillé vaut pour tout le monde : férié, vacances ou absence
+ * du formateur écartent la journée pour chacun de ses groupes. Le recalcul
+ * (PRD §4.9) porte donc sur l'année entière, pas sur un groupe.
+ *
+ * C'est le bug d'origine de la règle : un férié saisi au 18/09 au lieu du
+ * 18/11, supprimé après coup, laissait les séances sur leur ancien placement.
+ */
+async function replanifierTousLesGroupes() {
+  const { groupeIds } = await getPortee();
+  return replanifier(groupeIds);
 }
