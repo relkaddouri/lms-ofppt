@@ -196,6 +196,7 @@ L'ordre ci-dessous est arrêté : chaque atome se termine et se teste avant que 
 
 - [x] **7.9 — Répartition horaire · évaluation réservée et blocs de 2 h 30** (§4.7, §4.9) : les dix heures d'évaluation — CC1 2 h 30, CC2 2 h 30, EFM 5 h — sont réservées avant tout partage et apparaissent en trois lignes du tableau ; toute durée est un multiple de 2 h 30, arrondie par report d'un niveau à l'autre pour que chaque somme reste exacte.
   **Test** : sur un module de 90 h, le total retombe sur 90 h avec 10 h d'évaluation visibles et aucune valeur hors multiple de 2 h 30.
+  **Confirmé définitif le 4 septembre 2026** : le porteur de projet a annulé §4.6bis du PRD, qui demandait un nombre et une durée de contrôles configurables par module. Le forfait de 10 h s'applique à tous les modules, y compris les gros. `lib/repartition.ts` est conforme tel quel — aucune correction n'est due, et ce point n'est plus une décision en attente.
 
 ---
 

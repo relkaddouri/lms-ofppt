@@ -292,24 +292,11 @@ Fonctionnalités de l'espace stagiaire :
 
 *Point encore ouvert : le calcul exact du seuil proportionnel (30h sur un module standard, ramené à combien sur un module de 25h) reste à définir précisément — mais ce point ne concerne plus que le déclenchement du rappel, pas une génération, ce qui réduit l'enjeu de s'y tromper.*
 
-### 4.6bis Nombre et durée des contrôles — configurable par module, pas fixe (corrigé v3)
+### 4.6bis Nombre et durée des contrôles — abandonné, forfait fixe conservé (retiré v3)
 
-**Correction importante par rapport à une hypothèse précédente.** Le temps d'évaluation d'un module n'est **pas** un forfait fixe de 10h (2 CC × 2h30 + 1 EFM × 5h) appliqué uniformément à tous les modules. Sur un gros module (masse horaire ≥ 90h par exemple), 2 CC ne suffisent pas à évaluer correctement la progression — il en faut typiquement 3.
+**Annulé par le porteur de projet, après réflexion — le forfait fixe reste la règle définitive, pas une simplification provisoire.** Cette section avait initialement demandé un nombre et une durée de CC/EFM configurables par module (voir historique de version), avec la logique `(nombre_CC × durée_CC) + durée_EFM`. Le porteur de projet est revenu sur cette demande : **le forfait fixe de 10h par module (2 CC de 2h30 + 1 EFM de 5h) est conservé tel quel**, y compris sur les modules de grande masse horaire.
 
-**Le modèle doit donc permettre, pour chaque module, de configurer** :
-- Le **nombre de CC** (2 au minimum réglementaire, plus si le formateur le juge nécessaire — typiquement 3 sur les modules de grande masse horaire)
-- La **durée de chaque CC** (les exemples vus jusqu'ici sont à 2h30 chacun, mais ce n'est pas nécessairement figé non plus)
-- La **durée de l'EFM** (5h dans les exemples vus)
-
-**Le temps total d'évaluation réservé, avant répartition théorique/pratique sur les éléments (§2b.2 du backlog), se calcule donc ainsi** :
-
-```
-temps_evaluation = (nombre_CC × duree_CC) + duree_EFM
-```
-
-Exemple donné par le porteur de projet : 3 CC de 2h30 chacun (7h30) + 1 EFM de 5h = **12h30** de temps d'évaluation total, à réserver avant de répartir le reste sur les éléments de compétence — au lieu des 10h fixes utilisées précédemment.
-
-**Ce paramétrage vit au niveau du module** (ou de l'assignation groupe+module, à trancher techniquement — un module de grande taille aura probablement le même besoin sur tous les groupes qui le suivent, donc plutôt au niveau du module lui-même que de chaque assignation séparément, sauf avis contraire). Une valeur par défaut raisonnable (2 CC de 2h30 + 1 EFM de 5h) peut être proposée automatiquement selon la masse horaire du module, mais reste ajustable par le formateur avant de lancer la répartition horaire.
+Ce n'est pas un bug ni un oubli — la section est volontairement retirée, gardée ici pour ne pas revenir comme une redécouverte plus tard. Le comportement actuel du produit (`lib/repartition.ts`, forfait 10h fixe) est **conforme** à cette décision, aucune correction n'est due dessus.
 
 ### 4.7 Préparation de contrôles assistée par IA
 
