@@ -160,7 +160,7 @@ export default function ModulesManager({
   const heuresReference = visibles.reduce((t, m) => t + m.duree_reference, 0);
 
   return (
-    <div className="flex flex-col gap-6 px-6 py-10 md:px-10 md:pb-14">
+    <div className="flex flex-col gap-6 px-4 py-8 md:px-10 md:py-10 md:pb-14">
       <header className="flex flex-wrap items-end justify-between gap-6">
         <div className="flex flex-col gap-2">
           <span className="font-mono text-[11.5px] uppercase tracking-[0.12em] text-slate-light">
@@ -231,7 +231,7 @@ export default function ModulesManager({
       </div>
 
       <div className="overflow-hidden rounded-[14px] border border-border bg-surface shadow-repos">
-        <div className="grid grid-cols-[minmax(0,2.4fr)_minmax(120px,1fr)_minmax(96px,0.9fr)_52px] items-center gap-4 border-b border-border bg-paper-alt px-6 py-3.5">
+        <div className="hidden border-b border-border bg-paper-alt px-6 py-3.5 md:grid md:grid-cols-[minmax(0,2.4fr)_minmax(120px,1fr)_minmax(96px,0.9fr)_52px] md:items-center md:gap-4">
           {["Module", "Durée de référence", "Groupes", ""].map((c, i) => (
             <span
               key={c || i}
@@ -259,16 +259,18 @@ export default function ModulesManager({
           visibles.map((m) => (
             <div
               key={m.id}
-              className="grid grid-cols-[minmax(0,2.4fr)_minmax(120px,1fr)_minmax(96px,0.9fr)_52px] items-center gap-4 border-b border-separator px-6 py-4 transition-colors duration-150 ease-out last:border-0 hover:bg-paper"
+              // Quatre colonnes fixes tiennent à peine dans 375px : sous
+              // 768px la ligne s'empile, l'intitulé d'abord (§3bis).
+              className="relative grid grid-cols-1 gap-2 border-b border-separator px-5 py-4 transition-colors duration-150 ease-out last:border-0 hover:bg-paper md:grid-cols-[minmax(0,2.4fr)_minmax(120px,1fr)_minmax(96px,0.9fr)_52px] md:items-center md:gap-4 md:px-6"
             >
-              <span className="flex min-w-0 items-center gap-3.5">
+              <span className="flex min-w-0 items-center gap-3.5 max-md:pr-12">
                 <span className="flex h-9 shrink-0 items-center justify-center rounded-[9px] bg-wash px-2.5 font-mono text-xs font-semibold text-slate-2">
                   {m.code ?? "—"}
                 </span>
                 <span className="flex min-w-0 flex-col gap-0.5">
                   <Link
                     href={`/modules/${m.id}`}
-                    className="truncate text-[15.5px] font-semibold text-ink no-underline hover:no-underline"
+                    className="text-[15.5px] font-semibold text-ink no-underline hover:no-underline md:truncate"
                   >
                     {m.nom}
                   </Link>
@@ -280,7 +282,7 @@ export default function ModulesManager({
                 </span>
               </span>
 
-              <span className="font-mono text-[14.5px] text-body">
+              <span className="font-mono text-[14.5px] text-body max-md:text-[13.5px] max-md:text-slate-2">
                 {m.duree_reference} h
               </span>
 
@@ -297,7 +299,7 @@ export default function ModulesManager({
                 )}
               </span>
 
-              <span className="flex justify-end">
+              <span className="flex justify-end max-md:absolute max-md:right-4 max-md:top-3.5">
                 <KebabMenu
                   items={[
                     { label: "Modifier", onClick: () => openEdit(m), icon: Pencil },

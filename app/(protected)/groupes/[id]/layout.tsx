@@ -26,11 +26,11 @@ export default async function GroupeLayout({
 
   return (
     <div className="flex flex-col">
-      <div className="flex flex-col gap-5 bg-surface px-6 pt-8 md:px-10">
+      <div className="flex flex-col gap-5 bg-surface px-4 pt-6 md:px-10 md:pt-8">
         <GroupeHeader groupe={groupe} stagiairesCount={stagiairesCount} />
         <GroupeTabs compteurs={compteurs} />
       </div>
-      <div className="px-6 pb-14 md:px-10">{children}</div>
+      <div className="px-4 pb-12 md:px-10 md:pb-14">{children}</div>
     </div>
   );
 }

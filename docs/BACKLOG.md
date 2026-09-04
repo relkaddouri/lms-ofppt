@@ -332,6 +332,17 @@ L'espace formateur était pensé desktop-only ; il doit désormais fonctionner s
 
 ---
 
+- [x] **8.4 — Les listes principales** (design §3bis) : groupes, modules, fiche de groupe, et `GroupModulesList` — ce dernier sert à lui seul trois écrans (modules d'un groupe, contrôles, fiches).
+  - **`GroupModulesList`** — la ligne portait l'intitulé à gauche, le badge et le bouton « Ouvrir » à droite ; sous 768px le bouton écrasait l'intitulé. Elle s'empile, et l'intitulé cesse d'être tronqué une fois seul sur sa ligne.
+  - **Modules** — pseudo-tableau à quatre colonnes fixes qui tenaient à peine dans 375px. Les lignes s'empilent, l'en-tête de colonnes disparaît sous 768px (il ne décrit plus rien), et le menu « … » se cale en haut à droite de la carte au lieu de rester seul sur une ligne.
+  - **Groupes** — la grille de cartes exigeait 320px minimum, soit un cheveu de trop une fois les marges retirées d'un écran de 375. Passée à 280px.
+  - **Marges** — 16px au lieu de 24px sous 768px sur ces écrans et sur la coquille de groupe : 32px de contenu rendus aux cartes.
+  **Décidé en chemin** : ne pas faire passer ces écrans par `ListeCartes`. Leur rendu desktop n'est pas un `<table>` mais une grille sur mesure qui fonctionne ; les y forcer aurait changé l'apparence bureau, ce que ce chantier ne demande pas. `ListeCartes` reste pour les vrais tableaux.
+  **Relevé, à traiter dans les atomes de formulaire** : **12 fichiers basculent à 640px (`sm:`) là où le §3bis fixe la bascule à 768px** — 13 occurrences de `sm:grid-cols-2` notamment. Entre 640 et 768px, ces formulaires affichent donc deux à quatre colonnes sur une largeur que le design system considère comme mobile. Corrigé ici sur la fiche de groupe ; le reste relève de 8.6 et 8.7.
+  **Test** : `tsc` et build verts. **Rendu visuel non vérifié** — aucune session dans le navigateur intégré (zéro cookie, zéro stockage local).
+
+---
+
 ## Points de vigilance — pas des atomes
 
 À garder en tête à chaque changement de schéma, sans traitement immédiat.
