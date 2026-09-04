@@ -1,12 +1,14 @@
 import { getDocumentsModule, getModuleDetail } from "@/app/actions/modules";
 import { avancement, titreDocument } from "@/lib/documents-module";
 import { getManuel } from "@/app/actions/manuel";
+import { getEtablissement } from "@/app/actions/etablissement";
 import ReferentielCompetence from "@/components/ReferentielCompetence";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import Breadcrumb from "@/components/Breadcrumb";
 import Badge from "@/components/ui/Badge";
 import DureeReferenceEditor from "./DureeReferenceEditor";
+import ExportDocument from "./ExportDocument";
 import {
   BookOpen,
   FileText,
@@ -27,10 +29,11 @@ export default async function ModuleDetailPage({
 }) {
   const { id } = await params;
 
-  const [detail, referentiel, documents] = await Promise.all([
+  const [detail, referentiel, documents, etablissement] = await Promise.all([
     getModuleDetail(id),
     getManuel(id),
     getDocumentsModule(id),
+    getEtablissement(),
   ]);
   if (!detail) redirect("/modules");
 
@@ -239,6 +242,22 @@ export default async function ModuleDetailPage({
                       ))}
                     </ul>
                   )}
+
+                  <div className="mt-auto pt-1">
+                    <ExportDocument
+                      moduleId={id}
+                      moduleNom={module.nom}
+                      genre={doc.genre}
+                      groupeNom={
+                        groupes.length === 1
+                          ? groupes[0]!.nom
+                          : `${groupes.length} groupes`
+                      }
+                      anneeScolaire={etablissement.anneeScolaire ?? null}
+                      formateur={etablissement.nomFormateur ?? null}
+                      redigees={redigees}
+                    />
+                  </div>
                 </div>
               );
             })}

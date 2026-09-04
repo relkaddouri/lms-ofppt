@@ -5,6 +5,8 @@ import type { CycleModule } from "@/lib/modules";
 import { revalidatePath } from "next/cache";
 import { getPortee } from "@/app/actions/annees";
 import type { DocumentModule, PieceDocument } from "@/lib/documents-module";
+import type { PieceCompilee } from "@/lib/pdf-module";
+import type { Support } from "@/lib/support";
 
 export type Module = {
   id: string;
@@ -390,4 +392,79 @@ export async function getDocumentsModule(
       pieces: seances.filter((s) => s.nature === "pratique").map(piece),
     },
   ];
+}
+
+/**
+ * Le contenu compilé d'un des deux documents d'un module (PRD §4.4).
+ *
+ * Ne renvoie que les séances qui ont réellement un support : une compilation
+ * n'a pas à contenir des chapitres vides pour les séances non encore
+ * rédigées. Le rang imprimé suit l'ordre du programme, pas la position dans
+ * la liste filtrée — sauter la séance 3 ne doit pas renuméroter la 4 en 3.
+ */
+export async function getCompilationModule(
+  moduleId: string,
+  genre: "cours" | "pratique",
+  groupeId?: string,
+): Promise<PieceCompilee[]> {
+  const supabase = await createClient();
+
+  let requete = supabase
+    .from("seances")
+    .select(
+      "id, date, nature, contenu_source_id, objectif_operationnel, suggestions_pedagogiques(code, apprentissage_base), seance_groupes!inner(groupe_id)",
+    )
+    .eq("module_id", moduleId)
+    .order("date", { ascending: true, nullsFirst: false });
+  if (groupeId) requete = requete.eq("seance_groupes.groupe_id", groupeId);
+
+  const { data, error } = await requete;
+  if (error) throw new Error(error.message);
+
+  const toutes = (data ?? []) as unknown as {
+    id: string;
+    date: string | null;
+    nature: "theorique" | "pratique" | null;
+    contenu_source_id: string | null;
+    objectif_operationnel: string | null;
+    suggestions_pedagogiques: { code: string | null; apprentissage_base: string } | null;
+  }[];
+
+  const retenues = toutes.filter((s) =>
+    genre === "pratique" ? s.nature === "pratique" : s.nature !== "pratique",
+  );
+  if (retenues.length === 0) return [];
+
+  // §4.3bis : une séance miroir tire son support de sa source.
+  const sourceDe = new Map(retenues.map((s) => [s.id, s.contenu_source_id ?? s.id]));
+
+  const { data: supports } = await supabase
+    .from("supports_seance")
+    .select("seance_id, contenu, version, type")
+    .in("seance_id", [...new Set(sourceDe.values())])
+    .eq("type", genre === "pratique" ? "pratique" : "theorique")
+    .order("version", { ascending: false });
+
+  const dernier = new Map<string, Support>();
+  for (const s of supports ?? []) {
+    if (!dernier.has(s.seance_id)) dernier.set(s.seance_id, s.contenu as Support);
+  }
+
+  const pieces: PieceCompilee[] = [];
+  retenues.forEach((s, i) => {
+    const support = dernier.get(sourceDe.get(s.id) ?? s.id);
+    if (!support) return;
+    pieces.push({
+      rang: i + 1,
+      date: s.date,
+      objectif: s.suggestions_pedagogiques?.code ?? null,
+      titre:
+        s.suggestions_pedagogiques?.apprentissage_base ??
+        s.objectif_operationnel ??
+        "Séance",
+      support,
+    });
+  });
+
+  return pieces;
 }

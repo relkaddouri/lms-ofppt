@@ -262,6 +262,15 @@ L'ordre ci-dessous est arrêté : chaque atome se termine et se teste avant que 
 
 ---
 
+- [x] **7.22 — « Grille de correction » côté formateur, « Corrigé » côté stagiaire** : l'application note déjà des copies de contrôle toute seule ; appeler « correction » un document qui ne note rien laissait croire que le TP se corrigeait aussi tout seul. Deux libellés parce que ce ne sont pas les mêmes lecteurs, et la mention explicite que la grille est facultative. Les noms techniques ne bougent pas.
+
+---
+
+- [x] **7.23 — Export complet d'un module** (§4.4) : chacun des deux documents se télécharge en un PDF unique — page de garde avec identité de l'établissement et sommaire daté, puis une séance par chapitre, chacune ouvrant sa page. Distinct du classeur pédagogique (§4.13), qui compile les fiches du formateur : ici c'est le contenu remis aux stagiaires. Le rendu d'un support est désormais une fonction partagée entre l'export d'une séance et la compilation — le réécrire aurait produit deux mises en page du même contenu.
+  **Test** : compilation des deux documents de M202 sur les supports réels — 3 pages chacun, sommaire correct, rangs suivant l'ordre du programme et non la liste filtrée (une séance non rédigée ne renumérote pas la suivante), et une compilation vide produit une page de garde seule au lieu d'une erreur.
+
+---
+
 ## Points de vigilance — pas des atomes
 
 À garder en tête à chaque changement de schéma, sans traitement immédiat.

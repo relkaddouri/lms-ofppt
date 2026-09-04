@@ -18,15 +18,15 @@ export type EnteteSupport = {
   objectif: string | null;
 };
 
-const X = 16;
-const LARGEUR = 178;
-const HAUT = 20;
-const BAS = 278;
+export const X = 16;
+export const LARGEUR = 178;
+export const HAUT = 20;
+export const BAS = 278;
 
-const ENCRE: [number, number, number] = [17, 24, 39];
-const GRIS: [number, number, number] = [110, 116, 126];
-const TRAIT: [number, number, number] = [190, 194, 200];
-const FOND: [number, number, number] = [238, 241, 244];
+export const ENCRE: [number, number, number] = [17, 24, 39];
+export const GRIS: [number, number, number] = [110, 116, 126];
+export const TRAIT: [number, number, number] = [190, 194, 200];
+export const FOND: [number, number, number] = [238, 241, 244];
 
 export async function construireSupportPdf(
   support: Support,
@@ -35,7 +35,28 @@ export async function construireSupportPdf(
 ): Promise<jsPDF> {
   const { default: JsPDF } = await import("jspdf");
   const doc = new JsPDF({ unit: "mm", format: "a4" });
-  let y = dessinerEntete(doc, marque, X, HAUT, LARGEUR);
+  const y = dessinerEntete(doc, marque, X, HAUT, LARGEUR);
+
+  dessinerSupport(doc, support, entete, y);
+  numeroterPages(doc, `${entete.moduleNom} — ${entete.groupeNom}`);
+  return doc;
+}
+
+/**
+ * Le corps d'un support, dessiné à partir d'une ordonnée donnée.
+ *
+ * Exporté parce que la compilation d'un module (PRD §4.4) enchaîne plusieurs
+ * supports dans un même document : réécrire ce rendu là-bas produirait deux
+ * mises en page du même contenu, qui divergeraient à la première retouche.
+ * Renvoie l'ordonnée atteinte.
+ */
+export function dessinerSupport(
+  doc: jsPDF,
+  support: Support,
+  entete: EnteteSupport,
+  depart: number,
+): number {
+  let y = depart;
 
   const place = (h: number) => {
     if (y + h > BAS) {
@@ -240,17 +261,18 @@ export async function construireSupportPdf(
     ressources();
   }
 
+  return y;
+}
+
+/** Le pied de page, posé une fois le document complet. */
+export function numeroterPages(doc: jsPDF, libelle: string) {
   const pages = doc.getNumberOfPages();
   for (let p = 1; p <= pages; p++) {
     doc.setPage(p);
     doc.setFont("helvetica", "normal").setFontSize(7.5).setTextColor(...GRIS);
-    doc.text(`${entete.moduleNom} — ${entete.groupeNom}`, X, 287, {
-      maxWidth: LARGEUR - 25,
-    });
+    doc.text(libelle, X, 287, { maxWidth: LARGEUR - 25 });
     doc.text(`Page ${p} / ${pages}`, X + LARGEUR, 287, { align: "right" });
   }
-
-  return doc;
 }
 
 export async function telechargerSupportPdf(
