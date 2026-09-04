@@ -189,7 +189,7 @@ export default function CalendrierSemaine({
   ].sort((a, b) => b[1] - a[1]);
 
   return (
-    <div className="flex flex-col gap-8 px-6 py-10 md:px-10 md:pb-14">
+    <div className="flex flex-col gap-8 px-4 py-8 md:px-10 md:py-10 md:pb-14">
       <header className="flex flex-wrap items-end justify-between gap-6">
         <div className="flex flex-col gap-2">
           <span className="font-mono text-[11.5px] uppercase tracking-[0.12em] text-slate-light">

@@ -352,6 +352,15 @@ L'espace formateur était pensé desktop-only ; il doit désormais fonctionner s
 
 ---
 
+- [x] **8.6 — Détail de séance, fiche, classeur** (design §3bis) : premier atome vérifié à **386px réels**. La fenêtre Chrome étant maximisée et refusant de rétrécir, la page est chargée dans un cadre de 390px qui applique les vraies requêtes média — même CSS, même rendu qu'un téléphone.
+  - **Fiche de préparation** — quatre bascules à 640px passées à 768, dont l'en-tête à quatre colonnes et le couple méthode/durée d'une phase. Entre 640 et 768px, ces blocs repassaient en colonnes sur une largeur que le §3bis tient pour mobile.
+  - **Classeur** — la page ne portait **aucune marge** : son titre touchait le bord de l'écran, à toutes les largeurs. Personne ne l'avait vu parce que personne ne l'avait regardé de près.
+  - **Marges de page harmonisées à 16px sous 768px** sur cinq écrans qui divergeaient : classeur (0), calendrier (24), tableau de service (24), emploi du temps (32), journal (32). Le journal cumulait en plus deux marges.
+  **Vérifié sans rien trouver** : le détail de séance et la fiche de préparation d'un module ne débordent pas et se lisent bien à 386px — la barre d'onglets défile, les phases s'empilent, les boutons tiennent.
+  **Relevé pour 8.7** : `/parametres` **déborde** à 386px. C'est le prochain atome, il commencera par là.
+
+---
+
 ## Points de vigilance — pas des atomes
 
 À garder en tête à chaque changement de schéma, sans traitement immédiat.
