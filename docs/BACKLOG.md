@@ -290,6 +290,13 @@ L'ordre ci-dessous est arrêté : chaque atome se termine et se teste avant que 
 
 ---
 
+- [x] **7.27 — Le groupe est visible sur chaque contrôle d'un module** (§4.7, design §5.4) : deux groupes suivant le même module produisaient quatre lignes au titre identique, sans rien pour les distinguer — la donnée était en base depuis toujours, c'était un défaut d'affichage. Le tableau gagne une colonne Groupe portant la pastille de couleur du calendrier, avec le nom en clair à côté : la couleur seule ne porte jamais l'information (§11). Les lignes sont regroupées par groupe, DES101 avant DES102.
+  **Second défaut trouvé sur les mêmes lignes** : le bouton « Ouvrir » pointait vers `/modules/[id]/controle` sans paramètre de groupe, et cette adresse redirige vers la page du module. Le bouton ne faisait donc rien. Il porte désormais le groupe de sa ligne.
+  **Audit des autres écrans** : l'historique des contrôles est déjà borné à un groupe et redirige sans lui ; les échéances réglementaires affichent déjà `groupeNom` ; le tableau de bord compte les contrôles sans les lister ; l'espace stagiaire ne voit que son propre groupe. Aucun autre écran ne porte ce défaut.
+  **Test** : sur M104, les quatre contrôles s'affichent avec leur groupe, DES101 puis DES102 sans entrelacement, deux couleurs de pastille distinctes, et chaque ligne produit une URL qui ouvre réellement son contrôle.
+
+---
+
 - [ ] ~~**7.26 — Regroupement des ressources côté stagiaire et vue progressive** (§4.4, §4.5)~~ — **abandonné le 4 septembre 2026, décision du porteur de projet.** Les paragraphes correspondants restent dans le PRD ; ils ne sont pas implémentés et ne sont pas à reprendre sans nouvelle demande.
   **Ce qui existe déjà de ce périmètre, par ricochet d'autres atomes** : le support d'une séance et son corrigé partagé (§4.4) sont sur la même page côté stagiaire, et `devoirs.seance_id` est en base depuis la Phase 4 — la vue Devoirs ne l'exploite simplement pas. Rien à défaire si la décision change.
 

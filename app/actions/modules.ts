@@ -99,6 +99,16 @@ export type ModuleControleInfo = {
   id: string;
   titre: string | null;
   statut: "brouillon" | "valide";
+  /**
+   * Le groupe auquel ce contrôle appartient (§4.7 : un contrôle vit sur un
+   * couple groupe+module, jamais sur le module seul).
+   *
+   * Sans lui, deux groupes suivant le même module produisaient quatre lignes
+   * au titre identique, et rien pour les distinguer — alors que la donnée
+   * était en base depuis toujours.
+   */
+  groupeId: string;
+  groupeNom: string;
 };
 
 /** Compétence du référentiel dont le module est la déclinaison opérationnelle. */
@@ -160,8 +170,12 @@ export async function getModuleDetail(
       .order("created_at"),
     supabase
       .from("controles")
-      .select("id, titre, statut")
+      .select("id, titre, statut, groupe_id, groupes(nom)")
       .eq("module_id", moduleId)
+      .in("groupe_id", groupeIds)
+      // Groupe d'abord, puis du plus récent au plus ancien : les contrôles
+      // d'un même groupe se lisent ensemble.
+      .order("groupe_id")
       .order("created_at", { ascending: false }),
   ]);
 
@@ -183,7 +197,25 @@ export async function getModuleDetail(
       const gr = raw as { id: string; nom: string } | null;
       return { id: gr?.id ?? "", nom: gr?.nom ?? "Groupe" };
     }),
-    controles: (controles.data ?? []) as ModuleControleInfo[],
+    controles: (
+      (controles.data ?? []) as unknown as {
+        id: string;
+        titre: string | null;
+        statut: "brouillon" | "valide";
+        groupe_id: string;
+        groupes: { nom: string } | null;
+      }[]
+    )
+      .map((c) => ({
+        id: c.id,
+        titre: c.titre,
+        statut: c.statut,
+        groupeId: c.groupe_id,
+        groupeNom: c.groupes?.nom ?? "Groupe",
+      }))
+      // Le tri par identifiant de groupe ne dit rien au lecteur : on reprend
+      // par nom, DES101 avant DES102.
+      .sort((a, b) => a.groupeNom.localeCompare(b.groupeNom, "fr")),
   };
 }
 

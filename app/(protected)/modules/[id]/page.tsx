@@ -11,6 +11,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import Breadcrumb from "@/components/Breadcrumb";
 import Badge from "@/components/ui/Badge";
+import { couleurGroupe } from "@/lib/couleurs-groupe";
 import DureeReferenceEditor from "./DureeReferenceEditor";
 import ExportDocument from "./ExportDocument";
 import {
@@ -303,35 +304,63 @@ export default async function ModuleDetailPage({
             <table className="w-full text-left text-sm">
               <thead>
                 <tr className="border-b border-border bg-paper text-xs uppercase tracking-wide text-slate">
+                  <th className="px-4 py-3 font-medium">Groupe</th>
                   <th className="px-4 py-3 font-medium">Titre</th>
                   <th className="px-4 py-3 font-medium">Statut</th>
                   <th className="px-4 py-3 text-right font-medium">Accès</th>
                 </tr>
               </thead>
               <tbody>
-                {controles.map((c) => (
-                  <tr
-                    key={c.id}
-                    className="border-t border-border transition-colors hover:bg-wash/50"
-                  >
-                    <td className="px-4 py-3 font-medium text-ink">
-                      {c.titre ?? "Sans titre"}
-                    </td>
-                    <td className="px-4 py-3">
-                      <Badge tone={c.statut === "valide" ? "success" : "info"}>
-                        {c.statut === "valide" ? "Validé" : "Brouillon"}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <Link
-                        href={`/modules/${id}/controle`}
-                        className={linkBtn}
-                      >
-                        Ouvrir
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
+                {controles.map((c) => {
+                  const couleur = couleurGroupe(c.groupeId);
+                  return (
+                    <tr
+                      key={c.id}
+                      className="border-t border-border transition-colors hover:bg-wash/50"
+                    >
+                      {/* La pastille de groupe du calendrier (§5.4) : c'est le
+                          même repère, il doit être le même partout. Le nom en
+                          clair l'accompagne — la couleur seule ne porte
+                          jamais l'information (§11). */}
+                      <td className="whitespace-nowrap px-4 py-3">
+                        <span
+                          className="inline-flex items-center gap-2 rounded-full px-2.5 py-1 text-[13px] font-semibold"
+                          style={{
+                            backgroundColor: couleur.fond,
+                            color: couleur.trait,
+                          }}
+                        >
+                          <span
+                            aria-hidden
+                            className="h-1.5 w-1.5 shrink-0 rounded-full"
+                            style={{ backgroundColor: couleur.trait }}
+                          />
+                          {c.groupeNom}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 font-medium text-ink">
+                        {c.titre ?? "Sans titre"}
+                      </td>
+                      <td className="px-4 py-3">
+                        <Badge
+                          tone={c.statut === "valide" ? "success" : "info"}
+                        >
+                          {c.statut === "valide" ? "Validé" : "Brouillon"}
+                        </Badge>
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        {/* Sans le groupe, cette adresse renvoyait ici même :
+                            le bouton ne faisait rien. */}
+                        <Link
+                          href={`/modules/${id}/controle?groupe=${c.groupeId}`}
+                          className={linkBtn}
+                        >
+                          Ouvrir
+                        </Link>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
