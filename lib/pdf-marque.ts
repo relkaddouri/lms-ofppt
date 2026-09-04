@@ -77,7 +77,14 @@ export function dessinerEntete(
   largeur: number,
   hauteurLogo = 11,
 ): number {
-  const largeurLogo = dessinerLogo(doc, marque, x, y, hauteurLogo, largeur * 0.45);
+  const largeurLogo = dessinerLogo(
+    doc,
+    marque,
+    x,
+    y,
+    hauteurLogo,
+    largeur * 0.45,
+  );
   const decalage = largeurLogo > 0 ? largeurLogo + 5 : 0;
 
   police(doc, "corpsGras", 9);

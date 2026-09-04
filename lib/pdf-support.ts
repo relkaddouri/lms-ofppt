@@ -127,13 +127,13 @@ export function dessinerSupport(
 
   // ── En-tête commun ──────────────────────────────────────────────────────
   police(doc, "titre", 15);
-    doc.setTextColor(...ENCRE);
+  doc.setTextColor(...ENCRE);
   const lignesTitre = doc.splitTextToSize(support.titre, LARGEUR);
   lignesTitre.forEach((l: string, i: number) => doc.text(l, X, y + i * 6.5));
   y += lignesTitre.length * 6.5 + 2;
 
   police(doc, "corps", 8.5);
-    doc.setTextColor(...GRIS);
+  doc.setTextColor(...GRIS);
   doc.text(
     [
       entete.moduleNom,
@@ -176,10 +176,10 @@ export function dessinerSupport(
         doc.setFillColor(...FOND);
         doc.rect(X, y - 3, LARGEUR, h, "F");
         police(doc, "titre", 8);
-    doc.setTextColor(...GRIS);
+        doc.setTextColor(...GRIS);
         doc.text("EXEMPLE", X + 4, y + 1);
         police(doc, "corps", 9);
-    doc.setTextColor(...ENCRE);
+        doc.setTextColor(...ENCRE);
         lignes.forEach((l: string, k: number) =>
           doc.text(l, X + 4, y + 5.5 + k * 4.3),
         );
@@ -203,7 +203,7 @@ export function dessinerSupport(
     titre("Travail demandé", 11);
     support.consignes.forEach((c, i) => {
       police(doc, "corps", 9.5);
-    doc.setTextColor(...ENCRE);
+      doc.setTextColor(...ENCRE);
       const lignes = doc.splitTextToSize(c, LARGEUR - 10);
       lignes.forEach((l: string, k: number) => {
         place(6);
@@ -247,7 +247,7 @@ export function dessinerSupport(
         doc.rect(X, y, LARGEUR - lPoints, h);
         doc.rect(X + LARGEUR - lPoints, y, lPoints, h);
         police(doc, "corps");
-    doc.setTextColor(...ENCRE);
+        doc.setTextColor(...ENCRE);
         lignes.forEach((l: string, k: number) =>
           doc.text(l, X + 2, y + 4.5 + k * 4.3),
         );
@@ -266,7 +266,7 @@ export function dessinerSupport(
       doc.rect(X, y, LARGEUR, 8, "F");
       doc.setDrawColor(...TRAIT).rect(X, y, LARGEUR, 8);
       police(doc, "titre", 9.5);
-    doc.setTextColor(...ENCRE);
+      doc.setTextColor(...ENCRE);
       doc.text("Total", X + 2, y + 5.5);
       doc.text(`${total} pts`, X + LARGEUR - lPoints / 2, y + 5.5, {
         align: "center",
