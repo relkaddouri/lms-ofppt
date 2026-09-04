@@ -247,7 +247,13 @@ L'ordre ci-dessous est arrêté : chaque atome se termine et se teste avant que 
 - [x] **7.19 — Support : cohérence avec la fiche, et contenu riche** (§4.4, design §5.10) : la génération du support lit d'abord la fiche de la séance — celle de la source quand la séance est un miroir — et doit honorer chaque ressource qu'elle annonce, qu'elle vienne du champ « fichiers de travail » ou d'une URL semée dans les phases. La vérification est faite après coup et nomme ce qui manque, plutôt que de faire confiance à la consigne. Le support gagne des ressources externes typées par origine (fiche / proposée) et des figures — des étapes nommées, pas des images. Chaque lien est appelé à la génération : celui qui ne répond pas est signalé au formateur et n'est ni montré au stagiaire ni imprimé.
   **Test** : sur une génération réelle à partir d'une fiche annonçant trois ressources dont une URL, les trois sont honorées, deux figures sont produites, et le modèle laisse `url` à null sur les deux ressources qu'il ne sait pas lier plutôt que d'inventer une adresse. La détection de lien mort distingue une page réelle, une page absente d'un domaine réel, et un domaine inexistant.
   **Corrigé au passage** : la génération de support portait le même filtre PostgREST fautif que celle de fiche — « déjà traité avec ce groupe » était toujours vide.
-  **Non fait, délibérément** : les images du §4.4. L'application ne sait pas en produire ; à trancher entre un dépôt d'images par le formateur et un service de génération.
+  **Non fait, tranché par le porteur de projet le 4 septembre 2026** : les images du §4.4. Ni dépôt manuel, ni service de génération payant — on reste sur les schémas texte (étapes reliées par des flèches).
+
+---
+
+- [x] **7.20 — Deux documents par module, et la correction de TP** (§4.4) : un module porte désormais deux documents distincts et nommés — « Support du cours — [Module] » et « Pratique de [Module] » — chacun listant ses séances, celles qui sont rédigées et, pour les TP, celles qui sont corrigées. La proposition de correction se génère à partir de l'énoncé réellement remis, jamais du référentiel seul, et reprend son barème sans le renommer.
+  **Deux verrous, posés en base et non dans la route** : la correction n'existe que sur une séance **pratique** et **faite** — un trigger le refuse sinon —, et la table `corrections_tp` n'a **aucune** politique de lecture stagiaire. C'est plus strict que le PRD, qui interdit l'exposition « avant que le TP soit fait » sans dire ce qu'il en est après : ouvrir plus tard s'ajoute, se rétracter ne se peut pas.
+  **Test** : la base refuse une correction sur séance théorique et sur séance pratique non faite, l'accepte une fois la séance marquée faite, et n'en laisse lire aucune sans authentification. Sur une génération réelle, une étape par consigne (4/4), les quatre critères de l'énoncé repris tels quels, barème à 20/20, et une règle de notation par critère.
 
 ---
 

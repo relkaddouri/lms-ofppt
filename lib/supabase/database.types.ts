@@ -286,6 +286,38 @@ export type Database = {
           },
         ]
       }
+      corrections_tp: {
+        Row: {
+          contenu: Json
+          created_at: string
+          id: string
+          seance_id: string
+          version: number
+        }
+        Insert: {
+          contenu: Json
+          created_at?: string
+          id?: string
+          seance_id: string
+          version?: number
+        }
+        Update: {
+          contenu?: Json
+          created_at?: string
+          id?: string
+          seance_id?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "corrections_tp_seance_id_fkey"
+            columns: ["seance_id"]
+            isOneToOne: false
+            referencedRelation: "seances"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       creneaux_motif: {
         Row: {
           created_at: string

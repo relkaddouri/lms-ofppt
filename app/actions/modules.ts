@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { CycleModule } from "@/lib/modules";
 import { revalidatePath } from "next/cache";
 import { getPortee } from "@/app/actions/annees";
+import type { DocumentModule, PieceDocument } from "@/lib/documents-module";
 
 export type Module = {
   id: string;
@@ -299,4 +300,94 @@ export async function deleteModule(id: string) {
 
   if (error) throw new Error(error.message);
   revalidatePath("/modules");
+}
+
+/**
+ * Les deux documents d'un module, séance par séance (PRD §4.4).
+ *
+ * Le découpage suit la nature de la séance : une séance théorique alimente le
+ * support de cours, une séance pratique le document de TP. Les séances sans
+ * nature déclarée rejoignent le cours, qui est le cas par défaut du produit.
+ *
+ * Un groupe peut être demandé : deux groupes suivent le même module à des
+ * dates différentes, et le document d'un groupe n'est pas celui de l'autre.
+ * Sans groupe, on prend tout le module — c'est la vue du formateur qui
+ * prépare, pas celle qui remet.
+ */
+export async function getDocumentsModule(
+  moduleId: string,
+  groupeId?: string,
+): Promise<DocumentModule[]> {
+  const supabase = await createClient();
+
+  let requete = supabase
+    .from("seances")
+    .select(
+      "id, date, statut, nature, contenu_source_id, objectif_operationnel, suggestions_pedagogiques(code, apprentissage_base), seance_groupes!inner(groupe_id)",
+    )
+    .eq("module_id", moduleId)
+    .order("date", { ascending: true, nullsFirst: false });
+  if (groupeId) requete = requete.eq("seance_groupes.groupe_id", groupeId);
+
+  const { data, error } = await requete;
+  if (error) throw new Error(error.message);
+
+  const seances = (data ?? []) as unknown as {
+    id: string;
+    date: string | null;
+    statut: string;
+    nature: "theorique" | "pratique" | null;
+    contenu_source_id: string | null;
+    objectif_operationnel: string | null;
+    suggestions_pedagogiques: { code: string | null; apprentissage_base: string } | null;
+  }[];
+
+  if (seances.length === 0) {
+    return [
+      { genre: "cours", titre: "", pieces: [] },
+      { genre: "pratique", titre: "", pieces: [] },
+    ];
+  }
+
+  // §4.3bis : une séance miroir n'a pas de support à elle. Compter sur son
+  // seul identifiant la dirait « non rédigée » alors qu'elle en affiche un.
+  const sourceDe = new Map(seances.map((s) => [s.id, s.contenu_source_id ?? s.id]));
+  const sources = [...new Set(sourceDe.values())];
+
+  const [supportsRes, correctionsRes] = await Promise.all([
+    supabase.from("supports_seance").select("seance_id").in("seance_id", sources),
+    supabase.from("corrections_tp").select("seance_id").in("seance_id", sources),
+  ]);
+
+  const avecSupport = new Set((supportsRes.data ?? []).map((r) => r.seance_id));
+  const avecCorrection = new Set((correctionsRes.data ?? []).map((r) => r.seance_id));
+
+  const piece = (s: (typeof seances)[number]): PieceDocument => {
+    const source = sourceDe.get(s.id) ?? s.id;
+    return {
+      seanceId: s.id,
+      date: s.date,
+      titre:
+        s.suggestions_pedagogiques?.apprentissage_base ??
+        s.objectif_operationnel ??
+        "Séance",
+      objectif: s.suggestions_pedagogiques?.code ?? null,
+      redigee: avecSupport.has(source),
+      faite: s.statut === "fait",
+      corrigee: avecCorrection.has(source),
+    };
+  };
+
+  return [
+    {
+      genre: "cours",
+      titre: "",
+      pieces: seances.filter((s) => s.nature !== "pratique").map(piece),
+    },
+    {
+      genre: "pratique",
+      titre: "",
+      pieces: seances.filter((s) => s.nature === "pratique").map(piece),
+    },
+  ];
 }

@@ -15,6 +15,7 @@ import FicheSeance from "@/components/FicheSeance";
 import SupportSeance from "@/components/SupportSeance";
 import QuestionsSupport from "@/components/QuestionsSupport";
 import PartageContenu from "@/components/PartageContenu";
+import CorrectionTpPanneau from "@/components/CorrectionTpPanneau";
 import { formatDateJour, formatDateTime, formatHeures } from "@/lib/format";
 import { formatHeure } from "@/lib/creneaux";
 import {
@@ -418,6 +419,27 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
                 version={seance.supportVersion}
               />
             </div>
+
+            {/* §4.4 : la correction est un document du formateur, pas du
+                stagiaire. Elle vit sous l'énoncé, jamais dans son cadre. */}
+            {seance.nature === "pratique" ? (
+              <div className="border-t border-separator px-6 py-[22px]">
+                <h3 className="font-display text-[15px] font-semibold text-ink">
+                  Proposition de correction
+                </h3>
+                <p className="mb-3.5 text-[13px] text-slate-light">
+                  Pour vous seul — elle n&apos;apparaît pas dans l&apos;espace
+                  stagiaire.
+                </p>
+                <CorrectionTpPanneau
+                  seanceId={seance.id}
+                  seanceFaite={seance.statut === "fait"}
+                  aUnEnonce={Boolean(seance.supportVersion)}
+                  initial={seance.correction}
+                  versionInitiale={seance.correctionVersion}
+                />
+              </div>
+            ) : null}
 
             {seance.supportId ? (
               <div className="border-t border-separator px-6 py-[22px]">

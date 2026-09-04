@@ -15,6 +15,8 @@ import {
 } from "@/app/actions/questions-support";
 import type { Database, Json } from "@/lib/supabase/database.types";
 import { sourceContenu } from "@/app/actions/partage";
+import { getCorrection } from "@/app/actions/corrections";
+import type { CorrectionTp } from "@/lib/correction";
 
 /** Colonnes modifiables d'une séance, telles que la base les déclare. */
 type MajTableSeance = Database["public"]["Tables"]["seances"]["Update"];
@@ -239,6 +241,9 @@ export type SeanceDetail = {
   ficheVersion: number | null;
   supportContenu: unknown | null;
   supportVersion: number | null;
+  /** Correction du TP, réservée au formateur et postérieure à la séance (§4.4). */
+  correction: CorrectionTp | null;
+  correctionVersion: number | null;
   supportId: string | null;
   /** Questions posées par les stagiaires sur ce support. */
   questions: QuestionSupport[];
@@ -431,6 +436,20 @@ export async function getSeanceDetail(
       ? await chargerQuestions(supportRes.data.id, groupeId)
       : [],
     partage: await chargerPartage(s.id, s.contenu_source_id),
+    // §4.4 : la correction n'existe que sur une séance pratique et faite. La
+    // demander ailleurs coûterait une requête pour un `null` connu d'avance.
+    ...(s.nature === "pratique" && s.statut === "fait"
+      ? await chargerCorrection(seanceId)
+      : { correction: null, correctionVersion: null }),
+  };
+}
+
+/** La dernière correction de TP, aplatie pour le détail de séance. */
+async function chargerCorrection(seanceId: string) {
+  const trouvee = await getCorrection(seanceId);
+  return {
+    correction: trouvee?.correction ?? null,
+    correctionVersion: trouvee?.version ?? null,
   };
 }
 

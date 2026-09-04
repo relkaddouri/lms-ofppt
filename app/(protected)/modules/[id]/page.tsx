@@ -1,4 +1,5 @@
-import { getModuleDetail } from "@/app/actions/modules";
+import { getDocumentsModule, getModuleDetail } from "@/app/actions/modules";
+import { avancement, titreDocument } from "@/lib/documents-module";
 import { getManuel } from "@/app/actions/manuel";
 import ReferentielCompetence from "@/components/ReferentielCompetence";
 import { redirect } from "next/navigation";
@@ -6,7 +7,15 @@ import Link from "next/link";
 import Breadcrumb from "@/components/Breadcrumb";
 import Badge from "@/components/ui/Badge";
 import DureeReferenceEditor from "./DureeReferenceEditor";
-import { FileText, FolderKanban, ListChecks, Plus, Users } from "lucide-react";
+import {
+  BookOpen,
+  FileText,
+  FolderKanban,
+  ListChecks,
+  Plus,
+  Users,
+  Wrench,
+} from "lucide-react";
 
 const linkBtn =
   "inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-ink hover:bg-paper focus:outline-none focus:ring-2 focus:ring-ink";
@@ -18,9 +27,10 @@ export default async function ModuleDetailPage({
 }) {
   const { id } = await params;
 
-  const [detail, referentiel] = await Promise.all([
+  const [detail, referentiel, documents] = await Promise.all([
     getModuleDetail(id),
     getManuel(id),
+    getDocumentsModule(id),
   ]);
   if (!detail) redirect("/modules");
 
@@ -164,6 +174,77 @@ export default async function ModuleDetailPage({
           )}
         </section>
       </div>
+
+      <section className="mt-8">
+          <h2 className="font-display text-[17px] font-semibold text-ink">
+            Documents du module
+          </h2>
+          <p className="mt-1 text-[13.5px] text-slate-2">
+            Deux documents distincts, comme le veut le programme : le cours
+            qu&apos;on révise, et les travaux pratiques qu&apos;on fait.
+          </p>
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            {documents.map((doc) => {
+              const { redigees, total } = avancement(doc);
+              const Icone = doc.genre === "pratique" ? Wrench : BookOpen;
+              return (
+                <div
+                  key={doc.genre}
+                  className="flex flex-col gap-3 rounded-[14px] border border-border bg-surface p-6 shadow-repos"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[9px] bg-wash text-slate-2">
+                      <Icone size={16} />
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="font-display text-[15px] font-semibold text-ink">
+                        {titreDocument(doc.genre, module.nom)}
+                      </h3>
+                      <p className="font-mono text-[12.5px] text-slate-2">
+                        {total === 0
+                          ? "aucune séance"
+                          : `${redigees} / ${total} séance${total > 1 ? "s" : ""} rédigée${redigees > 1 ? "s" : ""}`}
+                      </p>
+                    </div>
+                  </div>
+
+                  {doc.pieces.length === 0 ? (
+                    <p className="text-sm text-slate">
+                      {doc.genre === "pratique"
+                        ? "Aucune séance pratique n'est prévue sur ce module."
+                        : "Aucune séance théorique n'est prévue sur ce module."}
+                    </p>
+                  ) : (
+                    <ul className="flex flex-col divide-y divide-separator">
+                      {doc.pieces.map((piece) => (
+                        <li
+                          key={piece.seanceId}
+                          className="flex items-baseline gap-3 py-2"
+                        >
+                          {piece.objectif ? (
+                            <span className="shrink-0 font-mono text-[11.5px] text-slate-light">
+                              {piece.objectif}
+                            </span>
+                          ) : null}
+                          <span className="min-w-0 flex-1 truncate text-sm text-ink">
+                            {piece.titre}
+                          </span>
+                          {doc.genre === "pratique" && piece.corrigee ? (
+                            <Badge tone="info">corrigé</Badge>
+                          ) : null}
+                          <Badge tone={piece.redigee ? "success" : "neutral"}>
+                            {piece.redigee ? "rédigé" : "à rédiger"}
+                          </Badge>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+      </section>
+
 
       {controles.length > 0 ? (
         <section className="mt-8">
