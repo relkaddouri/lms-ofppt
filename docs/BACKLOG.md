@@ -208,11 +208,21 @@ L'ordre ci-dessous est arrêté : chaque atome se termine et se teste avant que 
 
 ---
 
+- [x] **7.12 — Calendrier et emploi du temps · grille à quatre créneaux** (§4.10, design §5.4-5.5) : la journée tient en quatre lignes fixes de 2 h 30, une séance qui couvre deux créneaux est dessinée en un seul bloc, et chaque groupe garde la même couleur — à l'écran comme dans les deux PDF. Ce qui tombe hors grille est nommé sous le tableau plutôt que silencieusement absent.
+  **Test** : la semaine en cours affiche les blocs fusionnés et la légende des couleurs ; le PDF exporté depuis `/emploi-du-temps` reproduit la même grille.
+
+---
+
+- [x] **7.13 — Fiche et support partagés entre groupes parallèles** (§4.3bis) : une séance peut désigner celle qui porte son contenu (`contenu_source_id`) au lieu d'en garder une copie. Lire, écrire, imprimer le classeur et compter les fiches passent tous par la séance source. Le rapprochement de deux séances est proposé, jamais établi d'office : lier fait qu'écrire ici modifie ce que voit un autre groupe, absent de l'écran. Les contrôles restent hors du partage, exception explicite du PRD.
+  **Test** : la base refuse l'auto-référence, les chaînes de miroirs et le fait qu'une source suivie devienne miroir ; supprimer la source promeut le premier miroir et lui transmet fiche et support ; le classeur du groupe miroir imprime bien sa page, et sa séance n'est pas comptée « sans fiche » par le générateur.
+
+---
+
 ## Points de vigilance — pas des atomes
 
 À garder en tête à chaque changement de schéma, sans traitement immédiat.
 
-- **56 casts `as unknown as`** désactivent le typage sur les chaînes `select` de PostgREST. C'est le trou qui a laissé passer `fiches_prescrites_legacy` et `seances.groupe_id` après leur suppression : un changement de schéma se vérifie en relisant les chaînes `select`, pas en lançant `tsc`.
+- **60 casts `as unknown as`** désactivent le typage sur les chaînes `select` de PostgREST. C'est le trou qui a laissé passer `fiches_prescrites_legacy` et `seances.groupe_id` après leur suppression : un changement de schéma se vérifie en relisant les chaînes `select`, pas en lançant `tsc`.
 - Les **colonnes générées** (`masse_horaire_allouee`, `heures_fad`, `code_operationnel`) ne sont pas marquées en lecture seule par les types Supabase générés. Une écriture dessus passe `tsc` et échoue à l'exécution.
 
 ---

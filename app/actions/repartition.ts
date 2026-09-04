@@ -248,16 +248,28 @@ export async function genererPlanSeances(
     // préparée n'est pas à la main du générateur.
     const { data: intactes } = await supabase
       .from("seances")
-      .select("id, fiches_preparation(id), seance_groupes!inner(groupe_id)")
+      .select(
+        "id, contenu_source_id, fiches_preparation(id), seance_groupes!inner(groupe_id)",
+      )
       .eq("seance_groupes.groupe_id", groupeId)
       .eq("module_id", moduleId)
       .eq("statut", "a_faire")
       .not("suggestion_pedagogique_id", "is", null);
 
+    // §4.3bis : une séance miroir n'a pas de fiche à elle — elle affiche
+    // celle de sa source. La compter comme « sans fiche » la supprimerait
+    // alors que le formateur l'a explicitement rattachée.
     const supprimables = (
-      (intactes ?? []) as unknown as { id: string; fiches_preparation: unknown[] }[]
+      (intactes ?? []) as unknown as {
+        id: string;
+        contenu_source_id: string | null;
+        fiches_preparation: unknown[];
+      }[]
     )
-      .filter((s) => (s.fiches_preparation ?? []).length === 0)
+      .filter(
+        (s) =>
+          (s.fiches_preparation ?? []).length === 0 && !s.contenu_source_id,
+      )
       .map((s) => s.id);
 
     if (supprimables.length > 0) {

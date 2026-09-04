@@ -13,6 +13,7 @@ import { useToast } from "@/components/ui/Toast";
 import FicheSeance from "@/components/FicheSeance";
 import SupportSeance from "@/components/SupportSeance";
 import QuestionsSupport from "@/components/QuestionsSupport";
+import PartageContenu from "@/components/PartageContenu";
 import { formatDate, formatDateTime, formatHeures } from "@/lib/format";
 import { formatHeure } from "@/lib/creneaux";
 import {
@@ -349,7 +350,8 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
                 <Badge tone="neutral">aucune version</Badge>
               )}
             </div>
-            <div className="px-6 py-[22px]">
+            <div className="flex flex-col gap-5 px-6 py-[22px]">
+              <PartageContenu seanceId={seance.id} partage={seance.partage} />
               <FicheSeance
                 contexte={{
                   seanceId: seance.id,

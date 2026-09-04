@@ -98,7 +98,7 @@ export async function getFichesPeriode(
   let requete = supabase
     .from("seances")
     .select(
-      "id, date, duree_prevue, objectif_operationnel, modules(nom, competences(code_operationnel)), seance_groupes!inner(groupe_id, groupes(nom, annee, specialites(nom)))",
+      "id, contenu_source_id, date, duree_prevue, objectif_operationnel, modules(nom, competences(code_operationnel)), seance_groupes!inner(groupe_id, groupes(nom, annee, specialites(nom)))",
     )
     .not("date", "is", null)
     .gte("date", debut)
@@ -113,23 +113,34 @@ export async function getFichesPeriode(
   if (error) throw new Error(error.message);
   if (!seances || seances.length === 0) return { fiches: [], sansFiche: 0 };
 
+  // §4.3bis : une séance miroir tire sa fiche de sa source. Indexer sur le
+  // seul `seance_id` laisserait le groupe miroir sans aucune page.
+  const sourceDe = new Map(
+    (seances as unknown as { id: string; contenu_source_id: string | null }[]).map(
+      (s) => [s.id, s.contenu_source_id ?? s.id],
+    ),
+  );
+
   const { data: fiches, error: erreurFiches } = await supabase
     .from("fiches_preparation")
     .select("seance_id, contenu, version")
-    .in(
-      "seance_id",
-      seances.map((s) => s.id),
-    )
+    .in("seance_id", [...new Set(sourceDe.values())])
     .order("version", { ascending: false });
   if (erreurFiches) throw new Error(erreurFiches.message);
 
   // La version la plus haute fait foi : c'est celle que le formateur a relue
   // en dernier.
-  const derniere = new Map<string, string>();
+  const parSource = new Map<string, string>();
   for (const f of fiches ?? []) {
     // Une version sans contenu ne vaut pas une page de classeur.
     if (!f.contenu) continue;
-    if (!derniere.has(f.seance_id)) derniere.set(f.seance_id, f.contenu);
+    if (!parSource.has(f.seance_id)) parSource.set(f.seance_id, f.contenu);
+  }
+
+  const derniere = new Map<string, string>();
+  for (const [id, source] of sourceDe) {
+    const contenu = parSource.get(source);
+    if (contenu) derniere.set(id, contenu);
   }
 
   const retenues: SeanceAvecFiche[] = [];

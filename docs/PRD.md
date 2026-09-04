@@ -356,6 +356,20 @@ Exemple donné par le porteur de projet : 3 CC de 2h30 chacun (7h30) + 1 EFM de 
 
 **Positionnement automatique des dates de contrôle** : une fois les séances générées, les dates estimées de CC1, CC2 et EFM local (§4.9 ancien contenu, repris ci-dessous) se calent sur ce calendrier réellement généré, pas sur une simple estimation déconnectée des vraies séances.
 
+**Recalcul automatique obligatoire — bug constaté, ajout v3.** Un bug réel a révélé l'absence de cette règle : le porteur de projet a déclaré un jour férié à une mauvaise date (18/09/2026 au lieu de 18/11/2026), l'a supprimé après coup — et l'app n'a **jamais redéplacé** les séances qui auraient dû se replacer sur la bonne date. Pire, une séance est restée affichée sur un jour ensuite marqué férié (chevauchement visible dans le calendrier), preuve que les séances déjà générées ne sont jamais recalculées après un changement.
+
+**Règle : tout changement qui affecte le placement des séances doit déclencher un recalcul automatique et immédiat des séances non encore réalisées.** Ça inclut :
+- Ajout, modification, ou suppression d'un jour non travaillé (férié, vacances, absence — §4.10)
+- Modification du motif hebdomadaire actif — **tout changement**, sans exception : ajout ou suppression d'un créneau, changement de groupe sur un créneau existant, et **déplacement d'horaire d'un créneau existant** (ex. un créneau du jeudi qui passe de 8h30-13h30 à 13h30-18h30) — ce dernier cas avait été omis dans une première version de cette règle et constaté cassé en pratique : modifier l'horaire d'un créneau ne déclenchait aucun recalcul, le calendrier restait figé sur l'ancien placement.
+
+**Ce que le recalcul doit produire** :
+- Les séances **non encore réalisées** (statut "à faire") sont redéplacées sur les créneaux disponibles, dans le même ordre pédagogique qu'à la génération initiale (§4.9 ci-dessus, remplissage complet des créneaux)
+- Les séances déjà marquées **"faite" ne sont jamais déplacées ni modifiées** — elles représentent un fait passé, pas une prévision
+- Les **dates de fin prévisionnelles** par module et par année (ci-dessus) sont recalculées en conséquence
+- Les dates estimées de CC1/CC2/EFM local se recalent sur le nouveau calendrier
+
+**Retour visuel pendant le recalcul** : l'opération doit être visible pour le formateur — un indicateur (bandeau ou notification) signale qu'un recalcul est en cours, avec une possibilité de l'annuler si le calcul s'exécute en tâche de fond et prend un temps notable. Le formateur ne doit jamais se retrouver avec un calendrier silencieusement obsolète après avoir modifié un jour férié ou un motif.
+
 #### Page dédiée "Emploi du temps"
 
 **Nouvelle page, distincte du calendrier opérationnel (§4.10 ci-dessous)** — c'est le document officiel équivalent à celui du classeur pédagogique papier (section I.B du cahier du formateur : période de validité, horaires, groupes concernés, modules à mettre en œuvre). Contenu :

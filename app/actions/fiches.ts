@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { sourceContenu } from "@/app/actions/partage";
 
 export type FichePreparation = {
   id: string;
@@ -76,18 +77,35 @@ export async function getSeancesAPreparer(
 
   // Un compte par séance en une seule requête : boucler ici ferait une requête
   // par ligne, ce que conventions.md L.53 interdit.
+  // Une séance miroir n'a pas de fiche à elle : elle en a une par sa source.
+  // Compter sur les seuls identifiants de séance la dirait « sans fiche »
+  // alors qu'elle en affiche une (§4.3bis).
+  const { data: liens } = await supabase
+    .from("seances")
+    .select("id, contenu_source_id")
+    .in(
+      "id",
+      seances.map((s) => s.id),
+    );
+  const sourceDe = new Map(
+    (liens ?? []).map((l) => [l.id, l.contenu_source_id ?? l.id]),
+  );
+
   const { data: fiches, error: errFiches } = await supabase
     .from("fiches_preparation")
     .select("seance_id")
-    .in(
-      "seance_id",
-      seances.map((s) => s.id),
-    );
+    .in("seance_id", [...new Set(sourceDe.values())]);
   if (errFiches) throw new Error(errFiches.message);
 
-  const comptes = new Map<string, number>();
+  const parSource = new Map<string, number>();
   for (const f of fiches ?? []) {
-    comptes.set(f.seance_id, (comptes.get(f.seance_id) ?? 0) + 1);
+    parSource.set(f.seance_id, (parSource.get(f.seance_id) ?? 0) + 1);
+  }
+
+  const comptes = new Map<string, number>();
+  for (const s of seances) {
+    const n = parSource.get(sourceDe.get(s.id) ?? s.id) ?? 0;
+    if (n > 0) comptes.set(s.id, n);
   }
 
   return seances.map((s) => ({
@@ -111,10 +129,13 @@ export async function getFichesVersions(
   seanceId: string,
 ): Promise<FichePreparation[]> {
   const supabase = await createClient();
+  // §4.3bis : la fiche peut appartenir à une séance parallèle. On lit celle
+  // qui porte le contenu, pas celle qu'on regarde.
+  const source = await sourceContenu(seanceId);
   const { data, error } = await supabase
     .from("fiches_preparation")
     .select("id, seance_id, contenu, version, created_at")
-    .eq("seance_id", seanceId)
+    .eq("seance_id", source)
     .order("version", { ascending: false });
 
   if (error) throw new Error(error.message);
@@ -123,11 +144,14 @@ export async function getFichesVersions(
 
 export async function saveFiche(seanceId: string, contenu: string) {
   const supabase = await createClient();
+  // L'écriture va sur la séance source : enregistrer depuis l'une ou l'autre
+  // des séances parallèles met à jour la même fiche (§4.3bis).
+  const source = await sourceContenu(seanceId);
 
   const { data: derniere, error: errLecture } = await supabase
     .from("fiches_preparation")
     .select("version")
-    .eq("seance_id", seanceId)
+    .eq("seance_id", source)
     .order("version", { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -137,7 +161,7 @@ export async function saveFiche(seanceId: string, contenu: string) {
 
   const { error } = await supabase
     .from("fiches_preparation")
-    .insert({ seance_id: seanceId, contenu, version: next });
+    .insert({ seance_id: source, contenu, version: next });
   if (error) throw new Error(error.message);
 
   revalidatePath("/modules");

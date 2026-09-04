@@ -164,6 +164,17 @@ Sept écrans l'utilisaient sans qu'elle figure ici, avec trois hauteurs et trois
 
 Une ligne qui occupe du total sans être modifiable — les dix heures d'évaluation d'une répartition horaire (§4.7 du PRD) — se distingue par un fond `--paper-alt`, un filet supérieur `--border-strong` qui la sépare du bloc saisissable, un badge « réservé », et un tiret `--slate-light` à la place de chaque champ. Elle n'est jamais absente ni simplement soustraite du total : un formateur doit voir ce qui lui est retiré, pas le déduire d'un total qui ne tombe pas juste.
 
+### 5.8 Bandeau de contenu partagé — recensé le 4 septembre 2026
+
+Quand un écran modifie des données qu'un **autre écran, absent de la vue, affiche aussi**, il le dit en permanence — pas seulement au moment de lier.
+
+- Bandeau discret en tête du contenu concerné : fond `--tint-teal`, bordure `--tint-teal-strong`, icône 16px en `--ofppt-teal`, texte 13,5px. Pas de corail : le partage est un fait, pas une alerte.
+- Il nomme **les groupes concernés**, jamais un décompte anonyme (« partagé avec DES102 », pas « partagé avec 1 groupe »).
+- Le côté miroir porte l'action de détachement ; le côté source ne la porte pas — on quitte un partage depuis la séance qui suit, pas depuis celle qui est suivie.
+- Un rapprochement automatique s'affiche comme **proposition à confirmer**, jamais comme lien déjà établi. Quand plusieurs candidats sont indiscernables, l'écran le dit et donne le critère qui départage (ici la date) au lieu de trancher à la place du formateur.
+
+---
+
 ## 6. Espace stagiaire — mobile-first (règles spécifiques)
 
 Le stagiaire consulte l'app quasi exclusivement depuis son téléphone (§Espace stagiaire du PRD). Ces écrans suivent des règles différentes de l'espace formateur, pensé lui pour un écran de bureau :
@@ -217,6 +228,7 @@ Une fiche prescrite ou un tableau de suggestions pédagogiques contient beaucoup
 - **Icônes d'action** : chaque bouton d'action (Modifier, Supprimer, Ajouter, etc.) porte une icône (lucide-react, 16px) avant le texte, espacement 6px
 - **Champ de formulaire** : rayon 9px, **bordure 1px `--border-strong`** (pas `--border`, qui est trop pâle et disparaît sur fond blanc — réservée aux cartes et séparateurs), label 14px/600 au-dessus du champ, focus en halo sarcelle 3px (`--ofppt-teal` à faible opacité)
 - **Carte** : padding 24px (pas 16px), filet interne éventuel en `--separator`
+- **PartageContenu** : bandeau et panneau de proposition du contenu partagé entre groupes parallèles (voir §5.8)
 
 ## 11. Règles UX
 

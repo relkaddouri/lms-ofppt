@@ -1518,6 +1518,7 @@ export type Database = {
           a_prevoir_prochaine_seance: string | null
           contenu_prevu: string | null
           contenu_realise: string | null
+          contenu_source_id: string | null
           created_at: string
           cree_par: string | null
           date: string | null
@@ -1539,6 +1540,7 @@ export type Database = {
           a_prevoir_prochaine_seance?: string | null
           contenu_prevu?: string | null
           contenu_realise?: string | null
+          contenu_source_id?: string | null
           created_at?: string
           cree_par?: string | null
           date?: string | null
@@ -1560,6 +1562,7 @@ export type Database = {
           a_prevoir_prochaine_seance?: string | null
           contenu_prevu?: string | null
           contenu_realise?: string | null
+          contenu_source_id?: string | null
           created_at?: string
           cree_par?: string | null
           date?: string | null
@@ -1578,6 +1581,13 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "seances_contenu_source_id_fkey"
+            columns: ["contenu_source_id"]
+            isOneToOne: false
+            referencedRelation: "seances"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "seances_module_id_fkey"
             columns: ["module_id"]

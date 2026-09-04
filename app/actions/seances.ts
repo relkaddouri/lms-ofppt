@@ -14,6 +14,7 @@ import {
   type QuestionSupport,
 } from "@/app/actions/questions-support";
 import type { Database, Json } from "@/lib/supabase/database.types";
+import { sourceContenu } from "@/app/actions/partage";
 
 /** Colonnes modifiables d'une séance, telles que la base les déclare. */
 type MajTableSeance = Database["public"]["Tables"]["seances"]["Update"];
@@ -241,6 +242,13 @@ export type SeanceDetail = {
   supportId: string | null;
   /** Questions posées par les stagiaires sur ce support. */
   questions: QuestionSupport[];
+  /**
+   * §4.3bis : séance qui porte réellement la fiche et le support affichés.
+   * `null` quand cette séance les porte elle-même.
+   */
+  contenu_source_id: string | null;
+  /** Groupes avec qui la fiche et le support sont partagés, et de quel côté. */
+  partage: { role: "source" | "miroir"; groupes: string[] } | null;
 };
 
 /** Enregistre le support d'une séance en créant une nouvelle version. */
@@ -250,11 +258,14 @@ export async function saveSupport(
   contenu: Json,
 ) {
   const supabase = await createClient();
+  // §4.3bis : le support suit la même règle que la fiche — il s'écrit sur la
+  // séance qui porte le contenu, pour que les deux groupes le partagent.
+  const source = await sourceContenu(seanceId);
 
   const { data: derniere, error: errLecture } = await supabase
     .from("supports_seance")
     .select("version")
-    .eq("seance_id", seanceId)
+    .eq("seance_id", source)
     .order("version", { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -263,7 +274,7 @@ export async function saveSupport(
   const version = (derniere?.version ?? 0) + 1;
   const { error } = await supabase
     .from("supports_seance")
-    .insert({ seance_id: seanceId, type, contenu, version });
+    .insert({ seance_id: source, type, contenu, version });
   if (error) throw new Error(error.message);
 
   revalidatePath("/groupes");
@@ -286,7 +297,7 @@ export async function getSeanceDetail(
   const { data, error } = await supabase
     .from("seances")
     .select(
-      "id, module_id, date, heure_debut, heure_fin, duree_prevue, duree_realisee, statut, nature, est_fad, lien_teams, objectif_operationnel, contenu_prevu, contenu_realise, a_prevoir_prochaine_seance, modules(nom, competences(code_operationnel)), suggestions_pedagogiques(code, apprentissage_base, elements_contenu), seance_groupes!inner(groupe_id, groupes(nom, annee, specialites(nom))), tousGroupes:seance_groupes(groupe_id, groupes(nom))",
+      "id, module_id, contenu_source_id, date, heure_debut, heure_fin, duree_prevue, duree_realisee, statut, nature, est_fad, lien_teams, objectif_operationnel, contenu_prevu, contenu_realise, a_prevoir_prochaine_seance, modules(nom, competences(code_operationnel)), suggestions_pedagogiques(code, apprentissage_base, elements_contenu), seance_groupes!inner(groupe_id, groupes(nom, annee, specialites(nom))), tousGroupes:seance_groupes(groupe_id, groupes(nom))",
     )
     .eq("id", seanceId)
     .eq("seance_groupes.groupe_id", groupeId)
@@ -298,6 +309,7 @@ export async function getSeanceDetail(
   const s = data as unknown as {
     id: string;
     module_id: string;
+    contenu_source_id: string | null;
     date: string | null;
     heure_debut: string | null;
     heure_fin: string | null;
@@ -331,6 +343,9 @@ export async function getSeanceDetail(
     } | null;
   };
 
+  // §4.3bis : une séance miroir lit la fiche et le support de sa source.
+  const sourceDuContenu = s.contenu_source_id ?? s.id;
+
   const [stagiairesRes, presencesRes, remarquesRes, ficheRes, supportRes] =
     await Promise.all([
     supabase
@@ -350,14 +365,14 @@ export async function getSeanceDetail(
     supabase
       .from("fiches_preparation")
       .select("contenu, version")
-      .eq("seance_id", seanceId)
+      .eq("seance_id", sourceDuContenu)
       .order("version", { ascending: false })
       .limit(1)
       .maybeSingle(),
     supabase
       .from("supports_seance")
       .select("id, contenu, version")
-      .eq("seance_id", seanceId)
+      .eq("seance_id", sourceDuContenu)
       .order("version", { ascending: false })
       .limit(1)
       .maybeSingle(),
@@ -412,7 +427,37 @@ export async function getSeanceDetail(
     questions: supportRes.data?.id
       ? await chargerQuestions(supportRes.data.id, groupeId)
       : [],
+    partage: await chargerPartage(s.id, s.contenu_source_id),
   };
+}
+
+/**
+ * Décrit le partage de contenu d'une séance : soit elle porte la fiche et
+ * d'autres la suivent (source), soit elle suit celle d'une autre (miroir).
+ */
+async function chargerPartage(
+  seanceId: string,
+  sourceId: string | null,
+): Promise<{ role: "source" | "miroir"; groupes: string[] } | null> {
+  const supabase = await createClient();
+  const cible = sourceId ?? seanceId;
+
+  // Côté miroir : le groupe de la source. Côté source : les groupes qui suivent.
+  const { data } = await supabase
+    .from("seances")
+    .select("id, seance_groupes(groupes(nom))")
+    .or(sourceId ? `id.eq.${sourceId}` : `contenu_source_id.eq.${seanceId}`);
+
+  const liees = (data ?? []) as unknown as {
+    id: string;
+    seance_groupes: { groupes: { nom: string } | null }[];
+  }[];
+  const groupes = liees
+    .filter((l) => l.id !== seanceId)
+    .flatMap((l) => l.seance_groupes.map((g) => g.groupes?.nom ?? "Groupe"));
+  if (groupes.length === 0) return null;
+
+  return { role: cible === seanceId ? "source" : "miroir", groupes };
 }
 
 export async function setPresence(

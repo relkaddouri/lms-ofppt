@@ -423,11 +423,14 @@ export async function getGroupeModules(
       // Une fiche est désormais rattachée à une séance : « ce module a une
       // fiche » se lit donc « une séance de ce module, dans ce groupe, en a
       // une ». Le filtre passe par la séance.
+      // §4.3bis : une séance miroir affiche la fiche de sa source, qui vit
+      // dans l'autre groupe. On part donc des séances du groupe, puis on
+      // regarde si la séance qui porte le contenu a une fiche.
       supabase
-        .from("fiches_preparation")
-        .select("seances!inner(module_id, seance_groupes!inner(groupe_id))")
-        .eq("seances.seance_groupes.groupe_id", groupeId)
-        .in("seances.module_id", ids),
+        .from("seances")
+        .select("id, module_id, contenu_source_id, seance_groupes!inner(groupe_id)")
+        .eq("seance_groupes.groupe_id", groupeId)
+        .in("module_id", ids),
       supabase
         .from("controles")
         .select("module_id, statut")
@@ -439,11 +442,23 @@ export async function getGroupeModules(
     if (fRes.error) throw new Error(fRes.error.message);
     if (cRes.error) throw new Error(cRes.error.message);
 
-    (
-      fRes.data as unknown as { seances: { module_id: string } | null }[]
-    ).forEach((r) => {
-      if (r.seances?.module_id) hasFiche.add(r.seances.module_id);
-    });
+    const seancesDuGroupe = fRes.data as unknown as {
+      id: string;
+      module_id: string;
+      contenu_source_id: string | null;
+    }[];
+    if (seancesDuGroupe.length) {
+      const { data: fiches } = await supabase
+        .from("fiches_preparation")
+        .select("seance_id")
+        .in("seance_id", [
+          ...new Set(seancesDuGroupe.map((s) => s.contenu_source_id ?? s.id)),
+        ]);
+      const porteuses = new Set((fiches ?? []).map((f) => f.seance_id));
+      for (const s of seancesDuGroupe) {
+        if (porteuses.has(s.contenu_source_id ?? s.id)) hasFiche.add(s.module_id);
+      }
+    }
     cRes.data.forEach((r) => {
       if (!controleStatut.has(r.module_id)) {
         controleStatut.set(r.module_id, r.statut);
