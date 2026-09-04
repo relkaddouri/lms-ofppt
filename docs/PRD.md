@@ -221,16 +221,27 @@ Implication pour le prompt de génération IA (§7, à préciser lors du backlog
 
 **Principe d'usage** : le formateur doit pouvoir suivre ce mode "comme une présentation, avec tout devant lui" — sans avoir à deviner quoi faire ni à dépenser de l'énergie mentale à reconstruire le déroulement depuis l'aide-mémoire. Il lit ce qui s'affiche, il l'applique, il passe à la phase suivante.
 
-**Structure** : la séance est découpée en **phases successives** (ex. éléments de motivation, activité principale, synthèse — la nomenclature exacte des phases reste à définir avec le porteur de projet, probablement alignée sur un schéma de pédagogie active standard : mise en situation / activité / structuration / réinvestissement, ou équivalent). Pour chaque phase, l'écran affiche :
-- La méthode active mobilisée pour cette phase précise (ex. "Interaction active")
+**Structure — tranchée v3, quatre phases fixes et linéaires** :
+
+| Phase | Part indicative | Contenu affiché |
+|---|---|---|
+| **Mise en situation** | ~10% | Le déclencheur (problème, question, contexte) + les questions d'accroche |
+| **Activité / exploration** | ~50% | La consigne de l'activité, la composition des groupes le cas échéant, ce qu'il faut observer pendant que les stagiaires cherchent |
+| **Structuration** | ~25% | Les notions à nommer, dans l'ordre, les erreurs typiques à reprendre — **cette phase est nourrie directement par les critères particuliers de performance du référentiel officiel** (`criteres_particuliers_performance`, déjà en base depuis la Phase 1), pas par du contenu inventé par le modèle |
+| **Réinvestissement** | ~15% | Une nouvelle situation courte, dans un contexte différent, pour vérifier le transfert |
+
+**Choix délibéré : schéma unique, strictement linéaire, aucune phase conditionnelle.** Une variante examinée (déclenchement d'une phase seulement "si la moitié des groupes bloque") a été écartée : elle demanderait un jugement en temps réel de la part du formateur, ce qui contredit directement le principe d'usage ci-dessus — voir ce qui est affiché et l'appliquer, sans avoir à décider si une condition est remplie. Le même schéma s'applique aux séances théoriques et pratiques, pas de variante séparée par nature de séance.
+
+**Remplace, ne s'ajoute pas.** La génération de fiche produit aujourd'hui une structure implicite différente (motivation/plan/développement/évaluation/prochaine, avec des minutes par bloc) qui contredit la décision de format synthétique déjà prise (§4.3). Cette ancienne structure doit être **remplacée** par les quatre phases ci-dessus, jamais conservée en parallèle — sinon la fiche et le mode présentation racontent deux déroulements différents de la même séance.
+
+Pour chaque phase, l'écran affiche :
+- La méthode active mobilisée pour cette phase précise, variée d'une séance à l'autre (§4.3)
 - Les **instructions concrètes** à suivre
 - Les **questions précises à poser** aux stagiaires, prêtes à l'emploi
 - Tout autre élément nécessaire pour exécuter cette phase sans préparation supplémentaire
 - Une action pour marquer la phase terminée et passer à la suivante
 
 **Exigence d'UX/UI** : cet écran doit être pensé comme un mode présentation — épuré, une phase à la fois visible en priorité, navigation simple entre phases (précédent/suivant), lisible d'un coup d'œil pendant que le formateur anime sa classe. Ce n'est pas un document à relire, c'est un support d'exécution.
-
-*Point ouvert : la nomenclature exacte des phases et leur articulation avec les méthodes actives variées (§4.3) doit être précisée avec le porteur de projet avant l'implémentation — ne pas inventer une taxonomie de phases sans validation.*
 
 ### 4.4 Génération IA de support de cours (16:9)
 

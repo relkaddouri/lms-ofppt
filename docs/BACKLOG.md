@@ -228,6 +228,17 @@ L'ordre ci-dessous est arrêté : chaque atome se termine et se teste avant que 
 
 ---
 
+- [x] **7.16 — Garde-fou sur ce qui part au commit** (conventions.md) : trois incidents causés par un `git add -A` sans relecture du diff — un fichier mort remis dans l'arbre, puis deux fois trois sections de design system perdues sous une copie plus ancienne. `scripts/verifie-stage.mjs` refuse un fichier de code ajouté que personne n'importe, un document Markdown qui perd un titre, et un fichier qui perd beaucoup de lignes pour presque aucun ajout.
+  **Test** : les trois contrôles rejouent les trois incidents et sortent en erreur ; un contenu sain passe.
+
+---
+
+- [x] **7.17 — Génération de fiche : objectif APC, méthode variée, appui sur les acquis** (§4.3) : le prompt système pose la pédagogie active comme principe, l'objectif se formule en agir observable — les verbes d'état sont refusés et signalés —, la fiche nomme sa `methodeActive`, et la génération connaît celles des six dernières séances du couple groupe+module pour en choisir une autre. La continuité ne se contente plus d'éviter les répétitions : les objectifs et contenus réellement couverts sont passés au modèle, qui doit construire dessus.
+  **Test** : sur une vraie génération, objectif « À partir d'un brief client et des verbatims d'entretiens, le stagiaire hiérarchise les besoins selon MoSCoW et rédige une note de cadrage… », méthode « Analyse critique de production » — différente des deux passées en contexte —, et les acquis des séances précédentes cités nommément dans la motivation.
+  **Corrigé au passage** : la requête d'historique filtrait sur `seance_groupes.seance_groupes[0]!.groupe_id`, une expression TypeScript copiée dans une chaîne PostgREST. Elle échouait à chaque appel, et comme seul `data` était lu, l'échec passait pour « aucune séance précédente » — le contexte de continuité n'avait jamais atteint le modèle.
+
+---
+
 ## Points de vigilance — pas des atomes
 
 À garder en tête à chaque changement de schéma, sans traitement immédiat.

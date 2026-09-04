@@ -27,6 +27,8 @@ export type LigneDev = { strategie: string; contenu: string; minutes: number };
 export type Fiche = {
   nature: string;
   objectifs: string;
+  /** Méthode active dominante — variée d'une séance à l'autre (PRD §4.3). */
+  methodeActive: string;
   modalite: string;
   fichiers: string;
   motivation: Bloc;
@@ -40,6 +42,7 @@ export function ficheVide(): Fiche {
   return {
     nature: "cours théorique",
     objectifs: "",
+    methodeActive: "",
     modalite: "Synchrone présentiel",
     fichiers: "-",
     motivation: { contenu: "", minutes: 10 },
@@ -191,6 +194,7 @@ export default function FicheSeance({
           groupe: contexte.groupeNom,
           module: contexte.moduleNom,
           objectifs: fiche.objectifs,
+          methodeActive: fiche.methodeActive,
           modalite: fiche.modalite,
           fichiers: fiche.fichiers,
           motivation: fiche.motivation,
@@ -327,6 +331,7 @@ export default function FicheSeance({
               [
                 ["Nature", fiche.nature],
                 ["Modalité", fiche.modalite],
+                ["Méthode active", fiche.methodeActive],
                 ["Fichiers de travail", fiche.fichiers],
               ] as const
             ).map(([libelle, valeur]) => (
@@ -441,6 +446,17 @@ export default function FicheSeance({
               onChange={(e) =>
                 setFiche((f) => ({ ...f, modalite: e.target.value }))
               }
+              className={`${inputClass} mt-1`}
+            />
+          </div>
+          <div>
+            <label className="block text-xs text-slate">Méthode active</label>
+            <input
+              value={fiche.methodeActive}
+              onChange={(e) =>
+                setFiche((f) => ({ ...f, methodeActive: e.target.value }))
+              }
+              placeholder="Étude de cas, travail en sous-groupes…"
               className={`${inputClass} mt-1`}
             />
           </div>

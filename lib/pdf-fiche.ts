@@ -27,6 +27,8 @@ export type FichePdf = {
   groupe: string;
   module: string;
   objectifs: string;
+  /** Méthode active dominante de la séance (PRD §4.3). */
+  methodeActive?: string;
   modalite: string;
   fichiers: string;
   motivation: BlocFichePdf;
@@ -166,6 +168,9 @@ export function dessinerFiche(doc: jsPDF, f: FichePdf, marque?: Marque): void {
   ligne([{ texte: `Module : ${f.module}`, largeur: LARGEUR }]);
   ligne([{ texte: `Objectifs de la séance : ${f.objectifs}`, largeur: LARGEUR }]);
   ligne([{ texte: `Modalité : ${f.modalite}`, largeur: LARGEUR }]);
+  if (f.methodeActive) {
+    ligne([{ texte: `Méthode active : ${f.methodeActive}`, largeur: LARGEUR }]);
+  }
   ligne([{ texte: `Fichiers de travail : ${f.fichiers}`, largeur: LARGEUR }]);
 
   y += 4;

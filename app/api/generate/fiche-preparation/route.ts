@@ -4,6 +4,12 @@ import { dureeHeures, formatHeure } from "@/lib/creneaux";
 import { getElementsDeSeance } from "@/app/actions/couverture";
 import { verifierQuota, QUOTA_GENERATION } from "@/lib/rate-limit";
 import { NextResponse } from "next/server";
+import {
+  METHODES_ACTIVES,
+  VERBES_PASSIFS,
+  memeMethode,
+  methodesDeLaFiche,
+} from "@/lib/pedagogie";
 
 /**
  * Aide-mémoire de séance.
@@ -22,6 +28,8 @@ export type LigneDeveloppement = {
 
 export type FicheGeneree = {
   objectifs: string;
+  /** La méthode active dominante de la séance (PRD §4.3, variété imposée). */
+  methodeActive: string;
   modalite: string;
   fichiers: string;
   motivation: BlocFiche;
@@ -141,22 +149,89 @@ export async function POST(request: Request) {
     elements = c?.fiches_prescrites?.elements_competence ?? [];
   }
 
-  // Ce qui a déjà été fait avec CE groupe sur CE module : l'aide-mémoire doit
-  // enchaîner, pas répéter.
-  const { data: precedentes } = await supabase
+  // Ce qui a déjà été fait avec CE groupe sur CE module.
+  //
+  // Le nom de colonne du filtre était `seance_groupes.seance_groupes[0]!.
+  // groupe_id` — un copier-coller d'expression TypeScript dans une chaîne
+  // PostgREST. La requête échouait donc à chaque appel, et comme seul `data`
+  // était lu, l'échec passait pour « aucune séance précédente » : le contexte
+  // de continuité n'a jamais atteint le modèle.
+  const groupeId = s.seance_groupes[0]!.groupe_id;
+
+  const { data: precedentes, error: errPrecedentes } = await supabase
     .from("seances")
-    .select("date, contenu_realise, seance_groupes!inner(groupe_id)")
-    .eq("seance_groupes.seance_groupes[0]!.groupe_id", s.seance_groupes[0]!.groupe_id)
+    .select(
+      "id, date, statut, contenu_source_id, objectif_operationnel, contenu_realise, seance_groupes!inner(groupe_id)",
+    )
+    .eq("seance_groupes.groupe_id", groupeId)
     .eq("module_id", s.module_id)
-    .eq("statut", "fait")
-    .not("contenu_realise", "is", null)
+    .neq("id", seanceId)
+    .not("date", "is", null)
+    .lt("date", s.date ?? "9999-12-31")
     .order("date", { ascending: true });
+  if (errPrecedentes) throw new Error(errPrecedentes.message);
+
+  const anterieures = (precedentes ?? []) as unknown as {
+    id: string;
+    date: string | null;
+    statut: string;
+    contenu_source_id: string | null;
+    objectif_operationnel: string | null;
+    contenu_realise: string | null;
+  }[];
+
+  // PRD §4.3, continuité : ce sur quoi la séance prend appui, ce sont les
+  // séances réellement faites — une séance planifiée n'a rien construit chez
+  // personne.
+  const faites = anterieures.filter((p) => p.statut === "fait");
+
+  const acquis =
+    faites
+      .map((p, i) =>
+        [
+          `  ${i + 1}. ${p.date ?? "sans date"}`,
+          p.objectif_operationnel ? ` — visait : ${p.objectif_operationnel}` : "",
+          p.contenu_realise ? ` — a réellement couvert : ${p.contenu_realise}` : "",
+        ].join(""),
+      )
+      .join("\n") || null;
 
   const dejaCouvert =
-    (precedentes ?? [])
+    faites
       .map((p) => p.contenu_realise)
       .filter(Boolean)
       .join(" ; ") || null;
+
+  // PRD §4.3, variété : les méthodes des dernières fiches du couple
+  // groupe+module. Elles vivent dans la fiche, pas sur la séance — et une
+  // séance miroir tire la sienne de sa source (§4.3bis), d'où la résolution
+  // par `contenu_source_id`.
+  const recentes = anterieures.slice(-6);
+  const methodesRecentes: string[] = [];
+
+  if (recentes.length > 0) {
+    const sources = [...new Set(recentes.map((p) => p.contenu_source_id ?? p.id))];
+    const { data: fiches } = await supabase
+      .from("fiches_preparation")
+      .select("seance_id, contenu, version")
+      .in("seance_id", sources)
+      .order("version", { ascending: false });
+
+    const derniere = new Map<string, string>();
+    for (const f of fiches ?? []) {
+      if (f.contenu && !derniere.has(f.seance_id)) derniere.set(f.seance_id, f.contenu);
+    }
+
+    for (const p of recentes) {
+      const brut = derniere.get(p.contenu_source_id ?? p.id);
+      if (!brut) continue;
+      for (const m of methodesDeLaFiche(brut)) {
+        if (!methodesRecentes.some((v) => memeMethode(v, m))) {
+          methodesRecentes.push(m);
+        }
+      }
+    }
+  }
 
   const referentiel = elements.flatMap((el) => {
     const criteres = (el.criteres_particuliers_performance ?? [])
@@ -207,6 +282,28 @@ export async function POST(request: Request) {
       ? `Déjà traité avec ce groupe sur ce module : ${dejaCouvert}`
       : "Aucune séance de ce module n'a encore été faite avec ce groupe.",
     "",
+    acquis
+      ? [
+          `Ce que les ${faites.length} séance${faites.length > 1 ? "s" : ""} déjà faite${faites.length > 1 ? "s" : ""} ont construit chez ces stagiaires :`,
+          acquis,
+          "",
+          "Cette séance en est la suite : prends explicitement appui sur ces",
+          "acquis — désigne-les, fais-les rejouer, construis dessus. Ne repars",
+          "pas d'une base neutre comme si c'était la première séance du module.",
+        ].join("\n")
+      : null,
+    acquis ? "" : null,
+    methodesRecentes.length
+      ? [
+          "Méthodes actives déjà mobilisées lors des dernières séances de ce",
+          "groupe sur ce module :",
+          ...methodesRecentes.map((m) => `  — ${m}`),
+          "",
+          "Choisis-en une AUTRE. Répéter la même méthode séance après séance",
+          "est explicitement proscrit.",
+        ].join("\n")
+      : null,
+    methodesRecentes.length ? "" : null,
     elementsAssignes.length
       ? [
           "Éléments de contenu du référentiel assignés à CETTE séance —",
@@ -241,9 +338,27 @@ export async function POST(request: Request) {
     "Appuie-toi sur le référentiel ci-dessus et enchaîne sur ce qui a déjà été",
     "traité — ne le répète pas.",
     "",
+    "OBJECTIF — Approche Par Compétences, exigence non négociable :",
+    "l'objectif décrit ce que le stagiaire sera capable de FAIRE, dans une",
+    "situation professionnelle précise, à des conditions observables. Jamais",
+    `un état mental : les verbes ${VERBES_PASSIFS.slice(0, 5).join(", ")} sont`,
+    "interdits en tête d'objectif. Formule « À partir de … le stagiaire",
+    "produit / analyse / arbitre / justifie … en respectant … ».",
+    "Tout le reste de la fiche sert cet objectif : le contenu, la méthode et",
+    "le déroulement lui sont subordonnés, ce ne sont pas des rubriques",
+    "juxtaposées.",
+    "",
+    "MÉTHODE ACTIVE — le champ `methodeActive` nomme la méthode dominante de",
+    "la séance, choisie pour ce contenu précis. Répertoire de référence :",
+    ...METHODES_ACTIVES.map((m) => `  — ${m.nom} : ${m.description}`),
+    "Une méthode hors liste est acceptable si elle convient mieux ; garde",
+    "alors une formulation aussi courte. Le stagiaire produit, cherche,",
+    "confronte — il n'écoute pas.",
+    "",
     "Réponds UNIQUEMENT en JSON, sans markdown, avec exactement cette structure :",
     `{
-  "objectifs": "ce que le stagiaire doit savoir faire à la fin, en une phrase",
+  "objectifs": "ce que le stagiaire sera capable de FAIRE, en situation, en une phrase",
+  "methodeActive": "la méthode active dominante de la séance",
   "modalite": "Synchrone présentiel",
   "fichiers": "supports nécessaires, ou -",
   "motivation": { "contenu": "l'accroche : question, situation, vidéo…", "minutes": 10 },
@@ -263,8 +378,21 @@ export async function POST(request: Request) {
   try {
     const config = await chargerConfigLlm(user.id);
     const contenu = await appelerLlm(config, {
-      systeme:
-        "Tu es un formateur expert du référentiel OFPPT. Tu écris en français, en Markdown, de façon télégraphique : des puces courtes, jamais de paragraphes.",
+      systeme: [
+        "Tu es un formateur expert du référentiel OFPPT, qui enseigne selon",
+        "l'Approche Par Compétences et la pédagogie active.",
+        "",
+        "Deux principes gouvernent tout ce que tu écris :",
+        "1. Une compétence est un agir en situation. Le stagiaire construit son",
+        "   savoir en faisant ; il ne le reçoit pas. Une séance où le formateur",
+        "   expose et le stagiaire écoute est un échec, quelle qu'en soit la",
+        "   qualité d'exposition.",
+        "2. L'objectif commande. Le contenu, la méthode et le déroulement",
+        "   n'existent que pour le servir — jamais l'inverse.",
+        "",
+        "Tu écris en français, de façon télégraphique : des lignes courtes,",
+        "jamais de paragraphes.",
+      ].join("\n"),
       prompt,
       temperature: 0.6,
       // Enveloppe serrée : la fiche tient largement dedans, et le modèle ne
@@ -295,6 +423,7 @@ export async function POST(request: Request) {
 
     const fiche: FicheGeneree = {
       objectifs: String(brut.objectifs ?? s.objectif_operationnel ?? "").trim(),
+      methodeActive: String(brut.methodeActive ?? "").trim(),
       modalite: String(brut.modalite ?? "Synchrone présentiel").trim(),
       fichiers: String(brut.fichiers ?? "-").trim(),
       motivation: bloc(brut.motivation),
@@ -322,6 +451,30 @@ export async function POST(request: Request) {
     }
     if (developpement.length === 0) {
       avertissements.push("Le développement est vide.");
+    }
+
+    // Les deux exigences du PRD §4.3 se vérifient ici plutôt que de faire
+    // confiance à la consigne : un modèle qui retombe sur « comprendre les
+    // principes de… » ou sur la méthode de la semaine dernière doit être vu.
+    const passif = VERBES_PASSIFS.find((v) =>
+      fiche.objectifs.toLowerCase().includes(v),
+    );
+    if (passif) {
+      avertissements.push(
+        `L'objectif contient « ${passif} » : formulez un agir observable en situation, pas un état mental (APC).`,
+      );
+    }
+    if (!fiche.methodeActive) {
+      avertissements.push("Aucune méthode active n'est nommée.");
+    } else {
+      const repetee = methodesRecentes.find((m) =>
+        memeMethode(m, fiche.methodeActive),
+      );
+      if (repetee) {
+        avertissements.push(
+          `« ${fiche.methodeActive} » a déjà servi lors d'une séance récente de ce module. Variez la méthode ou régénérez.`,
+        );
+      }
     }
 
     return NextResponse.json({
