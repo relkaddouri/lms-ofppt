@@ -1,6 +1,7 @@
 import type jsPDF from "jspdf";
 import { dessinerEntete, type Marque } from "@/lib/pdf-marque";
 import type { Support } from "@/lib/support";
+import { COULEURS, installerPolices, police } from "@/lib/pdf-theme";
 
 /**
  * Support remis au stagiaire.
@@ -23,10 +24,13 @@ export const LARGEUR = 178;
 export const HAUT = 20;
 export const BAS = 278;
 
-export const ENCRE: [number, number, number] = [17, 24, 39];
-export const GRIS: [number, number, number] = [110, 116, 126];
-export const TRAIT: [number, number, number] = [190, 194, 200];
-export const FOND: [number, number, number] = [238, 241, 244];
+// Les quatre gris maison ont laissé place à la palette du design system : la
+// même que les écrans, définie une seule fois (lib/pdf-theme.ts).
+export const ENCRE = COULEURS.encre;
+export const CORPS = COULEURS.corps;
+export const GRIS = COULEURS.ardoise;
+export const TRAIT = COULEURS.bordureForte;
+export const FOND = COULEURS.lavis;
 
 export async function construireSupportPdf(
   support: Support,
@@ -35,6 +39,7 @@ export async function construireSupportPdf(
 ): Promise<jsPDF> {
   const { default: JsPDF } = await import("jspdf");
   const doc = new JsPDF({ unit: "mm", format: "a4" });
+  await installerPolices(doc);
   const y = dessinerEntete(doc, marque, X, HAUT, LARGEUR);
 
   dessinerSupport(doc, support, entete, y);
@@ -66,8 +71,8 @@ export function dessinerSupport(
   };
 
   function texte(t: string, taille = 9.5, indent = 0, gris = false) {
-    doc.setFont("helvetica", "normal").setFontSize(taille);
-    doc.setTextColor(...(gris ? GRIS : ENCRE));
+    police(doc, "corps", taille);
+    doc.setTextColor(...(gris ? GRIS : CORPS));
     for (const l of doc.splitTextToSize(t, LARGEUR - indent)) {
       place(6);
       doc.text(l, X + indent, y);
@@ -99,7 +104,8 @@ export function dessinerSupport(
   function titre(t: string, taille = 12, avant = 7) {
     y += avant;
     place(10);
-    doc.setFont("helvetica", "bold").setFontSize(taille).setTextColor(...ENCRE);
+    police(doc, "titre", taille);
+    doc.setTextColor(...ENCRE);
     for (const l of doc.splitTextToSize(t, LARGEUR)) {
       doc.text(l, X, y);
       y += taille * 0.5;
@@ -108,7 +114,8 @@ export function dessinerSupport(
   }
 
   function puce(t: string, indent = 5) {
-    doc.setFont("helvetica", "normal").setFontSize(9.5).setTextColor(...ENCRE);
+    police(doc, "corps", 9.5);
+    doc.setTextColor(...CORPS);
     const lignes = doc.splitTextToSize(t, LARGEUR - indent - 4);
     lignes.forEach((l: string, i: number) => {
       place(6);
@@ -119,12 +126,14 @@ export function dessinerSupport(
   }
 
   // ── En-tête commun ──────────────────────────────────────────────────────
-  doc.setFont("helvetica", "bold").setFontSize(15).setTextColor(...ENCRE);
+  police(doc, "titre", 15);
+    doc.setTextColor(...ENCRE);
   const lignesTitre = doc.splitTextToSize(support.titre, LARGEUR);
   lignesTitre.forEach((l: string, i: number) => doc.text(l, X, y + i * 6.5));
   y += lignesTitre.length * 6.5 + 2;
 
-  doc.setFont("helvetica", "normal").setFontSize(8.5).setTextColor(...GRIS);
+  police(doc, "corps", 8.5);
+    doc.setTextColor(...GRIS);
   doc.text(
     [
       entete.moduleNom,
@@ -166,9 +175,11 @@ export function dessinerSupport(
         place(h);
         doc.setFillColor(...FOND);
         doc.rect(X, y - 3, LARGEUR, h, "F");
-        doc.setFont("helvetica", "bold").setFontSize(8).setTextColor(...GRIS);
+        police(doc, "titre", 8);
+    doc.setTextColor(...GRIS);
         doc.text("EXEMPLE", X + 4, y + 1);
-        doc.setFont("helvetica", "normal").setFontSize(9).setTextColor(...ENCRE);
+        police(doc, "corps", 9);
+    doc.setTextColor(...ENCRE);
         lignes.forEach((l: string, k: number) =>
           doc.text(l, X + 4, y + 5.5 + k * 4.3),
         );
@@ -191,14 +202,15 @@ export function dessinerSupport(
 
     titre("Travail demandé", 11);
     support.consignes.forEach((c, i) => {
-      doc.setFont("helvetica", "normal").setFontSize(9.5).setTextColor(...ENCRE);
+      police(doc, "corps", 9.5);
+    doc.setTextColor(...ENCRE);
       const lignes = doc.splitTextToSize(c, LARGEUR - 10);
       lignes.forEach((l: string, k: number) => {
         place(6);
         if (k === 0) {
-          doc.setFont("helvetica", "bold");
+          police(doc, "corpsGras");
           doc.text(`${i + 1}.`, X + 2, y);
-          doc.setFont("helvetica", "normal");
+          police(doc, "corps");
         }
         doc.text(l, X + 10, y);
         y += 4.5;
@@ -213,9 +225,11 @@ export function dessinerSupport(
     place(hLivrable);
     doc.setDrawColor(...ENCRE).setLineWidth(0.5);
     doc.rect(X, y, LARGEUR, hLivrable);
-    doc.setFont("helvetica", "bold").setFontSize(8.5).setTextColor(...GRIS);
+    police(doc, "titre", 8.5);
+    doc.setTextColor(...GRIS);
     doc.text("LIVRABLE ATTENDU", X + 4, y + 5);
-    doc.setFont("helvetica", "normal").setFontSize(9.5).setTextColor(...ENCRE);
+    police(doc, "corps", 9.5);
+    doc.setTextColor(...ENCRE);
     lignesLivrable.forEach((l: string, k: number) =>
       doc.text(l, X + 4, y + 10.5 + k * 4.3),
     );
@@ -232,11 +246,12 @@ export function dessinerSupport(
         doc.setDrawColor(...TRAIT).setLineWidth(0.2);
         doc.rect(X, y, LARGEUR - lPoints, h);
         doc.rect(X + LARGEUR - lPoints, y, lPoints, h);
-        doc.setFont("helvetica", "normal").setTextColor(...ENCRE);
+        police(doc, "corps");
+    doc.setTextColor(...ENCRE);
         lignes.forEach((l: string, k: number) =>
           doc.text(l, X + 2, y + 4.5 + k * 4.3),
         );
-        doc.setFont("helvetica", "bold");
+        police(doc, "corpsGras");
         doc.text(
           `${c.points} pts`,
           X + LARGEUR - lPoints / 2,
@@ -250,7 +265,8 @@ export function dessinerSupport(
       doc.setFillColor(...FOND);
       doc.rect(X, y, LARGEUR, 8, "F");
       doc.setDrawColor(...TRAIT).rect(X, y, LARGEUR, 8);
-      doc.setFont("helvetica", "bold").setFontSize(9.5).setTextColor(...ENCRE);
+      police(doc, "titre", 9.5);
+    doc.setTextColor(...ENCRE);
       doc.text("Total", X + 2, y + 5.5);
       doc.text(`${total} pts`, X + LARGEUR - lPoints / 2, y + 5.5, {
         align: "center",
@@ -269,7 +285,8 @@ export function numeroterPages(doc: jsPDF, libelle: string) {
   const pages = doc.getNumberOfPages();
   for (let p = 1; p <= pages; p++) {
     doc.setPage(p);
-    doc.setFont("helvetica", "normal").setFontSize(7.5).setTextColor(...GRIS);
+    police(doc, "corps", 7.5);
+    doc.setTextColor(...GRIS);
     doc.text(libelle, X, 287, { maxWidth: LARGEUR - 25 });
     doc.text(`Page ${p} / ${pages}`, X + LARGEUR, 287, { align: "right" });
   }

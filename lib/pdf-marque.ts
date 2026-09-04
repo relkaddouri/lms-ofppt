@@ -1,4 +1,5 @@
 import type jsPDF from "jspdf";
+import { COULEURS, police } from "@/lib/pdf-theme";
 
 /**
  * Identité de l'établissement en tête des documents produits.
@@ -27,7 +28,8 @@ export function marqueDe(reglage: {
   return { etablissement: reglage.nom, logo: reglage.logo };
 }
 
-const GRIS: [number, number, number] = [107, 114, 128];
+// L'ardoise du design system, comme partout ailleurs (lib/pdf-theme.ts).
+const GRIS = COULEURS.ardoise;
 
 /** Le sigle reste le repli : un document sans en-tête d'aucune sorte serait pire. */
 export function nomEtablissement(marque?: Marque | null): string {
@@ -78,7 +80,8 @@ export function dessinerEntete(
   const largeurLogo = dessinerLogo(doc, marque, x, y, hauteurLogo, largeur * 0.45);
   const decalage = largeurLogo > 0 ? largeurLogo + 5 : 0;
 
-  doc.setFont("helvetica", "bold").setFontSize(9).setTextColor(...GRIS);
+  police(doc, "corpsGras", 9);
+  doc.setTextColor(...GRIS);
   const lignes = doc.splitTextToSize(
     nomEtablissement(marque),
     largeur - decalage,

@@ -107,6 +107,19 @@ Identité "tableau de pilotage clair" inspirée d'un dashboard SaaS professionne
 
 `999px` pour toute forme pilule (badge, avatar). `7-9px` pour les éléments interactifs de petite taille (boutons, champs, puces). `10-14px` pour les cartes et conteneurs. Ne pas descendre sous 7px ni dépasser 14px hors pilule.
 
+### Documents PDF — même identité que l'app, sans exception
+
+Un PDF produit par Pédago est un document de l'établissement, pas un export technique. Il porte la même identité que les écrans :
+
+- **`Sora`** sur les titres, la page de garde et les en-têtes de séance ou de section.
+- **`Source Sans 3`** pour tout le corps de texte.
+- **`IBM Plex Mono`** pour les codes, dates, numéros et tout ce qui s'aligne en colonne.
+- **La palette du §1**, appliquée à la page de garde, aux titres de section et aux séparateurs — pas du noir sur blanc.
+
+La règle vaut pour **tous** les générateurs, pas seulement ceux qu'on vient de retoucher. Un document livré en texte brut, sans police ni couleur, est un défaut à corriger, pas un état acceptable.
+
+Corollaire, cohérent avec `conventions.md` : les éléments visuels communs — page de garde, en-tête, pied de page avec logo — ont **une seule implémentation** partagée. Les dupliquer par générateur les ferait diverger à la première retouche.
+
 ## 4. Élément signature : la ligne d'identité à deux niveaux
 
 Repris directement du modèle de référence : chaque ligne représentant une personne (stagiaire, formateur) affiche un avatar (ou initiales sur fond `--mint` si pas de photo), le nom en `--ofppt-ink` gras sur la première ligne, et l'information secondaire (email, ou groupe) en `--slate` plus petit juste en dessous. Ce motif s'applique à toute liste de personnes dans l'app : liste de stagiaires, liste de formateurs si multi-comptes.
