@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { BookOpen, ChevronRight, FlaskConical, MessageCircle } from "lucide-react";
 import { getMesSupports } from "@/app/actions/questions-support";
-import { formatDate } from "@/lib/format";
+import { formatDateJour } from "@/lib/format";
 import EnConstruction from "../EnConstruction";
 
 export const metadata = { title: "Cours" };
@@ -73,7 +73,7 @@ export default async function CoursPage() {
               </span>
               <span className="flex items-center gap-3">
                 <span className="truncate font-mono text-[12.5px] text-slate-light">
-                  {[s.moduleNom, s.date ? formatDate(s.date) : null]
+                  {[s.moduleNom, s.date ? formatDateJour(s.date) : null]
                     .filter(Boolean)
                     .join(" · ")}
                 </span>

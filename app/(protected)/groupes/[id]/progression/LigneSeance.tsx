@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { updateSeance, type Seance } from "@/app/actions/seances";
 import { useToast } from "@/components/ui/Toast";
-import { formatDate, formatHeures } from "@/lib/format";
+import { formatDateJour, formatHeures } from "@/lib/format";
 import { formatHeure } from "@/lib/creneaux";
 import { Check, ChevronRight } from "lucide-react";
 
@@ -102,7 +102,7 @@ export default function LigneSeance({
       <span className="min-w-0 flex-1 truncate text-sm text-ink">
         {seance.date ? (
           <span className="font-mono text-xs text-slate">
-            {formatDate(seance.date)}
+            {formatDateJour(seance.date, { court: true })}
             {creneau ? ` ${creneau}` : ""}
             {" · "}
           </span>

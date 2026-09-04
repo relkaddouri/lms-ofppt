@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Clock, FileCheck2 } from "lucide-react";
 import { getMesControles } from "@/app/actions/controles-stagiaire";
-import { formatDate } from "@/lib/format";
+import { formatDateJour } from "@/lib/format";
 import { baremeAttendu, noteSur20 } from "@/lib/controles";
 import EnConstruction from "../EnConstruction";
 
@@ -91,7 +91,7 @@ export default async function ControlesPage() {
                 <span className="font-mono text-[12.5px] text-slate-light">
                   {[
                     c.codeOperationnel,
-                    c.date_prevue ? formatDate(c.date_prevue) : "date à venir",
+                    c.date_prevue ? formatDateJour(c.date_prevue) : "date à venir",
                   ]
                     .filter(Boolean)
                     .join(" · ")}

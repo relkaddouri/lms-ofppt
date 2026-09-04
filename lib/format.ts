@@ -15,6 +15,36 @@ export function formatDate(
   return date.toLocaleDateString("fr-FR");
 }
 
+/**
+ * Date d'une séance, jour de la semaine compris — « Vendredi 07/09/2026 ».
+ *
+ * Le formateur pense en jours (« le vendredi je vois DES101 »), pas en
+ * quantièmes : lui faire recalculer le jour de tête est une charge évitable
+ * (design_system.md §11). Forme courte — « Ven. 07/09/2026 » — pour les
+ * listes denses.
+ *
+ * Un seul appel produit le jour et les chiffres : les calculer séparément
+ * exposerait à ce qu'ils se contredisent au passage d'un fuseau.
+ */
+export function formatDateJour(
+  value: string | Date | null | undefined,
+  options: { court?: boolean } = {},
+  fallback = "—",
+): string {
+  if (!value) return fallback;
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return fallback;
+  const texte = date.toLocaleDateString("fr-FR", {
+    weekday: options.court ? "short" : "long",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+  // Le français rend le jour en minuscule ; en tête de ligne il porte une
+  // majuscule comme n'importe quel début de libellé.
+  return texte.charAt(0).toUpperCase() + texte.slice(1);
+}
+
 /** Date + heure, pour les horodatages (copies, historique). */
 export function formatDateTime(
   value: string | Date | null | undefined,

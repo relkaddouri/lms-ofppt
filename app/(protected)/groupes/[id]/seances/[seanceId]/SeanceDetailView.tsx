@@ -14,7 +14,7 @@ import FicheSeance from "@/components/FicheSeance";
 import SupportSeance from "@/components/SupportSeance";
 import QuestionsSupport from "@/components/QuestionsSupport";
 import PartageContenu from "@/components/PartageContenu";
-import { formatDate, formatDateTime, formatHeures } from "@/lib/format";
+import { formatDateJour, formatDateTime, formatHeures } from "@/lib/format";
 import { formatHeure } from "@/lib/creneaux";
 import {
   setPresence,
@@ -196,7 +196,7 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
             label: "Progression",
             href: `/groupes/${seance.groupe_id}/progression`,
           },
-          { label: seance.date ? formatDate(seance.date) : "Séance" },
+          { label: seance.date ? formatDateJour(seance.date) : "Séance" },
         ]}
       />
 
@@ -232,7 +232,7 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
           <p className="text-[14.5px] text-slate-2">
             <span className="font-mono text-body">
               {[
-                seance.date ? formatDate(seance.date) : "date à définir",
+                seance.date ? formatDateJour(seance.date) : "date à définir",
                 creneau,
                 seance.duree_prevue ? formatHeures(seance.duree_prevue) : null,
               ]
@@ -356,7 +356,7 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
                 contexte={{
                   seanceId: seance.id,
                   date: seance.date,
-                  dateFormatee: seance.date ? formatDate(seance.date) : null,
+                  dateFormatee: seance.date ? formatDateJour(seance.date) : null,
                   groupeNom: seance.groupeNom,
                   filiere: seance.filiere,
                   annee: seance.annee,
@@ -393,7 +393,7 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
                   moduleNom: seance.moduleNom,
                   groupeNom: seance.groupeNom,
                   date: seance.date,
-                  dateFormatee: seance.date ? formatDate(seance.date) : null,
+                  dateFormatee: seance.date ? formatDateJour(seance.date) : null,
                   dureeHeures: seance.duree_prevue
                     ? Number(seance.duree_prevue)
                     : null,

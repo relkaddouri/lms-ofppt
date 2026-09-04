@@ -4,7 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { getIdentiteStagiaire } from "@/app/actions/stagiaire";
 import { getCamarades } from "@/app/actions/fil";
 import { getSupportDetail } from "@/app/actions/questions-support";
-import { formatDate } from "@/lib/format";
+import { formatDateJour } from "@/lib/format";
 import SupportLecture from "./SupportLecture";
 import QuestionsSupport from "@/components/QuestionsSupport";
 
@@ -38,7 +38,7 @@ export default async function CoursDetailPage({
           {support.contenu.titre}
         </h1>
         <p className="mt-1 text-xs text-slate">
-          {[support.date ? formatDate(support.date) : null, support.moduleNom]
+          {[support.date ? formatDateJour(support.date) : null, support.moduleNom]
             .filter(Boolean)
             .join(" · ")}
         </p>

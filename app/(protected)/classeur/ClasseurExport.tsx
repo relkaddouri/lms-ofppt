@@ -4,7 +4,7 @@ import { useMemo, useState, useTransition } from "react";
 import Button from "@/components/ui/Button";
 import Input, { inputStyles } from "@/components/ui/Input";
 import { useToast } from "@/components/ui/Toast";
-import { formatDate, slugify } from "@/lib/format";
+import { formatDate, formatDateJour, slugify } from "@/lib/format";
 import { lireFiche } from "@/components/FicheSeance";
 import { getFichesPeriode, type GroupeClasseur } from "@/app/actions/classeur";
 import { getEtablissement } from "@/app/actions/etablissement";
@@ -98,10 +98,10 @@ export default function ClasseurExport({
           fiches.map((s) => {
             const f = lireFiche(s.contenu);
             return {
-              date: s.date ? formatDate(s.date) : null,
+              date: s.date ? formatDateJour(s.date) : null,
               fiche: {
                 nature: f.nature,
-                date: s.date ? formatDate(s.date) : null,
+                date: s.date ? formatDateJour(s.date) : null,
                 dureeHeures: s.dureeMinutes ? s.dureeMinutes / 60 : null,
                 filiere: s.filiere,
                 annee: s.annee,

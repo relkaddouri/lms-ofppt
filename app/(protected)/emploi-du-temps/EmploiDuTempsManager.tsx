@@ -7,7 +7,7 @@ import Button from "@/components/ui/Button";
 import Input, { inputStyles } from "@/components/ui/Input";
 import Modal from "@/components/ui/Modal";
 import { useToast } from "@/components/ui/Toast";
-import { formatDate, maintenant } from "@/lib/format";
+import { formatDate, formatDateJour, maintenant } from "@/lib/format";
 import type { Groupe } from "@/app/actions/groupes";
 import {
   ajouterCreneau,
@@ -203,7 +203,7 @@ export default function EmploiDuTempsManager({
             ? "Aucune séance en attente de date pour ce groupe."
             : `${r.placees} séance${r.placees > 1 ? "s" : ""} placée${
                 r.placees > 1 ? "s" : ""
-              }${r.derniereDate ? `, jusqu'au ${formatDate(r.derniereDate)}` : ""}${
+              }${r.derniereDate ? `, jusqu'au ${formatDateJour(r.derniereDate)}` : ""}${
                 r.joursSautes > 0
                   ? ` · ${r.joursSautes} jour${r.joursSautes > 1 ? "s" : ""} sauté${r.joursSautes > 1 ? "s" : ""}`
                   : ""

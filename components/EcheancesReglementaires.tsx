@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { formatDate } from "@/lib/format";
+import { formatDateJour } from "@/lib/format";
 import type { Echeance } from "@/lib/echeances";
 import { AlertTriangle, CalendarClock, Clock } from "lucide-react";
 
@@ -69,7 +69,7 @@ export default function EcheancesReglementaires({
                     {e.libelle}
                   </span>
                   <span className="shrink-0 whitespace-nowrap text-[11px] text-slate">
-                    {e.date ? formatDate(e.date) : "à dater"}
+                    {e.date ? formatDateJour(e.date) : "à dater"}
                   </span>
                 </span>
 

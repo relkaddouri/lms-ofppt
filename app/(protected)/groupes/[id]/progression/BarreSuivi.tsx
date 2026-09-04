@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { LayoutGrid, List, Search } from "lucide-react";
 import type { Seance } from "@/app/actions/seances";
-import { formatDate } from "@/lib/format";
+import { formatDateJour } from "@/lib/format";
 import { libelleModule } from "@/lib/modules";
 
 export type Vue = "liste" | "tableau";
@@ -155,7 +155,7 @@ export default function BarreSuivi({
                       </div>
                       <div className="flex items-center justify-between gap-2 border-t border-separator pt-2.5">
                         <span className="font-mono text-[12.5px] text-slate-2">
-                          {s.date ? formatDate(s.date) : "date à poser"}
+                          {s.date ? formatDateJour(s.date, { court: true }) : "date à poser"}
                         </span>
                         {s.duree_prevue ? (
                           <span className="font-mono text-[12.5px] text-slate-light">

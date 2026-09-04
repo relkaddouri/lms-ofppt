@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
-import { formatDate, initials } from "@/lib/format";
+import { formatDateJour, initials } from "@/lib/format";
 import type { BilanPresences } from "@/app/actions/presences";
 import { ChevronRight, UserCheck } from "lucide-react";
 
@@ -167,7 +167,7 @@ export default function PresencesTableau({ bilan }: { bilan: BilanPresences }) {
                                         className="text-xs text-slate"
                                       >
                                         <span className="font-mono text-ink">
-                                          {formatDate(a.date)}
+                                          {formatDateJour(a.date, { court: true })}
                                         </span>
                                         {" — "}
                                         {a.objectif ?? a.moduleNom}

@@ -5,7 +5,7 @@ import Breadcrumb from "@/components/Breadcrumb";
 import Button from "@/components/ui/Button";
 import { inputStyles as inputClass } from "@/components/ui/Input";
 import FicheSeance from "@/components/FicheSeance";
-import { formatDate } from "@/lib/format";
+import { formatDateJour } from "@/lib/format";
 import { dureeHeures } from "@/lib/creneaux";
 import { type FichePreparation, type SeanceAPreparer } from "@/app/actions/fiches";
 import Link from "next/link";
@@ -73,7 +73,7 @@ export default function FichePreparationManager({
                 <option key={s.id} value={s.id}>
                   {[
                     s.groupe_nom,
-                    s.date ? formatDate(s.date) : "date à définir",
+                    s.date ? formatDateJour(s.date) : "date à définir",
                     s.heure_debut ? s.heure_debut.slice(0, 5) : null,
                     s.statut === "fait" ? "faite" : "à faire",
                     s.nb_versions > 0
@@ -111,7 +111,7 @@ export default function FichePreparationManager({
               contexte={{
                 seanceId: seance.id,
                 date: seance.date,
-                dateFormatee: seance.date ? formatDate(seance.date) : null,
+                dateFormatee: seance.date ? formatDateJour(seance.date) : null,
                 groupeNom: seance.groupe_nom,
                 filiere: seance.filiere,
                 annee: seance.groupe_annee,

@@ -30,7 +30,7 @@ import Badge from "@/components/ui/Badge";
 import Button, { buttonStyles } from "@/components/ui/Button";
 import { inputStyles } from "@/components/ui/Input";
 import { ConfirmModal } from "@/components/ui/Modal";
-import { formatDate, slugify } from "@/lib/format";
+import { formatDateJour, slugify } from "@/lib/format";
 import { libelleModule } from "@/lib/modules";
 import {
   BadgeCheck,
@@ -528,7 +528,7 @@ export default function ControleManager({
           {[
             groupeNom,
             NATURES.find((n) => n.cle === natureCle)?.label,
-            datePrevue ? `session du ${formatDate(datePrevue)}` : null,
+            datePrevue ? `session du ${formatDateJour(datePrevue)}` : null,
           ]
             .filter(Boolean)
             .join(" · ")}

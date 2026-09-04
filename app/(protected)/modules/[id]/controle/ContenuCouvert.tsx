@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Check } from "lucide-react";
 import Badge from "@/components/ui/Badge";
-import { formatDate, formatHeures } from "@/lib/format";
+import { formatDateJour, formatHeures } from "@/lib/format";
 import {
   getContenuCouvert,
   type ContenuCouvert as Donnees,
@@ -181,7 +181,7 @@ export default function ContenuCouvert({
                     </span>
                   </span>
                   <span className="ml-auto whitespace-nowrap font-mono text-[13.5px] text-slate-2">
-                    {s.date ? formatDate(s.date) : "—"}
+                    {s.date ? formatDateJour(s.date, { court: true }) : "—"}
                   </span>
                 </button>
               );

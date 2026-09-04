@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Button from "@/components/ui/Button";
 import { ConfirmModal } from "@/components/ui/Modal";
 import { useToast } from "@/components/ui/Toast";
-import { formatDate } from "@/lib/format";
+import { formatDateJour } from "@/lib/format";
 import { formatHeure } from "@/lib/creneaux";
 import {
   getSeancesParalleles,
@@ -155,7 +155,7 @@ export default function PartageContenu({
               >
                 <span className="text-[13.5px] text-ink">
                   <strong className="font-semibold">{p.groupeNom}</strong>
-                  {p.date ? ` — ${formatDate(p.date)}` : ""}
+                  {p.date ? ` — ${formatDateJour(p.date, { court: true })}` : ""}
                   {p.heure_debut && p.heure_fin
                     ? ` ${formatHeure(p.heure_debut)}–${formatHeure(p.heure_fin)}`
                     : ""}

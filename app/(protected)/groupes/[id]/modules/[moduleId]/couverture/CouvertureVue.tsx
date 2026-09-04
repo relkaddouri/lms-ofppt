@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Check, CircleDashed, Clock } from "lucide-react";
-import { formatDate } from "@/lib/format";
+import { formatDateJour } from "@/lib/format";
 import type { CouvertureModule } from "@/app/actions/couverture";
 
 /**
@@ -167,7 +167,7 @@ export default function CouvertureVue({
                             className="self-start font-mono text-[12.5px] text-teal no-underline hover:underline"
                           >
                             {e.seanceDate
-                              ? formatDate(e.seanceDate)
+                              ? formatDateJour(e.seanceDate, { court: true })
                               : "séance sans date"}
                           </Link>
                         ) : (
