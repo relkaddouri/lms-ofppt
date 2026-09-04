@@ -13,7 +13,7 @@ import Button from "@/components/ui/Button";
 import Input, { inputStyles } from "@/components/ui/Input";
 import Modal from "@/components/ui/Modal";
 import { useToast } from "@/components/ui/Toast";
-import { formatDate } from "@/lib/format";
+import { formatDate, formatDateJour } from "@/lib/format";
 import { Plus, Search, X } from "lucide-react";
 import { anneeDuCycle, libelleAnnee, libelleModule } from "@/lib/modules";
 
@@ -227,7 +227,7 @@ export default function GroupesManager({
                     </span>
                     <span className="font-mono text-[13px] text-body">
                       {g.date_debut
-                        ? `${formatDate(g.date_debut)} → ${formatDate(g.date_fin)}`
+                        ? `${formatDate(g.date_debut)} → ${formatDateJour(g.date_fin, { court: true })}`
                         : "emploi du temps à générer"}
                     </span>
                   </div>

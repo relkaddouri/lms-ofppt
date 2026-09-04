@@ -9,7 +9,7 @@ import Input, { inputStyles as inputClass } from "@/components/ui/Input";
 import AutoTextarea from "@/components/ui/AutoTextarea";
 import Modal, { ConfirmModal } from "@/components/ui/Modal";
 import { useToast } from "@/components/ui/Toast";
-import { formatDate } from "@/lib/format";
+import { formatDateJour } from "@/lib/format";
 import {
   creerDevoir,
   supprimerDevoir,
@@ -116,7 +116,7 @@ export default function DevoirsManager({
                     {[
                       d.moduleNom,
                       d.date_echeance
-                        ? `à rendre le ${formatDate(d.date_echeance)}`
+                        ? `à rendre le ${formatDateJour(d.date_echeance, { court: true })}`
                         : "sans échéance",
                       TYPES.find((t) => t.valeur === d.type_rendu)?.label,
                     ]

@@ -11,7 +11,7 @@ import { getDashboardData } from "@/app/actions/dashboard";
 import { getUser } from "@/lib/supabase/server";
 import { getAnneeCourante } from "@/app/actions/annees";
 import DashboardCharts from "./DashboardCharts";
-import { formatDate, maintenant } from "@/lib/format";
+import { formatDateJour, maintenant } from "@/lib/format";
 
 export const metadata = { title: "Tableau de bord" };
 
@@ -293,7 +293,7 @@ export default async function DashboardPage() {
 
                       <span className="flex flex-col gap-0.5">
                         <span className="font-mono text-[13px] text-slate-2">
-                          {formatDate(g.date_fin, "—")}
+                          {formatDateJour(g.date_fin, { court: true }, "—")}
                         </span>
                         {jours !== null && jours >= 0 ? (
                           <span

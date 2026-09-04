@@ -264,7 +264,7 @@ export default function EmploiDuTempsManager({
                 {courant.libelle ?? "Motif en vigueur"}
               </h2>
               <span className="font-mono text-[12.5px] text-slate-light">
-                depuis le {formatDate(courant.date_debut)} · en cours
+                depuis le {formatDateJour(courant.date_debut, { court: true })} · en cours
               </span>
             </div>
             <span className="rounded-full border border-tint-green bg-success-wash px-3 py-1 text-[12.5px] font-semibold text-green-dark">
@@ -423,8 +423,8 @@ export default function EmploiDuTempsManager({
                   {m.libelle ?? "Motif"}
                 </span>
                 <span className="font-mono text-[12.5px] text-muted">
-                  {formatDate(m.date_debut)} —{" "}
-                  {m.date_fin ? formatDate(m.date_fin) : "…"}
+                  {formatDateJour(m.date_debut, { court: true })} —{" "}
+                  {m.date_fin ? formatDateJour(m.date_fin, { court: true }) : "…"}
                 </span>
               </div>
               <GrilleMotif motif={m} />

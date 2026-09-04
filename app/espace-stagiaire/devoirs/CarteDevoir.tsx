@@ -7,7 +7,7 @@ import Badge from "@/components/ui/Badge";
 import AutoTextarea from "@/components/ui/AutoTextarea";
 import { inputStyles } from "@/components/ui/Input";
 import { useToast } from "@/components/ui/Toast";
-import { formatDate, formatDateTime, maintenant } from "@/lib/format";
+import { formatDateJour, formatDateTime, maintenant } from "@/lib/format";
 import { enregistrerRendu, type DevoirStagiaire } from "@/app/actions/devoirs";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -113,7 +113,7 @@ export default function CarteDevoir({ devoir }: { devoir: DevoirStagiaire }) {
         <p
           className={`mt-2 text-sm ${enRetard ? "text-coral-dark" : "text-slate"}`}
         >
-          À rendre le {formatDate(devoir.date_echeance)}
+          À rendre le {formatDateJour(devoir.date_echeance, { court: true })}
           {jours !== null && !rendu ? (
             <span>
               {" — "}

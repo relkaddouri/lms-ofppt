@@ -5,7 +5,7 @@ import { useToast } from "./ui/Toast";
 import Breadcrumb from "./Breadcrumb";
 import type { Groupe } from "@/app/actions/groupes";
 import Button from "@/components/ui/Button";
-import { formatDate } from "@/lib/format";
+import { formatDateJour } from "@/lib/format";
 import { ONGLETS_GROUPE, ongletGroupeActif } from "@/lib/navigation";
 
 export default function GroupeHeader({
@@ -61,8 +61,8 @@ export default function GroupeHeader({
                   n'y a rien d'honnête à afficher. */}
               {groupe.date_debut ? (
                 <span className="font-mono text-[13px] text-slate-light">
-                  {formatDate(groupe.date_debut)} →{" "}
-                  {formatDate(groupe.date_fin)}
+                  {formatDateJour(groupe.date_debut, { court: true })} →{" "}
+                  {formatDateJour(groupe.date_fin, { court: true })}
                 </span>
               ) : (
                 <span className="font-mono text-[13px] text-muted">

@@ -11,7 +11,7 @@ import { useToast } from "@/components/ui/Toast";
 import Button from "@/components/ui/Button";
 import Input, { Textarea } from "@/components/ui/Input";
 import Modal, { ConfirmModal } from "@/components/ui/Modal";
-import { formatDate } from "@/lib/format";
+import { formatDateJour } from "@/lib/format";
 import { Megaphone, Plus, Send, Trash2 } from "lucide-react";
 
 const VIDE = { titre: "", contenu: "", date: "" };
@@ -125,8 +125,8 @@ export default function AnnoncesManager({
                       de publication reste le repère juste. */}
                   <p className="font-mono text-[12.5px] text-slate-light">
                     {a.date
-                      ? formatDate(a.date)
-                      : `publiée le ${formatDate(a.created_at)}`}
+                      ? formatDateJour(a.date, { court: true })
+                      : `publiée le ${formatDateJour(a.created_at, { court: true })}`}
                   </p>
                 </div>
                 <button

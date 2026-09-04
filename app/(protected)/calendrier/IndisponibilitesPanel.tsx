@@ -6,7 +6,7 @@ import Button from "@/components/ui/Button";
 import Input, { inputStyles } from "@/components/ui/Input";
 import { ConfirmModal } from "@/components/ui/Modal";
 import { useToast } from "@/components/ui/Toast";
-import { formatDate } from "@/lib/format";
+import { formatDateJour } from "@/lib/format";
 import {
   declarerIndisponibilite,
   supprimerIndisponibilite,
@@ -266,8 +266,8 @@ export default function IndisponibilitesPanel({
                       quand aucun libellé n'a été saisi. */}
                   {i.libelle ? `${LABEL.get(i.type)} · ` : ""}
                   {i.date_debut === i.date_fin
-                    ? formatDate(i.date_debut)
-                    : `${formatDate(i.date_debut)} → ${formatDate(i.date_fin)}`}
+                    ? formatDateJour(i.date_debut, { court: true })
+                    : `${formatDateJour(i.date_debut, { court: true })} → ${formatDateJour(i.date_fin, { court: true })}`}
                   {i.demi_journee
                     ? i.demi_journee === "matin"
                       ? " · matin"
@@ -300,8 +300,8 @@ export default function IndisponibilitesPanel({
           aSupprimer
             ? `${aSupprimer.libelle ?? LABEL.get(aSupprimer.type)} — ${
                 aSupprimer.date_debut === aSupprimer.date_fin
-                  ? formatDate(aSupprimer.date_debut)
-                  : `${formatDate(aSupprimer.date_debut)} → ${formatDate(aSupprimer.date_fin)}`
+                  ? formatDateJour(aSupprimer.date_debut)
+                  : `${formatDateJour(aSupprimer.date_debut)} → ${formatDateJour(aSupprimer.date_fin)}`
               }`
             : ""
         }

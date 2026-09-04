@@ -223,7 +223,7 @@ L'ordre ci-dessous est arrêté : chaque atome se termine et se teste avant que 
 
 ---
 
-- [x] **7.15 — Jour de la semaine sur toute date de séance** (design §11) : « Lun. 07/09/2026 » dans les listes denses, « Lundi 07/09/2026 » en détail et dans les documents. Un seul appel produit le jour et les chiffres, pour qu'ils ne puissent pas se contredire. La grille du calendrier garde ses en-têtes de jour et reste inchangée.
+- [x] **7.15 — Jour de la semaine sur toute date** (design §11) : « Lun. 07/09/2026 » dans les listes denses, « Lundi 07/09/2026 » en détail et dans les documents. La règle vaut pour toute date qui compte — séances, échéances de devoir, stage, période d'un groupe, jours non travaillés, validité d'un motif — pas seulement les séances. Un seul appel produit le jour et les chiffres, pour qu'ils ne puissent pas se contredire. Deux exceptions assumées : la grille du calendrier, qui porte déjà ses jours en en-tête, et l'horodatage « édité le » des PDF, où le jour n'apprend rien.
   **Test** : 07/09/2026 s'affiche « Lundi » — et non « Vendredi », ce que le seul quantième laissait croire.
 
 ---

@@ -9,7 +9,7 @@ import AutoTextarea from "@/components/ui/AutoTextarea";
 import { ConfirmModal } from "@/components/ui/Modal";
 import { useToast } from "@/components/ui/Toast";
 import { createClient } from "@/lib/supabase/client";
-import { formatDate, initials } from "@/lib/format";
+import { formatDateJour, initials } from "@/lib/format";
 import {
   BAREME,
   DOCUMENTS_STAGE,
@@ -210,8 +210,8 @@ export default function CarteStage({ stage }: { stage: StageStagiaire }) {
           </span>
           <span className="block truncate text-xs text-slate">
             {stage.entreprise ?? "Entreprise non renseignée"}
-            {stage.date_debut ? ` · ${formatDate(stage.date_debut)}` : ""}
-            {stage.date_fin ? ` → ${formatDate(stage.date_fin)}` : ""}
+            {stage.date_debut ? ` · ${formatDateJour(stage.date_debut, { court: true })}` : ""}
+            {stage.date_fin ? ` → ${formatDateJour(stage.date_fin, { court: true })}` : ""}
           </span>
         </span>
 
@@ -391,7 +391,7 @@ export default function CarteStage({ stage }: { stage: StageStagiaire }) {
                       {depose ? (
                         <span className="block truncate text-xs text-slate">
                           {depose.nom_fichier} · déposé le{" "}
-                          {formatDate(depose.created_at)}
+                          {formatDateJour(depose.created_at, { court: true })}
                         </span>
                       ) : (
                         <span className="block text-xs text-slate">
