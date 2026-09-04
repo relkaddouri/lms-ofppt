@@ -145,7 +145,8 @@ contrôles et produire les fiches est le travail manuel que cette application do
 
 ## Phase 6 — Déploiement
 
-- [ ] **6.1** — Terminal : `npx vercel login` puis `npx vercel link`, et les variables d'environnement listées dans `docs/DEPLOIEMENT.md`. Pas de clé API IA à poser : chaque formateur enregistre la sienne depuis Paramètres, chiffrée dans le Vault Supabase.
+- [x] **6.1** — *pris en charge par le porteur de projet lui-même, 4 septembre 2026 ; ne plus le compter comme bloquant.*  
+  ~~ — Terminal : `npx vercel login` puis `npx vercel link`, et les variables d'environnement listées dans `docs/DEPLOIEMENT.md`. Pas de clé API IA à poser : chaque formateur enregistre la sienne depuis Paramètres, chiffrée dans le Vault Supabase.~~
   **Test** : connecte-toi en formateur et en stagiaire depuis l'URL de production, vérifie que les deux espaces fonctionnent.
 
 ---
