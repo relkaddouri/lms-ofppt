@@ -283,6 +283,11 @@ L'ordre ci-dessous est arrêté : chaque atome se termine et se teste avant que 
 
 ---
 
+- [ ] ~~**7.26 — Regroupement des ressources côté stagiaire et vue progressive** (§4.4, §4.5)~~ — **abandonné le 4 septembre 2026, décision du porteur de projet.** Les paragraphes correspondants restent dans le PRD ; ils ne sont pas implémentés et ne sont pas à reprendre sans nouvelle demande.
+  **Ce qui existe déjà de ce périmètre, par ricochet d'autres atomes** : le support d'une séance et son corrigé partagé (§4.4) sont sur la même page côté stagiaire, et `devoirs.seance_id` est en base depuis la Phase 4 — la vue Devoirs ne l'exploite simplement pas. Rien à défaire si la décision change.
+
+---
+
 ## Points de vigilance — pas des atomes
 
 À garder en tête à chaque changement de schéma, sans traitement immédiat.
