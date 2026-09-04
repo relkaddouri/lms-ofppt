@@ -118,19 +118,21 @@ export default function ListeCartes<T>({
             <>
               <div className="flex items-start justify-between gap-3">
                 <div className="flex min-w-0 flex-col gap-0.5">
+                  {/* Un div et non un span : une colonne `titre` peut rendre
+                      une structure entière — un nom, puis un dépliant. */}
                   {titre ? (
-                    <span className="text-[15px] font-semibold leading-snug text-ink">
+                    <div className="text-[15px] font-semibold leading-snug text-ink">
                       {titre.cellule(l)}
-                    </span>
+                    </div>
                   ) : null}
                   {/* La ligne d'identité à deux niveaux (§4) : le nom, puis
                       ce qui le qualifie, jamais sur la même ligne. */}
                   {metas.length > 0 ? (
-                    <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-slate-2">
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-slate-2">
                       {metas.map((c) => (
                         <span key={c.cle}>{c.cellule(l)}</span>
                       ))}
-                    </span>
+                    </div>
                   ) : null}
                 </div>
                 {actions.length > 0 ? (

@@ -317,6 +317,14 @@ L'espace formateur était pensé desktop-only ; il doit désormais fonctionner s
 
 ---
 
+- [x] **8.2 — Le quotidien : tableau de bord, présences, animation** (design §3bis) : les trois écrans que le §3bis désigne comme consultés depuis un téléphone.
+  - **Présences** — le tableau passe par `ListeCartes`. Le dépliant d'absences vit dans la colonne `titre` et se retrouve donc dans la carte, sous le nom du stagiaire ; il fallait pour cela que `ListeCartes` accepte du contenu en bloc dans son titre, ce qu'un `<span>` ne permettait pas. Le filtre de module prend toute la largeur sous 768px.
+  - **Tableau de bord** — les tuiles et les graphiques étaient déjà fluides (`auto-fit`, `ResponsiveContainer`). La ligne de groupe, elle, tenait sur trois colonnes fixes serrées à 375px : elle s'empile désormais, le nom d'abord, la date et la barre d'avancement côte à côte ensuite.
+  - **Animation** — le §3bis l'annonce nativement compatible, et il l'est sur la structure. Restaient les cibles : onglets de phase, lien « Quitter » et boutons de navigation à 44px, marges latérales réduites, et surtout les **quatre titres de phase remplacés par leur numéro sous 768px** — ils se chevauchaient. La piste colorée situe déjà l'avancement, et le titre complet reste en tête de la phase ouverte.
+  **Test** : `tsc` et build verts. Le rendu visuel reste à vérifier dans l'application — le navigateur intégré n'a pas de session ouverte.
+
+---
+
 ## Points de vigilance — pas des atomes
 
 À garder en tête à chaque changement de schéma, sans traitement immédiat.

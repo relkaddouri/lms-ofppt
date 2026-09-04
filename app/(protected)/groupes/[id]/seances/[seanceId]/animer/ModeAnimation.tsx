@@ -73,7 +73,7 @@ export default function ModeAnimation({
   return (
     <div className="flex min-h-dvh flex-col bg-paper">
       {/* En-tête : le strict nécessaire pour savoir où l'on est. */}
-      <header className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-border bg-surface px-6 py-3.5">
+      <header className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-border bg-surface px-4 py-3.5 md:px-6">
         <span className="text-sm font-semibold text-ink">
           {seance.groupeNom}
         </span>
@@ -85,7 +85,7 @@ export default function ModeAnimation({
         ) : null}
         <Link
           href={retour}
-          className="ml-auto inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm text-slate transition-colors duration-150 ease-out hover:bg-paper hover:text-ink"
+          className="ml-auto inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm text-slate transition-colors duration-150 ease-out hover:bg-paper hover:text-ink max-md:min-h-11"
         >
           <X size={16} aria-hidden />
           Quitter
@@ -95,7 +95,7 @@ export default function ModeAnimation({
       {/* La barre des quatre phases : où l'on en est, d'un coup d'œil. */}
       <nav
         aria-label="Phases de la séance"
-        className="flex gap-1.5 border-b border-separator bg-surface px-6 pb-3"
+        className="flex gap-1.5 border-b border-separator bg-surface px-4 pb-3 md:px-6"
       >
         {PHASES.map((p, i) => {
           const faite = i < faites;
@@ -106,7 +106,7 @@ export default function ModeAnimation({
               type="button"
               onClick={() => setIndex(i)}
               aria-current={courante ? "step" : undefined}
-              className={`flex flex-1 flex-col gap-1.5 rounded-lg px-2.5 py-2 text-left transition-colors duration-150 ease-out ${
+              className={`flex flex-1 flex-col justify-end gap-1.5 rounded-lg px-2.5 py-2 text-left transition-colors duration-150 ease-out max-md:min-h-11 ${
                 courante ? "bg-wash" : "hover:bg-paper"
               }`}
             >
@@ -120,7 +120,11 @@ export default function ModeAnimation({
                   courante ? "font-semibold text-ink" : "text-slate-2"
                 }`}
               >
-                {p.titre}
+                {/* À 375px, quatre titres de phase se chevauchent. La piste
+                    colorée situe déjà l'avancement ; le numéro suffit, et le
+                    titre complet reste affiché en tête de la phase ouverte. */}
+                <span className="md:hidden">{i + 1}</span>
+                <span className="max-md:hidden">{p.titre}</span>
               </span>
             </button>
           );
@@ -128,9 +132,9 @@ export default function ModeAnimation({
       </nav>
 
       {/* La phase, seule au centre. */}
-      <main className="mx-auto w-full max-w-3xl flex-1 px-6 py-8">
+      <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-7 md:px-6 md:py-8">
         <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
-          <h1 className="font-display text-[28px] font-bold leading-tight tracking-[-0.02em] text-ink">
+          <h1 className="font-display text-[23px] font-bold leading-tight tracking-[-0.02em] text-ink md:text-[28px]">
             {def.titre}
           </h1>
           <span className="ml-auto font-mono text-base text-slate">
@@ -211,7 +215,7 @@ export default function ModeAnimation({
       </main>
 
       {/* La navigation reste en bas, à portée de pouce comme de souris. */}
-      <footer className="sticky bottom-0 flex items-center gap-3 border-t border-border bg-surface px-6 py-3.5">
+      <footer className="sticky bottom-0 flex flex-wrap items-center gap-3 border-t border-border bg-surface px-4 py-3.5 md:px-6">
         <Button
           variant="secondary"
           icon={ArrowLeft}
