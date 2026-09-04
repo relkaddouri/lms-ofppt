@@ -343,6 +343,15 @@ L'espace formateur était pensé desktop-only ; il doit désormais fonctionner s
 
 ---
 
+- [x] **8.5 — Listes secondaires, et deux défauts de structure** (design §3bis) : premier atome **vérifié à l'écran**, via l'extension Claude in Chrome et la session réelle du porteur de projet. Mesures faites à 591px de viewport.
+  - **`AppShell` — le défaut qui faisait défiler TOUS les écrans.** La colonne de contenu est un enfant flex sans `min-w-0` : elle gardait donc la largeur minimale de son contenu — 661px mesurés dans un viewport de 591 — et poussait chaque page hors cadre. Une classe. C'est très probablement ce que le porteur de projet voyait quand « rien ne s'affichait » en responsive.
+  - **`GroupeTabs` — six onglets qui poussaient la page à 799px.** La barre défile désormais pour elle-même, en débordant jusqu'aux bords de l'écran pour que le geste soit naturel. Un défilement voulu et borné, pas celui que le §3bis interdit. Corrige les six sous-écrans d'un groupe d'un coup.
+  - **Contrôles d'un module** — le seul vrai `<table>` du lot, passé par `ListeCartes`.
+  - **Mesuré sans rien trouver** : progression, couverture, devoirs, annonces, journal, historique ne débordent plus une fois les deux défauts ci-dessus corrigés.
+  **Test** : `document.scrollWidth === clientWidth` sur modules, calendrier, fiche de module et progression après correction ; captures d'écran à l'appui. Les deux défauts de structure relevaient du socle 8.1 — je ne les avais pas vus faute de pouvoir regarder.
+
+---
+
 ## Points de vigilance — pas des atomes
 
 À garder en tête à chaque changement de schéma, sans traitement immédiat.

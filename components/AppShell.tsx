@@ -36,7 +36,7 @@ export default function AppShell({
           onClick={() => setSidebarOpen(false)}
         />
       ) : null}
-      <div className="flex min-h-screen flex-1 flex-col">
+      <div className="flex min-h-screen min-w-0 flex-1 flex-col">
         <Topbar
           email={email}
           notifications={notifications}
