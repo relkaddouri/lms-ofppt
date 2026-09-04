@@ -291,6 +291,7 @@ export type Database = {
           contenu: Json
           created_at: string
           id: string
+          partagee_avec_stagiaires: boolean
           seance_id: string
           version: number
         }
@@ -298,6 +299,7 @@ export type Database = {
           contenu: Json
           created_at?: string
           id?: string
+          partagee_avec_stagiaires?: boolean
           seance_id: string
           version?: number
         }
@@ -305,6 +307,7 @@ export type Database = {
           contenu?: Json
           created_at?: string
           id?: string
+          partagee_avec_stagiaires?: boolean
           seance_id?: string
           version?: number
         }

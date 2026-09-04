@@ -241,6 +241,8 @@ Pour chaque phase, l'écran affiche :
 - Tout autre élément nécessaire pour exécuter cette phase sans préparation supplémentaire
 - Une action pour marquer la phase terminée et passer à la suivante
 
+**Repères temporels dans la phase — ajout v3.** Au-delà de la durée totale indicative d'une phase, l'écran doit signaler des **moments d'action précis à l'intérieur de la phase**, pas seulement un décompte silencieux — par exemple : à 5 minutes de la fin, un rappel "Prévenez les stagiaires qu'il reste 5 minutes" ; à la moitié du temps, une invite à vérifier l'avancement des groupes ; en fin de phase, un rappel explicite du moment où demander le rendu du travail. Ce n'est pas un chronomètre passif — c'est un guide qui dit au formateur *quand* agir, pas seulement combien de temps s'est écoulé. Le nombre et la nature de ces repères dépendent de la phase (une phase d'activité longue en a besoin, une phase de mise en situation courte moins).
+
 **Exigence d'UX/UI** : cet écran doit être pensé comme un mode présentation — épuré, une phase à la fois visible en priorité, navigation simple entre phases (précédent/suivant), lisible d'un coup d'œil pendant que le formateur anime sa classe. Ce n'est pas un document à relire, c'est un support d'exécution.
 
 ### 4.4 Génération IA de support de cours (16:9)
@@ -255,6 +257,8 @@ Pour chaque phase, l'écran affiche :
 **Deux documents distincts par module — support théorique et support pratique**, tranché par le porteur de projet :
 - **Support du cours** — la compilation du contenu théorique, dans l'ordre logique des séances
 - **Support de TP** ("Pratique de [Module]", ex. "Pratique de M202") — regroupe tous les travaux pratiques du module. **Génère une proposition de correction ou des pistes de correction pour chaque TP**, disponible pour le formateur au moment où il marque la séance correspondante comme terminée — pas générée à l'avance et exposée aux stagiaires avant que le TP soit fait.
+
+**Partage de la correction — décision manuelle du formateur, pas une règle automatique.** La correction est **fermée par défaut** aux stagiaires, y compris après que la séance est marquée faite. Le formateur dispose d'une action explicite ("Partager avec les stagiaires") pour l'ouvrir quand il le juge pertinent — après avoir corrigé les copies, par exemple, ou jamais s'il préfère garder la correction pour son seul usage. Une fois partagée, elle reste visible ; la revenir en arrière ne doit pas effacer ce qu'un stagiaire a potentiellement déjà vu, mais peut empêcher un accès futur si le formateur retire le partage. Cette décision se prend **par correction**, pas globalement pour tout le module — un formateur peut vouloir partager la correction d'un TP et garder celle d'un autre pour lui.
 
 **Compilation au niveau du module — export complet.** Une fois un module terminé (ou à tout moment en cours de route), le formateur doit pouvoir **télécharger le support complet du module** — la compilation de toutes les séances dans l'ordre logique du programme, pas seulement consulter un support séance par séance de façon fragmentée. Distinct du classeur pédagogique (§4.13, qui regroupe les fiches de préparation) : ici il s'agit du contenu de cours et de TP destiné aux stagiaires.
 

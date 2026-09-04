@@ -22,13 +22,17 @@ import { lireCorrection, type CorrectionTp } from "@/lib/correction";
  */
 export async function getCorrection(
   seanceId: string,
-): Promise<{ correction: CorrectionTp; version: number } | null> {
+): Promise<{
+  correction: CorrectionTp;
+  version: number;
+  partagee: boolean;
+} | null> {
   const supabase = await createClient();
   const source = await sourceContenu(seanceId);
 
   const { data, error } = await supabase
     .from("corrections_tp")
-    .select("contenu, version")
+    .select("contenu, version, partagee_avec_stagiaires")
     .eq("seance_id", source)
     .order("version", { ascending: false })
     .limit(1)
@@ -36,7 +40,11 @@ export async function getCorrection(
 
   if (error) throw new Error(error.message);
   if (!data) return null;
-  return { correction: lireCorrection(data.contenu), version: data.version };
+  return {
+    correction: lireCorrection(data.contenu),
+    version: data.version,
+    partagee: data.partagee_avec_stagiaires,
+  };
 }
 
 /** Enregistre une correction en créant une nouvelle version. */
@@ -63,4 +71,44 @@ export async function saveCorrection(
 
   revalidatePath("/groupes", "layout");
   return version;
+}
+
+/**
+ * Ouvre ou ferme la correction aux stagiaires du groupe (PRD §4.4).
+ *
+ * La décision est prise correction par correction, jamais pour un module
+ * entier : le formateur peut vouloir partager un TP et garder le suivant.
+ *
+ * Fermer bloque les accès à venir. Ça n'annule pas ce qu'un stagiaire a déjà
+ * lu ou téléchargé, et l'écran le dit — laisser croire à un retrait
+ * rétroactif serait une fausse sécurité.
+ */
+export async function partagerCorrection(
+  seanceId: string,
+  partagee: boolean,
+): Promise<boolean> {
+  const supabase = await createClient();
+  const source = await sourceContenu(seanceId);
+
+  // La dernière version fait foi : c'est celle que l'écran affiche, et donc
+  // celle que le formateur croit partager.
+  const { data: derniere } = await supabase
+    .from("corrections_tp")
+    .select("id")
+    .eq("seance_id", source)
+    .order("version", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (!derniere) throw new Error("Aucune correction à partager.");
+
+  const { error } = await supabase
+    .from("corrections_tp")
+    .update({ partagee_avec_stagiaires: partagee })
+    .eq("id", derniere.id);
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/groupes", "layout");
+  revalidatePath("/espace-stagiaire", "layout");
+  return partagee;
 }

@@ -244,6 +244,8 @@ export type SeanceDetail = {
   /** Correction du TP, réservée au formateur et postérieure à la séance (§4.4). */
   correction: CorrectionTp | null;
   correctionVersion: number | null;
+  /** Le formateur a ouvert cette correction à ses stagiaires (§4.4). */
+  correctionPartagee: boolean;
   supportId: string | null;
   /** Questions posées par les stagiaires sur ce support. */
   questions: QuestionSupport[];
@@ -440,7 +442,7 @@ export async function getSeanceDetail(
     // demander ailleurs coûterait une requête pour un `null` connu d'avance.
     ...(s.nature === "pratique" && s.statut === "fait"
       ? await chargerCorrection(seanceId)
-      : { correction: null, correctionVersion: null }),
+      : { correction: null, correctionVersion: null, correctionPartagee: false }),
   };
 }
 
@@ -450,6 +452,7 @@ async function chargerCorrection(seanceId: string) {
   return {
     correction: trouvee?.correction ?? null,
     correctionVersion: trouvee?.version ?? null,
+    correctionPartagee: trouvee?.partagee ?? false,
   };
 }
 

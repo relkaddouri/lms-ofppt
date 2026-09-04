@@ -252,8 +252,13 @@ L'ordre ci-dessous est arrêté : chaque atome se termine et se teste avant que 
 ---
 
 - [x] **7.20 — Deux documents par module, et la correction de TP** (§4.4) : un module porte désormais deux documents distincts et nommés — « Support du cours — [Module] » et « Pratique de [Module] » — chacun listant ses séances, celles qui sont rédigées et, pour les TP, celles qui sont corrigées. La proposition de correction se génère à partir de l'énoncé réellement remis, jamais du référentiel seul, et reprend son barème sans le renommer.
-  **Deux verrous, posés en base et non dans la route** : la correction n'existe que sur une séance **pratique** et **faite** — un trigger le refuse sinon —, et la table `corrections_tp` n'a **aucune** politique de lecture stagiaire. C'est plus strict que le PRD, qui interdit l'exposition « avant que le TP soit fait » sans dire ce qu'il en est après : ouvrir plus tard s'ajoute, se rétracter ne se peut pas.
+  **Deux verrous, posés en base et non dans la route** : la correction n'existe que sur une séance **pratique** et **faite** — un trigger le refuse sinon —, et elle est fermée aux stagiaires par défaut. La visibilité est traitée en 7.21.
   **Test** : la base refuse une correction sur séance théorique et sur séance pratique non faite, l'accepte une fois la séance marquée faite, et n'en laisse lire aucune sans authentification. Sur une génération réelle, une étape par consigne (4/4), les quatre critères de l'énoncé repris tels quels, barème à 20/20, et une règle de notation par critère.
+
+---
+
+- [x] **7.21 — Partage de la correction, décidé TP par TP** (§4.4) : `corrections_tp.partagee_avec_stagiaires`, faux par défaut y compris après que la séance est faite. Le formateur ouvre et referme depuis l'écran de correction ; la policy de lecture stagiaire exige **le drapeau et l'appartenance au groupe**, jamais l'un sans l'autre. Refermer bloque les accès à venir — l'écran de confirmation dit explicitement que ça ne revient pas sur ce qui a déjà été lu ou enregistré, plutôt que de laisser croire à un retrait rétroactif.
+  **Test** : protocole d'isolation sur deux comptes stagiaires temporaires, un par groupe, supprimés ensuite — non partagée personne ne voit ; partagée le groupe voit et l'autre groupe non ; refermée le groupe ne voit plus ; un stagiaire ne peut ni modifier la correction, ni changer le drapeau de partage, ni en créer une ; anonyme ne voit rien. Base rendue intacte : 0 correction, 15 stagiaires, 2 comptes auth.
 
 ---
 

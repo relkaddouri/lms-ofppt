@@ -428,8 +428,8 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
                   Proposition de correction
                 </h3>
                 <p className="mb-3.5 text-[13px] text-slate-light">
-                  Pour vous seul — elle n&apos;apparaît pas dans l&apos;espace
-                  stagiaire.
+                  Fermée aux stagiaires par défaut. C&apos;est vous qui
+                  l&apos;ouvrez, TP par TP.
                 </p>
                 <CorrectionTpPanneau
                   seanceId={seance.id}
@@ -437,6 +437,7 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
                   aUnEnonce={Boolean(seance.supportVersion)}
                   initial={seance.correction}
                   versionInitiale={seance.correctionVersion}
+                  partageeInitial={seance.correctionPartagee}
                 />
               </div>
             ) : null}

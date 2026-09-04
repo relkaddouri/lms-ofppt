@@ -6,12 +6,13 @@ import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
 import BandeauIa from "@/components/BandeauIa";
 import { useToast } from "@/components/ui/Toast";
-import { saveCorrection } from "@/app/actions/corrections";
+import { partagerCorrection, saveCorrection } from "@/app/actions/corrections";
 import {
   correctionVide,
   type CorrectionTp,
 } from "@/lib/correction";
-import { Lock, Save, Sparkles } from "lucide-react";
+import { ConfirmModal } from "@/components/ui/Modal";
+import { Eye, EyeOff, Lock, Save, Sparkles } from "lucide-react";
 
 /**
  * Proposition de correction d'un TP (PRD §4.4).
@@ -21,8 +22,10 @@ import { Lock, Save, Sparkles } from "lucide-react";
  * cherchera ailleurs. La raison est pédagogique, pas technique — les
  * stagiaires doivent avoir cherché avant qu'un corrigé existe.
  *
- * Rien de ce panneau n'est visible du stagiaire : la table n'a aucune
- * politique de lecture pour lui, ce composant ne vit que côté formateur.
+ * Elle est fermée aux stagiaires par défaut, y compris après la séance. Le
+ * formateur l'ouvre quand il le juge bon, correction par correction — jamais
+ * pour un module entier. Refermer bloque les accès à venir et rien de plus :
+ * l'écran le dit, promettre un retrait rétroactif serait une fausse sécurité.
  */
 export default function CorrectionTpPanneau({
   seanceId,
@@ -30,12 +33,14 @@ export default function CorrectionTpPanneau({
   aUnEnonce,
   initial,
   versionInitiale,
+  partageeInitial,
 }: {
   seanceId: string;
   seanceFaite: boolean;
   aUnEnonce: boolean;
   initial: CorrectionTp | null;
   versionInitiale: number | null;
+  partageeInitial: boolean;
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -44,6 +49,10 @@ export default function CorrectionTpPanneau({
   const [issuDuModele, setIssuDuModele] = useState(false);
   const [avertissements, setAvertissements] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
+  const [partagee, setPartagee] = useState(partageeInitial);
+  // Fermer se confirme, ouvrir non : ouvrir se défait, la lecture qui a eu
+  // lieu ne se défait pas.
+  const [aFermer, setAFermer] = useState(false);
 
   async function generer() {
     setBusy(true);
@@ -59,6 +68,25 @@ export default function CorrectionTpPanneau({
       setIssuDuModele(true);
       setAvertissements(data.avertissements ?? []);
       toast("Correction proposée. Relisez-la avant de corriger.");
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "Erreur inattendue", "error");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function basculerPartage(vers: boolean) {
+    setBusy(true);
+    try {
+      await partagerCorrection(seanceId, vers);
+      setPartagee(vers);
+      setAFermer(false);
+      toast(
+        vers
+          ? "Correction visible par les stagiaires du groupe"
+          : "Correction refermée — les accès à venir sont bloqués",
+      );
+      router.refresh();
     } catch (e) {
       toast(e instanceof Error ? e.message : "Erreur inattendue", "error");
     } finally {
@@ -124,10 +152,31 @@ export default function CorrectionTpPanneau({
         ) : (
           <Badge tone="neutral">aucune version</Badge>
         )}
+        {version ? (
+          <Button
+            variant={partagee ? "secondary" : "primary"}
+            size="sm"
+            icon={partagee ? EyeOff : Eye}
+            onClick={() => (partagee ? setAFermer(true) : basculerPartage(true))}
+            disabled={busy}
+          >
+            {partagee ? "Ne plus partager" : "Partager avec les stagiaires"}
+          </Button>
+        ) : null}
         <span className="ml-auto text-[13px] text-slate">
-          Réservée au formateur
+          {partagee
+            ? "Visible par les stagiaires du groupe"
+            : "Réservée au formateur"}
         </span>
       </div>
+
+      {version && partagee ? (
+        <p className="rounded-[10px] border border-tint-teal-strong bg-tint-teal px-4 py-3 text-[13.5px] leading-relaxed text-ink">
+          Les stagiaires de ce groupe voient cette correction dans leur espace.
+          Eux seuls : un stagiaire d&apos;un autre groupe n&apos;y a pas accès,
+          même partagée.
+        </p>
+      ) : null}
 
       {!aUnEnonce ? (
         <p className="text-sm text-slate">
@@ -150,6 +199,16 @@ export default function CorrectionTpPanneau({
           ))}
         </ul>
       ) : null}
+
+      <ConfirmModal
+        open={aFermer}
+        title="Ne plus partager la correction ?"
+        message="Les stagiaires n'y auront plus accès à partir de maintenant. Ceux qui l'ont déjà ouverte ont pu la lire ou l'enregistrer : refermer ne revient pas là-dessus."
+        confirmLabel="Refermer"
+        onConfirm={() => basculerPartage(false)}
+        onClose={() => setAFermer(false)}
+        busy={busy}
+      />
 
       {correction ? (
         <div className="flex flex-col gap-4">

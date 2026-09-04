@@ -4,6 +4,7 @@ import { createClient, getUser } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import type { Support } from "@/lib/support";
 import { libelleModule } from "@/lib/modules";
+import { lireCorrection, type CorrectionTp } from "@/lib/correction";
 
 export type SupportListe = {
   id: string;
@@ -33,6 +34,12 @@ export type SupportDetail = {
   date: string | null;
   moduleNom: string | null;
   questions: QuestionSupport[];
+  /**
+   * La correction du TP, si le formateur l'a ouverte à ce groupe (§4.4).
+   * La RLS décide seule : ici, `null` veut dire « pas partagée, ou pas mon
+   * groupe » sans qu'on ait à refaire le test.
+   */
+  correction: CorrectionTp | null;
 };
 
 /** Titre lisible d'un support, quel que soit son type. */
@@ -191,7 +198,9 @@ export async function getSupportDetail(
 
   const { data, error } = await supabase
     .from("supports_seance")
-    .select("id, contenu, seances(date, modules(nom, competences(code_operationnel)), seance_groupes(groupe_id))")
+    .select(
+      "id, contenu, seance_id, seances(date, modules(nom, competences(code_operationnel)), seance_groupes(groupe_id))",
+    )
     .eq("id", supportId)
     .maybeSingle();
 
@@ -201,6 +210,7 @@ export async function getSupportDetail(
   const s = data as unknown as {
     id: string;
     contenu: Support;
+    seance_id: string;
     seances: {
       date: string | null;
       modules: {
@@ -227,7 +237,29 @@ export async function getSupportDetail(
       s.id,
       s.seances?.seance_groupes[0]?.groupe_id ?? "",
     ),
+    correction: await correctionVisible(s.seance_id),
   };
+}
+
+/**
+ * La correction que ce lecteur a le droit de voir, s'il y en a une.
+ *
+ * Aucun filtre n'est écrit ici : la policy `corrections_tp_lecture_stagiaire`
+ * exige à la fois le drapeau de partage et l'appartenance au groupe. Redoubler
+ * la règle dans le code la ferait diverger le jour où l'une des deux change.
+ */
+async function correctionVisible(seanceId: string): Promise<CorrectionTp | null> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("corrections_tp")
+    .select("contenu")
+    .eq("seance_id", seanceId)
+    .eq("partagee_avec_stagiaires", true)
+    .order("version", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  return data ? lireCorrection(data.contenu) : null;
 }
 
 /** Le contexte archivé est dérivé du support côté base, jamais transmis ici. */
