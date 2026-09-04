@@ -1,5 +1,9 @@
 import { getDocumentsModule, getModuleDetail } from "@/app/actions/modules";
-import { avancement, titreDocument } from "@/lib/documents-module";
+import {
+  avancement,
+  etatChapitre,
+  titreDocument,
+} from "@/lib/documents-module";
 import { getManuel } from "@/app/actions/manuel";
 import { getEtablissement } from "@/app/actions/etablissement";
 import ReferentielCompetence from "@/components/ReferentielCompetence";
@@ -150,7 +154,9 @@ export default async function ModuleDetailPage({
               <Users size={16} />
             </div>
             <div>
-              <h2 className="font-display text-[17px] font-semibold text-ink">Groupes</h2>
+              <h2 className="font-display text-[17px] font-semibold text-ink">
+                Groupes
+              </h2>
               <p className="text-xs text-slate">
                 {groupes.length} groupe{groupes.length > 1 ? "s" : ""}
               </p>
@@ -179,100 +185,120 @@ export default async function ModuleDetailPage({
       </div>
 
       <section className="mt-8">
-          <h2 className="font-display text-[17px] font-semibold text-ink">
-            Documents du module
-          </h2>
-          <p className="mt-1 text-[13.5px] text-slate-2">
-            Deux documents distincts, comme le veut le programme : le cours
-            qu&apos;on révise, et les travaux pratiques qu&apos;on fait.
-          </p>
-          <div className="mt-4 grid gap-4 md:grid-cols-2">
-            {documents.map((doc) => {
-              const { redigees, total } = avancement(doc);
-              const Icone = doc.genre === "pratique" ? Wrench : BookOpen;
-              return (
-                <div
-                  key={doc.genre}
-                  className="flex flex-col gap-3 rounded-[14px] border border-border bg-surface p-6 shadow-repos"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[9px] bg-wash text-slate-2">
-                      <Icone size={16} />
-                    </div>
-                    <div className="min-w-0">
-                      <h3 className="font-display text-[15px] font-semibold text-ink">
-                        {titreDocument(doc.genre, module.nom)}
-                      </h3>
-                      <p className="font-mono text-[12.5px] text-slate-2">
-                        {total === 0
-                          ? "aucun contenu"
-                          : `${redigees} / ${total} chapitre${total > 1 ? "s" : ""} rédigé${redigees > 1 ? "s" : ""}`}
-                      </p>
-                    </div>
+        <h2 className="font-display text-[17px] font-semibold text-ink">
+          Documents du module
+        </h2>
+        <p className="mt-1 text-[13.5px] text-slate-2">
+          Deux documents distincts, comme le veut le programme : le cours
+          qu&apos;on révise, et les travaux pratiques qu&apos;on fait.
+        </p>
+        <div className="mt-4 grid gap-4 md:grid-cols-2">
+          {documents.map((doc) => {
+            const { redigees, total } = avancement(doc);
+            const Icone = doc.genre === "pratique" ? Wrench : BookOpen;
+            return (
+              <div
+                key={doc.genre}
+                className="flex flex-col gap-3 rounded-[14px] border border-border bg-surface p-6 shadow-repos"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[9px] bg-wash text-slate-2">
+                    <Icone size={16} />
                   </div>
-
-                  {doc.pieces.length === 0 ? (
-                    <p className="text-sm text-slate">
-                      {doc.genre === "pratique"
-                        ? "Aucune séance pratique n'est prévue sur ce module."
-                        : "Aucune séance théorique n'est prévue sur ce module."}
+                  <div className="min-w-0">
+                    <h3 className="font-display text-[15px] font-semibold text-ink">
+                      {titreDocument(doc.genre, module.nom)}
+                    </h3>
+                    <p className="font-mono text-[12.5px] text-slate-2">
+                      {total === 0
+                        ? "aucun contenu"
+                        : `${redigees} / ${total} chapitre${total > 1 ? "s" : ""} rédigé${redigees > 1 ? "s" : ""}`}
                     </p>
-                  ) : (
-                    <ul className="flex flex-col divide-y divide-separator">
-                      {doc.pieces.map((piece) => (
-                        <li
-                          key={piece.seanceId}
-                          className="flex items-baseline gap-3 py-2"
-                        >
-                          {piece.objectif ? (
-                            <span className="shrink-0 font-mono text-[11.5px] text-slate-light">
-                              {piece.objectif}
-                            </span>
-                          ) : null}
-                          <span className="min-w-0 flex-1 truncate text-sm text-ink">
-                            {piece.titre}
-                          </span>
-                          {piece.seances > 1 ? (
-                            <span className="shrink-0 font-mono text-[11.5px] text-slate-light">
-                              {piece.seances} séances
-                            </span>
-                          ) : null}
-                          {doc.genre === "pratique" && piece.corrigee ? (
-                            <Badge tone="info">grille prête</Badge>
-                          ) : null}
-                          <Badge tone={piece.redigee ? "success" : "neutral"}>
-                            {piece.redigee ? "rédigé" : "à rédiger"}
-                          </Badge>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-
-                  <div className="mt-auto pt-1">
-                    <ExportDocument
-                      moduleId={id}
-                      moduleNom={module.nom}
-                      genre={doc.genre}
-                      groupeNom={
-                        groupes.length === 1
-                          ? groupes[0]!.nom
-                          : `${groupes.length} groupes`
-                      }
-                      anneeScolaire={etablissement.anneeScolaire ?? null}
-                      formateur={etablissement.nomFormateur ?? null}
-                      redigees={redigees}
-                    />
                   </div>
                 </div>
-              );
-            })}
-          </div>
-      </section>
 
+                {doc.pieces.length === 0 ? (
+                  <p className="text-sm text-slate">
+                    {doc.genre === "pratique"
+                      ? "Aucune séance pratique n'est prévue sur ce module."
+                      : "Aucune séance théorique n'est prévue sur ce module."}
+                  </p>
+                ) : (
+                  <ul className="flex flex-col divide-y divide-separator">
+                    {doc.pieces.map((piece) => (
+                      <li
+                        key={piece.seanceId}
+                        className="flex items-baseline gap-3 py-2"
+                      >
+                        {piece.objectif ? (
+                          <span className="shrink-0 font-mono text-[11.5px] text-slate-light">
+                            {piece.objectif}
+                          </span>
+                        ) : null}
+                        <span className="min-w-0 flex-1 truncate text-sm text-ink">
+                          {piece.titre}
+                        </span>
+                        {piece.seances > 1 ? (
+                          <span className="shrink-0 font-mono text-[11.5px] text-slate-light">
+                            {piece.seances} séances
+                          </span>
+                        ) : null}
+                        {doc.genre === "pratique" && piece.corrigees ? (
+                          <Badge tone="info">
+                            {piece.corrigees >= piece.seances
+                              ? "grille prête"
+                              : `${piece.corrigees} / ${piece.seances} grilles`}
+                          </Badge>
+                        ) : null}
+                        {/* La fraction dit ce qui manque : un chapitre de
+                              quatre séances dont une seule porte son support
+                              n'est pas rédigé, il est commencé. */}
+                        <Badge
+                          tone={
+                            etatChapitre(piece) === "complet"
+                              ? "success"
+                              : etatChapitre(piece) === "partiel"
+                                ? "info"
+                                : "neutral"
+                          }
+                        >
+                          {etatChapitre(piece) === "complet"
+                            ? "rédigé"
+                            : etatChapitre(piece) === "partiel"
+                              ? `${piece.redigees} / ${piece.seances} rédigés`
+                              : "à rédiger"}
+                        </Badge>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                <div className="mt-auto pt-1">
+                  <ExportDocument
+                    moduleId={id}
+                    moduleNom={module.nom}
+                    genre={doc.genre}
+                    groupeNom={
+                      groupes.length === 1
+                        ? groupes[0]!.nom
+                        : `${groupes.length} groupes`
+                    }
+                    anneeScolaire={etablissement.anneeScolaire ?? null}
+                    formateur={etablissement.nomFormateur ?? null}
+                    redigees={redigees}
+                  />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
 
       {controles.length > 0 ? (
         <section className="mt-8">
-          <h2 className="font-display text-[17px] font-semibold text-ink">Contrôles du module</h2>
+          <h2 className="font-display text-[17px] font-semibold text-ink">
+            Contrôles du module
+          </h2>
           <div className="mt-4 overflow-hidden rounded-[14px] border border-border bg-surface shadow-repos">
             <table className="w-full text-left text-sm">
               <thead>

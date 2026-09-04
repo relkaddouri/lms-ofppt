@@ -23,11 +23,18 @@ export type PieceDocument = {
   date: string | null;
   titre: string;
   objectif: string | null;
-  /** Vrai quand un support est enregistré pour cette séance. */
-  redigee: boolean;
+  /**
+   * Combien de ces séances portent réellement un support.
+   *
+   * Un compte et non un booléen : générer le support d'une seule séance d'un
+   * chapitre qui en couvre quatre laissait le chapitre annoncé « rédigé »
+   * alors que trois séances restaient vides — un stagiaire qui en ouvrait une
+   * ne voyait rien. La fraction dit ce qui manque.
+   */
+  redigees: number;
   faite: boolean;
-  /** TP seulement : une grille de correction est enregistrée. */
-  corrigee?: boolean;
+  /** TP seulement : combien de ces séances ont leur grille de correction. */
+  corrigees?: number;
 };
 
 export type DocumentModule = {
@@ -46,15 +53,29 @@ export function titreDocument(
     : `Support du cours — ${moduleNom}`;
 }
 
-/** Combien de pièces sont réellement rédigées, sur le total attendu. */
+/**
+ * Combien de chapitres sont **entièrement** rédigés, sur le total.
+ *
+ * Entièrement : toutes les séances du chapitre portent leur support. Compter
+ * un chapitre à moitié écrit comme fait donnerait un avancement flatteur et
+ * faux, ce qui est la seule chose qu'un indicateur ne doit pas faire.
+ */
 export function avancement(doc: DocumentModule): {
   redigees: number;
   total: number;
 } {
   return {
-    redigees: doc.pieces.filter((p) => p.redigee).length,
+    redigees: doc.pieces.filter((p) => p.redigees >= p.seances).length,
     total: doc.pieces.length,
   };
+}
+
+/** L'état d'un chapitre, tel qu'il s'affiche. */
+export function etatChapitre(
+  piece: PieceDocument,
+): "complet" | "partiel" | "vide" {
+  if (piece.redigees === 0) return "vide";
+  return piece.redigees >= piece.seances ? "complet" : "partiel";
 }
 
 /**

@@ -133,7 +133,9 @@ export type ModuleDetail = {
   groupes: { id: string; nom: string }[];
 };
 
-export async function getModuleDetail(moduleId: string): Promise<ModuleDetail | null> {
+export async function getModuleDetail(
+  moduleId: string,
+): Promise<ModuleDetail | null> {
   const supabase = await createClient();
   // Les groupes listés sur la fiche du module sont ceux de l'année en cours.
   const { groupeIds } = await getPortee();
@@ -346,7 +348,10 @@ export async function getDocumentsModule(
     nature: "theorique" | "pratique" | null;
     contenu_source_id: string | null;
     objectif_operationnel: string | null;
-    suggestions_pedagogiques: { code: string | null; apprentissage_base: string } | null;
+    suggestions_pedagogiques: {
+      code: string | null;
+      apprentissage_base: string;
+    } | null;
   }[];
 
   if (seances.length === 0) {
@@ -358,16 +363,26 @@ export async function getDocumentsModule(
 
   // §4.3bis : une séance miroir n'a pas de support à elle. Compter sur son
   // seul identifiant la dirait « non rédigée » alors qu'elle en affiche un.
-  const sourceDe = new Map(seances.map((s) => [s.id, s.contenu_source_id ?? s.id]));
+  const sourceDe = new Map(
+    seances.map((s) => [s.id, s.contenu_source_id ?? s.id]),
+  );
   const sources = [...new Set(sourceDe.values())];
 
   const [supportsRes, correctionsRes] = await Promise.all([
-    supabase.from("supports_seance").select("seance_id").in("seance_id", sources),
-    supabase.from("corrections_tp").select("seance_id").in("seance_id", sources),
+    supabase
+      .from("supports_seance")
+      .select("seance_id")
+      .in("seance_id", sources),
+    supabase
+      .from("corrections_tp")
+      .select("seance_id")
+      .in("seance_id", sources),
   ]);
 
   const avecSupport = new Set((supportsRes.data ?? []).map((r) => r.seance_id));
-  const avecCorrection = new Set((correctionsRes.data ?? []).map((r) => r.seance_id));
+  const avecCorrection = new Set(
+    (correctionsRes.data ?? []).map((r) => r.seance_id),
+  );
 
   // Une entrée par contenu, pas par séance : deux groupes parallèles suivent
   // le même cours, et un objectif étalé sur plusieurs créneaux reste un seul
@@ -391,18 +406,22 @@ export async function getDocumentsModule(
         premiere.objectif_operationnel ??
         "Séance",
       objectif: premiere.suggestions_pedagogiques?.code ?? null,
-      // Rédigé dès qu'une des séances porte le support : c'est le même contenu.
-      redigee: sources.some((id) => avecSupport.has(id)),
+      // Compté séance par séance : le contenu est le même, mais chaque séance
+      // a besoin de son support pour que le stagiaire qui l'ouvre voie quelque
+      // chose.
+      redigees: sources.filter((id) => avecSupport.has(id)).length,
       // Fait quand toutes le sont — le contenu n'est couvert qu'à la dernière.
       faite: paquet.every((s) => s.statut === "fait"),
-      corrigee: sources.some((id) => avecCorrection.has(id)),
+      corrigees: sources.filter((id) => avecCorrection.has(id)).length,
     };
   };
 
   const pour = (genre: "cours" | "pratique") =>
     grouperParContenu(
       seances.filter((s) =>
-        genre === "pratique" ? s.nature === "pratique" : s.nature !== "pratique",
+        genre === "pratique"
+          ? s.nature === "pratique"
+          : s.nature !== "pratique",
       ),
       cle,
     ).map(piece);
@@ -446,7 +465,10 @@ export async function getCompilationModule(
     nature: "theorique" | "pratique" | null;
     contenu_source_id: string | null;
     objectif_operationnel: string | null;
-    suggestions_pedagogiques: { code: string | null; apprentissage_base: string } | null;
+    suggestions_pedagogiques: {
+      code: string | null;
+      apprentissage_base: string;
+    } | null;
   }[];
 
   const retenues = toutes.filter((s) =>
@@ -455,7 +477,9 @@ export async function getCompilationModule(
   if (retenues.length === 0) return [];
 
   // §4.3bis : une séance miroir tire son support de sa source.
-  const sourceDe = new Map(retenues.map((s) => [s.id, s.contenu_source_id ?? s.id]));
+  const sourceDe = new Map(
+    retenues.map((s) => [s.id, s.contenu_source_id ?? s.id]),
+  );
 
   const { data: supports } = await supabase
     .from("supports_seance")
@@ -466,7 +490,8 @@ export async function getCompilationModule(
 
   const dernier = new Map<string, Support>();
   for (const s of supports ?? []) {
-    if (!dernier.has(s.seance_id)) dernier.set(s.seance_id, s.contenu as Support);
+    if (!dernier.has(s.seance_id))
+      dernier.set(s.seance_id, s.contenu as Support);
   }
 
   // Un chapitre par contenu, comme la liste à l'écran : sans ce regroupement,

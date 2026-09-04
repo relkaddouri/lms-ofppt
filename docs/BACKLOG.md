@@ -283,6 +283,13 @@ L'ordre ci-dessous est arrêté : chaque atome se termine et se teste avant que 
 
 ---
 
+- [x] **7.25bis — Le badge d'un chapitre dit ce qui manque** (§4.4) : conséquence du regroupement, relevée par le porteur de projet. Un chapitre qui couvre quatre séances et dont une seule porte son support s'affichait « rédigé » — trois séances restaient vides, et le stagiaire qui en ouvrait une ne voyait rien. Le badge compte désormais : « à rédiger », « 1 / 4 rédigés », « rédigé ». Même traitement pour les grilles de correction d'un TP.
+  L'avancement en tête de document ne compte que les chapitres **entièrement** rédigés : compter un chapitre à moitié écrit comme fait donnerait un indicateur flatteur et faux.
+  **Test** : les trois états sur des chapitres fabriqués (0, 1, 3 et 4 supports sur 4 séances), et un document de 4 chapitres dont un commencé affiche 2/4, pas 3/4.
+  **Non fait, en attente d'arbitrage** : propager automatiquement un support aux autres séances du même objectif. Ça fermerait le trou pour de bon, mais impliquerait qu'un objectif ne puisse jamais avoir deux supports distincts.
+
+---
+
 - [ ] ~~**7.26 — Regroupement des ressources côté stagiaire et vue progressive** (§4.4, §4.5)~~ — **abandonné le 4 septembre 2026, décision du porteur de projet.** Les paragraphes correspondants restent dans le PRD ; ils ne sont pas implémentés et ne sont pas à reprendre sans nouvelle demande.
   **Ce qui existe déjà de ce périmètre, par ricochet d'autres atomes** : le support d'une séance et son corrigé partagé (§4.4) sont sur la même page côté stagiaire, et `devoirs.seance_id` est en base depuis la Phase 4 — la vue Devoirs ne l'exploite simplement pas. Rien à défaire si la décision change.
 
