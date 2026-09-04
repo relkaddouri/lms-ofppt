@@ -304,6 +304,19 @@ L'ordre ci-dessous est arrêté : chaque atome se termine et se teste avant que 
 
 ---
 
+## Phase 8 — Espace formateur responsive (design §3bis)
+
+L'espace formateur était pensé desktop-only ; il doit désormais fonctionner sur mobile au même niveau de finition que l'espace stagiaire. **27 écrans formateur**, découpés en 9 atomes, dans l'ordre de priorité du §3bis : le quotidien d'abord, la configuration lourde en dernier.
+
+- [x] **8.1 — Socle mobile** : les primitives que les huit atomes suivants réutilisent, plutôt que huit interprétations du même pattern.
+  - `components/ui/ListeCartes.tsx` — une liste décrite par ses colonnes, rendue en tableau au-dessus de 768px et en cartes en dessous. Chaque colonne porte un rôle (`titre`, `meta`, `detail`, `action`) qui dit sa place dans la carte. Les deux rendus coexistent dans le DOM, l'un caché par CSS : détecter la largeur en JavaScript ferait clignoter la liste à l'hydratation et se tromperait au rendu serveur.
+  - **Cibles tactiles à 44px sous 768px** : `Button` sur ses trois tailles courantes, et le menu « … » à 44×44 avec ses entrées à 44 de haut.
+  - **Menu « … » repositionné** : il s'alignait sur le bord droit du bouton et sortait de l'écran quand ce bord était trop à gauche — visible seulement sur petit écran.
+  - **Vérifié** : le tiroir hamburger annoncé par le §3bis comme « déjà en place » l'est effectivement (`AppShell`, overlay `md:hidden`). Rien à faire de ce côté.
+  **Test** : rendu comparé à 375px et à 1280px sur une liste de trois modules — cartes empilées d'un côté, tableau à six colonnes de l'autre, état vide dans les deux cas.
+
+---
+
 ## Points de vigilance — pas des atomes
 
 À garder en tête à chaque changement de schéma, sans traitement immédiat.
