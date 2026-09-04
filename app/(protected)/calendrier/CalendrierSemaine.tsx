@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Badge from "@/components/ui/Badge";
@@ -78,6 +79,12 @@ export default function CalendrierSemaine({
 }) {
   const router = useRouter();
   const aujourdhui = iso(new Date());
+  // Vue par jour sous 768px : on ouvre sur aujourd'hui quand il tombe dans la
+  // semaine affichée, sur le lundi sinon.
+  const [jourActif, setJourActif] = useState(() => {
+    const i = [0, 1, 2, 3, 4, 5].findIndex((n) => decale(lundi, n) === aujourdhui);
+    return i === -1 ? 0 : i;
+  });
   const jours = JOURS.map((nom, i) => {
     const date = decale(lundi, i);
     return { nom, date, estAujourdhui: date === aujourdhui };
@@ -276,7 +283,9 @@ export default function CalendrierSemaine({
       ) : null}
 
       <div className="mt-4">
-        <div className="overflow-x-auto">
+        {/* La grille hebdomadaire demande 680px : sous 768px elle cède la
+            place à la vue par jour (design_system.md §3bis). */}
+        <div className="hidden overflow-x-auto md:block">
           {/* `table-fixed` donne aux six jours la même largeur : sans lui, le
               seul jour occupé écrasait les cinq autres. */}
           <table className="w-full min-w-[680px] table-fixed border-collapse overflow-hidden rounded-[14px] border border-border bg-surface">
@@ -479,6 +488,171 @@ export default function CalendrierSemaine({
               ))}
             </tbody>
           </table>
+        </div>
+
+        {/* ── Sous 768px : une journée à la fois ────────────────────── */}
+        <div className="md:hidden">
+          {/* La bande des six jours remplace la grille sans la perdre : on
+              choisit son jour, et on voit d'un coup d'œil lesquels sont
+              chargés — ce que la grille donnait et qu'une simple flèche
+              précédent/suivant ferait disparaître. */}
+          <div className="flex gap-1.5">
+            {jours.map((j, i) => {
+              const compte = seances.filter((s) => s.date === j.date).length;
+              const actif = i === jourActif;
+              return (
+                <button
+                  key={j.date}
+                  type="button"
+                  onClick={() => setJourActif(i)}
+                  aria-current={actif ? "date" : undefined}
+                  aria-label={`${j.nom} ${j.date.slice(8)} — ${compte} séance${compte > 1 ? "s" : ""}`}
+                  className={`flex min-h-11 flex-1 flex-col items-center gap-1 rounded-[10px] border px-1 py-2 transition-colors duration-150 ease-out ${
+                    actif
+                      ? "border-ink bg-ink text-white"
+                      : j.estAujourdhui
+                        ? "border-border-strong bg-surface text-ink"
+                        : "border-border bg-surface text-slate-2"
+                  }`}
+                >
+                  <span className="text-[11.5px] font-semibold">{j.nom}</span>
+                  <span className="font-mono text-[13px]">{j.date.slice(8)}</span>
+                  <span
+                    aria-hidden
+                    className={`h-1 w-1 rounded-full ${
+                      compte === 0
+                        ? "bg-transparent"
+                        : actif
+                          ? "bg-white"
+                          : "bg-teal"
+                    }`}
+                  />
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="mt-3 flex flex-col gap-2.5">
+            {(() => {
+              const j = jours[jourActif]!;
+              const indispoJour = indispoDuJour(j.date).filter(
+                (i) => i.demi_journee === null,
+              );
+              const ctrls = controlesDuJour(j.date);
+              const duJour = CRENEAUX_JOUR.map((creneau, ligne) => ({
+                creneau,
+                ligne,
+                seances: placees.get(`${j.date}|${ligne}`) ?? [],
+                indispos: indispoDuJour(j.date, ligne).filter(
+                  (i) => i.demi_journee !== null,
+                ),
+              })).filter((b) => b.seances.length > 0 || b.indispos.length > 0);
+
+              if (indispoJour.length > 0) {
+                return (
+                  <p className="rounded-[10px] border border-border-strong bg-paper px-4 py-3 text-sm text-slate-2">
+                    {indispoJour.map((i) => libelleIndispo(i)).join(" · ")} —
+                    journée non travaillée.
+                  </p>
+                );
+              }
+
+              if (duJour.length === 0 && ctrls.length === 0) {
+                return (
+                  <p className="rounded-[10px] border border-border bg-surface px-4 py-6 text-center text-sm text-slate">
+                    Aucune séance ce jour-là.
+                  </p>
+                );
+              }
+
+              return (
+                <>
+                  {ctrls.map((c) => (
+                    <Link
+                      key={c.id}
+                      href={`/modules/${c.module_id}/controle`}
+                      className={`block rounded-[10px] px-4 py-3 no-underline ${
+                        c.confirmee
+                          ? "border-2 border-solid border-ink bg-wash"
+                          : "border border-dashed border-slate/60 bg-surface"
+                      }`}
+                    >
+                      <span className="block text-[11px] font-semibold uppercase tracking-wide text-ink">
+                        {c.type === "EFM"
+                          ? c.type_efm === "regional"
+                            ? "EFM régional"
+                            : "EFM local"
+                          : "Contrôle continu"}
+                      </span>
+                      <span className="mt-0.5 block text-sm text-ink">
+                        {c.groupeNom}
+                      </span>
+                    </Link>
+                  ))}
+
+                  {duJour.map(({ creneau, ligne, seances: ici, indispos }) => (
+                    <section key={ligne} className="flex flex-col gap-1.5">
+                      <p className="font-mono text-[11.5px] uppercase tracking-[0.12em] text-slate-light">
+                        {formatHeure(creneau.debut)}–{formatHeure(creneau.fin)}
+                      </p>
+                      {indispos.map((i) => (
+                        <p
+                          key={i.id}
+                          className="rounded-[9px] border border-border bg-wash px-3 py-2 text-[13px] font-semibold text-slate-2"
+                        >
+                          {libelleIndispo(i)} (
+                          {i.demi_journee === "matin" ? "matin" : "après-midi"})
+                        </p>
+                      ))}
+                      {ici.map(({ seance: s, span: n }) => {
+                        const couleur = couleurGroupe(s.groupe_id);
+                        return (
+                          <Link
+                            key={s.id}
+                            href={`/groupes/${s.groupe_id}/seances/${s.id}`}
+                            style={{
+                              background: couleur.fond,
+                              borderColor: couleur.trait,
+                            }}
+                            className={`block rounded-[10px] border border-l-[3px] px-4 py-3 no-underline ${
+                              s.statut === "fait" ? "opacity-60" : ""
+                            }`}
+                          >
+                            <span className="flex items-baseline gap-2">
+                              <span
+                                className="font-mono text-[12px]"
+                                style={{ color: couleur.trait, opacity: 0.85 }}
+                              >
+                                {s.heure_debut ? formatHeure(s.heure_debut) : "—"}
+                                {s.heure_fin ? `–${formatHeure(s.heure_fin)}` : ""}
+                              </span>
+                              <span
+                                className="ml-auto font-mono text-[11.5px]"
+                                style={{ color: couleur.trait, opacity: 0.7 }}
+                              >
+                                {n * 2.5} h
+                              </span>
+                            </span>
+                            <span
+                              className="mt-1 block text-sm font-semibold"
+                              style={{ color: couleur.trait }}
+                            >
+                              {s.groupeNom}
+                              {s.codeOperationnel ? ` · ${s.codeOperationnel}` : ""}
+                            </span>
+                            <span className="mt-0.5 block text-[13px] leading-snug text-slate-2">
+                              {s.objectif ??
+                                libelleModule(s.codeOperationnel, s.moduleNom)}
+                            </span>
+                          </Link>
+                        );
+                      })}
+                    </section>
+                  ))}
+                </>
+              );
+            })()}
+          </div>
         </div>
 
         {horsGrille.length > 0 ? (

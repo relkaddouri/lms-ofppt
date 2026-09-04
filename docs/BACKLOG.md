@@ -325,6 +325,13 @@ L'espace formateur était pensé desktop-only ; il doit désormais fonctionner s
 
 ---
 
+- [x] **8.3 — Calendrier : une journée à la fois sous 768px** (design §3bis) : la grille hebdomadaire réclamait 680px de large ; elle ne s'affiche plus qu'au-dessus de 768px. En dessous, une bande de six jours sert à la fois de sélecteur et de vue d'ensemble — chaque jour porte son nom, son quantième et un point quand il compte des séances. Le jour ouvert affiche ses créneaux dans l'ordre, avec les mêmes cartes de séance qu'en grille, couleur de groupe comprise.
+  **Choix** : la bande de jours plutôt que de simples flèches précédent/suivant. Le §3bis autorisait les flèches, mais elles auraient fait disparaître ce que la grille donne gratuitement — savoir d'un regard que le jeudi est chargé. La bande coûte une ligne et rend cette information.
+  L'écran s'ouvre sur aujourd'hui quand la semaine affichée le contient, sur le lundi sinon. Un jour non travaillé le dit en toutes lettres au lieu d'un motif hachuré, illisible sur une carte.
+  **Test** : `tsc` et build verts. **Rendu visuel non vérifié** — le navigateur intégré est resté sur l'écran de connexion.
+
+---
+
 ## Points de vigilance — pas des atomes
 
 À garder en tête à chaque changement de schéma, sans traitement immédiat.
