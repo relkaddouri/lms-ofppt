@@ -13,6 +13,12 @@ import { couleurGroupe } from "@/lib/couleurs-groupe";
  * C'est la forme du document officiel — section I.B du cahier du formateur —
  * et c'est aussi la seule qui rende lisible d'un coup d'œil ce que le motif
  * réserve à chaque groupe.
+ *
+ * Sous 768px, six colonnes de jours ne tiennent pas : la grille réclame
+ * 720px de large. Elle cède la place à une liste par groupe (design_system
+ * §3bis) — le groupe en tête, ses créneaux dessous, un par ligne. C'est la
+ * lecture que le formateur fait le plus souvent de toute façon : « ce
+ * groupe, je le vois quand ? »
  */
 export default function GrilleMotif({
   motif,
@@ -45,6 +51,22 @@ export default function GrilleMotif({
     ...new Map(motif.creneaux.map((c) => [c.groupe_id, c.groupeNom])).entries(),
   ].sort((a, b) => a[1].localeCompare(b[1], "fr"));
 
+  // La liste mobile prend `motif.creneaux` et non `places` : elle n'a pas la
+  // contrainte des blocs de 2 h 30 qui écarte certains créneaux de la grille.
+  // Elle en montre donc davantage — d'où l'avertissement masqué sous 768px,
+  // où il serait faux.
+  const parGroupe = groupesVus.map(([id, nom]) => ({
+    id,
+    nom,
+    creneaux: motif.creneaux
+      .filter((c) => c.groupe_id === id)
+      .sort(
+        (a, b) =>
+          a.jour_semaine - b.jour_semaine ||
+          a.heure_debut.localeCompare(b.heure_debut),
+      ),
+  }));
+
   if (motif.creneaux.length === 0) {
     return (
       <p className="px-6 py-10 text-center text-[14.5px] text-slate-light">
@@ -76,7 +98,7 @@ export default function GrilleMotif({
         </div>
       ) : null}
 
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto max-md:hidden">
       <table className="w-full min-w-[720px] border-collapse">
         <thead>
           <tr>
@@ -186,8 +208,70 @@ export default function GrilleMotif({
       </table>
       </div>
 
+      <ul className="flex list-none flex-col gap-2.5 px-4 pb-4 md:hidden">
+        {parGroupe.map(({ id, nom, creneaux }) => {
+          const couleur = couleurGroupe(id);
+          return (
+            <li
+              key={id}
+              className="overflow-hidden rounded-[10px] border border-l-[3px] border-border"
+              style={{ borderLeftColor: couleur.trait }}
+            >
+              <p
+                className="px-3 py-2 text-[14px] font-semibold"
+                style={{ background: couleur.fond, color: couleur.trait }}
+              >
+                {nom}
+              </p>
+              <ul className="list-none">
+                {creneaux.map((c) => {
+                  const jour = JOURS.find((j) => j.valeur === c.jour_semaine);
+                  return (
+                    <li
+                      key={c.id}
+                      className="flex items-center gap-3 border-t border-separator px-3 py-2"
+                    >
+                      <span className="w-12 shrink-0 text-[13.5px] font-medium text-body">
+                        {jour?.court ?? "—"}
+                      </span>
+                      <span className="font-mono text-[13px] text-slate-2">
+                        {formatHeure(c.heure_debut)}–{formatHeure(c.heure_fin)}
+                      </span>
+                      {modifiable && (onModifier || onSupprimer) ? (
+                        <span className="ml-auto flex shrink-0 items-center gap-1">
+                          {onModifier ? (
+                            <button
+                              type="button"
+                              aria-label={`Déplacer ${nom} du ${jour?.long} ${formatHeure(c.heure_debut)}`}
+                              onClick={() => onModifier(c)}
+                              className="flex h-11 w-11 items-center justify-center rounded-lg text-slate transition-colors duration-150 ease-out hover:bg-paper hover:text-ink"
+                            >
+                              <Pencil size={15} aria-hidden />
+                            </button>
+                          ) : null}
+                          {onSupprimer ? (
+                            <button
+                              type="button"
+                              aria-label={`Retirer ${nom} du ${jour?.long} ${formatHeure(c.heure_debut)}`}
+                              onClick={() => onSupprimer(c.id)}
+                              className="flex h-11 w-11 items-center justify-center rounded-lg text-coral-dark transition-colors duration-150 ease-out hover:bg-alert-wash"
+                            >
+                              <Trash2 size={15} aria-hidden />
+                            </button>
+                          ) : null}
+                        </span>
+                      ) : null}
+                    </li>
+                  );
+                })}
+              </ul>
+            </li>
+          );
+        })}
+      </ul>
+
       {horsGrille.length > 0 ? (
-        <p className="mx-4 mb-3 rounded-[10px] border border-border-strong bg-paper px-4 py-3 text-[13.5px] text-slate-2">
+        <p className="mx-4 mb-3 rounded-[10px] border border-border-strong bg-paper px-4 py-3 text-[13.5px] text-slate-2 max-md:hidden">
           {horsGrille.length} créneau{horsGrille.length > 1 ? "x" : ""} ne
           tombe{horsGrille.length > 1 ? "nt" : ""} sur aucun bloc de 2 h 30 et
           n&apos;apparaî{horsGrille.length > 1 ? "ssent" : "t"} pas dans la

@@ -378,6 +378,12 @@ L'espace formateur était pensé desktop-only ; il doit désormais fonctionner s
   **Test** : mesuré à 390px et **contre-mesuré à 1200px** — c'est ce second passage qui a rattrapé une régression, `flex-wrap` combiné au `w-full` d'`inputStyles` renvoyant les trois contrôles à la ligne y compris sur bureau.
   **Non vérifié à l'écran** : les copies, la correction d'une copie et le corps de l'historique. La base ne contient **aucune passation** (`content-range: */0`) ni aucune entrée d'audit — ces trois écrans ne rendent que leur état vide. Corrigés à la lecture, à revoir dès qu'un stagiaire aura rendu une copie.
 
+- [x] **8.9 — Les trois grilles larges** (design §3bis) : les seules qui restaient à défiler horizontalement dans leur conteneur. Chacune a l'équivalent mobile que le §3bis lui assigne, plutôt qu'un défilement latéral.
+  - **Emploi du temps** (`GrilleMotif`, 720px) → **une liste par groupe** : le groupe en tête avec sa couleur, ses créneaux dessous, un par ligne — `DDOUX201 · Lun 13 h 30–18 h 30 · Mar 8 h 30–13 h 30 …`. C'est la lecture la plus fréquente de toute façon : « ce groupe, je le vois quand ? ». La liste prend `motif.creneaux` et non les cases placées : elle n'a pas la contrainte des blocs de 2 h 30, donc elle en montre **davantage** que la grille — d'où l'avertissement « n'apparaît pas dans la grille » masqué sous 768px, où il serait faux.
+  - **Tableau de service** (960px, neuf colonnes) → **une carte par affectation**, les quatre valeurs horaires en mini-tableau 2×2 : c'est la seule information du document qui se lise par comparaison, S1 face à S2 et P face à S. Le total et le MHT AFF général ferment la liste dans leur propre carte.
+  - **Répartition horaire** (720px) → **une carte par objectif**, avec **théorique et pratique appariés à l'intérieur** — seule exception accordée à la règle « jamais deux champs côte à côte » : on les saisit l'un en fonction de l'autre, et leur somme doit rester sous les yeux. Les lignes d'évaluation, dont les heures sont réservées d'office, ont une carte sans champ.
+  **Test** : mesuré à 390px et contre-mesuré à 1200px sur les trois — `scrollWidth === clientWidth` partout, tables toujours visibles sur bureau (866 / 960 / 770 px) et listes mobiles bien masquées.
+
 ---
 
 ## Points de vigilance — pas des atomes

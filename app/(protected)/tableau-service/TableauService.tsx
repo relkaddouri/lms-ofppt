@@ -257,7 +257,7 @@ export default function TableauService({
                 type="button"
                 onClick={() => setAnnee(o.valeur)}
                 aria-pressed={annee === o.valeur}
-                className={`whitespace-nowrap rounded-lg px-3.5 py-2 text-sm font-semibold transition-colors duration-150 ease-out ${
+                className={`whitespace-nowrap rounded-lg px-3.5 py-2 text-sm font-semibold transition-colors duration-150 ease-out max-md:min-h-11 ${
                   annee === o.valeur
                     ? "bg-surface text-ink shadow-[0_1px_2px_rgba(46,59,78,0.12)]"
                     : "text-slate-2 hover:text-ink"
@@ -270,7 +270,7 @@ export default function TableauService({
         </div>
       ) : null}
 
-      <div className="overflow-hidden rounded-[14px] border border-border bg-surface shadow-repos">
+      <div className="overflow-hidden rounded-[14px] border border-border bg-surface shadow-repos max-md:hidden">
         <div className="overflow-x-auto">
           <div className="min-w-[960px]">
             <div className={`${GRILLE} border-b border-border bg-paper-alt px-6 py-3`}>
@@ -389,6 +389,100 @@ export default function TableauService({
           </div>
         </div>
       </div>
+
+      {/* Sous 768px, neuf colonnes réclamaient 960px de large. Le §3bis
+          demande une ligne empilée par affectation, avec les quatre heures en
+          mini-tableau interne : c'est la seule information du document qui se
+          lise par comparaison, S1 face à S2 et P face à S. */}
+      <ul className="flex list-none flex-col gap-2.5 md:hidden">
+        {visibles.length === 0 ? (
+          <li className="flex flex-col items-center gap-1 rounded-[14px] border border-border bg-surface px-6 py-10 text-center shadow-repos">
+            <span className="text-[15px] font-semibold text-ink">
+              Aucune affectation
+            </span>
+            <span className="text-[13.5px] text-slate-light">
+              Le tableau se remplit dès qu&apos;un module est affecté à un
+              groupe.
+            </span>
+          </li>
+        ) : (
+          visibles.map((l) => (
+            <li
+              key={l.id}
+              className="rounded-[14px] border border-border bg-surface px-4 py-3.5 shadow-repos"
+            >
+              <p className="text-[15px] font-semibold leading-snug text-ink">
+                {l.module}
+              </p>
+              <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-slate-2">
+                <span className="font-mono">{l.codeModule ?? "—"}</span>
+                <span>·</span>
+                <span>{l.groupe}</span>
+                <span>·</span>
+                <span>{l.annee ?? "—"}</span>
+              </p>
+              <p className="mt-0.5 text-[13px] text-slate-light">{l.filiere}</p>
+
+              <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 border-t border-separator pt-3">
+                {[
+                  { titre: "MHT AFF P S1", valeur: l.presentielS1, mutualisee: false },
+                  { titre: "MHT AFF S S1", valeur: l.fadS1, mutualisee: l.fadMutualisee },
+                  { titre: "MHT AFF P S2", valeur: l.presentielS2, mutualisee: false },
+                  { titre: "MHT AFF S S2", valeur: l.fadS2, mutualisee: l.fadMutualisee },
+                ].map((c) => (
+                  <div key={c.titre} className="flex flex-col gap-0.5">
+                    <dt className="font-mono text-[10.5px] uppercase tracking-[0.08em] text-slate-light">
+                      {c.titre}
+                    </dt>
+                    <dd className="font-mono text-[14.5px] text-ink">
+                      {c.mutualisee ? (
+                        <span
+                          className="text-muted"
+                          title={`${c.valeur} h portées par l'autre groupe`}
+                        >
+                          —
+                        </span>
+                      ) : (
+                        c.valeur
+                      )}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            </li>
+          ))
+        )}
+
+        {visibles.length > 0 ? (
+          <li className="rounded-[14px] border border-border bg-wash px-4 py-3.5">
+            <dl className="grid grid-cols-2 gap-x-4 gap-y-2">
+              {[
+                { titre: "Total P S1", valeur: total.pS1 },
+                { titre: "Total S S1", valeur: total.sS1 },
+                { titre: "Total P S2", valeur: total.pS2 },
+                { titre: "Total S S2", valeur: total.sS2 },
+              ].map((c) => (
+                <div key={c.titre} className="flex flex-col gap-0.5">
+                  <dt className="font-mono text-[10.5px] uppercase tracking-[0.08em] text-slate-2">
+                    {c.titre}
+                  </dt>
+                  <dd className="font-mono text-[15px] font-bold text-ink">
+                    {c.valeur}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+            <p className="mt-3 flex items-baseline justify-between gap-3 border-t border-border-strong pt-3">
+              <span className="font-mono text-[11.5px] uppercase tracking-[0.08em] text-slate-2">
+                MHT AFF S1+S2 (P+S)
+              </span>
+              <span className="font-display text-[18px] font-bold text-ink">
+                {general}
+              </span>
+            </p>
+          </li>
+        ) : null}
+      </ul>
 
       <p className="max-w-[820px] text-[13.5px] text-slate-light">
         Un tiret dans une colonne <span className="font-semibold text-slate-2">S</span>{" "}
