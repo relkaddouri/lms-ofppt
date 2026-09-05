@@ -4,7 +4,7 @@
 
 Identité "tableau de pilotage clair" inspirée d'un dashboard SaaS professionnel (type outil RH — vue liste, vue tableau/board, fil de commentaires avec mentions et réactions, panneau de notifications) : fond clair, cartes blanches, hiérarchie nette, statuts lisibles au premier coup d'œil. Ça correspond bien à ce que fait l'outil : le formateur pilote des groupes de stagiaires qui avancent par étapes, exactement comme un recruteur pilote des candidats à travers un pipeline.
 
-**Deux publics, deux logiques d'écran.** L'espace formateur (desktop, dense, orienté tableau/données) et l'espace stagiaire (mobile, aéré, orienté fil/consultation rapide) partagent la même palette et la même typographie, mais pas la même densité d'information ni les mêmes patterns de navigation. Ne jamais transposer un pattern formateur (tableau dense, barre latérale) tel quel côté stagiaire.
+**Deux publics, une exigence unique de responsive — corrigé v3.** L'espace formateur (dense, orienté tableau/données) et l'espace stagiaire (aéré, orienté fil/consultation rapide) gardent des logiques de densité différentes, mais **les deux doivent désormais fonctionner pleinement sur mobile**, au même niveau de finition. Ce n'était pas le cas jusqu'ici — l'espace formateur était pensé desktop-only ; ce n'est plus la règle. Voir §3bis pour les patterns de conversion du formateur en mobile. Ne jamais transposer un pattern stagiaire (fil, cartes pleine largeur) tel quel côté formateur, ni l'inverse — la densité reste différente, seule l'exigence de fonctionner sur petit écran devient commune aux deux.
 
 **Ce fichier est un contrat de gouvernance, pas juste une feuille de style.** Toute personne (humaine ou agent IA) qui ajoute un composant à l'avenir doit d'abord vérifier s'il existe déjà un token ou un pattern ici avant d'en inventer un nouveau. La section 12 (Gouvernance) fixe la procédure.
 
@@ -107,18 +107,28 @@ Identité "tableau de pilotage clair" inspirée d'un dashboard SaaS professionne
 
 `999px` pour toute forme pilule (badge, avatar). `7-9px` pour les éléments interactifs de petite taille (boutons, champs, puces). `10-14px` pour les cartes et conteneurs. Ne pas descendre sous 7px ni dépasser 14px hors pilule.
 
-### Documents PDF — même identité que l'app, sans exception
+### Documents PDF — même identité que l'app, sans exception (ajout v3)
 
-Un PDF produit par Pédago est un document de l'établissement, pas un export technique. Il porte la même identité que les écrans :
+**Constat** : deux exports (compilation support de cours, compilation support de TP) sont sortis en texte brut, sans aucune trace de l'identité visuelle — pas de `Sora` sur les titres, pas de bleu-ardoise, aucune couleur. Ce n'est pas acceptable pour un seul document et tolérable pour le reste : **tout PDF généré par l'app doit respecter le design system au même titre qu'un écran** — polices (`Sora` pour les titres, `Source Sans 3` pour le corps, `IBM Plex Mono` pour les données chiffrées/codes), palette de couleurs (§1), même niveau de soin de mise en page qu'à l'écran.
 
-- **`Sora`** sur les titres, la page de garde et les en-têtes de séance ou de section.
-- **`Source Sans 3`** pour tout le corps de texte.
-- **`IBM Plex Mono`** pour les codes, dates, numéros et tout ce qui s'aligne en colonne.
-- **La palette du §1**, appliquée à la page de garde, aux titres de section et aux séparateurs — pas du noir sur blanc.
+**Portée** : cette règle couvre tous les documents exportés, pas seulement les deux qui ont révélé le problème — Tableau de service, classeur pédagogique, manuel formateur, contrôle et son corrigé, fiche de préparation, compilation de support (cours et TP), et tout futur export. Un nouveau type de document PDF ajouté au produit hérite de cette règle par défaut, elle n'a pas besoin d'être redemandée à chaque fois.
 
-La règle vaut pour **tous** les générateurs, pas seulement ceux qu'on vient de retoucher. Un document livré en texte brut, sans police ni couleur, est un défaut à corriger, pas un état acceptable.
+**Vérification recommandée** : puisque plusieurs générateurs PDF existent dans le code (pas un seul point central), une vérification ponctuelle de l'ensemble des exports existants est nécessaire pour rattraper ceux qui, comme ces deux-là, ont été construits avant que cette règle soit explicite — pas seulement corriger les deux signalés et laisser les autres non vérifiés.
 
-Corollaire, cohérent avec `conventions.md` : les éléments visuels communs — page de garde, en-tête, pied de page avec logo — ont **une seule implémentation** partagée. Les dupliquer par générateur les ferait diverger à la première retouche.
+## 3bis. Espace formateur responsive — patterns de conversion (ajout v3)
+
+**Principe général** : sous 768px, l'espace formateur ne doit jamais casser, défiler horizontalement de façon incontrôlée, ni tronquer une information essentielle sans moyen d'y accéder. Chaque pattern desktop dense a un équivalent mobile défini ci-dessous — ne pas en inventer un nouveau au cas par cas.
+
+- **Barre latérale** → tiroir en hamburger sous 768px (pattern déjà confirmé et en place). Reste la référence pour la navigation principale sur mobile côté formateur.
+- **Tableau dense** (liste de modules, groupes, stagiaires, contrôles...) → sous 768px, **chaque ligne devient une carte empilée** reprenant le motif de la ligne d'identité à deux niveaux (§4) plutôt qu'un tableau à défilement horizontal. Les colonnes secondaires (celles qui ne sont pas le nom/titre principal) passent en sous-texte à l'intérieur de la carte, pas dans des colonnes séparées.
+- **Grille large à plusieurs colonnes fixes** (le calendrier à 4 créneaux × 6 jours, le Tableau de service à 4 colonnes d'heures) → sous 768px, bascule sur une **vue par jour** (calendrier) ou une **vue par ligne empilée avec les 4 valeurs en mini-tableau interne** (Tableau de service) plutôt que de réduire les colonnes jusqu'à l'illisible. Un sélecteur de jour (précédent/suivant) remplace la grille hebdomadaire complète pour le calendrier.
+- **Formulaire de saisie multi-colonnes** (répartition horaire, assignation de module) → passe en **une seule colonne**, champs empilés verticalement, jamais deux champs côte à côte sous 768px.
+- **Mode animation (§4.3ter)** — déjà conçu épuré et centré sur une seule phase à la fois : le motif est nativement compatible mobile, vérifier seulement les tailles de police et de zones tactiles (44px minimum, comme le reste du mobile).
+- **Export PDF et boutons d'action secondaires** — restent accessibles mais peuvent se regrouper dans un menu "..." sous 768px plutôt que d'occuper une barre d'outils entière, cohérent avec la règle déjà en place pour les actions de ligne (§11).
+
+**Cibles tactiles — les 44px valent aussi côté formateur.** La règle du §6 n'était écrite que pour l'espace stagiaire. Sous 768px, tout bouton et toute action d'icône de l'espace formateur atteint 44px de haut : `Button` l'applique à ses trois tailles courantes par `max-md:min-h-11`, et le menu « … » passe à 44×44. Au-dessus de 768px, les tailles denses reprennent — un écran de bureau n'a pas besoin de cibles de doigt.
+
+**Priorité de traitement** : les écrans consultés au quotidien depuis un téléphone (tableau de bord, calendrier, présences, animation de séance) doivent être traités avec le plus grand soin ; les écrans de configuration lourde consultés rarement (import du référentiel, paramétrage initial d'une répartition horaire) peuvent se contenter d'une conversion correcte sans optimisation poussée, tant qu'ils restent utilisables.
 
 ## 4. Élément signature : la ligne d'identité à deux niveaux
 
@@ -264,6 +274,7 @@ Une fiche prescrite ou un tableau de suggestions pédagogiques contient beaucoup
 - **Champ de formulaire** : rayon 9px, **bordure 1px `--border-strong`** (pas `--border`, qui est trop pâle et disparaît sur fond blanc — réservée aux cartes et séparateurs), label 14px/600 au-dessus du champ, focus en halo sarcelle 3px (`--ofppt-teal` à faible opacité)
 - **Carte** : padding 24px (pas 16px), filet interne éventuel en `--separator`
 - **PartageContenu** : bandeau et panneau de proposition du contenu partagé entre groupes parallèles (voir §5.8)
+- **ListeCartes** : une liste qui est un tableau au-dessus de 768px et des cartes en dessous (§3bis). Décrite par ses colonnes, chacune portant un rôle — `titre`, `meta`, `detail`, `action` — qui dit sa place dans la carte. C'est l'implémentation unique du pattern « tableau dense → cartes empilées » : aucun écran ne réécrit sa propre conversion.
 
 ## 11. Règles UX
 

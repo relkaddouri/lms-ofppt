@@ -8,7 +8,7 @@ export default async function JournalPage() {
   const entrees = await getJournalAudit(7);
 
   return (
-    <div className="p-8">
+    <div className="px-4 py-6 md:p-8">
       <Breadcrumb
         items={[
           { label: "Paramètres", href: "/parametres" },

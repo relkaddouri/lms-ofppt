@@ -49,7 +49,9 @@ export default function GroupModulesList({
         return (
           <div
             key={m.module_id}
-            className="flex items-center justify-between gap-4 rounded-[14px] border border-border bg-surface shadow-repos p-4"
+            // Sous 768px le bouton « Ouvrir » et le badge écrasaient
+            // l'intitulé du module : la ligne s'empile (§3bis).
+            className="flex flex-col gap-3 rounded-[14px] border border-border bg-surface p-4 shadow-repos md:flex-row md:items-center md:justify-between md:gap-4"
           >
             <div className="flex min-w-0 items-center gap-3">
               {m.code_operationnel ? (
@@ -58,7 +60,7 @@ export default function GroupModulesList({
                 </span>
               ) : null}
               <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-ink">
+                <p className="text-sm font-semibold text-ink md:truncate">
                   {m.nom}
                 </p>
                 <p className="mt-0.5 text-xs text-slate">
@@ -66,11 +68,11 @@ export default function GroupModulesList({
                 </p>
               </div>
             </div>
-            <div className="flex shrink-0 items-center gap-3">
+            <div className="flex shrink-0 flex-wrap items-center gap-3">
               {status}
               <Link
                 href={href}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-ink hover:bg-paper focus:outline-none focus:ring-2 focus:ring-ink"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-ink hover:bg-paper focus:outline-none focus:ring-2 focus:ring-ink max-md:min-h-11 max-md:flex-1 max-md:justify-center"
               >
                 {kind === "fiches" ? (
                   <FileText size={16} />

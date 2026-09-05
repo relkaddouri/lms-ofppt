@@ -184,7 +184,7 @@ export default async function DashboardPage() {
         ))}
       </div>
 
-      <div className="grid gap-5 xl:grid-cols-[1.35fr_1fr]">
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1.35fr_1fr]">
         <section className="flex flex-col gap-5 rounded-[14px] border border-border bg-surface p-6 shadow-repos">
           <div className="flex items-start justify-between gap-4">
             <div className="flex flex-col gap-1">
@@ -271,7 +271,10 @@ export default async function DashboardPage() {
                   <li key={g.id} className="border-b border-separator last:border-0">
                     <Link
                       href={`/groupes/${g.id}/progression`}
-                      className="grid grid-cols-[minmax(0,1.4fr)_minmax(72px,0.7fr)_minmax(110px,1fr)] items-center gap-4 px-6 py-[18px] no-underline transition-colors duration-150 ease-out hover:bg-paper hover:no-underline"
+                      // Trois colonnes serrées à 375px deviennent illisibles :
+                      // sous 768px la ligne s'empile, le nom d'abord, puis la
+                      // date et la barre côte à côte (§3bis).
+                      className="grid grid-cols-1 items-center gap-3 px-5 py-4 no-underline transition-colors duration-150 ease-out hover:bg-paper hover:no-underline md:grid-cols-[minmax(0,1.4fr)_minmax(72px,0.7fr)_minmax(110px,1fr)] md:gap-4 md:px-6 md:py-[18px]"
                     >
                       <span className="flex min-w-0 items-center gap-3">
                         <span
@@ -291,7 +294,7 @@ export default async function DashboardPage() {
                         </span>
                       </span>
 
-                      <span className="flex flex-col gap-0.5">
+                      <span className="flex items-baseline gap-2 md:flex-col md:items-stretch md:gap-0.5">
                         <span className="font-mono text-[13px] text-slate-2">
                           {formatDateJour(g.date_fin, { court: true }, "—")}
                         </span>

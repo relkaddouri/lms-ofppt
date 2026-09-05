@@ -104,7 +104,7 @@ export default function NouvelleSeanceForm({
           </select>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <Input
             id="date"
             label="Date"
@@ -131,7 +131,7 @@ export default function NouvelleSeanceForm({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
             <label htmlFor="bloc" className="block text-sm font-medium text-ink">
               Bloc horaire

@@ -221,7 +221,7 @@ export default function EmploiDuTempsManager({
   }
 
   return (
-    <div className="p-8">
+    <div className="px-4 py-6 md:p-8">
       <BandeauRecalcul actif={enCours} />
       <div className="flex flex-wrap items-end justify-between gap-6">
         <div className="flex flex-col gap-2">

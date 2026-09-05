@@ -233,7 +233,7 @@ export default function CarteStage({ stage }: { stage: StageStagiaire }) {
         <div className="space-y-5 border-t border-border bg-paper p-4">
           <section>
             <h3 className="text-sm font-medium text-ink">Le stage</h3>
-            <div className="mt-2 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-2 grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
               <label className="block">
                 <span className="mb-1 block text-xs text-slate">Entreprise</span>
                 <Input
@@ -298,7 +298,7 @@ export default function CarteStage({ stage }: { stage: StageStagiaire }) {
             </div>
           </section>
 
-          <section className="grid gap-4 lg:grid-cols-2">
+          <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <div className="rounded-[14px] border border-border bg-surface p-3">
               <div className="flex items-baseline justify-between gap-2">
                 <h3 className="text-sm font-medium text-ink">Rapport</h3>
@@ -306,7 +306,7 @@ export default function CarteStage({ stage }: { stage: StageStagiaire }) {
                   {rapport === null ? "—" : rapport.toLocaleString("fr-FR")} / 20
                 </span>
               </div>
-              <div className="mt-2 grid gap-3 sm:grid-cols-2">
+              <div className="mt-2 grid grid-cols-1 gap-3 md:grid-cols-2">
                 <CaseNote
                   label="Présentation"
                   max={BAREME.rapport.presentation}
@@ -333,7 +333,7 @@ export default function CarteStage({ stage }: { stage: StageStagiaire }) {
                   {expose === null ? "—" : expose.toLocaleString("fr-FR")} / 20
                 </span>
               </div>
-              <div className="mt-2 grid gap-3 sm:grid-cols-2">
+              <div className="mt-2 grid grid-cols-1 gap-3 md:grid-cols-2">
                 <CaseNote
                   label="Fond"
                   max={BAREME.expose.fond}

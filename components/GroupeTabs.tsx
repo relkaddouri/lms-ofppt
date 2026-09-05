@@ -71,7 +71,13 @@ export default function GroupeTabs({
   };
 
   return (
-    <div className="relative flex items-stretch gap-1 border-t border-separator px-1">
+    <div
+      // Six onglets ne tiennent pas dans 375px et poussaient toute la page à
+      // 799px. La barre défile pour elle-même, en débordant jusqu'aux bords de
+      // l'écran pour que le geste soit naturel — un défilement voulu et borné,
+      // pas celui que le §3bis interdit.
+      className="relative -mx-4 flex items-stretch gap-1 overflow-x-auto border-t border-separator px-4 [scrollbar-width:none] md:mx-0 md:overflow-visible md:px-1"
+    >
       {principaux.map((o) => {
         const estActif = actif === o.key;
         return (
@@ -92,7 +98,7 @@ export default function GroupeTabs({
       })}
 
       {debordement.length > 0 ? (
-        <div ref={menuRef} className="relative ml-auto flex items-center">
+        <div ref={menuRef} className="relative ml-auto flex shrink-0 items-center">
           <button
             type="button"
             onClick={() => setOuvert((v) => !v)}

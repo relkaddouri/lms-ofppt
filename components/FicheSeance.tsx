@@ -331,7 +331,7 @@ export default function FicheSeance({
 
       {!edition ? (
         <div className="mt-4">
-          <dl className="grid gap-x-6 gap-y-2 sm:grid-cols-4">
+          <dl className="grid grid-cols-1 gap-x-6 gap-y-2 md:grid-cols-4">
             {(
               [
                 ["Nature", fiche.nature],
@@ -413,7 +413,7 @@ export default function FicheSeance({
       ) : null}
 
       {edition && !compact ? (
-        <div className="mt-4 grid gap-3 sm:grid-cols-3">
+        <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
           <div>
             <label className="block text-xs text-slate">Nature</label>
             <select
@@ -448,7 +448,7 @@ export default function FicheSeance({
               className={`${inputClass} mt-1`}
             />
           </div>
-          <div className="sm:col-span-3">
+          <div className="md:col-span-3">
             <label className="block text-xs text-slate">
               Fichiers de travail
             </label>
@@ -500,7 +500,7 @@ export default function FicheSeance({
                   </span>
                 </div>
 
-                <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_110px]">
+                <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-[1fr_110px]">
                   <div>
                     <label className="block text-xs text-slate">
                       Méthode active de la phase

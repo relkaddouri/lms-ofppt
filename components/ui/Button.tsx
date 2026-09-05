@@ -45,11 +45,14 @@ const variants: Record<ButtonVariant, string> = {
     "bg-coral border border-coral text-white hover:bg-coral-dark hover:border-coral-dark",
 };
 
+// `max-md:min-h-11` : sous 768px, tout bouton atteint 44px de haut. La règle
+// des 44px ne vaut plus seulement pour l'espace stagiaire — l'espace formateur
+// se tient au doigt lui aussi (design_system.md §3bis).
 const sizes: Record<ButtonSize, string> = {
-  sm: "rounded-lg px-3.5 py-2 text-[13.5px]",
-  md: "rounded-[9px] px-4 py-2.5 text-sm",
-  lg: "rounded-[9px] px-5 py-[11px] text-[15px]",
-  // Espace stagiaire : cible tactile de 44×44 px minimum.
+  sm: "rounded-lg px-3.5 py-2 text-[13.5px] max-md:min-h-11",
+  md: "rounded-[9px] px-4 py-2.5 text-sm max-md:min-h-11",
+  lg: "rounded-[9px] px-5 py-[11px] text-[15px] max-md:min-h-11",
+  // Cible tactile explicite, quelle que soit la largeur.
   touch: "rounded-[9px] min-h-11 min-w-11 px-4 py-2.5 text-sm",
 };
 

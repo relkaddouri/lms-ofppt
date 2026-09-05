@@ -157,7 +157,7 @@ export default function GroupeDetail({
             value={form.cef}
             onChange={(e) => setForm({ ...form, cef: e.target.value })}
           />
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <Input
               id="nom"
               label="Nom"
@@ -228,7 +228,7 @@ export default function GroupeDetail({
                   editingId === s.id ? (
                     <tr key={s.id} className="border-t border-border bg-paper">
                       <td className="px-4 py-3">
-                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
+                        <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
                           <Input
                             value={editForm.cef}
                             onChange={(e) =>

@@ -109,7 +109,7 @@ export default function GroupesManager({
   ].sort();
 
   return (
-    <div className="flex flex-col gap-6 px-6 py-10 md:px-10 md:pb-14">
+    <div className="flex flex-col gap-6 px-4 py-8 md:px-10 md:py-10 md:pb-14">
       <header className="flex flex-wrap items-end justify-between gap-6">
         <div className="flex flex-col gap-2">
           <span className="font-mono text-[11.5px] uppercase tracking-[0.12em] text-slate-light">
@@ -174,7 +174,7 @@ export default function GroupesManager({
         ) : null}
       </div>
 
-      <div className="grid gap-5 [grid-template-columns:repeat(auto-fill,minmax(320px,1fr))]">
+      <div className="grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(280px,1fr))] md:gap-5">
         {visibles.length === 0 ? (
           <div className="col-span-full flex flex-col items-center gap-1 rounded-[14px] border border-border bg-surface px-6 py-14 text-center shadow-repos">
             <span className="text-[15px] font-semibold text-ink">

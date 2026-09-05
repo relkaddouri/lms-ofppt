@@ -304,6 +304,72 @@ L'ordre ci-dessous est arrêté : chaque atome se termine et se teste avant que 
 
 ---
 
+## Phase 8 — Espace formateur responsive (design §3bis)
+
+L'espace formateur était pensé desktop-only ; il doit désormais fonctionner sur mobile au même niveau de finition que l'espace stagiaire. **27 écrans formateur**, découpés en 9 atomes, dans l'ordre de priorité du §3bis : le quotidien d'abord, la configuration lourde en dernier.
+
+- [x] **8.1 — Socle mobile** : les primitives que les huit atomes suivants réutilisent, plutôt que huit interprétations du même pattern.
+  - `components/ui/ListeCartes.tsx` — une liste décrite par ses colonnes, rendue en tableau au-dessus de 768px et en cartes en dessous. Chaque colonne porte un rôle (`titre`, `meta`, `detail`, `action`) qui dit sa place dans la carte. Les deux rendus coexistent dans le DOM, l'un caché par CSS : détecter la largeur en JavaScript ferait clignoter la liste à l'hydratation et se tromperait au rendu serveur.
+  - **Cibles tactiles à 44px sous 768px** : `Button` sur ses trois tailles courantes, et le menu « … » à 44×44 avec ses entrées à 44 de haut.
+  - **Menu « … » repositionné** : il s'alignait sur le bord droit du bouton et sortait de l'écran quand ce bord était trop à gauche — visible seulement sur petit écran.
+  - **Vérifié** : le tiroir hamburger annoncé par le §3bis comme « déjà en place » l'est effectivement (`AppShell`, overlay `md:hidden`). Rien à faire de ce côté.
+  **Test** : rendu comparé à 375px et à 1280px sur une liste de trois modules — cartes empilées d'un côté, tableau à six colonnes de l'autre, état vide dans les deux cas.
+
+---
+
+- [x] **8.2 — Le quotidien : tableau de bord, présences, animation** (design §3bis) : les trois écrans que le §3bis désigne comme consultés depuis un téléphone.
+  - **Présences** — le tableau passe par `ListeCartes`. Le dépliant d'absences vit dans la colonne `titre` et se retrouve donc dans la carte, sous le nom du stagiaire ; il fallait pour cela que `ListeCartes` accepte du contenu en bloc dans son titre, ce qu'un `<span>` ne permettait pas. Le filtre de module prend toute la largeur sous 768px.
+  - **Tableau de bord** — les tuiles et les graphiques étaient déjà fluides (`auto-fit`, `ResponsiveContainer`). La ligne de groupe, elle, tenait sur trois colonnes fixes serrées à 375px : elle s'empile désormais, le nom d'abord, la date et la barre d'avancement côte à côte ensuite.
+  - **Animation** — le §3bis l'annonce nativement compatible, et il l'est sur la structure. Restaient les cibles : onglets de phase, lien « Quitter » et boutons de navigation à 44px, marges latérales réduites, et surtout les **quatre titres de phase remplacés par leur numéro sous 768px** — ils se chevauchaient. La piste colorée situe déjà l'avancement, et le titre complet reste en tête de la phase ouverte.
+  **Test** : `tsc` et build verts. Le rendu visuel reste à vérifier dans l'application — le navigateur intégré n'a pas de session ouverte.
+
+---
+
+- [x] **8.3 — Calendrier : une journée à la fois sous 768px** (design §3bis) : la grille hebdomadaire réclamait 680px de large ; elle ne s'affiche plus qu'au-dessus de 768px. En dessous, une bande de six jours sert à la fois de sélecteur et de vue d'ensemble — chaque jour porte son nom, son quantième et un point quand il compte des séances. Le jour ouvert affiche ses créneaux dans l'ordre, avec les mêmes cartes de séance qu'en grille, couleur de groupe comprise.
+  **Choix** : la bande de jours plutôt que de simples flèches précédent/suivant. Le §3bis autorisait les flèches, mais elles auraient fait disparaître ce que la grille donne gratuitement — savoir d'un regard que le jeudi est chargé. La bande coûte une ligne et rend cette information.
+  L'écran s'ouvre sur aujourd'hui quand la semaine affichée le contient, sur le lundi sinon. Un jour non travaillé le dit en toutes lettres au lieu d'un motif hachuré, illisible sur une carte.
+  **Test** : `tsc` et build verts. **Rendu visuel non vérifié** — le navigateur intégré est resté sur l'écran de connexion.
+
+---
+
+- [x] **8.4 — Les listes principales** (design §3bis) : groupes, modules, fiche de groupe, et `GroupModulesList` — ce dernier sert à lui seul trois écrans (modules d'un groupe, contrôles, fiches).
+  - **`GroupModulesList`** — la ligne portait l'intitulé à gauche, le badge et le bouton « Ouvrir » à droite ; sous 768px le bouton écrasait l'intitulé. Elle s'empile, et l'intitulé cesse d'être tronqué une fois seul sur sa ligne.
+  - **Modules** — pseudo-tableau à quatre colonnes fixes qui tenaient à peine dans 375px. Les lignes s'empilent, l'en-tête de colonnes disparaît sous 768px (il ne décrit plus rien), et le menu « … » se cale en haut à droite de la carte au lieu de rester seul sur une ligne.
+  - **Groupes** — la grille de cartes exigeait 320px minimum, soit un cheveu de trop une fois les marges retirées d'un écran de 375. Passée à 280px.
+  - **Marges** — 16px au lieu de 24px sous 768px sur ces écrans et sur la coquille de groupe : 32px de contenu rendus aux cartes.
+  **Décidé en chemin** : ne pas faire passer ces écrans par `ListeCartes`. Leur rendu desktop n'est pas un `<table>` mais une grille sur mesure qui fonctionne ; les y forcer aurait changé l'apparence bureau, ce que ce chantier ne demande pas. `ListeCartes` reste pour les vrais tableaux.
+  **Relevé, à traiter dans les atomes de formulaire** : **12 fichiers basculent à 640px (`sm:`) là où le §3bis fixe la bascule à 768px** — 13 occurrences de `sm:grid-cols-2` notamment. Entre 640 et 768px, ces formulaires affichent donc deux à quatre colonnes sur une largeur que le design system considère comme mobile. Corrigé ici sur la fiche de groupe ; le reste relève de 8.6 et 8.7.
+  **Test** : `tsc` et build verts. **Rendu visuel non vérifié** — aucune session dans le navigateur intégré (zéro cookie, zéro stockage local).
+
+---
+
+- [x] **8.5 — Listes secondaires, et deux défauts de structure** (design §3bis) : premier atome **vérifié à l'écran**, via l'extension Claude in Chrome et la session réelle du porteur de projet. Mesures faites à 591px de viewport.
+  - **`AppShell` — le défaut qui faisait défiler TOUS les écrans.** La colonne de contenu est un enfant flex sans `min-w-0` : elle gardait donc la largeur minimale de son contenu — 661px mesurés dans un viewport de 591 — et poussait chaque page hors cadre. Une classe. C'est très probablement ce que le porteur de projet voyait quand « rien ne s'affichait » en responsive.
+  - **`GroupeTabs` — six onglets qui poussaient la page à 799px.** La barre défile désormais pour elle-même, en débordant jusqu'aux bords de l'écran pour que le geste soit naturel. Un défilement voulu et borné, pas celui que le §3bis interdit. Corrige les six sous-écrans d'un groupe d'un coup.
+  - **Contrôles d'un module** — le seul vrai `<table>` du lot, passé par `ListeCartes`.
+  - **Mesuré sans rien trouver** : progression, couverture, devoirs, annonces, journal, historique ne débordent plus une fois les deux défauts ci-dessus corrigés.
+  **Test** : `document.scrollWidth === clientWidth` sur modules, calendrier, fiche de module et progression après correction ; captures d'écran à l'appui. Les deux défauts de structure relevaient du socle 8.1 — je ne les avais pas vus faute de pouvoir regarder.
+
+---
+
+- [x] **8.6 — Détail de séance, fiche, classeur** (design §3bis) : premier atome vérifié à **386px réels**. La fenêtre Chrome étant maximisée et refusant de rétrécir, la page est chargée dans un cadre de 390px qui applique les vraies requêtes média — même CSS, même rendu qu'un téléphone.
+  - **Fiche de préparation** — quatre bascules à 640px passées à 768, dont l'en-tête à quatre colonnes et le couple méthode/durée d'une phase. Entre 640 et 768px, ces blocs repassaient en colonnes sur une largeur que le §3bis tient pour mobile.
+  - **Classeur** — la page ne portait **aucune marge** : son titre touchait le bord de l'écran, à toutes les largeurs. Personne ne l'avait vu parce que personne ne l'avait regardé de près.
+  - **Marges de page harmonisées à 16px sous 768px** sur cinq écrans qui divergeaient : classeur (0), calendrier (24), tableau de service (24), emploi du temps (32), journal (32). Le journal cumulait en plus deux marges.
+  **Vérifié sans rien trouver** : le détail de séance et la fiche de préparation d'un module ne débordent pas et se lisent bien à 386px — la barre d'onglets défile, les phases s'empilent, les boutons tiennent.
+  **Relevé pour 8.7** : `/parametres` **déborde** à 386px. C'est le prochain atome, il commencera par là.
+
+---
+
+- [x] **8.7 — Configuration, et deux défauts systémiques** (design §3bis) : l'atome devait traiter paramètres et stage ; il a surtout mis au jour deux règles cassées à l'échelle de l'application.
+  - **`Segments` — trois onglets qui poussaient la page à 436px.** Le composant sert aussi le parcours de contrôle. Les libellés ne se coupent pas en deux ; quand ils ne tiennent pas, c'est la gouttière qui défile. `basis-0 grow shrink-0` plutôt que `flex-1`, pour que l'ordre des classes ne puisse pas décider du résultat.
+  - **21 bascules à 640px passées à 768**, sur 14 fichiers. Le §3bis fixe la limite à 768 : entre les deux largeurs, ces formulaires affichaient deux à quatre colonnes sur un écran tenu pour mobile. Les `sm:block` et `sm:inline` du Topbar et de la carte de stage ne sont pas des colonnes — laissés tels quels.
+  - **26 grilles sans colonne de base.** `grid gap-4 md:grid-cols-2` ne déclare aucune colonne sous 768px : la grille en crée une seule, dimensionnée sur le contenu. C'est ce qui faisait sortir la fiche d'un module à 583px, avec un titre de 462px dans une carte de 358. Toutes portent désormais `grid-cols-1` explicite.
+  - **Modules d'un groupe** — badge d'heures, ventilation S1/S2 et bouton refusaient de rétrécir : ils passent à la ligne.
+  **Test** : douze écrans mesurés à 390px, `scrollWidth === clientWidth` sur les douze — modules, paramètres, calendrier, stage, fiche de groupe, progression, tableau de bord, emploi du temps, tableau de service, classeur, liste des modules, liste des groupes.
+
+---
+
 ## Points de vigilance — pas des atomes
 
 À garder en tête à chaque changement de schéma, sans traitement immédiat.

@@ -714,7 +714,7 @@ export default function ControleManager({
                     Le contrôle affiché est renvoyé au modèle avec votre
                     consigne.
                   </p>
-                  <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+                  <div className="mt-2 flex flex-col gap-2 md:flex-row">
                     <input
                       value={instruction}
                       onChange={(e) => setInstruction(e.target.value)}

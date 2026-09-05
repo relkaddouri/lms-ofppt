@@ -70,7 +70,7 @@ export default function ParametresHeuresForm({
           </span>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <Input
             label="Heures annuelles dues"
             type="number"
@@ -121,7 +121,7 @@ export default function ParametresHeuresForm({
               comptées comme supplémentaires.
             </p>
 
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <Input
                 label="Plafond mensuel"
                 type="number"

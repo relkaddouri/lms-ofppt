@@ -115,7 +115,7 @@ export default function ParametresLlmForm({
         <h2 className="text-base font-semibold text-ink">Fournisseur</h2>
         <p className="mt-1 text-sm text-slate">{description.resume}</p>
 
-        <div className="mt-4 grid gap-2 sm:grid-cols-2">
+        <div className="mt-4 grid grid-cols-1 gap-2 md:grid-cols-2">
           {FOURNISSEURS.map((f) => {
             const actif = f.id === choix;
             return (
@@ -267,7 +267,7 @@ export default function ParametresLlmForm({
           ) : null}
         </div>
 
-        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
           <Input
             label="Longueur maximale de réponse"
             type="number"
