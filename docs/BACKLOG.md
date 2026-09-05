@@ -368,6 +368,16 @@ L'espace formateur était pensé desktop-only ; il doit désormais fonctionner s
   - **Modules d'un groupe** — badge d'heures, ventilation S1/S2 et bouton refusaient de rétrécir : ils passent à la ligne.
   **Test** : douze écrans mesurés à 390px, `scrollWidth === clientWidth` sur les douze — modules, paramètres, calendrier, stage, fiche de groupe, progression, tableau de bord, emploi du temps, tableau de service, classeur, liste des modules, liste des groupes.
 
+- [x] **8.8 — Parcours de contrôle** (design §3bis) : aucun de ces écrans ne débordait. Ce qu'ils faisaient est plus insidieux — ils effaçaient l'information et rendaient les commandes intouchables.
+  - **La frise d'étapes effaçait ses libellés.** Mesurés à 390px, les trois premiers étaient à **zéro pixel de large** : `truncate` les avait réduits à rien, et seule « Relecture » survivait parce que sa case ne se rétracte pas. Sous 768px la frise ne garde que ses ronds numérotés, portés à 44px — l'en-tête de la page annonce déjà « Étape 3 sur 4 · Questions » deux lignes plus haut. `sr-only` et non `hidden`, pour que les libellés restent annoncés par un lecteur d'écran.
+  - **Toutes les cibles de l'éditeur de questions étaient sous 44px** : type 32, difficulté **27**, barème 34, suppression 32, justification 36, cases du QCM **16**. La case garde ses 16px — l'étirer donnerait un rectangle ; c'est son label qui porte la zone tactile.
+  - **La ligne d'une proposition de QCM tenait trois contrôles sur 232px.** Le champ tombait à 126px. Sous 768px il prend sa ligne, la case et la corbeille passent dessous — et le mot « Correcte » apparaît, sans quoi la case détachée du champ ne dirait plus ce qu'elle coche.
+  - **La navigation d'étapes empilait tout à gauche** : l'action principale se retrouvait sous une phrase. Grille à deux colonnes, les deux boutons face à face, la consigne sur sa propre ligne.
+  - **`CorrectionManager` : une 27ᵉ grille sans colonne de base**, non vue au balayage de 8.7.
+  - **L'historique était un tableau dense brut** — converti en `ListeCartes`. Sa colonne « Modifications » rend une liste de champs : `ListeCartes` gagne l'option `pleineLargeur`, sans quoi ce détail se serait retrouvé à moins de 120px dans le `dl` à deux colonnes.
+  **Test** : mesuré à 390px et **contre-mesuré à 1200px** — c'est ce second passage qui a rattrapé une régression, `flex-wrap` combiné au `w-full` d'`inputStyles` renvoyant les trois contrôles à la ligne y compris sur bureau.
+  **Non vérifié à l'écran** : les copies, la correction d'une copie et le corps de l'historique. La base ne contient **aucune passation** (`content-range: */0`) ni aucune entrée d'audit — ces trois écrans ne rendent que leur état vide. Corrigés à la lecture, à revoir dès qu'un stagiaire aura rendu une copie.
+
 ---
 
 ## Points de vigilance — pas des atomes

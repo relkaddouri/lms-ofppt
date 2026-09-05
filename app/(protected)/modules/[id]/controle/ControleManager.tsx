@@ -852,7 +852,7 @@ export default function ControleManager({
                             <span
                               role="radiogroup"
                               aria-label={`Type de la question ${i + 1}`}
-                              className="flex gap-[3px] rounded-[9px] border border-border bg-wash-strong p-[3px]"
+                              className="flex gap-[3px] rounded-[9px] border border-border bg-wash-strong p-[3px] max-md:w-full"
                             >
                               {(
                                 Object.keys(LIBELLE_COURT) as TypeQuestion[]
@@ -878,7 +878,7 @@ export default function ControleManager({
                                             : q.options,
                                       })
                                     }
-                                    className={`rounded-lg px-[11px] py-1.5 text-[13px] font-semibold transition-colors duration-150 ease-out ${
+                                    className={`rounded-lg px-[11px] py-1.5 text-[13px] font-semibold transition-colors duration-150 ease-out max-md:min-h-11 max-md:grow ${
                                       actif
                                         ? "bg-surface text-ink shadow-[0_1px_2px_rgba(46,59,78,0.12)]"
                                         : "text-slate-2 hover:text-ink"
@@ -897,7 +897,7 @@ export default function ControleManager({
                               <span className="text-[13px] text-slate-2">
                                 Barème
                               </span>
-                              <span className="flex items-stretch overflow-hidden rounded-lg border border-border-strong bg-surface">
+                              <span className="flex items-stretch overflow-hidden rounded-lg border border-border-strong bg-surface max-md:min-h-11">
                                 <input
                                   id={`bareme-${q.id}`}
                                   type="number"
@@ -921,7 +921,7 @@ export default function ControleManager({
                               type="button"
                               aria-label={`Supprimer la question ${i + 1}`}
                               onClick={() => removeQuestion(q.id)}
-                              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-transparent text-coral-dark transition-colors duration-150 ease-out hover:border-tint-alert-strong hover:bg-alert-wash"
+                              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-transparent text-coral-dark transition-colors duration-150 ease-out hover:border-tint-alert-strong hover:bg-alert-wash max-md:h-11 max-md:w-11"
                             >
                               <Trash2 size={15} aria-hidden />
                             </button>
@@ -932,7 +932,7 @@ export default function ControleManager({
                               permet de contester un chiffre plutôt que de le
                               subir. */}
                           <div className="flex flex-wrap items-center gap-2.5">
-                            <span className="flex gap-1 rounded-[9px] border border-border bg-wash-strong p-1">
+                            <span className="flex gap-1 rounded-[9px] border border-border bg-wash-strong p-1 max-md:w-full">
                               {(
                                 [
                                   ["accessible", "Accessible"],
@@ -951,7 +951,7 @@ export default function ControleManager({
                                         difficulte: actif ? null : niveau,
                                       })
                                     }
-                                    className={`rounded-[7px] px-2.5 py-1 text-[12.5px] font-semibold transition-colors duration-150 ease-out ${
+                                    className={`rounded-[7px] px-2.5 py-1 text-[12.5px] font-semibold transition-colors duration-150 ease-out max-md:min-h-11 max-md:grow ${
                                       actif
                                         ? "bg-surface text-ink shadow-[0_1px_2px_rgba(46,59,78,0.12)]"
                                         : "text-slate-light hover:text-ink"
@@ -972,7 +972,7 @@ export default function ControleManager({
                               }
                               placeholder="Pourquoi ce barème pour cette difficulté…"
                               aria-label={`Justification du barème de la question ${i + 1}`}
-                              className="min-w-[220px] flex-1 rounded-[9px] border border-border bg-surface px-3 py-[7px] text-[13.5px] text-body outline-none transition-colors duration-150 ease-out placeholder:text-slate-light focus:border-teal focus:shadow-[0_0_0_3px_rgba(46,125,158,0.15)]"
+                              className="min-w-[220px] flex-1 rounded-[9px] border border-border bg-surface px-3 py-[7px] text-[13.5px] text-body outline-none transition-colors duration-150 ease-out placeholder:text-slate-light focus:border-teal focus:shadow-[0_0_0_3px_rgba(46,125,158,0.15)] max-md:min-h-11"
                             />
                           </div>
 
@@ -983,25 +983,48 @@ export default function ControleManager({
                             </p>
                             <ul className="mt-2 space-y-2">
                               {q.options.map((opt, j) => (
-                                <li key={j} className="flex items-center gap-2">
-                                  <input
-                                    type="checkbox"
-                                    aria-label={`Proposition ${j + 1} correcte`}
-                                    checked={opt.correcte}
-                                    onChange={(e) =>
-                                      updateQuestion(q.id, {
-                                        options: q.options.map((o, k) =>
-                                          k === j
-                                            ? {
-                                                ...o,
-                                                correcte: e.target.checked,
-                                              }
-                                            : o,
-                                        ),
-                                      })
-                                    }
-                                    className="h-4 w-4 shrink-0 accent-ink"
-                                  />
+                                <li
+                                  key={j}
+                                  /* `max-md:flex-wrap` et non `flex-wrap` :
+                                     `inputStyles` porte déjà `w-full`, qui
+                                     sur une ligne qui s'enroule prend la
+                                     largeur entière et renvoie les deux
+                                     autres contrôles à la ligne — y compris
+                                     sur bureau, où ils restent alignés. */
+                                  className="flex items-center gap-2 max-md:flex-wrap"
+                                >
+                                  {/* La case garde ses 16px — c'est sa taille
+                                      native, et l'étirer donnerait un
+                                      rectangle. C'est son label qui porte les
+                                      44px de zone tactile (§3bis) et qui lui
+                                      transmet le clic.
+
+                                      Le mot « Correcte » n'apparaît que sous
+                                      768px : détachée du champ, la case ne
+                                      dirait plus ce qu'elle coche. */}
+                                  <label className="flex shrink-0 cursor-pointer items-center gap-2 max-md:order-2 max-md:h-11">
+                                    <input
+                                      type="checkbox"
+                                      aria-label={`Proposition ${j + 1} correcte`}
+                                      checked={opt.correcte}
+                                      onChange={(e) =>
+                                        updateQuestion(q.id, {
+                                          options: q.options.map((o, k) =>
+                                            k === j
+                                              ? {
+                                                  ...o,
+                                                  correcte: e.target.checked,
+                                                }
+                                              : o,
+                                          ),
+                                        })
+                                      }
+                                      className="h-4 w-4 shrink-0 accent-ink"
+                                    />
+                                    <span className="text-[13px] text-slate-2 md:sr-only">
+                                      Correcte
+                                    </span>
+                                  </label>
                                   <input
                                     value={opt.texte}
                                     aria-label={`Texte de la proposition ${j + 1}`}
@@ -1015,12 +1038,13 @@ export default function ControleManager({
                                         ),
                                       })
                                     }
-                                    className={inputClass}
+                                    className={`${inputClass} max-md:order-1 max-md:mt-0`}
                                   />
                                   <Button
                                     variant="ghost"
                                     size="sm"
                                     icon={Trash2}
+                                    className="max-md:order-3 max-md:ml-auto"
                                     aria-label={`Supprimer la proposition ${j + 1}`}
                                     onClick={() =>
                                       updateQuestion(q.id, {
