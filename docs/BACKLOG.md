@@ -149,6 +149,14 @@ contrôles et produire les fiches est le travail manuel que cette application do
   ~~ — Terminal : `npx vercel login` puis `npx vercel link`, et les variables d'environnement listées dans `docs/DEPLOIEMENT.md`. Pas de clé API IA à poser : chaque formateur enregistre la sienne depuis Paramètres, chiffrée dans le Vault Supabase.~~
   **Test** : connecte-toi en formateur et en stagiaire depuis l'URL de production, vérifie que les deux espaces fonctionnent.
 
+- [ ] **6.2 — Activer le crochet de jeton** *(migration écrite, activation à faire par le porteur de projet)*. La migration `075_role_dans_le_jeton.sql` et le code sont prêts et sans effet de bord : tant que le crochet n'est pas activé, `getCurrentUserRole()` retombe sur la lecture PostgREST et l'application se comporte exactement comme avant. Deux gestes restent :
+  1. **Appliquer la migration** — `npx supabase db push` (demande le mot de passe de la base ; je ne dois pas le voir).
+  2. **Activer le crochet** — tableau de bord Supabase → *Authentication* → *Hooks* → **Customize Access Token (JWT) Claims** → choisir `public.custom_access_token_hook`.
+
+  Ce que ça change : le rôle voyage dans le jeton, donc plus aucun aller-retour PostgREST sur `profils` à chaque rendu du layout protégé — c'est-à-dire sur **chaque page** de l'espace formateur. Et surtout, plus de lecture à refuser : c'est cette lecture qui, refusée « JWT issued at future », remplaçait l'espace entier par la page d'erreur de Next (`47b3df9`).
+
+  **Test après activation** : se déconnecter puis se reconnecter — la revendication n'entre dans le jeton qu'au renouvellement suivant — et vérifier dans les journaux Vercel qu'aucune ligne `[auth] lecture du rôle` n'apparaît plus. Vérifier aussi qu'un compte stagiaire est toujours renvoyé vers son espace.
+
 ---
 
 ## Phase 7 — Suite validée (ordre strict)
