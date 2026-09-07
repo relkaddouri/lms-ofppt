@@ -49,7 +49,12 @@ export default function TexteMentions({
         typeof m === "string" ? (
           <span key={i}>{m}</span>
         ) : (
-          <span key={i} className="font-medium text-ink">
+          // Sarcelle et non encre : en `text-ink` la mention portait la
+          // couleur du corps de texte et ne se distinguait de lui que par sa
+          // graisse — autant dire pas du tout dans un paragraphe. `teal` et
+          // non `teal-dark` : 4,62:1 sur blanc, au-dessus du seuil AA que le
+          // §12 impose à tout texte.
+          <span key={i} className="font-medium text-teal">
             @{m.mention}
           </span>
         ),
