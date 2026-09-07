@@ -107,6 +107,8 @@ export type PassationDetail = {
 export type Passation = {
   id: string;
   controle_id: string;
+  /** Date de publication du résultat au stagiaire, `null` tant qu'il attend. */
+  publie_le?: string | null;
   nom_complet: string;
   email: string | null;
   note: number;
@@ -287,12 +289,16 @@ export async function getPassations(controleId: string): Promise<Passation[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("passations_controle")
-    .select("id, controle_id, nom_complet, email, note, responses, submitted_at")
+    .select(
+      "id, controle_id, nom_complet, email, note, responses, submitted_at, publie_le",
+    )
     .eq("controle_id", controleId)
     .order("submitted_at", { ascending: true });
 
   if (error) throw new Error(error.message);
-  return (data ?? []) as Passation[];
+  // `publie_le` n'entrera dans `database.types.ts` qu'après `supabase db push`
+  // et une régénération des types (migration 077). À retirer ce jour-là.
+  return (data ?? []) as unknown as Passation[];
 }
 
 /**
@@ -445,4 +451,35 @@ export async function getContenuCouvert(
     heuresModule: toutes.reduce((t, s) => t + duree(s), 0),
     seancesModule: toutes.length,
   };
+}
+
+/**
+ * Publie — ou retire — le résultat d'une copie (PRD §4.7).
+ *
+ * Le stagiaire ne voit rien tant que ce geste n'a pas été fait : ni note, ni
+ * corrigé. Même principe que le partage de la grille de correction d'un TP,
+ * et même réserve — refermer empêche un accès futur, ça n'efface pas ce qui a
+ * déjà été lu. L'écran doit le dire, l'action ne le prétend pas.
+ *
+ * La date sert de trace autant que d'interrupteur : le cahier du formateur
+ * impose de restituer les notes d'un CC au plus tard à la deuxième séance
+ * suivante, et savoir quand un résultat est parti est ce qui permet de le
+ * vérifier.
+ */
+export async function publierResultat(
+  passationId: string,
+  publier: boolean,
+): Promise<{ publieLe: string | null }> {
+  const supabase = await createClient();
+  const publieLe = publier ? new Date().toISOString() : null;
+
+  // Même dette que ci-dessus : la colonne existe en base, pas encore dans les
+  // types générés.
+  const { error } = await supabase
+    .from("passations_controle")
+    .update({ publie_le: publieLe } as unknown as Record<string, never>)
+    .eq("id", passationId);
+
+  if (error) throw new Error(error.message);
+  return { publieLe };
 }

@@ -1,4 +1,5 @@
-import type { Support } from "@/lib/support";
+import DocumentRedige from "@/components/DocumentRedige";
+import { estRedige, type Support } from "@/lib/support";
 import { FigureSupport, ListeRessources } from "@/components/RessourcesSupport";
 
 /**
@@ -8,7 +9,14 @@ import { FigureSupport, ListeRessources } from "@/components/RessourcesSupport";
  * un document. On ne lui montre pas un formulaire en lecture seule : il vient
  * réviser, pas relire une fiche de travail.
  */
-export default function SupportLecture({ support }: { support: Support }) {
+export default function SupportLecture({
+  support,
+  sousTitre,
+}: {
+  support: Support;
+  /** Module et séance, pour le surtitre de la couverture. */
+  sousTitre?: string | null;
+}) {
   if (support.type === "pratique") {
     const total = support.criteres.reduce((t, c) => t + c.points, 0);
     return (
@@ -55,12 +63,24 @@ export default function SupportLecture({ support }: { support: Support }) {
     );
   }
 
+  // Un cours rédigé à la main est ce texte, rien d'autre : ni sections, ni
+  // introduction saisies ailleurs (PRD §4.4).
+  if (estRedige(support)) {
+    return (
+      <div className="space-y-5">
+        <DocumentRedige texte={support.markdown!} surtitre={sousTitre ?? null} />
+        <ListeRessources ressources={support.ressources ?? []} />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-5">
       <p className="text-sm leading-relaxed text-ink">{support.introduction}</p>
 
       {support.sections.map((sec, i) => (
         <Bloc key={i} titre={sec.titre}>
+          <>
           <ul className="space-y-2">
             {sec.notions.map((n, k) => (
               <li key={k} className="flex gap-2 text-sm leading-relaxed text-ink">
@@ -76,6 +96,7 @@ export default function SupportLecture({ support }: { support: Support }) {
               {sec.exemple}
             </p>
           ) : null}
+          </>
         </Bloc>
       ))}
 

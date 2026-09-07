@@ -31,10 +31,26 @@ export type CorrectionTp = {
   criteres: CritereNote[];
   /** Ce qu'il faut reprendre avec le groupe entier après la correction. */
   aReprendre: string[];
+  /**
+   * Grille rédigée à la main, en markdown (PRD §4.4).
+   *
+   * Renseignée, elle remplace la grille structurée — pas de fusion des deux :
+   * un formateur qui écrit sa propre grille ne veut pas la voir cohabiter avec
+   * une proposition du modèle qu'il a justement écartée. Le rendu passe par le
+   * même moteur que les supports, donc la même typographie.
+   */
+  markdown?: string | null;
 };
 
 export function correctionVide(): CorrectionTp {
   return { proposition: "", etapes: [], criteres: [], aReprendre: [] };
+}
+
+/** Vrai si la correction est rédigée à la main plutôt que structurée. */
+export function estRedigee(correction: CorrectionTp): boolean {
+  return (
+    typeof correction.markdown === "string" && correction.markdown.trim() !== ""
+  );
 }
 
 /**
@@ -64,6 +80,10 @@ export function lireCorrection(contenu: unknown): CorrectionTp {
       };
     }),
     aReprendre: lignes(brut.aReprendre, 8),
+    markdown:
+      typeof brut.markdown === "string" && brut.markdown.trim()
+        ? brut.markdown
+        : null,
   };
 }
 

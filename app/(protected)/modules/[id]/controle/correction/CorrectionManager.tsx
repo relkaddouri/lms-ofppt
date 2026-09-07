@@ -4,6 +4,7 @@ import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   corrigerPassation,
+  publierResultat,
   type Controle,
   type Passation,
   type PassationDetail,
@@ -13,8 +14,10 @@ import Avatar from "@/components/ui/Avatar";
 import Button from "@/components/ui/Button";
 import { inputStyles } from "@/components/ui/Input";
 import { useToast } from "@/components/ui/Toast";
-import { formatDateTime } from "@/lib/format";
-import { ChevronRight, X, Zap } from "lucide-react";
+import { formatDate, formatDateTime, slugify } from "@/lib/format";
+import { getEtablissement } from "@/app/actions/etablissement";
+import { marqueDe } from "@/lib/pdf-marque";
+import { ChevronRight, Download, Eye, EyeOff, X, Zap } from "lucide-react";
 import { libelleModule } from "@/lib/modules";
 import BandeauIa from "@/components/BandeauIa";
 import { baremeAttendu } from "@/lib/controles";
@@ -100,6 +103,70 @@ export default function CorrectionManager({
 
   const active = reponses[index] ?? null;
   const corrigees = reponses.filter(estCorrigee).length;
+  const [publie, setPublie] = useState<boolean>(
+    Boolean(copies.find((c) => c.id === copieInitiale)?.publie_le),
+  );
+  const [busyPublication, setBusyPublication] = useState(false);
+
+  async function basculerPublication(publier: boolean) {
+    if (!copie) return;
+    setBusyPublication(true);
+    try {
+      await publierResultat(copie.id, publier);
+      setPublie(publier);
+      toast(
+        publier
+          ? `Résultat publié — ${copie.nom_complet} le voit désormais.`
+          : "Publication retirée. Ce que le stagiaire a déjà lu, il l'a lu.",
+      );
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "Publication impossible.", "error");
+    } finally {
+      setBusyPublication(false);
+    }
+  }
+
+  async function telechargerResultat() {
+    if (!copie) return;
+    setBusyPublication(true);
+    try {
+      const [{ telechargerResultatPdf }, etablissement] = await Promise.all([
+        import("@/lib/pdf-resultat"),
+        getEtablissement(),
+      ]);
+      await telechargerResultatPdf(
+        {
+          titre: controles.find((c) => c.id === controleId)?.titre ?? "Contrôle",
+          stagiaire: copie.nom_complet,
+          contexte: [moduleCode, moduleNom].filter(Boolean).join(" — "),
+          nature:
+            baremeAttendu(
+              controles.find((c) => c.id === controleId)?.type ?? null,
+            ) === 40
+              ? "Épreuve de fin de module"
+              : "Contrôle continu",
+          dateEpreuve: copie.submitted_at
+            ? formatDate(copie.submitted_at)
+            : null,
+          datePublication: formatDate(new Date().toISOString()),
+          note,
+          total: totalAttendu,
+          lignes: reponses.map((r) => ({
+            enonce: r.enonce,
+            bareme: Number(r.bareme ?? 0),
+            points: Number(r.points ?? 0),
+          })),
+        },
+        `${slugify(`resultat ${copie.nom_complet}`, "resultat")}.pdf`,
+        marqueDe(etablissement),
+      );
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "Export impossible.", "error");
+    } finally {
+      setBusyPublication(false);
+    }
+  }
+
   const note = useMemo(
     () => reponses.reduce((s, r) => s + (Number(r.points) || 0), 0),
     [reponses],
@@ -247,6 +314,32 @@ export default function CorrectionManager({
               <span className="text-[15px] text-muted">/ {totalAttendu}</span>
             </span>
           </div>
+          {/* §4.7 : le stagiaire ne voit rien tant que ce geste n'a pas été
+              fait. Il est donc voisin de la note, pas enterré dans un menu —
+              c'est la dernière étape de la correction, pas une option. */}
+          <Button
+            variant={publie ? "secondary" : "primary"}
+            icon={publie ? EyeOff : Eye}
+            onClick={() => basculerPublication(!publie)}
+            disabled={busyPublication || corrigees < reponses.length}
+            title={
+              corrigees < reponses.length
+                ? "Corrigez toutes les questions avant de publier."
+                : undefined
+            }
+          >
+            {publie ? "Retirer la publication" : "Publier le résultat"}
+          </Button>
+          {publie ? (
+            <Button
+              variant="ghost"
+              icon={Download}
+              onClick={telechargerResultat}
+              disabled={busyPublication}
+            >
+              Résultat à signer
+            </Button>
+          ) : null}
           <Button
             iconRight={ChevronRight}
             disabled={rang >= copies.length - 1}

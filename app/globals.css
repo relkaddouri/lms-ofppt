@@ -518,3 +518,27 @@ body {
   line-height: 1.6;
   color: var(--forest);
 }
+
+/* ── Impression du navigateur ──────────────────────────────────────────────
+ *
+ * Le diaporama 16:9 et le document A4 se téléchargent désormais comme des
+ * fichiers, dessinés par `lib/pdf-diapos.ts` et `lib/pdf-document.ts` : les
+ * polices y sont embarquées, la pagination y est mesurée, et le formateur
+ * reçoit un fichier plutôt qu'une boîte de dialogue. Tout l'appareillage
+ * d'impression qui vivait ici — conteneur hors champ, sélecteurs de
+ * visibilité, règles `@page` — n'a donc plus d'objet.
+ *
+ * Reste le minimum pour un Ctrl+P improvisé : fond blanc, et fonds conservés
+ * pour que l'encre des encadrés ne soit pas blanchie par l'économiseur du
+ * navigateur. */
+@media print {
+  html,
+  body {
+    background: #fff;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}

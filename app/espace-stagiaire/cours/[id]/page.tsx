@@ -7,6 +7,7 @@ import { getSupportDetail } from "@/app/actions/questions-support";
 import { formatDateJour } from "@/lib/format";
 import SupportLecture from "./SupportLecture";
 import QuestionsSupport from "@/components/QuestionsSupport";
+import TelechargerDiapos from "@/components/TelechargerDiapos";
 
 export default async function CoursDetailPage({
   params,
@@ -43,8 +44,25 @@ export default async function CoursDetailPage({
             .join(" · ")}
         </p>
 
+        {/* Emporter le cours : le stagiaire révise hors ligne, imprime, ou
+            le range avec ses notes. Un support qu'on ne peut que consulter à
+            l'écran n'est pas un support de cours. */}
+        <div className="mt-4">
+          <TelechargerDiapos
+            support={support.contenu}
+            pied={[support.moduleNom, "Support du stagiaire"]
+              .filter(Boolean)
+              .join(" · ")}
+          />
+        </div>
+
         <div className="mt-5">
-          <SupportLecture support={support.contenu} />
+          <SupportLecture
+            support={support.contenu}
+            sousTitre={[support.moduleNom, support.date ? formatDateJour(support.date) : null]
+              .filter(Boolean)
+              .join(" · ")}
+          />
         </div>
       </article>
 

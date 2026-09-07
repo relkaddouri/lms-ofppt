@@ -1,4 +1,6 @@
 import type jsPDF from "jspdf";
+import { dessinerMarkdown } from "@/lib/pdf-markdown";
+import { estRedige } from "@/lib/support";
 import { dessinerEntete, type Marque } from "@/lib/pdf-marque";
 import type { Support } from "@/lib/support";
 import { COULEURS, installerPolices, police } from "@/lib/pdf-theme";
@@ -153,12 +155,31 @@ export function dessinerSupport(
   y += 4;
 
   if (support.type === "theorique") {
+    // Un cours rédigé à la main est ce texte, rien d'autre. Il passe par le
+    // moteur markdown, qui peint avec les polices et les gris de pdf-theme :
+    // à l'impression, rien ne dit d'où vient le contenu (PRD §4.4).
+    if (estRedige(support)) {
+      y = dessinerMarkdown(doc, support.markdown!, {
+        x: X,
+        largeur: LARGEUR,
+        y,
+        place: (h) => {
+          place(h);
+          y += h;
+          return y;
+        },
+      });
+      ressources();
+      return y;
+    }
+
     if (support.introduction) {
       texte(support.introduction, 10);
       y += 2;
     }
     support.sections.forEach((sec, i) => {
       titre(`${i + 1}. ${sec.titre}`, 11);
+
       for (const n of sec.notions) puce(n);
       // La figure se rend en une ligne d'étapes fléchées : c'est la même
       // information qu'à l'écran, dans un document qui s'imprime en noir.

@@ -122,7 +122,16 @@ export async function basculerJaime(annonceId: string, aimer: boolean) {
   revalidatePath("/espace-stagiaire/fil");
 }
 
-export async function commenter(annonceId: string, texte: string) {
+/**
+ * `cheminARevalider` : le fil vit maintenant aussi sur l'écran d'annonces du
+ * formateur. Revalider le seul chemin stagiaire y laisserait une page servie
+ * depuis le cache, sans le commentaire qui vient d'être écrit.
+ */
+export async function commenter(
+  annonceId: string,
+  texte: string,
+  cheminARevalider?: string,
+) {
   const propre = texte.trim();
   if (!propre) throw new Error("Le commentaire est vide.");
   if (propre.length > 2000) {
@@ -136,9 +145,13 @@ export async function commenter(annonceId: string, texte: string) {
 
   if (error) throw new Error(error.message);
   revalidatePath("/espace-stagiaire/fil");
+  if (cheminARevalider) revalidatePath(cheminARevalider);
 }
 
-export async function supprimerCommentaire(id: string) {
+export async function supprimerCommentaire(
+  id: string,
+  cheminARevalider?: string,
+) {
   const supabase = await createClient();
   const { error } = await supabase
     .from("commentaires_annonce")
@@ -146,4 +159,5 @@ export async function supprimerCommentaire(id: string) {
     .eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePath("/espace-stagiaire/fil");
+  if (cheminARevalider) revalidatePath(cheminARevalider);
 }

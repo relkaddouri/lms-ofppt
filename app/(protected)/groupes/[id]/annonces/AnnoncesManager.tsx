@@ -11,8 +11,10 @@ import { useToast } from "@/components/ui/Toast";
 import Button from "@/components/ui/Button";
 import Input, { Textarea } from "@/components/ui/Input";
 import Modal, { ConfirmModal } from "@/components/ui/Modal";
+import FilCommentaires from "@/components/FilCommentaires";
+import { type AnnonceFil, type Camarade } from "@/app/actions/fil";
 import { formatDateJour } from "@/lib/format";
-import { Megaphone, Plus, Send, Trash2 } from "lucide-react";
+import { Megaphone, MessageCircle, Plus, Send, Trash2 } from "lucide-react";
 
 const VIDE = { titre: "", contenu: "", date: "" };
 
@@ -26,10 +28,16 @@ const VIDE = { titre: "", contenu: "", date: "" };
 export default function AnnoncesManager({
   groupeId,
   annonces,
+  fil,
+  camarades,
 }: {
   groupeId: string;
   annonces: Annonce[];
+  /** Les mêmes annonces, vues du fil : c'est ce qui porte les commentaires. */
+  fil: AnnonceFil[];
+  camarades: Camarade[];
 }) {
+  const commentairesDe = new Map(fil.map((a) => [a.id, a.commentaires]));
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [ouvert, setOuvert] = useState(false);
@@ -143,6 +151,26 @@ export default function AnnoncesManager({
                   {a.contenu}
                 </p>
               ) : null}
+
+              {/* Le fil est toujours là, même vide : le formateur publie une
+                  annonce puis vient voir ce qu'on lui a répondu, et ne
+                  trouvait rien jusqu'ici. Ouvrir la saisie sans qu'il ait à
+                  la chercher est la moitié du geste. */}
+              <div className="mt-4 border-t border-separator pt-3.5">
+                <p className="flex items-center gap-2 text-[13px] font-semibold text-slate-2">
+                  <MessageCircle size={15} className="shrink-0" aria-hidden />
+                  {(commentairesDe.get(a.id) ?? []).length === 0
+                    ? "Aucun commentaire"
+                    : `${(commentairesDe.get(a.id) ?? []).length} commentaire${(commentairesDe.get(a.id) ?? []).length > 1 ? "s" : ""}`}
+                </p>
+                <FilCommentaires
+                  annonceId={a.id}
+                  commentaires={commentairesDe.get(a.id) ?? []}
+                  camarades={camarades}
+                  cheminARevalider={`/groupes/${groupeId}/annonces`}
+                  placeholder="Répondre… @ pour mentionner un stagiaire"
+                />
+              </div>
             </article>
           ))
         )}

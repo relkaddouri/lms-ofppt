@@ -1,9 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import DiapoRedigee from "@/components/DiapoRedigee";
+import { decouperEnDiapositives } from "@/lib/diapos";
+import { decouperEnDiapos } from "@/lib/markdown";
+import { estRedige } from "@/lib/support";
+import { slugify } from "@/lib/format";
 import Button from "@/components/ui/Button";
 import type { SupportTheorique } from "@/lib/support";
 import {
+  FileDown,
   ChevronLeft,
   ChevronRight,
   Maximize2,
@@ -42,6 +48,24 @@ function decouper(support: SupportTheorique, sousTitre: string): Diapo[] {
   ];
 
   const total = support.sections.length;
+  // Un cours rédigé à la main se découpe sur ses titres markdown : chacun
+  // ouvre une diapositive. C'est le seul aperçu que le formateur ait de son
+  // texte, et c'est exactement ce que la classe verra — projeter du markdown
+  // brut montrerait la source, ce que le §4.4 interdit.
+  if (estRedige(support)) {
+    decouperEnDiapos(support.markdown!, support.titre).forEach((d, i, tous) => {
+      diapos.push({
+        type: "section",
+        numero: i + 1,
+        total: tous.length,
+        titre: d.titre,
+        notions: d.points,
+        exemple: null,
+      });
+    });
+    return diapos;
+  }
+
   support.sections.forEach((sec, i) => {
     const paquets: string[][] = [];
     for (let k = 0; k < sec.notions.length; k += 4) {
@@ -82,19 +106,51 @@ function decouper(support: SupportTheorique, sousTitre: string): Diapo[] {
 export default function DiaporamaCours({
   support,
   sousTitre,
+  pied,
 }: {
   support: SupportTheorique;
   sousTitre: string;
+  /** Ce que le pied de page répète — module, élément, nature du document. */
+  pied?: string;
 }) {
-  const diapos = decouper(support, sousTitre);
+  // Un cours rédigé a sa propre grammaire de diapositives : couverture,
+  // sommaire, intercalaires, contenu paginé. Elle est reprise du support de
+  // référence du porteur de projet plutôt qu'inventée.
+  const redigees = estRedige(support)
+    ? decouperEnDiapositives(support.markdown!, {
+        surtitre: pied ?? sousTitre,
+        pied: pied ?? sousTitre,
+      })
+    : null;
+  // Les deux jeux ne se mélangent pas : celui d'un cours structuré et celui
+  // d'un cours rédigé n'ont ni les mêmes types de diapositive ni le même
+  // rendu. Seul leur nombre est commun, pour la navigation.
+  const classiques = redigees ? null : decouper(support, sousTitre);
+  const nombre = redigees?.length ?? classiques!.length;
   const [index, setIndex] = useState(0);
   const [pleinEcran, setPleinEcran] = useState(false);
+  const [enExport, setEnExport] = useState(false);
+
+  async function telecharger() {
+    if (!estRedige(support)) return;
+    setEnExport(true);
+    try {
+      const { telechargerDiapositivesPdf } = await import("@/lib/pdf-diapos");
+      await telechargerDiapositivesPdf(
+        support.markdown!,
+        { surtitre: pied ?? sousTitre, pied: pied ?? sousTitre },
+        `${slugify(support.titre, "diaporama")}-16-9.pdf`,
+      );
+    } finally {
+      setEnExport(false);
+    }
+  }
   const cadre = useRef<HTMLDivElement>(null);
 
   const aller = useCallback(
     (delta: number) =>
-      setIndex((i) => Math.min(diapos.length - 1, Math.max(0, i + delta))),
-    [diapos.length],
+      setIndex((i) => Math.min(nombre - 1, Math.max(0, i + delta))),
+    [nombre],
   );
 
   useEffect(() => {
@@ -102,11 +158,11 @@ export default function DiaporamaCours({
       if (e.key === "ArrowRight" || e.key === " ") aller(1);
       else if (e.key === "ArrowLeft") aller(-1);
       else if (e.key === "Home") setIndex(0);
-      else if (e.key === "End") setIndex(diapos.length - 1);
+      else if (e.key === "End") setIndex(nombre - 1);
     }
     window.addEventListener("keydown", touche);
     return () => window.removeEventListener("keydown", touche);
-  }, [aller, diapos.length]);
+  }, [aller, nombre]);
 
   useEffect(() => {
     function change() {
@@ -121,7 +177,7 @@ export default function DiaporamaCours({
     else await cadre.current?.requestFullscreen();
   }
 
-  const d = diapos[index];
+  const d = classiques?.[index];
 
   return (
     <div>
@@ -134,10 +190,31 @@ export default function DiaporamaCours({
         >
           Présenter en plein écran
         </Button>
+        {/* Le PDF se produit en imprimant : c'est ainsi qu'a été fait le
+            support de référence, et le navigateur rend alors les tableaux,
+            les encadrés et les fonds que le moteur PDF maison ne sait pas
+            dessiner. La boîte d'impression est déjà celle du navigateur, on
+            n'a pas à en réécrire une. */}
+        {/* Un fichier, pas une boîte d'impression : le PDF est dessiné, pas
+            imprimé. Les polices y sont embarquées, donc le rendu ne dépend
+            plus de ce que le navigateur avait chargé. */}
+        {redigees && estRedige(support) ? (
+          <Button
+            variant="ghost"
+            size="sm"
+            icon={FileDown}
+            onClick={telecharger}
+            loading={enExport}
+            loadingLabel="Préparation…"
+          >
+            Télécharger en PDF 16:9
+          </Button>
+        ) : null}
         <span className="ml-auto font-mono text-xs text-slate">
-          {index + 1} / {diapos.length}
+          {index + 1} / {nombre}
         </span>
       </div>
+
 
       <div
         ref={cadre}
@@ -158,7 +235,13 @@ export default function DiaporamaCours({
             maxWidth: pleinEcran ? "min(100vw, calc(100vh * 16 / 9))" : undefined,
           }}
         >
-          {d.type === "titre" ? (
+          {redigees ? (
+            <DiapoRedigee
+              diapo={redigees[index]!}
+              numero={index + 1}
+              pied={pied ?? sousTitre}
+            />
+          ) : !d ? null : d.type === "titre" ? (
             <div className="flex h-full flex-col justify-center bg-ink px-[7cqw] text-white">
               <p
                 className="font-mono uppercase tracking-widest text-mint/70"
@@ -301,8 +384,9 @@ export default function DiaporamaCours({
             </div>
           )}
 
-          {/* Pied de diapositive, hors page de titre. */}
-          {d.type !== "titre" ? (
+          {/* Pied de diapositive, hors page de titre. Le rendu rédigé pose
+              le sien. */}
+          {d && d.type !== "titre" ? (
             <div className="absolute inset-x-[6cqw] bottom-[2.5cqh] flex items-center justify-between">
               <span
                 className="truncate font-mono text-slate/70"
@@ -314,7 +398,7 @@ export default function DiaporamaCours({
                 className="font-mono text-slate/70"
                 style={{ fontSize: "1.3cqw" }}
               >
-                {index + 1} / {diapos.length}
+                {index + 1} / {nombre}
               </span>
             </div>
           ) : null}
@@ -335,7 +419,7 @@ export default function DiaporamaCours({
             <button
               type="button"
               onClick={() => aller(1)}
-              disabled={index === diapos.length - 1}
+              disabled={index === nombre - 1}
               aria-label="Diapositive suivante"
               className="m-[1cqw] rounded-full bg-ink/60 p-[1cqw] text-white disabled:opacity-30"
             >
@@ -360,7 +444,7 @@ export default function DiaporamaCours({
           size="sm"
           icon={ChevronRight}
           onClick={() => aller(1)}
-          disabled={index === diapos.length - 1}
+          disabled={index === nombre - 1}
         >
           Suivante
         </Button>
