@@ -122,13 +122,14 @@ async function inviterUn(
     }
   }
 
-  // La fiche et le compte peuvent avoir divergé : modifier l'adresse d'un
-  // stagiaire dans Pédago ne renomme pas son compte d'authentification. Le
-  // lien se demande alors pour une adresse qui n'a pas de compte, et GoTrue
-  // répond « User with this email not found » — vrai, mais incompréhensible
-  // quand l'adresse est affichée juste à côté. Aucune des deux adresses n'est
-  // la bonne par défaut : envoyer à l'ancienne écrirait à côté, créer un
-  // second compte dédoublerait le stagiaire. C'est au formateur de trancher.
+  // Filet pour les fiches modifiées avant que `updateStagiaire` ne renomme
+  // aussi le compte. Sans lui, le lien serait demandé pour une adresse sans
+  // compte et GoTrue répondrait « User with this email not found » — vrai,
+  // mais incompréhensible quand l'adresse est affichée juste à côté.
+  //
+  // On ne devine pas laquelle fait foi : envoyer à l'ancienne écrirait dans
+  // une boîte que le stagiaire a peut-être perdue, et c'est souvent la raison
+  // même du changement.
   if (stagiaire.user_id) {
     const { data: compte } = await service.auth.admin.getUserById(
       stagiaire.user_id,
@@ -136,7 +137,7 @@ async function inviterUn(
     const adresseDuCompte = compte?.user?.email?.toLowerCase() ?? null;
     if (adresseDuCompte && adresseDuCompte !== email) {
       throw new Error(
-        `Son compte est ouvert à ${adresseDuCompte}, alors que sa fiche porte ${email}. Rétablissez la même adresse des deux côtés avant de renvoyer le lien.`,
+        `Sa fiche porte ${email}, mais son compte est resté ouvert à ${adresseDuCompte} — et c'est le compte qui reçoit le lien. Ouvrez sa fiche et réenregistrez son adresse : le compte suivra, et le lien partira au bon endroit.`,
       );
     }
   }

@@ -128,14 +128,17 @@ export default function GroupeDetail({
   async function handleUpdate(id: string) {
     setBusy(true);
     try {
-      await updateStagiaire(id, groupeId, {
+      const { avertissement } = await updateStagiaire(id, groupeId, {
         nom: editForm.nom,
         prenom: editForm.prenom,
         email: editForm.email || undefined,
         cef: editForm.cef || undefined,
       });
       setEditingId(null);
-      toast("Modification enregistrée");
+      // Le renommage du compte peut échouer là où la fiche passe : le dire,
+      // sinon la divergence ne se découvrirait qu'au prochain envoi de lien.
+      if (avertissement) toast(avertissement, "error");
+      else toast("Modification enregistrée");
       router.refresh();
     } catch (err) {
       toast(err instanceof Error ? err.message : "Erreur inattendue", "error");
