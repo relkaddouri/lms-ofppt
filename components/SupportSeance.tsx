@@ -12,7 +12,6 @@ import { slugify } from "@/lib/format";
 import DiaporamaCours from "@/components/DiaporamaCours";
 import { estRedige, type Support } from "@/lib/support";
 import DocumentRedige from "@/components/DocumentRedige";
-import { imprimer } from "@/lib/impression";
 import { ListeRessources } from "@/components/RessourcesSupport";
 import { Download, FileDown, PenLine, Save, Sparkles } from "lucide-react";
 import { getEtablissement } from "@/app/actions/etablissement";
@@ -58,6 +57,7 @@ export default function SupportSeance({
     ecrireSupport(v);
   };
   const [busy, setBusy] = useState(false);
+  const [enExport, setEnExport] = useState(false);
   const [avertissements, setAvertissements] = useState<string[]>([]);
   // Un cours se projette autant qu'il s'édite : les deux vues portent le même
   // contenu, on bascule plutôt que d'empiler.
@@ -316,14 +316,40 @@ export default function SupportSeance({
             variant="ghost"
             size="sm"
             icon={FileDown}
-            onClick={() => imprimer("document")}
+            loading={enExport}
+            loadingLabel="Préparation…"
+            onClick={async () => {
+              setEnExport(true);
+              try {
+                const { telechargerDocumentPdf } = await import(
+                  "@/lib/pdf-document"
+                );
+                await telechargerDocumentPdf(
+                  support.markdown ?? "",
+                  {
+                    surtitre: [contexte.moduleNom, contexte.groupeNom]
+                      .filter(Boolean)
+                      .join(" · "),
+                    pied: [
+                      contexte.moduleNom,
+                      contexte.groupeNom,
+                      "Support du stagiaire",
+                    ]
+                      .filter(Boolean)
+                      .join(" · "),
+                  },
+                  `${slugify(support.titre, "document")}-a4.pdf`,
+                );
+              } finally {
+                setEnExport(false);
+              }
+            }}
           >
             Télécharger le document (PDF A4)
           </Button>
-          {/* Le même rendu sert l'écran et l'impression : c'est ce qui garantit
-              que le PDF montre ce que le formateur vient de relire. Le moteur
-              jsPDF, lui, perdait les tableaux et les encadrés. */}
-          <div className="doc-impression mt-3 rounded-[14px] border border-border bg-surface px-6 py-6 shadow-repos md:px-10 md:py-9">
+          {/* L'écran et le fichier lisent le même `analyser` : c'est ce qui
+              garantit que le PDF montre ce que le formateur vient de relire. */}
+          <div className="mt-3 rounded-[14px] border border-border bg-surface px-6 py-6 shadow-repos md:px-10 md:py-9">
             <DocumentRedige
               texte={support.markdown ?? ""}
               surtitre={[contexte.moduleNom, contexte.groupeNom]

@@ -10,11 +10,9 @@ import {
 /**
  * Le diaporama 16:9, dessiné en PDF (PRD §4.4).
  *
- * Pourquoi ne pas imprimer la page, comme pour le document A4 : parce que
- * l'impression passe par une boîte de dialogue, et que le formateur veut un
- * fichier. Un diaporama s'y prête, sa mise en page étant régulière — des
- * blocs, des cartes, des tableaux, à des positions connues. Le document A4,
- * lui, coule sur plusieurs pages et se prête mal au même traitement.
+ * Pourquoi ne pas imprimer la page : parce que l'impression passe par une
+ * boîte de dialogue, et que le formateur veut un fichier. Le document A4 a
+ * suivi le même chemin, dans `lib/pdf-document.ts`.
  *
  * Deux gains en prime. Les polices sont **embarquées** par `pdf-theme` depuis
  * `public/polices` : le PDF sort en Sora et Source Sans quoi qu'il arrive, là

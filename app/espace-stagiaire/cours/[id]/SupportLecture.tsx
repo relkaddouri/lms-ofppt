@@ -66,10 +66,8 @@ export default function SupportLecture({
   // Un cours rédigé à la main est ce texte, rien d'autre : ni sections, ni
   // introduction saisies ailleurs (PRD §4.4).
   if (estRedige(support)) {
-    // `doc-impression` : ce que le stagiaire lit est exactement ce que son PDF
-    // contiendra. Deux rendus auraient divergé.
     return (
-      <div className="doc-impression space-y-5">
+      <div className="space-y-5">
         <DocumentRedige texte={support.markdown!} surtitre={sousTitre ?? null} />
         <ListeRessources ressources={support.ressources ?? []} />
       </div>

@@ -215,28 +215,6 @@ export default function DiaporamaCours({
         </span>
       </div>
 
-      {/* Toutes les diapositives, hors écran, prêtes à imprimer. Les rendre au
-          moment du clic les ferait paginer après l'ouverture de la boîte
-          d'impression, donc trop tard — et Chrome les peindrait avec la police
-          de repli.
-          
-          Elles ne sont montées que sur cet onglet : les garder en page pendant
-          qu'on lit le document ferait cohabiter deux rendus complets du même
-          cours, ce qui suffit à figer la page sur un support d'une trentaine
-          de pages. */}
-      {redigees ? (
-        <div className="diapo-impression" aria-hidden>
-          {redigees.map((d, i) => (
-            <div key={i} className="diapo-page">
-              <DiapoRedigee
-                diapo={d}
-                numero={i + 1}
-                pied={pied ?? sousTitre}
-              />
-            </div>
-          ))}
-        </div>
-      ) : null}
 
       <div
         ref={cadre}

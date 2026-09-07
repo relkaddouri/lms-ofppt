@@ -519,137 +519,24 @@ body {
   color: var(--forest);
 }
 
-/* ── Impressions : diaporama 16:9 et document A4 ───────────────────────────
+/* ── Impression du navigateur ──────────────────────────────────────────────
  *
- * Le support de référence du porteur de projet est un PDF produit en
- * imprimant une page HTML (Creator: Chromium). C'est la voie retenue ici : le
- * navigateur imprime ce qu'il affiche, donc avec les tableaux, les encadrés et
- * les fonds — ce qu'un moteur PDF écrit à la main perdrait, ou coûterait dix
- * fois plus cher à retrouver.
+ * Le diaporama 16:9 et le document A4 se téléchargent désormais comme des
+ * fichiers, dessinés par `lib/pdf-diapos.ts` et `lib/pdf-document.ts` : les
+ * polices y sont embarquées, la pagination y est mesurée, et le formateur
+ * reçoit un fichier plutôt qu'une boîte de dialogue. Tout l'appareillage
+ * d'impression qui vivait ici — conteneur hors champ, sélecteurs de
+ * visibilité, règles `@page` — n'a donc plus d'objet.
  *
- * Le format de page ne se choisit pas ici. `@page` est unique par impression
- * et ne se conditionne pas par une classe : c'est `lib/impression.ts` qui
- * injecte la bonne règle au moment du clic, et pose la classe correspondante
- * sur `<html>`. Les sélecteurs ci-dessous ne font que dire quoi montrer.
- */
-
-/* Le conteneur des diapositives n'existe que pour l'impression : à l'écran, la
-   navigation du diaporama montre une diapositive à la fois. Celui du document,
-   lui, est ce que le formateur lit — il reste visible, et sert les deux.
- *
- * Hors champ, et non `display: none`. Une sous-arborescence en `display: none`
- * n'est mise en page qu'à l'ouverture de l'impression : Chrome la peint alors
- * avec la police de repli, celle que `next/font` construit sur Arial — d'où
- * des PDF en Arial là où l'écran affichait Sora et Source Sans 3. Posée hors
- * champ, elle est mise en page avec le reste, donc avec les vraies fontes.
- *
- * `position: fixed` la sort du flux : elle n'ajoute ni hauteur ni barre de
- * défilement, et `aria-hidden` sur le conteneur la tient hors de la lecture
- * d'écran. */
-@media screen {
-  .diapo-impression {
-    position: fixed;
-    top: 0;
-    left: -200vw;
-    width: 1280px;
-    pointer-events: none;
-  }
-
-  .diapo-impression > .diapo-page {
-    width: 1280px;
-    height: 720px;
-    overflow: hidden;
-    container-type: size;
-  }
-}
-
+ * Reste le minimum pour un Ctrl+P improvisé : fond blanc, et fonds conservés
+ * pour que l'encre des encadrés ne soit pas blanchie par l'économiseur du
+ * navigateur. */
 @media print {
   html,
   body {
     background: #fff;
   }
 
-  /* `visibility` et non `display` : couper les blocs de l'application avec
-     `display: none` casse la mise en page de ce qu'on imprime, qui vit dans un
-     conteneur imbriqué. */
-  body * {
-    visibility: hidden !important;
-  }
-
-  html.impression-diapo .diapo-impression,
-  html.impression-diapo .diapo-impression *,
-  html.impression-document .doc-impression,
-  html.impression-document .doc-impression * {
-    visibility: visible !important;
-  }
-
-  html.impression-diapo .diapo-impression {
-    position: absolute;
-    inset: 0;
-    display: block;
-  }
-
-  /* Le document garde son flux : il doit se répartir sur plusieurs pages A4,
-     ce qu'un bloc en position absolue ne fait pas. On le remonte en haut de la
-     page en neutralisant son cadre d'écran. */
-  html.impression-document .doc-impression {
-    position: static;
-    margin: 0;
-    border: 0;
-    padding: 0;
-    box-shadow: none;
-    background: transparent;
-  }
-
-  /* ── Diapositives ───────────────────────────────────────────────────── */
-
-  html.impression-diapo .diapo-impression > .diapo-page {
-    width: 338.7mm;
-    height: 190.5mm;
-    overflow: hidden;
-    container-type: size;
-    break-after: page;
-    page-break-after: always;
-  }
-
-  /* Sans quoi une page blanche s'ajoute à la fin. */
-  html.impression-diapo .diapo-impression > .diapo-page:last-child {
-    break-after: auto;
-    page-break-after: auto;
-  }
-
-  /* ── Document ───────────────────────────────────────────────────────── */
-
-  /* La couverture occupe sa page, le corps commence à la suivante. */
-  .doc-impression .doc-couverture {
-    min-height: 0;
-    height: calc(297mm - 36mm);
-    break-after: page;
-    page-break-after: always;
-  }
-
-  /* Un titre seul en bas de page, sa suite sur la suivante : la règle
-     typographique de base, que le navigateur n'applique pas d'office. */
-  .doc-impression h1,
-  .doc-impression h2,
-  .doc-impression h3,
-  .doc-impression h4 {
-    break-after: avoid;
-    page-break-after: avoid;
-  }
-
-  /* Un tableau ou un encadré coupé en deux se relit mal : on les garde
-     entiers tant qu'ils tiennent sur une page. */
-  .doc-impression table,
-  .doc-impression aside,
-  .doc-impression pre {
-    break-inside: avoid;
-    page-break-inside: avoid;
-  }
-
-  /* Les fonds encre des couvertures et les fonds clairs des encadrés doivent
-     sortir : sans cette règle, le navigateur les blanchit pour économiser
-     l'encre et le texte blanc disparaît sur fond blanc. */
   * {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;

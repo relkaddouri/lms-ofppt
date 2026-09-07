@@ -1,6 +1,7 @@
 import { Fragment } from "react";
 import { analyser, enTeteDocument, type Noeud } from "@/lib/diapos";
 import { segmenter } from "@/lib/markdown";
+import { colonnesCategorielles } from "@/lib/tableaux";
 
 /**
  * Un cours rédigé, mis en page comme un document (PRD §4.4).
@@ -151,16 +152,10 @@ function Encadres({ groupes }: { groupes: string[][] }) {
 }
 
 /**
- * Colonnes rendues en pastilles.
+ * Palette des pastilles, dans l'ordre où les valeurs apparaissent.
  *
- * Une colonne dont toutes les cellules tiennent en un mot court est une
- * colonne de catégories — « Quanti », « Quali », « Mixte ». Le support de
- * référence les pose en pastilles colorées : on les compare alors d'un coup
- * d'œil au lieu de les lire ligne à ligne.
- *
- * La couleur suit l'ordre d'apparition des valeurs distinctes, pas leur
- * contenu : rien à coder en dur, et deux tableaux du même document donnent la
- * même couleur à la même valeur.
+ * La détection, elle, vit dans `lib/tableaux.ts` : le PDF la refait à
+ * l'identique avec sa propre palette, et deux détections divergeraient.
  */
 const PASTILLES = [
   "border-tint-teal-strong bg-tint-teal text-teal-dark",
@@ -169,28 +164,8 @@ const PASTILLES = [
   "border-border bg-wash-strong text-slate-2",
 ] as const;
 
-function colonnesEnPastilles(lignes: string[][], nbColonnes: number) {
-  const enPastille = new Set<number>();
-  const couleurs = new Map<string, string>();
-
-  for (let c = 0; c < nbColonnes; c++) {
-    const valeurs = lignes.map((l) => (l[c] ?? "").trim()).filter(Boolean);
-    if (valeurs.length < 3) continue;
-    if (!valeurs.every((v) => v.length <= 12 && !/\s/.test(v))) continue;
-    // Des valeurs toutes différentes ne sont pas des catégories : ce sont des
-    // données. Une catégorie se répète.
-    const distinctes = [...new Set(valeurs)];
-    if (distinctes.length > 4 || distinctes.length === valeurs.length) continue;
-    enPastille.add(c);
-    distinctes.forEach((v, i) => {
-      if (!couleurs.has(v)) couleurs.set(v, PASTILLES[i % PASTILLES.length]!);
-    });
-  }
-  return { enPastille, couleurs };
-}
-
 function Tableau({ entetes, lignes }: { entetes: string[]; lignes: string[][] }) {
-  const { enPastille, couleurs } = colonnesEnPastilles(lignes, entetes.length);
+  const { enPastille, rang } = colonnesCategorielles(lignes, entetes.length);
   return (
     <div className="overflow-x-auto rounded-[10px] border border-border">
       <table className="w-full border-collapse text-left text-[13px]">
@@ -218,7 +193,7 @@ function Tableau({ entetes, lignes }: { entetes: string[]; lignes: string[][] })
                   {enPastille.has(j) && c.trim() ? (
                     <span
                       className={`inline-block whitespace-nowrap rounded-full border px-2 py-px text-[11.5px] font-semibold ${
-                        couleurs.get(c.trim()) ?? PASTILLES[3]
+                        PASTILLES[(rang.get(c.trim()) ?? 3) % PASTILLES.length]
                       }`}
                     >
                       {c.trim()}
@@ -398,8 +373,6 @@ function Blocs({ texte }: { texte: string }) {
  * c'est ce qui lui donne l'air d'un document relié plutôt que d'une bannière.
  * Le titre en haut, les métadonnées enfermées dans un cadre en bas, et entre
  * les deux le vide — qui fait la moitié de l'effet.
- *
- * `break-after: page` à l'impression : le corps commence à la page suivante.
  */
 function Couverture({
   titre,
@@ -415,7 +388,7 @@ function Couverture({
   surtitre: string | null;
 }) {
   return (
-    <section className="doc-couverture flex min-h-[62vh] flex-col rounded-[14px] bg-ink px-8 py-9 text-white md:min-h-[900px] md:px-12 md:py-14">
+    <section className="flex min-h-[62vh] flex-col rounded-[14px] bg-ink px-8 py-9 text-white md:min-h-[900px] md:px-12 md:py-14">
       <span aria-hidden className="mb-7 flex items-center gap-1.5">
         {["bg-green", "bg-teal", "bg-coral"].map((c) => (
           <span key={c} className={`h-2.5 w-2.5 rounded-full ${c}`} />

@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Button from "@/components/ui/Button";
-import { imprimer } from "@/lib/impression";
 import { estRedige, type Support } from "@/lib/support";
 import { slugify } from "@/lib/format";
 import { FileDown, FileText } from "lucide-react";
@@ -10,14 +9,10 @@ import { FileDown, FileText } from "lucide-react";
 /**
  * Le cours à emporter, dans les deux formats (PRD §4.4).
  *
- * Côté stagiaire on ne projette pas : on récupère. Le diaporama est donc
- * *dessiné* en PDF et téléchargé directement — pas d'aperçu, pas de boîte
+ * Côté stagiaire on ne projette pas : on récupère. Les deux formats sont donc
+ * *dessinés* en PDF et téléchargés directement — pas d'aperçu, pas de boîte
  * d'impression, et les polices embarquées plutôt que dépendantes de ce que le
  * navigateur avait chargé.
- *
- * Le document A4, lui, passe encore par l'impression : il coule sur plusieurs
- * pages, avec des tableaux et une couverture, ce qu'un dessin PDF à la main
- * reproduirait mal.
  */
 export default function TelechargerDiapos({
   support,
@@ -26,22 +21,31 @@ export default function TelechargerDiapos({
   support: Support;
   pied: string;
 }) {
-  const [enExport, setEnExport] = useState(false);
+  const [enExport, setEnExport] = useState<"diapo" | "doc" | null>(null);
 
   if (support.type !== "theorique" || !estRedige(support)) return null;
 
-  async function telecharger() {
+  async function telecharger(format: "diapo" | "doc") {
     if (support.type !== "theorique" || !support.markdown) return;
-    setEnExport(true);
+    setEnExport(format);
     try {
-      const { telechargerDiapositivesPdf } = await import("@/lib/pdf-diapos");
-      await telechargerDiapositivesPdf(
-        support.markdown,
-        { surtitre: pied, pied },
-        `${slugify(support.titre, "diaporama")}-16-9.pdf`,
-      );
+      if (format === "diapo") {
+        const { telechargerDiapositivesPdf } = await import("@/lib/pdf-diapos");
+        await telechargerDiapositivesPdf(
+          support.markdown,
+          { surtitre: pied, pied },
+          `${slugify(support.titre, "diaporama")}-16-9.pdf`,
+        );
+      } else {
+        const { telechargerDocumentPdf } = await import("@/lib/pdf-document");
+        await telechargerDocumentPdf(
+          support.markdown,
+          { surtitre: pied, pied },
+          `${slugify(support.titre, "document")}-a4.pdf`,
+        );
+      }
     } finally {
-      setEnExport(false);
+      setEnExport(null);
     }
   }
 
@@ -52,8 +56,8 @@ export default function TelechargerDiapos({
           variant="secondary"
           size="sm"
           icon={FileDown}
-          onClick={telecharger}
-          loading={enExport}
+          onClick={() => telecharger("diapo")}
+          loading={enExport === "diapo"}
           loadingLabel="Préparation…"
         >
           Diaporama (PDF 16:9)
@@ -64,7 +68,9 @@ export default function TelechargerDiapos({
           variant="secondary"
           size="sm"
           icon={FileText}
-          onClick={() => imprimer("document")}
+          onClick={() => telecharger("doc")}
+          loading={enExport === "doc"}
+          loadingLabel="Préparation…"
         >
           Document (PDF A4)
         </Button>
