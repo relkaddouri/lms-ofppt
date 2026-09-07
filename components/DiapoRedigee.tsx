@@ -3,143 +3,197 @@
 import type { BlocDiapo, Diapo } from "@/lib/diapos";
 
 /**
- * Une diapositive 16:9 d'un cours rédigé.
+ * Une diapositive 16:9, à la géométrie du support de référence.
  *
- * La géométrie est relevée sur le support de référence du porteur de projet :
- * logo à 4,7 % du bord, surtitre de section à 10,9 %, titre à 11,3 % de haut,
- * pied et numéro à 94,4 %, corps à partir de 23 %. Les encadrés y vont par
- * rangées de deux, jamais en colonne unique — c'est ce qui remplit la largeur
- * d'un 16:9 au lieu de laisser une bande vide à droite.
+ * Toutes les valeurs ci-dessous sont relevées dans le PPTX fourni par le
+ * porteur de projet, pas estimées : positions en pourcentage de la
+ * diapositive, tailles en points converties en `cqw`. Une diapositive fait
+ * 13,333 pouces de large, donc 1 pt vaut 1/96 de pouce sur 13,333, soit
+ * 0,104167 cqw. Le titre de 26 pt fait ainsi 2,708 cqw exactement.
  *
- * Les tailles sont en `cqw` : elles se mesurent sur la largeur de la
- * diapositive, pas sur celle de l'écran. Une diapositive projetée et la même
- * dans une vignette gardent ainsi exactement les mêmes proportions.
+ * Pourquoi cette précision : la première version posait les tailles à l'œil et
+ * se trompait d'un quart — corps à 1,85 cqw au lieu de 1,458 — ce qui suffit à
+ * faire déborder chaque bloc et à donner une page encombrée. Une mise en page
+ * de diaporama ne se règle pas au jugé.
  */
 
-function Pastilles() {
+/** Points vers `cqw` : 1 pt = 1/96 pouce, la diapositive en fait 13,333. */
+const pt = (points: number) => `${(points / 96 / 13.3333) * 100}cqw`;
+
+const MARGE = 4.5; // % — bord gauche du contenu
+const LARGEUR = 90.75; // % — largeur utile
+const CORPS_HAUT = 23.33; // % — première ligne sous le titre
+
+function Pastilles({
+  x,
+  y,
+  taille,
+  ecart,
+}: {
+  x: number;
+  y: number;
+  taille: number;
+  ecart: number;
+}) {
+  // Vert, sarcelle, corail — les trois accents du design system, dans cet
+  // ordre. C'est la marque du document, elle ne se réinvente pas.
   return (
-    <span aria-hidden className="flex items-center gap-[0.5cqw]">
-      {["bg-green", "bg-teal", "bg-ink"].map((c) => (
-        <span key={c} className={`h-[0.9cqw] w-[0.9cqw] rounded-full ${c}`} />
+    <>
+      {["bg-green", "bg-teal", "bg-coral"].map((c, i) => (
+        <span
+          key={c}
+          aria-hidden
+          className={`absolute rounded-full ${c}`}
+          style={{
+            left: `${x + i * ecart}%`,
+            top: `${y}%`,
+            width: `${taille}%`,
+            aspectRatio: "1",
+          }}
+        />
       ))}
-    </span>
+    </>
   );
 }
 
-function Corps({ blocs }: { blocs: BlocDiapo[] }) {
-  return (
-    <div className="flex flex-col gap-[1.8cqw]">
-      {blocs.map((b, i) => {
-        if (b.type === "sousTitre") {
-          return (
-            <p
-              key={i}
-              className="font-display text-[2.1cqw] font-semibold text-ink"
-            >
-              {b.texte}
-            </p>
-          );
-        }
-        if (b.type === "texte") {
-          return (
-            <p key={i} className="text-[1.85cqw] leading-relaxed text-body">
-              {b.texte}
-            </p>
-          );
-        }
-        if (b.type === "liste") {
-          return (
-            <ul key={i} className="flex list-none flex-col gap-[1cqw] p-0">
-              {b.items.map((it, k) => (
-                <li
-                  key={k}
-                  className="flex gap-[1.2cqw] text-[1.85cqw] leading-relaxed text-body"
-                >
-                  {/* Une liste numérotée garde ses numéros : dans un sommaire
-                      ou une suite d'étapes, l'ordre est l'information. */}
-                  {b.ordonnee ? (
-                    <span className="mt-[0.15cqw] shrink-0 font-mono text-[1.5cqw] text-slate-light">
-                      {String(k + 1).padStart(2, "0")}
-                    </span>
-                  ) : (
-                    <span
-                      aria-hidden
-                      className="mt-[0.8cqw] h-[0.55cqw] w-[0.55cqw] shrink-0 rounded-full bg-teal"
-                    />
-                  )}
-                  <span>{it}</span>
-                </li>
-              ))}
-            </ul>
-          );
-        }
-        if (b.type === "cartes") {
-          return (
-            <div key={i} className="grid grid-cols-2 gap-[1.6cqw]">
-              {b.cartes.map((c, k) => (
-                <div
-                  key={k}
-                  className="flex flex-col gap-[0.6cqw] rounded-[0.9cqw] border border-border bg-paper px-[1.6cqw] py-[1.3cqw]"
-                >
-                  {c.intitule ? (
-                    <p className="font-mono text-[1.15cqw] font-semibold uppercase tracking-[0.1em] text-slate-light">
-                      {c.intitule}
-                    </p>
-                  ) : null}
-                  {c.titre ? (
-                    <p className="font-display text-[1.85cqw] font-semibold leading-snug text-ink">
-                      {c.titre}
-                    </p>
-                  ) : null}
-                  {c.lignes.map((l, j) => (
-                    <p
-                      key={j}
-                      className="text-[1.6cqw] leading-snug text-slate-2"
-                    >
-                      {l}
-                    </p>
-                  ))}
-                </div>
-              ))}
-            </div>
-          );
-        }
-        return (
-          <div
-            key={i}
-            className="overflow-hidden rounded-[0.7cqw] border border-border"
+function Bloc({ bloc }: { bloc: BlocDiapo }) {
+  if (bloc.type === "sousTitre") {
+    return (
+      <p
+        className="font-display font-semibold text-ink"
+        style={{ fontSize: pt(16) }}
+      >
+        {bloc.texte}
+      </p>
+    );
+  }
+
+  if (bloc.type === "texte") {
+    return (
+      <p className="text-body" style={{ fontSize: pt(14), lineHeight: 1.45 }}>
+        {bloc.texte}
+      </p>
+    );
+  }
+
+  if (bloc.type === "liste") {
+    return (
+      <ul className="flex list-none flex-col p-0" style={{ gap: "1.1%" }}>
+        {bloc.items.map((it, k) => (
+          <li
+            key={k}
+            className="flex text-body"
+            style={{ gap: "1.2%", fontSize: pt(14), lineHeight: 1.45 }}
           >
-            <table className="w-full border-collapse text-left text-[1.5cqw]">
-              <thead className="bg-paper-alt">
-                <tr>
-                  {b.entetes.map((e, k) => (
-                    <th
-                      key={k}
-                      className="border-b border-border px-[1.1cqw] py-[0.7cqw] font-medium text-slate"
-                    >
-                      {e}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {b.lignes.map((ligne, k) => (
-                  <tr key={k}>
-                    {ligne.map((c, j) => (
-                      <td
-                        key={j}
-                        className="border-t border-separator px-[1.1cqw] py-[0.6cqw] align-top text-body"
-                      >
-                        {c}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            {bloc.ordonnee ? (
+              <span
+                className="shrink-0 font-mono text-slate-light"
+                style={{ fontSize: pt(11.5), minWidth: "2.2%" }}
+              >
+                {String(k + 1).padStart(2, "0")}
+              </span>
+            ) : (
+              <span
+                aria-hidden
+                className="mt-[0.65cqw] shrink-0 rounded-full bg-teal"
+                style={{ width: "0.5cqw", height: "0.5cqw" }}
+              />
+            )}
+            <span>{it}</span>
+          </li>
+        ))}
+      </ul>
+    );
+  }
+
+  if (bloc.type === "cartes") {
+    // Deux colonnes de 44,25 %, séparées de 2,25 % : les chiffres du deck.
+    return (
+      <div
+        className="grid grid-cols-2"
+        style={{ columnGap: "2.25%", rowGap: "2%" }}
+      >
+        {bloc.cartes.map((c, k) => (
+          // Hauteur minimale, marges et écarts internes repris du deck : la
+          // carte y fait 22,82 % de la hauteur, son contenu commence à 2,66 %
+          // du haut et 1,5 % du bord. C'est cette hauteur fixe qui rend la
+          // grille régulière — des cartes ajustées à leur texte donnent des
+          // rangées bancales.
+          <div
+            key={k}
+            className="flex flex-col rounded-[0.6cqw] border border-border bg-surface"
+            style={{
+              minHeight: "22.82cqh",
+              padding: "2.66cqh 1.5cqw",
+              gap: "0.8cqh",
+            }}
+          >
+            {c.intitule ? (
+              <p
+                className="font-mono uppercase text-slate-light"
+                style={{ fontSize: pt(9.5), letterSpacing: "0.08em" }}
+              >
+                {c.intitule}
+              </p>
+            ) : null}
+            {c.titre ? (
+              <p
+                className="font-semibold text-body"
+                style={{ fontSize: pt(14), lineHeight: 1.3 }}
+              >
+                {c.titre}
+              </p>
+            ) : null}
+            {c.lignes.map((l, j) => (
+              <p
+                key={j}
+                className="text-body"
+                style={{ fontSize: pt(14), lineHeight: 1.4 }}
+              >
+                {l}
+              </p>
+            ))}
           </div>
-        );
-      })}
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="overflow-hidden rounded-[0.5cqw] border border-border">
+      <table
+        className="w-full border-collapse text-left"
+        style={{ fontSize: pt(11) }}
+      >
+        <thead className="bg-paper-alt">
+          <tr>
+            {bloc.entetes.map((e, k) => (
+              <th
+                key={k}
+                className="border-b border-border font-medium text-slate"
+                style={{ padding: "0.7% 1%" }}
+              >
+                {e}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {bloc.lignes.map((ligne, k) => (
+            <tr key={k}>
+              {ligne.map((c, j) => (
+                <td
+                  key={j}
+                  className="border-t border-separator align-top text-body"
+                  style={{ padding: "0.6% 1%" }}
+                >
+                  {c}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -153,31 +207,83 @@ export default function DiapoRedigee({
   numero: number;
   pied: string;
 }) {
-  // La couverture et les intercalaires sont sombres : ils marquent une
-  // rupture, et c'est ce qui fait qu'on sait où on en est dans une projection
-  // d'une heure.
+  // ── Couverture et intercalaires : fond encre, plein cadre ───────────────
   if (diapo.type === "couverture" || diapo.type === "intercalaire") {
+    const couverture = diapo.type === "couverture";
     return (
-      <div className="flex h-full flex-col justify-center bg-ink px-[6cqw] py-[5cqw] text-white">
-        <p className="font-mono text-[1.3cqw] uppercase tracking-[0.18em] text-white/55">
+      <div className="relative h-full w-full overflow-hidden bg-ink text-white">
+        <Pastilles x={6} y={10.67} taille={1.65} ecart={2.175} />
+
+        <p
+          className="absolute font-mono uppercase"
+          style={{
+            left: "6%",
+            top: couverture ? "19.33%" : "20%",
+            width: "86.25%",
+            fontSize: pt(11),
+            letterSpacing: "0.14em",
+            color: "#9FB0C2",
+          }}
+        >
           {diapo.surtitre}
         </p>
-        <p className="mt-[1.6cqw] font-display text-[4.2cqw] font-bold leading-[1.1] tracking-[-0.02em]">
+
+        <p
+          className="absolute font-display font-bold"
+          style={{
+            left: "6%",
+            top: couverture ? "26.67%" : "29.33%",
+            width: "86.25%",
+            fontSize: pt(couverture ? 44 : 40),
+            lineHeight: 1.12,
+            letterSpacing: "-0.02em",
+          }}
+        >
           {diapo.titre}
         </p>
+
         {diapo.sousTitre ? (
-          <p className="mt-[1.4cqw] text-[1.9cqw] text-white/70">
+          <p
+            className="absolute"
+            style={{
+              left: "6%",
+              top: couverture ? "49.33%" : "46%",
+              width: "82.5%",
+              fontSize: pt(18),
+              lineHeight: 1.4,
+              color: "#DCE3EB",
+            }}
+          >
             {diapo.sousTitre}
           </p>
         ) : null}
-        {diapo.type === "couverture" && diapo.meta.length > 0 ? (
-          <dl className="mt-[3.5cqw] grid grid-cols-2 gap-x-[3cqw] gap-y-[1.4cqw]">
+
+        {couverture && diapo.meta.length > 0 ? (
+          <dl
+            className="absolute grid grid-cols-2"
+            style={{
+              left: "6%",
+              top: "66.67%",
+              width: "86.25%",
+              columnGap: "3%",
+              rowGap: "2.2%",
+              fontSize: pt(12.5),
+              color: "#DCE3EB",
+            }}
+          >
             {diapo.meta.map((m) => (
-              <div key={m.cle} className="flex flex-col gap-[0.3cqw]">
-                <dt className="font-mono text-[1.1cqw] uppercase tracking-[0.12em] text-white/45">
+              <div key={m.cle} className="flex flex-col" style={{ gap: "0.4%" }}>
+                <dt
+                  className="font-mono uppercase"
+                  style={{
+                    fontSize: pt(9.5),
+                    letterSpacing: "0.12em",
+                    color: "#9FB0C2",
+                  }}
+                >
                   {m.cle}
                 </dt>
-                <dd className="text-[1.5cqw] text-white/85">{m.valeur}</dd>
+                <dd style={{ lineHeight: 1.35 }}>{m.valeur}</dd>
               </div>
             ))}
           </dl>
@@ -186,40 +292,98 @@ export default function DiapoRedigee({
     );
   }
 
+  // ── Sommaire et contenu : fond clair, en-tête et pied fixes ─────────────
   return (
-    <div className="flex h-full flex-col bg-surface px-[4.5cqw] pb-[3cqw] pt-[5.5cqw]">
-      <div className="flex items-center gap-[1.5cqw]">
-        <Pastilles />
-        <p className="font-mono text-[1.15cqw] uppercase tracking-[0.14em] text-slate-light">
-          {diapo.surtitre}
-        </p>
-      </div>
+    <div className="relative h-full w-full overflow-hidden bg-surface">
+      <Pastilles x={4.65} y={7.73} taille={1.2} ecart={1.575} />
 
-      <p className="mt-[1.2cqw] font-display text-[2.9cqw] font-bold leading-tight tracking-[-0.02em] text-ink">
+      <p
+        className="absolute font-mono uppercase text-slate-light"
+        style={{
+          left: "10.88%",
+          top: "6.67%",
+          width: "71.25%",
+          fontSize: pt(10.5),
+          letterSpacing: "0.14em",
+        }}
+      >
+        {diapo.surtitre}
+      </p>
+
+      <p
+        className="absolute font-display font-bold text-ink"
+        style={{
+          left: `${MARGE}%`,
+          top: "11.33%",
+          width: `${LARGEUR}%`,
+          fontSize: pt(26),
+          lineHeight: 1.15,
+          letterSpacing: "-0.02em",
+        }}
+      >
         {diapo.type === "sommaire" ? "Sommaire" : diapo.titre}
       </p>
 
-      <div className="mt-[2.4cqw] min-h-0 flex-1 overflow-hidden">
+      <div
+        className="absolute overflow-hidden"
+        style={{
+          left: `${MARGE}%`,
+          top: `${CORPS_HAUT}%`,
+          width: `${LARGEUR}%`,
+          bottom: "9.5%",
+        }}
+      >
         {diapo.type === "sommaire" ? (
-          <ol className="flex list-none flex-col gap-[1.3cqw] p-0">
+          // Deux colonnes, pastille numérotée : la forme du deck. Une colonne
+          // unique laisserait la moitié droite vide sur un 16:9.
+          <div
+            className="grid grid-cols-2"
+            style={{ columnGap: "2.5%", rowGap: "2.4%" }}
+          >
             {diapo.entrees.map((e, i) => (
-              <li key={i} className="flex items-baseline gap-[1.6cqw]">
-                <span className="font-mono text-[1.6cqw] text-slate-light">
-                  {String(i).padStart(2, "0")}
+              <div key={i} className="flex items-start" style={{ gap: "1.4%" }}>
+                <span
+                  className={`flex shrink-0 items-center justify-center rounded-[0.35cqw] font-display font-semibold text-white ${
+                    ["bg-ink", "bg-teal", "bg-green", "bg-coral"][i % 4]
+                  }`}
+                  style={{
+                    width: "3.3%",
+                    aspectRatio: "1",
+                    fontSize: pt(11),
+                  }}
+                >
+                  {i}
                 </span>
-                <span className="text-[2cqw] text-body">{e}</span>
-              </li>
+                <span
+                  className="text-body"
+                  style={{ fontSize: pt(14), lineHeight: 1.35 }}
+                >
+                  {e}
+                </span>
+              </div>
             ))}
-          </ol>
+          </div>
         ) : (
-          <Corps blocs={diapo.blocs} />
+          <div className="flex flex-col" style={{ gap: "2.4%" }}>
+            {diapo.blocs.map((b, i) => (
+              <Bloc key={i} bloc={b} />
+            ))}
+          </div>
         )}
       </div>
 
-      <div className="flex items-baseline justify-between pt-[1.2cqw]">
-        <p className="font-mono text-[1.1cqw] text-muted">{pied}</p>
-        <p className="font-mono text-[1.1cqw] text-muted">{numero}</p>
-      </div>
+      <p
+        className="absolute font-mono text-slate-light"
+        style={{ left: `${MARGE}%`, top: "94.4%", fontSize: pt(8.5) }}
+      >
+        {pied}
+      </p>
+      <p
+        className="absolute text-right font-mono text-slate-light"
+        style={{ right: `${MARGE}%`, top: "94.4%", fontSize: pt(8.5) }}
+      >
+        {numero}
+      </p>
     </div>
   );
 }

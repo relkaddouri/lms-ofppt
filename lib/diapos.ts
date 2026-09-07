@@ -162,7 +162,11 @@ function enCarte(lignes: string[]): Carte {
 // donc en lignes, pas en caractères : un tableau de huit lignes coûte dix, une
 // carte en coûte quatre quelle que soit sa prose.
 
-const BUDGET = 15;
+// La zone de corps va de 23,33 % à 90,5 % de la hauteur, soit 483 px sur 720.
+// Une ligne de 14 pt interlignée à 1,45 en occupe 27 : la diapositive tient
+// donc dix-sept lignes, et non quinze comme le supposait la première version
+// dont les polices étaient un quart trop grandes.
+const BUDGET = 17;
 
 /**
  * Une carte coûte ce que sa prose occupe, pas un forfait.
@@ -173,13 +177,21 @@ const BUDGET = 15;
  * cinquante-cinq caractères par ligne.
  */
 function coutCarte(c: Carte): number {
-  const prose = c.lignes.join(" ");
-  return (
-    (c.intitule ? 1 : 0) +
-    (c.titre ? 1.5 : 0) +
-    Math.max(1, Math.ceil(prose.length / 55)) +
-    1
+  // Ligne par ligne, et non sur le texte joint : chaque ligne fait son propre
+  // paragraphe dans la carte. Une carte de huit lignes brèves était comptée
+  // pour deux et en occupait huit — c'est ce qui faisait déborder les blocs de
+  // données du cas fil rouge.
+  const prose = c.lignes.reduce(
+    (t, l) => t + Math.max(1, Math.ceil(l.length / 55)),
+    0,
   );
+  const contenu =
+    (c.intitule ? 1 : 0) + (c.titre ? 1.5 : 0) + prose + 1;
+  // Plancher : une carte occupe au minimum les 22,82 % de hauteur du deck,
+  // soit 164 px sur 720, soit près de six lignes de la zone de corps. Sans ce
+  // plancher, une rangée de cartes brèves était comptée pour trois lignes
+  // alors qu'elle en occupe six, et la diapositive débordait.
+  return Math.max(5.8, contenu);
 }
 
 function cout(bloc: BlocDiapo): number {
