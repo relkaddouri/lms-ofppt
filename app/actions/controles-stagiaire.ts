@@ -51,11 +51,41 @@ export async function getMesControles(): Promise<ControleStagiaire[]> {
       .eq("stagiaire_id", moi.id),
   ]);
 
+  // Deux lectures et non une : depuis la migration 077, la policy ferme la
+  // table tant que le résultat n'est pas publié. `v_mes_remises` dit qu'une
+  // copie a été rendue sans jamais dire ce qu'elle vaut — sans elle, une copie
+  // en attente disparaîtrait de l'écran et le stagiaire croirait l'avoir
+  // perdue.
+  //
+  // Le cast est la dette connue des chaînes `select` (BACKLOG, points de
+  // vigilance) : `database.types.ts` se régénère depuis la base, donc la vue
+  // n'y figurera qu'une fois la migration poussée.
+  type LectureRemises = {
+    select: (colonnes: string) => {
+      eq: (
+        colonne: string,
+        valeur: string,
+      ) => PromiseLike<{
+        data: { id: string; controle_id: string }[] | null;
+        error: { message: string } | null;
+      }>;
+    };
+  };
+  const remisesRes = await (
+    supabase.from as unknown as (table: string) => LectureRemises
+  )("v_mes_remises")
+    .select("id, controle_id")
+    .eq("stagiaire_id", moi.id);
+
   if (controlesRes.error) throw new Error(controlesRes.error.message);
   if (passationsRes.error) throw new Error(passationsRes.error.message);
+  if (remisesRes.error) throw new Error(remisesRes.error.message);
 
   const parControle = new Map(
     (passationsRes.data ?? []).map((p) => [p.controle_id, p]),
+  );
+  const remisPour = new Map(
+    (remisesRes.data ?? []).map((r) => [r.controle_id, r.id]),
   );
 
   return (
@@ -80,8 +110,10 @@ export async function getMesControles(): Promise<ControleStagiaire[]> {
       date_prevue: c.date_prevue,
       moduleNom: c.modules?.nom ?? null,
       codeOperationnel: c.modules?.competences?.code_operationnel ?? null,
+      // La note n'existe que si le formateur a publié ; la remise, elle, se
+      // sait dans tous les cas.
       note: p ? Number(p.note) : null,
-      passationId: p?.id ?? null,
+      passationId: p?.id ?? remisPour.get(c.id) ?? null,
     };
   });
 }

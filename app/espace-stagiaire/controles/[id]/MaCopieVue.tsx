@@ -50,8 +50,12 @@ export default function MaCopieVue({
       </div>
 
       {!copie ? (
-        <p className="mt-5 text-sm text-slate">
-          Votre copie a été rendue, son détail n&apos;est pas disponible.
+        // §4.7 : tant que le formateur n'a pas publié, le stagiaire ne voit
+        // ni note ni corrigé. Le dire ainsi plutôt que « détail non
+        // disponible », qui laissait croire à une copie égarée.
+        <p className="mt-5 rounded-[10px] border border-tint-teal-strong bg-tint-teal px-4 py-3 text-sm leading-relaxed text-ink">
+          Votre copie est bien arrivée. Le résultat s&apos;affichera ici quand
+          votre formateur l&apos;aura publié, après correction.
         </p>
       ) : (
         <ol className="mt-5 space-y-3">
