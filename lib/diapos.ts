@@ -18,7 +18,20 @@ import { texteNu } from "@/lib/markdown";
  * que de réduire le texte jusqu'à l'illisible.
  */
 
-export type Carte = { intitule: string; titre: string | null; lignes: string[] };
+/**
+ * Un encadré de diapositive.
+ *
+ * `accent` distingue ce qui structure de ce qui illustre : dans le support de
+ * référence, les critères d'évaluation sortent en encre et la consigne de
+ * déroulement en sarcelle, tandis que les notions parallèles restent neutres.
+ * Ce n'est pas de la décoration — c'est ce qui dit au stagiaire où regarder.
+ */
+export type Carte = {
+  intitule: string;
+  titre: string | null;
+  lignes: { texte: string; puce: boolean }[];
+  accent: "neutre" | "encre" | "sarcelle";
+};
 
 export type BlocDiapo =
   | { type: "texte"; texte: string }
@@ -156,11 +169,37 @@ function enCarte(lignes: string[]): Carte {
   return {
     intitule: enCapitales ? premiere : "",
     titre: gras ? gras[1]!.trim() : null,
+    // La puce est conservée : une liste projetée se lit par ses puces, pas en
+    // paragraphes collés les uns aux autres.
     lignes: reste
       .slice(gras ? 1 : 0)
-      .map((l) => texteNu(l))
-      .filter(Boolean),
+      .map((l) => ({
+        texte: texteNu(l),
+        puce: /^\s*[-*+]\s+/.test(l),
+      }))
+      .filter((l) => l.texte),
+    accent: "neutre",
   };
+}
+
+/**
+ * Donne son accent à chaque carte d'un groupe.
+ *
+ * Les cartes brèves et parallèles restent neutres : les colorer toutes ferait
+ * un vitrail. Celles qui portent un vrai développement — un barème, une
+ * consigne de déroulement — prennent l'accent, encre puis sarcelle, parce que
+ * ce sont elles qu'on cherche du regard.
+ */
+function accentuer(cartes: Carte[]): Carte[] {
+  const accents = ["encre", "sarcelle"] as const;
+  let rang = 0;
+  return cartes.map((c) => {
+    const longueur = c.lignes.reduce((t, l) => t + l.texte.length, 0);
+    if (longueur < 200) return c;
+    const accent = accents[rang % accents.length]!;
+    rang++;
+    return { ...c, accent };
+  });
 }
 
 // ── Coût d'un bloc, en lignes de projection ───────────────────────────────
@@ -189,7 +228,7 @@ function coutCarte(c: Carte): number {
   // pour deux et en occupait huit — c'est ce qui faisait déborder les blocs de
   // données du cas fil rouge.
   const prose = c.lignes.reduce(
-    (t, l) => t + Math.max(1, Math.ceil(l.length / 55)),
+    (t, l) => t + Math.max(1, Math.ceil(l.texte.length / 55)),
     0,
   );
   const contenu =
@@ -399,7 +438,7 @@ export function decouperEnDiapositives(
     };
     const fermerCartes = () => {
       if (cartesEnCours) {
-        blocs.push({ type: "cartes", cartes: cartesEnCours });
+        blocs.push({ type: "cartes", cartes: accentuer(cartesEnCours) });
         cartesEnCours = null;
       }
     };

@@ -121,16 +121,27 @@ function Bloc({ bloc }: { bloc: BlocDiapo }) {
           // rangées bancales.
           <div
             key={k}
-            className="flex flex-col rounded-[0.6cqw] border border-border bg-surface"
+            className={`flex flex-col rounded-[0.6cqw] border ${
+              c.accent === "encre"
+                ? "border-ink bg-ink"
+                : c.accent === "sarcelle"
+                  ? "border-tint-teal-strong bg-tint-teal"
+                  : "border-border bg-surface"
+            }`}
             style={{
               minHeight: "22.82cqh",
               padding: "2.66cqh 1.5cqw",
               gap: "0.8cqh",
+              // Une ombre très basse détache la carte du fond sans la faire
+              // flotter : c'est ce que fait le support de référence.
+              boxShadow: "0 0.12cqw 0.4cqw rgba(46,59,78,0.06)",
             }}
           >
             {c.intitule ? (
               <p
-                className="font-mono uppercase text-slate-light"
+                className={`font-mono uppercase ${
+                  c.accent === "encre" ? "text-white/55" : "text-slate-light"
+                }`}
                 style={{ fontSize: pt(9.5), letterSpacing: "0.08em" }}
               >
                 {c.intitule}
@@ -138,7 +149,9 @@ function Bloc({ bloc }: { bloc: BlocDiapo }) {
             ) : null}
             {c.titre ? (
               <p
-                className="font-semibold text-body"
+                className={`font-semibold ${
+                  c.accent === "encre" ? "text-white" : "text-body"
+                }`}
                 style={{ fontSize: pt(14), lineHeight: 1.3 }}
               >
                 {c.titre}
@@ -147,10 +160,25 @@ function Bloc({ bloc }: { bloc: BlocDiapo }) {
             {c.lignes.map((l, j) => (
               <p
                 key={j}
-                className="text-body"
-                style={{ fontSize: pt(14), lineHeight: 1.4 }}
+                className={`flex ${
+                  c.accent === "encre" ? "text-white/85" : "text-body"
+                }`}
+                style={{
+                  fontSize: pt(14),
+                  lineHeight: 1.4,
+                  gap: l.puce ? "0.8cqw" : undefined,
+                }}
               >
-                {l}
+                {l.puce ? (
+                  <span
+                    aria-hidden
+                    className={`mt-[0.55cqw] shrink-0 rounded-full ${
+                      c.accent === "encre" ? "bg-white/50" : "bg-teal"
+                    }`}
+                    style={{ width: "0.4cqw", height: "0.4cqw" }}
+                  />
+                ) : null}
+                <span>{l.texte}</span>
               </p>
             ))}
           </div>

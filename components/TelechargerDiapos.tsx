@@ -1,22 +1,23 @@
 "use client";
 
+import { useState } from "react";
 import Button from "@/components/ui/Button";
 import { imprimer } from "@/lib/impression";
-import DiapoRedigee from "@/components/DiapoRedigee";
-import { decouperEnDiapositives } from "@/lib/diapos";
 import { estRedige, type Support } from "@/lib/support";
+import { slugify } from "@/lib/format";
 import { FileDown, FileText } from "lucide-react";
 
 /**
- * Le diaporama 16:9 d'un cours, à emporter (PRD §4.4).
+ * Le cours à emporter, dans les deux formats (PRD §4.4).
  *
- * Côté stagiaire on ne projette pas : on récupère. Le bouton produit donc le
- * PDF sans afficher la navigation du diaporama — les diapositives sont
- * rendues hors écran, et l'impression du navigateur fait le reste.
+ * Côté stagiaire on ne projette pas : on récupère. Le diaporama est donc
+ * *dessiné* en PDF et téléchargé directement — pas d'aperçu, pas de boîte
+ * d'impression, et les polices embarquées plutôt que dépendantes de ce que le
+ * navigateur avait chargé.
  *
- * Même voie que le support de référence du porteur de projet, qui est un PDF
- * imprimé depuis Chromium : le rendu garde les tableaux, les encadrés et les
- * fonds encre, qu'un moteur PDF écrit à la main perdrait.
+ * Le document A4, lui, passe encore par l'impression : il coule sur plusieurs
+ * pages, avec des tableaux et une couverture, ce qu'un dessin PDF à la main
+ * reproduirait mal.
  */
 export default function TelechargerDiapos({
   support,
@@ -25,12 +26,24 @@ export default function TelechargerDiapos({
   support: Support;
   pied: string;
 }) {
+  const [enExport, setEnExport] = useState(false);
+
   if (support.type !== "theorique" || !estRedige(support)) return null;
 
-  const diapos = decouperEnDiapositives(support.markdown!, {
-    surtitre: pied,
-    pied,
-  });
+  async function telecharger() {
+    if (support.type !== "theorique" || !support.markdown) return;
+    setEnExport(true);
+    try {
+      const { telechargerDiapositivesPdf } = await import("@/lib/pdf-diapos");
+      await telechargerDiapositivesPdf(
+        support.markdown,
+        { surtitre: pied, pied },
+        `${slugify(support.titre, "diaporama")}-16-9.pdf`,
+      );
+    } finally {
+      setEnExport(false);
+    }
+  }
 
   return (
     <>
@@ -39,7 +52,9 @@ export default function TelechargerDiapos({
           variant="secondary"
           size="sm"
           icon={FileDown}
-          onClick={() => imprimer("diapo")}
+          onClick={telecharger}
+          loading={enExport}
+          loadingLabel="Préparation…"
         >
           Diaporama (PDF 16:9)
         </Button>
@@ -55,13 +70,6 @@ export default function TelechargerDiapos({
         </Button>
       </div>
 
-      <div className="diapo-impression" aria-hidden>
-        {diapos.map((d, i) => (
-          <div key={i} className="diapo-page">
-            <DiapoRedigee diapo={d} numero={i + 1} pied={pied} />
-          </div>
-        ))}
-      </div>
     </>
   );
 }

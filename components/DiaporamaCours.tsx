@@ -1,11 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { imprimer } from "@/lib/impression";
 import DiapoRedigee from "@/components/DiapoRedigee";
 import { decouperEnDiapositives } from "@/lib/diapos";
 import { decouperEnDiapos } from "@/lib/markdown";
 import { estRedige } from "@/lib/support";
+import { slugify } from "@/lib/format";
 import Button from "@/components/ui/Button";
 import type { SupportTheorique } from "@/lib/support";
 import {
@@ -129,6 +129,22 @@ export default function DiaporamaCours({
   const nombre = redigees?.length ?? classiques!.length;
   const [index, setIndex] = useState(0);
   const [pleinEcran, setPleinEcran] = useState(false);
+  const [enExport, setEnExport] = useState(false);
+
+  async function telecharger() {
+    if (!estRedige(support)) return;
+    setEnExport(true);
+    try {
+      const { telechargerDiapositivesPdf } = await import("@/lib/pdf-diapos");
+      await telechargerDiapositivesPdf(
+        support.markdown!,
+        { surtitre: pied ?? sousTitre, pied: pied ?? sousTitre },
+        `${slugify(support.titre, "diaporama")}-16-9.pdf`,
+      );
+    } finally {
+      setEnExport(false);
+    }
+  }
   const cadre = useRef<HTMLDivElement>(null);
 
   const aller = useCallback(
@@ -179,12 +195,17 @@ export default function DiaporamaCours({
             les encadrés et les fonds que le moteur PDF maison ne sait pas
             dessiner. La boîte d'impression est déjà celle du navigateur, on
             n'a pas à en réécrire une. */}
-        {redigees ? (
+        {/* Un fichier, pas une boîte d'impression : le PDF est dessiné, pas
+            imprimé. Les polices y sont embarquées, donc le rendu ne dépend
+            plus de ce que le navigateur avait chargé. */}
+        {redigees && estRedige(support) ? (
           <Button
             variant="ghost"
             size="sm"
             icon={FileDown}
-            onClick={() => imprimer("diapo")}
+            onClick={telecharger}
+            loading={enExport}
+            loadingLabel="Préparation…"
           >
             Télécharger en PDF 16:9
           </Button>
