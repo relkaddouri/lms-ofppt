@@ -1056,6 +1056,7 @@ export type Database = {
           id: string
           nom_complet: string
           note: number | null
+          publie_le: string | null
           responses: Json | null
           stagiaire_id: string | null
           submitted_at: string | null
@@ -1067,6 +1068,7 @@ export type Database = {
           id?: string
           nom_complet: string
           note?: number | null
+          publie_le?: string | null
           responses?: Json | null
           stagiaire_id?: string | null
           submitted_at?: string | null
@@ -1078,6 +1080,7 @@ export type Database = {
           id?: string
           nom_complet?: string
           note?: number | null
+          publie_le?: string | null
           responses?: Json | null
           stagiaire_id?: string | null
           submitted_at?: string | null
@@ -1859,6 +1862,45 @@ export type Database = {
       }
     }
     Views: {
+      v_mes_remises: {
+        Row: {
+          controle_id: string | null
+          id: string | null
+          resultat_publie: boolean | null
+          stagiaire_id: string | null
+          submitted_at: string | null
+        }
+        Insert: {
+          controle_id?: string | null
+          id?: string | null
+          resultat_publie?: never
+          stagiaire_id?: string | null
+          submitted_at?: string | null
+        }
+        Update: {
+          controle_id?: string | null
+          id?: string | null
+          resultat_publie?: never
+          stagiaire_id?: string | null
+          submitted_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "passations_controle_controle_id_fkey"
+            columns: ["controle_id"]
+            isOneToOne: false
+            referencedRelation: "controles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "passations_controle_stagiaire_id_fkey"
+            columns: ["stagiaire_id"]
+            isOneToOne: false
+            referencedRelation: "stagiaires"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       v_progression_module: {
         Row: {
           groupe_id: string | null
@@ -1906,6 +1948,7 @@ export type Database = {
         Args: { p_note: number; p_passation_id: string; p_responses: Json }
         Returns: undefined
       }
+      custom_access_token_hook: { Args: { event: Json }; Returns: Json }
       dupliquer_annee: {
         Args: {
           p_annee_source: string

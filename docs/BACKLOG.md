@@ -392,6 +392,14 @@ L'espace formateur était pensé desktop-only ; il doit désormais fonctionner s
   - **Répartition horaire** (720px) → **une carte par objectif**, avec **théorique et pratique appariés à l'intérieur** — seule exception accordée à la règle « jamais deux champs côte à côte » : on les saisit l'un en fonction de l'autre, et leur somme doit rester sous les yeux. Les lignes d'évaluation, dont les heures sont réservées d'office, ont une carte sans champ.
   **Test** : mesuré à 390px et contre-mesuré à 1200px sur les trois — `scrollWidth === clientWidth` partout, tables toujours visibles sur bureau (866 / 960 / 770 px) et listes mobiles bien masquées.
 
+- [x] **8.10 — Le cours rédigé, lu depuis un téléphone** (design §6) : `DocumentRedige` avait été écrit pour la page A4 puis réutilisé tel quel dans la lecture du stagiaire, qui consulte « quasi exclusivement depuis son téléphone ». Mesuré à 375px, ce que ça donnait : corps à 14px, tableaux à 13px, étiquettes d'encadré à 10,5px, une couverture de **894px sur un écran de 1018** — une page de garde entière à faire défiler avant la première ligne de cours — et surtout **la page elle-même défilant en travers** sur 530px de large.
+  - **Échelle typographique** rehaussée sous 768px : corps et listes à 16px, valeurs de tableau à 15px, sous-titres à 17px. Les étiquettes en petites capitales monospace restent volontairement plus petites — ce sont des surtitres, pas du texte courant.
+  - **Tableaux → blocs empilés** (§3bis) : sous 768px, une ligne devient un bloc — la première cellule en titre, les autres en `étiquette / valeur`. Quatre des dix-sept tableaux débordaient ; à 375px, quatre colonnes de texte donnaient des mots coupés lettre à lettre. Une ligne entièrement vide — la trame d'un tableau à remplir — ne donne pas de bloc : c'est le PDF qui porte l'espace où écrire.
+  - **Couverture ramenée à 677px** : elle garde son rôle — dire de quel support il s'agit — sans prendre la hauteur d'un écran, d'autant que le titre et la date de la séance sont déjà affichés au-dessus.
+  - **Défilement horizontal supprimé** : deux causes distinctes, le tableau qui élargissait son conteneur faute de `min-w-0` sur la colonne flex, et les lignes à remplir — des suites de tirets bas, insécables — qui poussaient la page à 530px.
+  **Test** : mesuré à 375px et contre-mesuré à 1280px. À 375 : `scrollWidth === clientWidth`, zéro élément hors page, 88 blocs empilés, aucun tableau visible, corps à 16px. À 1280 : 17 tableaux visibles, zéro bloc empilé, corps à 14px, tableaux à 13px, grille à trois colonnes — le rendu de bureau est inchangé, ce qui vaut aussi pour l'onglet Document du formateur.
+  **Non vérifié à l'écran réel** : la page stagiaire elle-même, faute de session ouverte ; la mesure a porté sur `DocumentRedige` monté dans le même cadre que `SupportLecture`.
+
 ---
 
 ## Points de vigilance — pas des atomes
