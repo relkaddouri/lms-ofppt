@@ -311,6 +311,9 @@ export default function SupportSeance({
         <div className="mt-4">
           <DiaporamaCours
             support={support}
+            pied={[contexte.moduleNom, contexte.groupeNom, "Support du stagiaire"]
+              .filter(Boolean)
+              .join(" · ")}
             sousTitre={[contexte.moduleNom, contexte.groupeNom]
               .filter(Boolean)
               .join(" · ")}

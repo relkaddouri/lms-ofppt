@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import DiapoRedigee from "@/components/DiapoRedigee";
+import { decouperEnDiapositives } from "@/lib/diapos";
 import { decouperEnDiapos } from "@/lib/markdown";
 import { estRedige } from "@/lib/support";
 import Button from "@/components/ui/Button";
@@ -102,19 +104,35 @@ function decouper(support: SupportTheorique, sousTitre: string): Diapo[] {
 export default function DiaporamaCours({
   support,
   sousTitre,
+  pied,
 }: {
   support: SupportTheorique;
   sousTitre: string;
+  /** Ce que le pied de page répète — module, élément, nature du document. */
+  pied?: string;
 }) {
-  const diapos = decouper(support, sousTitre);
+  // Un cours rédigé a sa propre grammaire de diapositives : couverture,
+  // sommaire, intercalaires, contenu paginé. Elle est reprise du support de
+  // référence du porteur de projet plutôt qu'inventée.
+  const redigees = estRedige(support)
+    ? decouperEnDiapositives(support.markdown!, {
+        surtitre: pied ?? sousTitre,
+        pied: pied ?? sousTitre,
+      })
+    : null;
+  // Les deux jeux ne se mélangent pas : celui d'un cours structuré et celui
+  // d'un cours rédigé n'ont ni les mêmes types de diapositive ni le même
+  // rendu. Seul leur nombre est commun, pour la navigation.
+  const classiques = redigees ? null : decouper(support, sousTitre);
+  const nombre = redigees?.length ?? classiques!.length;
   const [index, setIndex] = useState(0);
   const [pleinEcran, setPleinEcran] = useState(false);
   const cadre = useRef<HTMLDivElement>(null);
 
   const aller = useCallback(
     (delta: number) =>
-      setIndex((i) => Math.min(diapos.length - 1, Math.max(0, i + delta))),
-    [diapos.length],
+      setIndex((i) => Math.min(nombre - 1, Math.max(0, i + delta))),
+    [nombre],
   );
 
   useEffect(() => {
@@ -122,11 +140,11 @@ export default function DiaporamaCours({
       if (e.key === "ArrowRight" || e.key === " ") aller(1);
       else if (e.key === "ArrowLeft") aller(-1);
       else if (e.key === "Home") setIndex(0);
-      else if (e.key === "End") setIndex(diapos.length - 1);
+      else if (e.key === "End") setIndex(nombre - 1);
     }
     window.addEventListener("keydown", touche);
     return () => window.removeEventListener("keydown", touche);
-  }, [aller, diapos.length]);
+  }, [aller, nombre]);
 
   useEffect(() => {
     function change() {
@@ -141,7 +159,7 @@ export default function DiaporamaCours({
     else await cadre.current?.requestFullscreen();
   }
 
-  const d = diapos[index];
+  const d = classiques?.[index];
 
   return (
     <div>
@@ -155,7 +173,7 @@ export default function DiaporamaCours({
           Présenter en plein écran
         </Button>
         <span className="ml-auto font-mono text-xs text-slate">
-          {index + 1} / {diapos.length}
+          {index + 1} / {nombre}
         </span>
       </div>
 
@@ -178,7 +196,13 @@ export default function DiaporamaCours({
             maxWidth: pleinEcran ? "min(100vw, calc(100vh * 16 / 9))" : undefined,
           }}
         >
-          {d.type === "titre" ? (
+          {redigees ? (
+            <DiapoRedigee
+              diapo={redigees[index]!}
+              numero={index + 1}
+              pied={pied ?? sousTitre}
+            />
+          ) : !d ? null : d.type === "titre" ? (
             <div className="flex h-full flex-col justify-center bg-ink px-[7cqw] text-white">
               <p
                 className="font-mono uppercase tracking-widest text-mint/70"
@@ -321,8 +345,9 @@ export default function DiaporamaCours({
             </div>
           )}
 
-          {/* Pied de diapositive, hors page de titre. */}
-          {d.type !== "titre" ? (
+          {/* Pied de diapositive, hors page de titre. Le rendu rédigé pose
+              le sien. */}
+          {d && d.type !== "titre" ? (
             <div className="absolute inset-x-[6cqw] bottom-[2.5cqh] flex items-center justify-between">
               <span
                 className="truncate font-mono text-slate/70"
@@ -334,7 +359,7 @@ export default function DiaporamaCours({
                 className="font-mono text-slate/70"
                 style={{ fontSize: "1.3cqw" }}
               >
-                {index + 1} / {diapos.length}
+                {index + 1} / {nombre}
               </span>
             </div>
           ) : null}
@@ -355,7 +380,7 @@ export default function DiaporamaCours({
             <button
               type="button"
               onClick={() => aller(1)}
-              disabled={index === diapos.length - 1}
+              disabled={index === nombre - 1}
               aria-label="Diapositive suivante"
               className="m-[1cqw] rounded-full bg-ink/60 p-[1cqw] text-white disabled:opacity-30"
             >
@@ -380,7 +405,7 @@ export default function DiaporamaCours({
           size="sm"
           icon={ChevronRight}
           onClick={() => aller(1)}
-          disabled={index === diapos.length - 1}
+          disabled={index === nombre - 1}
         >
           Suivante
         </Button>
