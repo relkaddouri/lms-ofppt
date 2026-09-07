@@ -12,6 +12,7 @@ import { slugify } from "@/lib/format";
 import DiaporamaCours from "@/components/DiaporamaCours";
 import { estRedige, type Support } from "@/lib/support";
 import TexteMarkdown from "@/components/TexteMarkdown";
+import { imprimer } from "@/lib/impression";
 import { ListeRessources } from "@/components/RessourcesSupport";
 import { Download, FileDown, PenLine, Save, Sparkles } from "lucide-react";
 import { getEtablissement } from "@/app/actions/etablissement";
@@ -216,15 +217,21 @@ export default function SupportSeance({
         <Button icon={Save} size="sm" onClick={enregistrer} disabled={busy || !support}>
           Enregistrer
         </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          icon={Download}
-          onClick={exporter}
-          disabled={busy || !support}
-        >
-          Télécharger
-        </Button>
+        {/* L'export jsPDF ne sert plus un cours rédigé : il perdrait ses
+            tableaux et ses encadrés, que le moteur ne sait pas dessiner. Pour
+            celui-là, ce sont les deux boutons d'impression — document A4 dans
+            l'onglet Document, diaporama 16:9 dans l'autre. */}
+        {redige ? null : (
+          <Button
+            variant="ghost"
+            size="sm"
+            icon={Download}
+            onClick={exporter}
+            disabled={busy || !support}
+          >
+            Télécharger
+          </Button>
+        )}
         {/* Le markdown se récupère tel quel : c'est la source, elle se
             retravaille ailleurs, se met sous git, se recolle. Un support
             qu'on ne peut sortir qu'en PDF est un support qu'on ne peut plus
@@ -304,8 +311,21 @@ export default function SupportSeance({
             : "Cette séance n'a pas de nature définie ; la génération produira un support de cours."}
         </p>
       ) : support.type === "theorique" && redige && vue === "document" ? (
-        <div className="mt-4 rounded-[14px] border border-border bg-surface px-6 py-6 shadow-repos md:px-10 md:py-9">
-          <TexteMarkdown texte={support.markdown ?? ""} />
+        <div className="mt-4">
+          <Button
+            variant="ghost"
+            size="sm"
+            icon={FileDown}
+            onClick={() => imprimer("document")}
+          >
+            Télécharger le document (PDF A4)
+          </Button>
+          {/* Le même rendu sert l'écran et l'impression : c'est ce qui garantit
+              que le PDF montre ce que le formateur vient de relire. Le moteur
+              jsPDF, lui, perdait les tableaux et les encadrés. */}
+          <div className="doc-impression mt-3 rounded-[14px] border border-border bg-surface px-6 py-6 shadow-repos md:px-10 md:py-9">
+            <TexteMarkdown texte={support.markdown ?? ""} />
+          </div>
         </div>
       ) : support.type === "theorique" && vue === "diaporama" ? (
         <div className="mt-4">

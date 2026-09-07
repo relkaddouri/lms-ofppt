@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { imprimer } from "@/lib/impression";
 import DiapoRedigee from "@/components/DiapoRedigee";
 import { decouperEnDiapositives } from "@/lib/diapos";
 import { decouperEnDiapos } from "@/lib/markdown";
@@ -183,7 +184,7 @@ export default function DiaporamaCours({
             variant="ghost"
             size="sm"
             icon={FileDown}
-            onClick={() => window.print()}
+            onClick={() => imprimer("diapo")}
           >
             Télécharger en PDF 16:9
           </Button>

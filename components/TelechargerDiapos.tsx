@@ -1,10 +1,11 @@
 "use client";
 
 import Button from "@/components/ui/Button";
+import { imprimer } from "@/lib/impression";
 import DiapoRedigee from "@/components/DiapoRedigee";
 import { decouperEnDiapositives } from "@/lib/diapos";
 import { estRedige, type Support } from "@/lib/support";
-import { FileDown } from "lucide-react";
+import { FileDown, FileText } from "lucide-react";
 
 /**
  * Le diaporama 16:9 d'un cours, à emporter (PRD §4.4).
@@ -33,14 +34,26 @@ export default function TelechargerDiapos({
 
   return (
     <>
-      <Button
-        variant="secondary"
-        size="sm"
-        icon={FileDown}
-        onClick={() => window.print()}
-      >
-        Télécharger le diaporama (PDF 16:9)
-      </Button>
+      <div className="flex flex-wrap gap-2">
+        <Button
+          variant="secondary"
+          size="sm"
+          icon={FileDown}
+          onClick={() => imprimer("diapo")}
+        >
+          Diaporama (PDF 16:9)
+        </Button>
+        {/* Les deux formats servent deux usages : on projette l'un, on relit
+            et on annote l'autre. Le stagiaire choisit. */}
+        <Button
+          variant="secondary"
+          size="sm"
+          icon={FileText}
+          onClick={() => imprimer("document")}
+        >
+          Document (PDF A4)
+        </Button>
+      </div>
 
       <div className="diapo-impression" aria-hidden>
         {diapos.map((d, i) => (

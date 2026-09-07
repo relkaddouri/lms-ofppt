@@ -519,19 +519,23 @@ body {
   color: var(--forest);
 }
 
-/* ── Impression d'un diaporama 16:9 ────────────────────────────────────────
+/* ── Impressions : diaporama 16:9 et document A4 ───────────────────────────
  *
  * Le support de référence du porteur de projet est un PDF produit en
- * imprimant une page HTML (Creator: Chromium). C'est aussi la voie retenue
- * ici : le navigateur imprime les diapositives telles qu'il les affiche, donc
- * avec les tableaux, les encadrés et les couleurs — ce qu'un moteur PDF écrit
- * à la main perdrait, ou coûterait dix fois plus cher à retrouver.
+ * imprimant une page HTML (Creator: Chromium). C'est la voie retenue ici : le
+ * navigateur imprime ce qu'il affiche, donc avec les tableaux, les encadrés et
+ * les fonds — ce qu'un moteur PDF écrit à la main perdrait, ou coûterait dix
+ * fois plus cher à retrouver.
  *
- * `visibility` et non `display` pour masquer le reste : couper les blocs de
- * l'application avec `display: none` casse la mise en page des diapositives,
- * qui vivent dans un conteneur imbriqué.
+ * Le format de page ne se choisit pas ici. `@page` est unique par impression
+ * et ne se conditionne pas par une classe : c'est `lib/impression.ts` qui
+ * injecte la bonne règle au moment du clic, et pose la classe correspondante
+ * sur `<html>`. Les sélecteurs ci-dessous ne font que dire quoi montrer.
  */
 
+/* Le conteneur des diapositives n'existe que pour l'impression : à l'écran, la
+   navigation du diaporama montre une diapositive à la fois. Celui du document,
+   lui, est ce que le formateur lit — il reste visible, et sert les deux. */
 @media screen {
   .diapo-impression {
     display: none;
@@ -539,33 +543,46 @@ body {
 }
 
 @media print {
-  @page {
-    /* 13,333 × 7,5 pouces : le 16:9 de PowerPoint, celui du deck fourni. */
-    size: 338.7mm 190.5mm;
-    margin: 0;
-  }
-
   html,
   body {
     background: #fff;
   }
 
+  /* `visibility` et non `display` : couper les blocs de l'application avec
+     `display: none` casse la mise en page de ce qu'on imprime, qui vit dans un
+     conteneur imbriqué. */
   body * {
     visibility: hidden !important;
   }
 
-  .diapo-impression,
-  .diapo-impression * {
+  html.impression-diapo .diapo-impression,
+  html.impression-diapo .diapo-impression *,
+  html.impression-document .doc-impression,
+  html.impression-document .doc-impression * {
     visibility: visible !important;
   }
 
-  .diapo-impression {
+  html.impression-diapo .diapo-impression {
     position: absolute;
     inset: 0;
     display: block;
   }
 
-  .diapo-impression > .diapo-page {
+  /* Le document garde son flux : il doit se répartir sur plusieurs pages A4,
+     ce qu'un bloc en position absolue ne fait pas. On le remonte en haut de la
+     page en neutralisant son cadre d'écran. */
+  html.impression-document .doc-impression {
+    position: static;
+    margin: 0;
+    border: 0;
+    padding: 0;
+    box-shadow: none;
+    background: transparent;
+  }
+
+  /* ── Diapositives ───────────────────────────────────────────────────── */
+
+  html.impression-diapo .diapo-impression > .diapo-page {
     width: 338.7mm;
     height: 190.5mm;
     overflow: hidden;
@@ -575,14 +592,35 @@ body {
   }
 
   /* Sans quoi une page blanche s'ajoute à la fin. */
-  .diapo-impression > .diapo-page:last-child {
+  html.impression-diapo .diapo-impression > .diapo-page:last-child {
     break-after: auto;
     page-break-after: auto;
   }
 
-  /* Les fonds encre des couvertures et des intercalaires doivent sortir :
-     sans cette règle, le navigateur les blanchit pour économiser l'encre et
-     le texte blanc disparaît sur fond blanc. */
+  /* ── Document ───────────────────────────────────────────────────────── */
+
+  /* Un titre seul en bas de page, sa suite sur la suivante : la règle
+     typographique de base, que le navigateur n'applique pas d'office. */
+  .doc-impression h1,
+  .doc-impression h2,
+  .doc-impression h3,
+  .doc-impression h4 {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+
+  /* Un tableau ou un encadré coupé en deux se relit mal : on les garde
+     entiers tant qu'ils tiennent sur une page. */
+  .doc-impression table,
+  .doc-impression aside,
+  .doc-impression pre {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Les fonds encre des couvertures et les fonds clairs des encadrés doivent
+     sortir : sans cette règle, le navigateur les blanchit pour économiser
+     l'encre et le texte blanc disparaît sur fond blanc. */
   * {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
