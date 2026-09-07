@@ -274,7 +274,7 @@ export default function CorrectionManager({
         </label>
       ) : null}
 
-      <div className="mt-5 grid items-start gap-5 xl:[grid-template-columns:320px_minmax(0,1fr)]">
+      <div className="mt-5 grid grid-cols-1 items-start gap-5 xl:[grid-template-columns:320px_minmax(0,1fr)]">
         <section className="min-w-0 overflow-hidden rounded-[14px] border border-border bg-surface shadow-repos">
           <div className="flex items-center gap-2.5 border-b border-separator bg-paper-alt px-[18px] py-4">
             <h2 className="font-display text-[15.5px] font-semibold text-ink">
@@ -418,7 +418,7 @@ export default function CorrectionManager({
                     <span className="text-sm font-semibold text-body">
                       Points obtenus
                     </span>
-                    <span className="flex items-stretch overflow-hidden rounded-[9px] border border-border-strong bg-surface">
+                    <span className="flex items-stretch overflow-hidden rounded-[9px] border border-border-strong bg-surface max-md:min-h-11">
                       <input
                         id="points"
                         type="number"
@@ -448,7 +448,7 @@ export default function CorrectionManager({
                         key={m}
                         type="button"
                         onClick={() => modifierActive({ points: m })}
-                        className="rounded-lg border border-border-strong bg-surface px-3 py-2 font-mono text-[13px] font-medium text-body transition-colors duration-150 ease-out hover:border-ink hover:bg-paper"
+                        className="rounded-lg border border-border-strong bg-surface px-3 py-2 font-mono text-[13px] font-medium text-body transition-colors duration-150 ease-out hover:border-ink hover:bg-paper max-md:min-h-11 max-md:min-w-11"
                       >
                         {m}
                       </button>

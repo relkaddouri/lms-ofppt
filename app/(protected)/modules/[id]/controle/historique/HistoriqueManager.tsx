@@ -5,6 +5,7 @@ import Breadcrumb from "@/components/Breadcrumb";
 import Badge from "@/components/ui/Badge";
 import type { AuditEntry, Controle } from "@/app/actions/controles";
 import { inputStyles } from "@/components/ui/Input";
+import ListeCartes, { type Colonne } from "@/components/ui/ListeCartes";
 import { formatDateTime } from "@/lib/format";
 import { libelleModule } from "@/lib/modules";
 
@@ -112,6 +113,46 @@ export default function HistoriqueManager({
   const titreFor = (id: string) =>
     controles.find((c) => c.id === id)?.titre ?? "Contrôle supprimé";
 
+  /**
+   * Le tableau devient une carte par ligne sous 768px (design_system §3bis).
+   *
+   * Le titre du contrôle porte la ligne, la date et l'action le qualifient,
+   * et le détail des champs modifiés — la seule colonne qui puisse tenir sur
+   * plusieurs lignes — passe en bas de carte.
+   */
+  const colonnes: Colonne<AuditEntry>[] = [
+    {
+      cle: "controle",
+      entete: "Contrôle",
+      role: "titre",
+      cellule: (e) => titreFor(e.ligne_id),
+    },
+    {
+      cle: "date",
+      entete: "Date",
+      role: "meta",
+      cellule: (e) => (
+        <span className="font-mono text-xs text-slate">
+          {formatDateTime(e.date)}
+        </span>
+      ),
+    },
+    {
+      cle: "action",
+      entete: "Action",
+      role: "meta",
+      cellule: (e) => (
+        <Badge tone={actionTone(e.action)}>{actionLabel(e.action)}</Badge>
+      ),
+    },
+    {
+      cle: "modifications",
+      entete: "Modifications",
+      pleineLargeur: true,
+      cellule: (e) => <ChangesList entry={e} />,
+    },
+  ];
+
   return (
     <div className="p-8">
       <Breadcrumb
@@ -123,7 +164,7 @@ export default function HistoriqueManager({
         ]}
       />
 
-      <div className="mt-6 flex max-w-[640px] items-center gap-3">
+      <div className="mt-6 flex max-w-[640px] flex-col gap-1.5 md:flex-row md:items-center md:gap-3">
         <label htmlFor="controle" className="text-sm font-medium text-ink">
           Contrôle
         </label>
@@ -142,50 +183,14 @@ export default function HistoriqueManager({
         </select>
       </div>
 
-      {filtered.length === 0 ? (
-        <div className="mt-6 rounded-[14px] border border-dashed border-border bg-surface shadow-repos p-10 text-center">
-          <p className="text-sm text-slate">
-            Aucune modification enregistrée pour l&apos;instant. Les changements
-            sur un contrôle validé apparaîtront ici.
-          </p>
-        </div>
-      ) : (
-        <div className="mt-6 overflow-hidden rounded-[14px] border border-border bg-surface shadow-repos">
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="border-b border-border bg-paper text-xs uppercase tracking-wide text-slate">
-                <th className="px-4 py-3 font-medium">Date</th>
-                <th className="px-4 py-3 font-medium">Contrôle</th>
-                <th className="px-4 py-3 font-medium">Action</th>
-                <th className="px-4 py-3 font-medium">Modifications</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((e) => (
-                <tr
-                  key={e.id}
-                  className="border-t border-border transition-colors hover:bg-wash/50"
-                >
-                  <td className="px-4 py-3 font-mono text-xs text-slate">
-                    {formatDateTime(e.date)}
-                  </td>
-                  <td className="px-4 py-3 font-medium text-ink">
-                    {titreFor(e.ligne_id)}
-                  </td>
-                  <td className="px-4 py-3">
-                    <Badge tone={actionTone(e.action)}>
-                      {actionLabel(e.action)}
-                    </Badge>
-                  </td>
-                  <td className="px-4 py-3">
-                    <ChangesList entry={e} />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <div className="mt-6">
+        <ListeCartes
+          lignes={filtered}
+          cle={(e) => e.id}
+          colonnes={colonnes}
+          vide="Aucune modification enregistrée pour l'instant. Les changements sur un contrôle validé apparaîtront ici."
+        />
+      </div>
     </div>
   );
 }

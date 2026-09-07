@@ -3,16 +3,23 @@
 import { headers } from "next/headers";
 import { createClient, getUser } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { envoyerCourriel } from "@/lib/courriel";
 import { revalidatePath } from "next/cache";
 
 /**
  * Invitation d'un stagiaire à créer son compte.
  *
  * La création d'un compte passe par l'API d'administration, donc par la clé de
- * service : elle ne peut pas se faire depuis le navigateur. Le lien est rendu
- * au formateur plutôt qu'envoyé par courriel — l'application n'a pas de
- * serveur d'envoi configuré, et un lien qu'on transmet soi-même vaut mieux
- * qu'un courriel qui échoue en silence.
+ * service : elle ne peut pas se faire depuis le navigateur.
+ *
+ * Le lien partait au formateur et à lui seul, faute de serveur d'envoi. Ce
+ * n'est plus vrai : le courriel part maintenant au stagiaire. Le lien
+ * continue d'être rendu au formateur, mais comme un filet et non comme le
+ * moyen principal — une adresse mal saisie ou une boîte pleine ne doit pas
+ * laisser un stagiaire dehors.
+ *
+ * Ce que l'écran ne fera jamais : prétendre que le courriel est parti quand
+ * il ne l'est pas. C'est tout l'objet du champ `envoi`.
  */
 
 export type ResultatInvitation = {
@@ -20,6 +27,8 @@ export type ResultatInvitation = {
   email: string;
   /** Vrai si le compte existait déjà : le lien sert alors à le retrouver. */
   existant: boolean;
+  /** Ce que le courriel a fait, mot pour mot, pour que l'écran le dise. */
+  envoi: { envoye: true } | { envoye: false; raison: string };
 };
 
 export async function inviterStagiaire(
@@ -110,7 +119,36 @@ export async function inviterStagiaire(
   url.searchParams.set("type", "recovery");
   url.searchParams.set("next", "/definir-mot-de-passe");
 
+  const lienFinal = url.toString();
+
+  // L'échec d'envoi n'annule pas l'invitation : le compte existe, le lien est
+  // valide, et le formateur peut le transmettre à la main. Jeter ici obligerait
+  // à tout recommencer pour un incident de messagerie.
+  const envoi = await envoyerCourriel({
+    a: email,
+    sujet: existant
+      ? "Votre accès à Pédago — nouveau lien"
+      : "Votre accès à Pédago",
+    texte: [
+      `Bonjour ${stagiaire.prenom},`,
+      ``,
+      existant
+        ? `Voici un nouveau lien pour accéder à votre espace Pédago et redéfinir votre mot de passe :`
+        : `Un espace Pédago vous a été ouvert. Ce lien vous permet de choisir votre mot de passe :`,
+      ``,
+      lienFinal,
+      ``,
+      `Ce lien ouvre une session : ne le transmettez à personne.`,
+      ``,
+      `— Pédago`,
+    ].join("\n"),
+  });
+
+  if (!envoi.envoye) {
+    console.error("[invitation] courriel non parti", email, envoi.raison);
+  }
+
   revalidatePath(`/groupes/${stagiaire.groupe_id}`);
 
-  return { lien: url.toString(), email, existant };
+  return { lien: lienFinal, email, existant, envoi };
 }

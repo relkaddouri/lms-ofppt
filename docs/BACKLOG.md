@@ -149,6 +149,14 @@ contrôles et produire les fiches est le travail manuel que cette application do
   ~~ — Terminal : `npx vercel login` puis `npx vercel link`, et les variables d'environnement listées dans `docs/DEPLOIEMENT.md`. Pas de clé API IA à poser : chaque formateur enregistre la sienne depuis Paramètres, chiffrée dans le Vault Supabase.~~
   **Test** : connecte-toi en formateur et en stagiaire depuis l'URL de production, vérifie que les deux espaces fonctionnent.
 
+- [ ] **6.2 — Activer le crochet de jeton** *(migration écrite, activation à faire par le porteur de projet)*. La migration `075_role_dans_le_jeton.sql` et le code sont prêts et sans effet de bord : tant que le crochet n'est pas activé, `getCurrentUserRole()` retombe sur la lecture PostgREST et l'application se comporte exactement comme avant. Deux gestes restent :
+  1. **Appliquer la migration** — `npx supabase db push` (demande le mot de passe de la base ; je ne dois pas le voir).
+  2. **Activer le crochet** — tableau de bord Supabase → *Authentication* → *Hooks* → **Customize Access Token (JWT) Claims** → choisir `public.custom_access_token_hook`.
+
+  Ce que ça change : le rôle voyage dans le jeton, donc plus aucun aller-retour PostgREST sur `profils` à chaque rendu du layout protégé — c'est-à-dire sur **chaque page** de l'espace formateur. Et surtout, plus de lecture à refuser : c'est cette lecture qui, refusée « JWT issued at future », remplaçait l'espace entier par la page d'erreur de Next (`47b3df9`).
+
+  **Test après activation** : se déconnecter puis se reconnecter — la revendication n'entre dans le jeton qu'au renouvellement suivant — et vérifier dans les journaux Vercel qu'aucune ligne `[auth] lecture du rôle` n'apparaît plus. Vérifier aussi qu'un compte stagiaire est toujours renvoyé vers son espace.
+
 ---
 
 ## Phase 7 — Suite validée (ordre strict)
@@ -367,6 +375,22 @@ L'espace formateur était pensé desktop-only ; il doit désormais fonctionner s
   - **26 grilles sans colonne de base.** `grid gap-4 md:grid-cols-2` ne déclare aucune colonne sous 768px : la grille en crée une seule, dimensionnée sur le contenu. C'est ce qui faisait sortir la fiche d'un module à 583px, avec un titre de 462px dans une carte de 358. Toutes portent désormais `grid-cols-1` explicite.
   - **Modules d'un groupe** — badge d'heures, ventilation S1/S2 et bouton refusaient de rétrécir : ils passent à la ligne.
   **Test** : douze écrans mesurés à 390px, `scrollWidth === clientWidth` sur les douze — modules, paramètres, calendrier, stage, fiche de groupe, progression, tableau de bord, emploi du temps, tableau de service, classeur, liste des modules, liste des groupes.
+
+- [x] **8.8 — Parcours de contrôle** (design §3bis) : aucun de ces écrans ne débordait. Ce qu'ils faisaient est plus insidieux — ils effaçaient l'information et rendaient les commandes intouchables.
+  - **La frise d'étapes effaçait ses libellés.** Mesurés à 390px, les trois premiers étaient à **zéro pixel de large** : `truncate` les avait réduits à rien, et seule « Relecture » survivait parce que sa case ne se rétracte pas. Sous 768px la frise ne garde que ses ronds numérotés, portés à 44px — l'en-tête de la page annonce déjà « Étape 3 sur 4 · Questions » deux lignes plus haut. `sr-only` et non `hidden`, pour que les libellés restent annoncés par un lecteur d'écran.
+  - **Toutes les cibles de l'éditeur de questions étaient sous 44px** : type 32, difficulté **27**, barème 34, suppression 32, justification 36, cases du QCM **16**. La case garde ses 16px — l'étirer donnerait un rectangle ; c'est son label qui porte la zone tactile.
+  - **La ligne d'une proposition de QCM tenait trois contrôles sur 232px.** Le champ tombait à 126px. Sous 768px il prend sa ligne, la case et la corbeille passent dessous — et le mot « Correcte » apparaît, sans quoi la case détachée du champ ne dirait plus ce qu'elle coche.
+  - **La navigation d'étapes empilait tout à gauche** : l'action principale se retrouvait sous une phrase. Grille à deux colonnes, les deux boutons face à face, la consigne sur sa propre ligne.
+  - **`CorrectionManager` : une 27ᵉ grille sans colonne de base**, non vue au balayage de 8.7.
+  - **L'historique était un tableau dense brut** — converti en `ListeCartes`. Sa colonne « Modifications » rend une liste de champs : `ListeCartes` gagne l'option `pleineLargeur`, sans quoi ce détail se serait retrouvé à moins de 120px dans le `dl` à deux colonnes.
+  **Test** : mesuré à 390px et **contre-mesuré à 1200px** — c'est ce second passage qui a rattrapé une régression, `flex-wrap` combiné au `w-full` d'`inputStyles` renvoyant les trois contrôles à la ligne y compris sur bureau.
+  **Non vérifié à l'écran** : les copies, la correction d'une copie et le corps de l'historique. La base ne contient **aucune passation** (`content-range: */0`) ni aucune entrée d'audit — ces trois écrans ne rendent que leur état vide. Corrigés à la lecture, à revoir dès qu'un stagiaire aura rendu une copie.
+
+- [x] **8.9 — Les trois grilles larges** (design §3bis) : les seules qui restaient à défiler horizontalement dans leur conteneur. Chacune a l'équivalent mobile que le §3bis lui assigne, plutôt qu'un défilement latéral.
+  - **Emploi du temps** (`GrilleMotif`, 720px) → **une liste par groupe** : le groupe en tête avec sa couleur, ses créneaux dessous, un par ligne — `DDOUX201 · Lun 13 h 30–18 h 30 · Mar 8 h 30–13 h 30 …`. C'est la lecture la plus fréquente de toute façon : « ce groupe, je le vois quand ? ». La liste prend `motif.creneaux` et non les cases placées : elle n'a pas la contrainte des blocs de 2 h 30, donc elle en montre **davantage** que la grille — d'où l'avertissement « n'apparaît pas dans la grille » masqué sous 768px, où il serait faux.
+  - **Tableau de service** (960px, neuf colonnes) → **une carte par affectation**, les quatre valeurs horaires en mini-tableau 2×2 : c'est la seule information du document qui se lise par comparaison, S1 face à S2 et P face à S. Le total et le MHT AFF général ferment la liste dans leur propre carte.
+  - **Répartition horaire** (720px) → **une carte par objectif**, avec **théorique et pratique appariés à l'intérieur** — seule exception accordée à la règle « jamais deux champs côte à côte » : on les saisit l'un en fonction de l'autre, et leur somme doit rester sous les yeux. Les lignes d'évaluation, dont les heures sont réservées d'office, ont une carte sans champ.
+  **Test** : mesuré à 390px et contre-mesuré à 1200px sur les trois — `scrollWidth === clientWidth` partout, tables toujours visibles sur bureau (866 / 960 / 770 px) et listes mobiles bien masquées.
 
 ---
 

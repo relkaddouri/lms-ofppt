@@ -36,6 +36,15 @@ export type Colonne<T> = {
    * ou trop longue pour un petit écran. Elle reste dans le tableau.
    */
   masqueeEnCarte?: boolean;
+  /**
+   * Détail qui prend les deux colonnes de la carte.
+   *
+   * Les détails s'apparient deux par deux, ce qui convient à des valeurs
+   * courtes — une durée, un effectif. Une colonne qui rend un paragraphe ou
+   * une liste s'y retrouve à moins de 120px de large : elle demande la
+   * largeur entière.
+   */
+  pleineLargeur?: boolean;
 };
 
 export default function ListeCartes<T>({
@@ -147,7 +156,12 @@ export default function ListeCartes<T>({
               {details.length > 0 ? (
                 <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 border-t border-separator pt-3">
                   {details.map((c) => (
-                    <div key={c.cle} className="flex flex-col gap-0.5">
+                    <div
+                      key={c.cle}
+                      className={`flex flex-col gap-0.5 ${
+                        c.pleineLargeur ? "col-span-2" : ""
+                      }`}
+                    >
                       <dt className="text-xs text-slate-light">{c.entete}</dt>
                       <dd className="text-sm text-ink">{c.cellule(l)}</dd>
                     </div>

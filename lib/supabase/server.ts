@@ -84,25 +84,61 @@ async function ageDuJeton(): Promise<string> {
 /** Le temps qu'une horloge en retard a pour rattraper l'émission du jeton. */
 const DELAI_SECONDE_LECTURE = 1000;
 
+/**
+ * Le rôle de l'utilisateur courant.
+ *
+ * Depuis la migration 075, le jeton porte lui-même la revendication
+ * `role_pedago` : la lire évite un aller-retour PostgREST sur chaque rendu du
+ * layout protégé — c'est-à-dire sur chaque page de l'espace formateur — pour
+ * une valeur qui ne change jamais. Et sans lecture, plus de lecture à
+ * refuser : c'est ce qui éteignait l'espace entier quand les horloges de
+ * Supabase divergeaient d'une seconde (commit 47b3df9).
+ *
+ * `getClaims()` plutôt que `getUser()` ici : le projet signe en ES256, donc
+ * la vérification se fait localement contre le JWKS, que `auth-js` garde dans
+ * un cache global au processus — une seule récupération par démarrage à
+ * froid. `getUser()` interrogeait le service d'authentification à chaque
+ * appel, et le layout le fait déjà de son côté pour établir l'identité.
+ *
+ * `getSession()` ne conviendrait pas : elle lit le cookie sans vérifier la
+ * signature, ce qui ne suffit pas pour une valeur dont dépend une
+ * redirection.
+ */
 export async function getCurrentUserRole() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
 
-  if (!user) return null;
+  // Une vérification qui échoue n'a pas à coûter la page : le repli PostgREST
+  // reste là pour trancher.
+  const revendications = await supabase.auth
+    .getClaims()
+    .then((r) => r.data?.claims ?? null)
+    .catch(() => null);
+
+  if (!revendications || typeof revendications.sub !== "string") return null;
+  const identifiant = revendications.sub;
+
+  // `role_pedago` et non `role` : cette dernière est le rôle Postgres du
+  // jeton Supabase, celui sur lequel PostgREST fait son `set role`. La
+  // migration 075 explique pourquoi les confondre casserait tout.
+  //
+  // Absente tant que le crochet n'est pas activé côté Supabase, et pour une
+  // session ouverte avant son activation : la revendication n'entre dans le
+  // jeton qu'au renouvellement suivant.
+  const duJeton = revendications.role_pedago;
+  if (typeof duJeton === "string" && duJeton.length > 0) return duJeton;
 
   const lire = () =>
-    supabase.from("profils").select("role").eq("id", user.id).maybeSingle();
+    supabase.from("profils").select("role").eq("id", identifiant).maybeSingle();
 
   let { data, error } = await lire();
 
-  // PostgREST refuse parfois un jeton tout juste renouvelé — `JWT issued at
-  // future` — quand son horloge retarde de quelques secondes sur celle du
-  // service qui l'a émis. Le cas se résout de lui-même en une seconde. Comme
-  // cette fonction n'est appelée que par le layout protégé, y jeter éteint
-  // l'espace formateur entier : un tel incident mérite un second essai, pas
-  // un écran d'erreur.
+  // Repli, emprunté tant que le crochet n'est pas activé ou que la session
+  // date d'avant : PostgREST refuse parfois un jeton tout juste renouvelé —
+  // `JWT issued at future` — quand son horloge retarde de quelques secondes
+  // sur celle du service qui l'a émis. Le cas se résout de lui-même en une
+  // seconde. Comme cette fonction n'est appelée que par le layout protégé, y
+  // jeter éteint l'espace formateur entier : un tel incident mérite un second
+  // essai, pas un écran d'erreur.
   if (error) {
     console.error(
       "[auth] lecture du rôle, premier échec",

@@ -269,7 +269,7 @@ export default function RepartitionManager({
         </p>
       </div>
 
-      <div className="overflow-x-auto rounded-[14px] border border-border bg-surface shadow-repos">
+      <div className="overflow-x-auto rounded-[14px] border border-border bg-surface shadow-repos max-md:hidden">
         <table className="w-full min-w-[720px] text-sm">
           <thead>
             <tr className="border-b border-border bg-paper-alt text-left font-mono text-[11px] uppercase tracking-[0.1em] text-slate-light">
@@ -375,6 +375,104 @@ export default function RepartitionManager({
           </tbody>
         </table>
       </div>
+
+      {/* Sous 768px, cinq colonnes réclamaient 720px. Une carte par objectif,
+          et — seule exception accordée à la règle « jamais deux champs côte à
+          côte » du §3bis — les heures théoriques et pratiques restent
+          appariées à l'intérieur de la carte : on les saisit l'une en fonction
+          de l'autre, et leur somme doit rester sous les yeux. */}
+      <ul className="flex list-none flex-col gap-2.5 md:hidden">
+        {lignes.map((l) => (
+          <li
+            key={l.id}
+            className="rounded-[14px] border border-border bg-surface px-4 py-3.5 shadow-repos"
+          >
+            <p className="text-[15px] leading-snug text-ink">
+              <span className="font-mono text-[13px] text-slate">{l.code}</span>{" "}
+              {l.intitule}
+            </p>
+            {l.pourcentElement != null ? (
+              <p className="mt-1.5">
+                <Badge tone="neutral">
+                  élément {l.lettre} — {l.pourcentElement} %
+                </Badge>
+              </p>
+            ) : null}
+
+            <div className="mt-3 grid grid-cols-2 gap-3 border-t border-separator pt-3">
+              {(
+                [
+                  ["heures_theoriques", "Théorique", l.heures_theoriques],
+                  ["heures_pratiques", "Pratique", l.heures_pratiques],
+                ] as const
+              ).map(([champ, libelle, valeur]) => (
+                <label key={champ} className="flex flex-col gap-1">
+                  <span className="font-mono text-[10.5px] uppercase tracking-[0.08em] text-slate-light">
+                    {libelle}
+                  </span>
+                  <input
+                    type="number"
+                    min={0}
+                    step={PAS}
+                    aria-label={`Heures ${libelle.toLowerCase()}s ${l.code}`}
+                    value={valeur}
+                    onChange={(e) =>
+                      maj(l.id, champ, Number(e.target.value) || 0)
+                    }
+                    className={`${inputClass} mt-0 text-right`}
+                  />
+                </label>
+              ))}
+            </div>
+
+            <p className="mt-3 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 text-[13px] text-slate">
+              <span>
+                Total{" "}
+                <span className="font-medium text-ink">
+                  {formatHeures(l.heures_theoriques + l.heures_pratiques)}
+                </span>
+              </span>
+              <span>
+                {[
+                  l.presentiel ? "présentiel" : null,
+                  l.synchrone ? "synchrone" : null,
+                  l.asynchrone ? "asynchrone" : null,
+                ]
+                  .filter(Boolean)
+                  .join(", ") || "—"}
+              </span>
+            </p>
+          </li>
+        ))}
+
+        {/* Les heures d'évaluation ne se saisissent pas : elles sont réservées
+            d'office (PRD §4.7). Leur carte n'a donc pas de champ. */}
+        {LIGNES_EVALUATION.map((e) => (
+          <li
+            key={e.cle}
+            className="rounded-[14px] border border-border bg-paper-alt px-4 py-3.5"
+          >
+            <p className="text-[15px] leading-snug text-ink">
+              <span className="font-mono text-[13px] text-slate">
+                {e.cle.toUpperCase()}
+              </span>{" "}
+              {e.libelle}
+            </p>
+            <p className="mt-1.5">
+              <Badge tone="neutral">évaluation — réservé</Badge>
+            </p>
+            <p className="mt-3 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 border-t border-separator pt-3 text-[13px] text-slate">
+              <span>
+                Total{" "}
+                <span className="font-medium text-ink">
+                  {formatHeures(e.heures)}
+                </span>
+              </span>
+              <span>présentiel</span>
+            </p>
+          </li>
+        ))}
+      </ul>
 
       <div className="flex flex-wrap items-center gap-3">
         <Button icon={Save} onClick={() => enregistrer(false)} disabled={enCours}>
