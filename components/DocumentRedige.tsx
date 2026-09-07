@@ -129,12 +129,12 @@ function Encadres({ groupes }: { groupes: string[][] }) {
         return (
           <aside
             key={i}
-            className={`flex flex-col gap-2 rounded-[12px] border px-4 py-3.5 ${
+            className={`flex min-w-0 flex-col gap-2 rounded-[12px] border px-4 py-4 md:py-3.5 ${
               groupes.length > 1 ? TEINTES[i % TEINTES.length] : TEINTES[2]
             }`}
           >
             {estIntitule ? (
-              <p className="font-mono text-[10.5px] font-semibold uppercase tracking-[0.1em] text-slate-light">
+              <p className="font-mono text-[11.5px] font-semibold uppercase tracking-[0.1em] text-slate-light md:text-[10.5px]">
                 {nue}
               </p>
             ) : null}
@@ -166,8 +166,67 @@ const PASTILLES = [
 
 function Tableau({ entetes, lignes }: { entetes: string[]; lignes: string[][] }) {
   const { enPastille, rang } = colonnesCategorielles(lignes, entetes.length);
+
+  const pastille = (valeur: string, colonne: number) =>
+    enPastille.has(colonne) && valeur ? (
+      <span
+        className={`inline-block whitespace-nowrap rounded-full border px-2 py-px text-[11.5px] font-semibold ${
+          PASTILLES[(rang.get(valeur) ?? 3) % PASTILLES.length]
+        }`}
+      >
+        {valeur}
+      </span>
+    ) : null;
+
   return (
-    <div className="overflow-x-auto rounded-[10px] border border-border">
+    <>
+      {/* Sous 768px, une ligne devient un bloc empilé (design_system §3bis).
+          À 375px, quatre colonnes de texte donnaient des mots coupés lettre à
+          lettre — et le tableau ne débordait pas seulement son conteneur, il
+          faisait défiler la page entière en travers, ce que le §3bis
+          interdit. Une ligne entièrement vide — la trame d'un tableau à
+          remplir — ne donne pas de bloc : elle n'a rien à lire, et c'est le
+          PDF qui porte l'espace où écrire. */}
+      <div className="flex flex-col gap-2.5 md:hidden">
+        {lignes.map((ligne, k) => {
+          if (!ligne.some((c) => c.trim())) return null;
+          const titre = ligne[0]?.trim();
+          return (
+            <div
+              key={k}
+              className="rounded-[10px] border border-border bg-paper-alt px-3.5 py-3"
+            >
+              <p className="break-words text-[15.5px] font-semibold leading-snug text-ink">
+                {pastille(titre ?? "", 0) ?? <Ligne>{titre || entetes[0] || ""}</Ligne>}
+              </p>
+              <dl className="mt-2.5 flex flex-col gap-2">
+                {entetes.slice(1).map((e, j) => {
+                  const valeur = (ligne[j + 1] ?? "").trim();
+                  if (!valeur) return null;
+                  return (
+                    <div key={j} className="flex flex-col gap-0.5">
+                      {/* Un en-tête vide ne donne pas d'étiquette : certains
+                          tableaux à deux colonnes n'en nomment qu'une, et une
+                          étiquette vide n'ouvrait qu'un trou au-dessus de la
+                          valeur. */}
+                      {e.trim() ? (
+                        <dt className="font-mono text-[10.5px] uppercase tracking-[0.1em] text-slate-light">
+                          {e}
+                        </dt>
+                      ) : null}
+                      <dd className="break-words text-[15px] leading-relaxed text-body">
+                        {pastille(valeur, j + 1) ?? <Ligne>{valeur}</Ligne>}
+                      </dd>
+                    </div>
+                  );
+                })}
+              </dl>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="hidden overflow-x-auto rounded-[10px] border border-border md:block">
       <table className="w-full border-collapse text-left text-[13px]">
         {/* En-tête encre, texte blanc : c'est ce qui fait qu'un tableau se
             repère d'un coup d'œil dans une page dense. */}
@@ -190,24 +249,15 @@ function Tableau({ entetes, lignes }: { entetes: string[]; lignes: string[][] })
                     j === 0 ? "font-semibold text-ink" : "text-body"
                   }`}
                 >
-                  {enPastille.has(j) && c.trim() ? (
-                    <span
-                      className={`inline-block whitespace-nowrap rounded-full border px-2 py-px text-[11.5px] font-semibold ${
-                        PASTILLES[(rang.get(c.trim()) ?? 3) % PASTILLES.length]
-                      }`}
-                    >
-                      {c.trim()}
-                    </span>
-                  ) : (
-                    <Ligne>{c}</Ligne>
-                  )}
+                  {pastille(c.trim(), j) ?? <Ligne>{c}</Ligne>}
                 </td>
               ))}
             </tr>
           ))}
         </tbody>
       </table>
-    </div>
+      </div>
+    </>
   );
 }
 
@@ -233,7 +283,7 @@ function Blocs({ texte }: { texte: string }) {
         rendu.push(
           <h1
             key={i}
-            className="font-display text-[26px] font-bold leading-tight tracking-[-0.02em] text-ink"
+            className="font-display text-[24px] font-bold leading-tight tracking-[-0.02em] text-ink md:text-[26px]"
           >
             {n.texte}
           </h1>,
@@ -251,7 +301,7 @@ function Blocs({ texte }: { texte: string }) {
         rendu.push(
           <header key={i} className="mt-3 border-b border-border-strong pb-2">
             {legende && legende.k === "p" ? (
-              <p className="font-mono text-[10.5px] uppercase tracking-[0.12em] text-slate-light">
+              <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-slate-light md:text-[10.5px]">
                 {legende.texte.replace(/^\*|\*$/g, "")}
               </p>
             ) : null}
@@ -263,7 +313,7 @@ function Blocs({ texte }: { texte: string }) {
                   {numero[1]}
                 </span>
               ) : null}
-              <h2 className="font-display text-[19px] font-semibold leading-snug text-ink">
+              <h2 className="font-display text-[20px] font-semibold leading-snug text-ink md:text-[19px]">
                 {numero ? numero[2] : n.texte}
               </h2>
             </div>
@@ -279,8 +329,8 @@ function Blocs({ texte }: { texte: string }) {
           key={i}
           className={
             n.niveau === 3
-              ? "mt-2 font-display text-[15.5px] font-semibold text-ink"
-              : "mt-1 font-display text-[14px] font-semibold text-body"
+              ? "mt-2 font-display text-[17px] font-semibold text-ink md:text-[15.5px]"
+              : "mt-1 font-display text-[15px] font-semibold text-body md:text-[14px]"
           }
         >
           {n.texte}
@@ -319,15 +369,15 @@ function Blocs({ texte }: { texte: string }) {
       rendu.push(
         <ol
           key={`l${i}`}
-          className={`flex flex-col gap-1.5 pl-0 text-[14px] leading-relaxed text-body`}
+          className="flex flex-col gap-2 break-words pl-0 text-[16px] leading-relaxed text-body md:gap-1.5 md:text-[14px]"
         >
           {items.map((it, k) => (
             <li key={k} className="flex gap-2.5">
               <span
                 className={
                   ordonnee
-                    ? "shrink-0 font-mono text-[13px] font-semibold text-coral"
-                    : "mt-[7px] h-[5px] w-[5px] shrink-0 rounded-full bg-teal"
+                    ? "shrink-0 font-mono text-[15px] font-semibold text-coral md:text-[13px]"
+                    : "mt-[9px] h-[5px] w-[5px] shrink-0 rounded-full bg-teal md:mt-[7px]"
                 }
                 aria-hidden={!ordonnee}
               >
@@ -350,7 +400,11 @@ function Blocs({ texte }: { texte: string }) {
     }
 
     rendu.push(
-      <p key={i} className="text-[14px] leading-relaxed text-body">
+      // `break-words` : les lignes à remplir du cahier d'atelier sont des
+      // suites de tirets bas, insécables pour le navigateur. Sur téléphone
+      // elles poussaient la page à 530px de large et la faisaient défiler en
+      // travers. Elles se coupent plutôt que de déborder.
+      <p key={i} className="break-words text-[16px] leading-relaxed text-body md:text-[14px]">
         <Ligne>{n.brut}</Ligne>
       </p>,
     );
@@ -358,7 +412,10 @@ function Blocs({ texte }: { texte: string }) {
   }
 
   return (
-    <div className="flex flex-col gap-3">
+    // `min-w-0` : sans lui, un enfant plus large que la colonne — un tableau —
+    // élargit le conteneur au lieu d'être contenu, et c'est la page entière
+    // qui défile en travers.
+    <div className="flex min-w-0 flex-col gap-4 md:gap-3">
       {rendu.map((r, k) => (
         <Fragment key={k}>{r}</Fragment>
       ))}
@@ -388,8 +445,13 @@ function Couverture({
   surtitre: string | null;
 }) {
   return (
-    <section className="flex min-h-[62vh] flex-col rounded-[14px] bg-ink px-8 py-9 text-white md:min-h-[900px] md:px-12 md:py-14">
-      <span aria-hidden className="mb-7 flex items-center gap-1.5">
+    // Sur téléphone, la couverture ne prend pas la hauteur d'un écran. Elle
+    // en prenait 894px sur 1018 : le stagiaire faisait défiler une page de
+    // garde entière avant d'atteindre la première ligne de son cours, alors
+    // que le titre et la date de la séance sont déjà au-dessus. Elle garde son
+    // rôle — dire de quel support il s'agit — dans un tiers de la place.
+    <section className="flex flex-col rounded-[14px] bg-ink px-5 py-6 text-white md:min-h-[900px] md:px-12 md:py-14">
+      <span aria-hidden className="mb-5 flex items-center gap-1.5 md:mb-7">
         {["bg-green", "bg-teal", "bg-coral"].map((c) => (
           <span key={c} className={`h-2.5 w-2.5 rounded-full ${c}`} />
         ))}
@@ -401,28 +463,28 @@ function Couverture({
         </p>
       ) : null}
 
-      <h1 className="mt-3 font-display text-[34px] font-bold leading-[1.1] tracking-[-0.02em] md:text-[42px]">
+      <h1 className="mt-2.5 font-display text-[26px] font-bold leading-[1.12] tracking-[-0.02em] md:mt-3 md:text-[42px]">
         {titre}
       </h1>
 
       {sousTitre ? (
-        <p className="mt-4 text-[17px] leading-relaxed text-white/75">
+        <p className="mt-3 text-[15.5px] leading-relaxed text-white/75 md:mt-4 md:text-[17px]">
           {sousTitre}
         </p>
       ) : null}
 
       {legende ? (
-        <p className="mt-2 text-[14.5px] italic leading-relaxed text-white/55">
+        <p className="mt-2 text-[13.5px] italic leading-relaxed text-white/55 md:text-[14.5px]">
           {legende}
         </p>
       ) : null}
 
       {meta.length > 0 ? (
-        <div className="mt-auto pt-12">
+        <div className="mt-6 md:mt-auto md:pt-12">
           <p className="font-mono text-[10.5px] uppercase tracking-[0.16em] text-white/40">
             Support de cours du stagiaire
           </p>
-          <dl className="mt-3 flex flex-col gap-1.5 rounded-[10px] bg-white/[0.06] px-5 py-4 text-[13.5px] leading-relaxed">
+          <dl className="mt-2.5 flex flex-col gap-1.5 rounded-[10px] bg-white/[0.06] px-4 py-3.5 text-[13px] leading-relaxed md:mt-3 md:px-5 md:py-4 md:text-[13.5px]">
             {meta.map((m) => (
               <div key={m.cle} className="flex flex-wrap gap-x-2">
                 <dt className="font-semibold text-white/90">{m.cle}</dt>
@@ -458,7 +520,7 @@ export default function DocumentRedige({
     .join("\n");
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex min-w-0 flex-col gap-6">
       <Couverture
         titre={entete.titre}
         sousTitre={entete.sousTitre}
