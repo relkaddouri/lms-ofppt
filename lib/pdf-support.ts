@@ -1,4 +1,6 @@
 import type jsPDF from "jspdf";
+import { dessinerMarkdown } from "@/lib/pdf-markdown";
+import { estRedigee } from "@/lib/support";
 import { dessinerEntete, type Marque } from "@/lib/pdf-marque";
 import type { Support } from "@/lib/support";
 import { COULEURS, installerPolices, police } from "@/lib/pdf-theme";
@@ -159,6 +161,25 @@ export function dessinerSupport(
     }
     support.sections.forEach((sec, i) => {
       titre(`${i + 1}. ${sec.titre}`, 11);
+
+      // Une section rédigée passe par le moteur markdown, qui peint avec les
+      // mêmes polices et les mêmes gris que les puces d'à côté. Le titre et la
+      // numérotation sont posés au-dessus par le même code : rien dans la mise
+      // en page ne dit d'où vient le contenu (PRD §4.4).
+      if (estRedigee(sec)) {
+        y = dessinerMarkdown(doc, sec.markdown!, {
+          x: X,
+          largeur: LARGEUR,
+          y,
+          place: (h) => {
+            place(h);
+            y += h;
+            return y;
+          },
+        });
+        return;
+      }
+
       for (const n of sec.notions) puce(n);
       // La figure se rend en une ligne d'étapes fléchées : c'est la même
       // information qu'à l'écran, dans un document qui s'imprime en noir.

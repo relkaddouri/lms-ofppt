@@ -41,12 +41,34 @@ export type SchemaSupport = {
   legende: string | null;
 };
 
+/**
+ * Une section du cours — structurée, ou rédigée à la main (PRD §4.4).
+ *
+ * `markdown` renseigné, la section est ce texte : les notions, l'exemple et le
+ * schéma sont alors ignorés. C'est l'alternative à la génération que le PRD
+ * exige « de même niveau », posée comme une section parmi les autres plutôt
+ * que comme un second document. La conséquence tient en une phrase : titre,
+ * espacement, pagination et place dans le fil sont ceux de n'importe quelle
+ * autre section, donc « exactement le même traitement visuel » n'est pas une
+ * intention mais une mécanique.
+ */
 export type SectionCours = {
   titre: string;
   notions: string[];
   exemple: string | null;
   schema: SchemaSupport | null;
+  markdown?: string | null;
 };
+
+/** Vrai si la section porte du texte rédigé plutôt qu'une structure. */
+export function estRedigee(section: SectionCours): boolean {
+  return typeof section.markdown === "string" && section.markdown.trim() !== "";
+}
+
+/** Une section vierge, prête à être rédigée. */
+export function sectionRedigee(titre = "Section rédigée"): SectionCours {
+  return { titre, notions: [], exemple: null, schema: null, markdown: "" };
+}
 
 export type SupportTheorique = {
   type: "theorique";

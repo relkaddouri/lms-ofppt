@@ -1,4 +1,5 @@
-import type { Support } from "@/lib/support";
+import TexteMarkdown from "@/components/TexteMarkdown";
+import { estRedigee, type Support } from "@/lib/support";
 import { FigureSupport, ListeRessources } from "@/components/RessourcesSupport";
 
 /**
@@ -61,6 +62,10 @@ export default function SupportLecture({ support }: { support: Support }) {
 
       {support.sections.map((sec, i) => (
         <Bloc key={i} titre={sec.titre}>
+          {estRedigee(sec) ? (
+            <TexteMarkdown texte={sec.markdown!} />
+          ) : (
+          <>
           <ul className="space-y-2">
             {sec.notions.map((n, k) => (
               <li key={k} className="flex gap-2 text-sm leading-relaxed text-ink">
@@ -76,6 +81,8 @@ export default function SupportLecture({ support }: { support: Support }) {
               {sec.exemple}
             </p>
           ) : null}
+          </>
+          )}
         </Bloc>
       ))}
 

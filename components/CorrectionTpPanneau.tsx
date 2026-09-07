@@ -12,7 +12,10 @@ import {
   type CorrectionTp,
 } from "@/lib/correction";
 import { ConfirmModal } from "@/components/ui/Modal";
-import { Eye, EyeOff, Lock, Save, Sparkles } from "lucide-react";
+import { Eye, EyeOff, Lock, PenLine, Save, Sparkles } from "lucide-react";
+import TexteMarkdown from "@/components/TexteMarkdown";
+import { inputStyles as inputClass } from "@/components/ui/Input";
+import { estRedigee } from "@/lib/correction";
 
 /**
  * Grille de correction d'un TP (PRD §4.4, « proposition de correction »).
@@ -51,6 +54,27 @@ export default function CorrectionTpPanneau({
   const router = useRouter();
   const toast = useToast();
   const [correction, setCorrection] = useState<CorrectionTp | null>(initial);
+  // Au sens de l'écran : le champ existe, même vide — sinon la zone de saisie
+  // se refermerait à la première frappe effacée. `estRedigee` garde son sens
+  // strict pour tout ce qui lit une correction enregistrée.
+  const redigee =
+    correction !== null &&
+    correction.markdown !== null &&
+    correction.markdown !== undefined;
+
+  /**
+   * Bascule la grille en rédaction libre.
+   *
+   * Le markdown remplace la grille structurée, il ne s'y ajoute pas : un
+   * formateur qui écrit la sienne a écarté la proposition du modèle, la voir
+   * subsister dessous n'aurait aucun sens. Repasser à vide restitue la
+   * structure, rien n'est détruit tant qu'on n'enregistre pas.
+   */
+  function redigerAlaMain() {
+    const base = correction ?? correctionVide();
+    setCorrection({ ...base, markdown: base.markdown ?? "" });
+    setIssuDuModele(false);
+  }
   const [version, setVersion] = useState(versionInitiale);
   const [issuDuModele, setIssuDuModele] = useState(false);
   const [avertissements, setAvertissements] = useState<string[]>([]);
@@ -143,12 +167,26 @@ export default function CorrectionTpPanneau({
         >
           {correction ? "Regénérer la grille" : "Proposer une grille"}
         </Button>
+        {/* §4.4 : la génération n'est jamais le seul chemin. Le bouton est
+            voisin du sien, pas caché sous la grille. */}
+        <Button
+          variant="secondary"
+          size="sm"
+          icon={PenLine}
+          onClick={redigerAlaMain}
+          disabled={busy}
+        >
+          {redigee ? "Reprendre la grille rédigée" : "Rédiger la grille"}
+        </Button>
         {correction ? (
           <Button
             size="sm"
             icon={Save}
             onClick={enregistrer}
-            disabled={busy || !issuDuModele}
+            // `issuDuModele` garde le bouton fermé tant qu'une proposition
+            // n'a pas été relue. Une grille écrite à la main n'a personne à
+            // relire : elle s'enregistre directement.
+            disabled={busy || (!issuDuModele && !redigee)}
           >
             Enregistrer
           </Button>
@@ -217,7 +255,38 @@ export default function CorrectionTpPanneau({
         busy={busy}
       />
 
-      {correction ? (
+      {correction && redigee ? (
+        <div className="flex flex-col gap-3">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            <label className="flex flex-col gap-1">
+              <span className="text-xs text-slate">
+                Markdown — titres, listes, gras
+              </span>
+              <textarea
+                rows={14}
+                value={correction.markdown ?? ""}
+                onChange={(e) =>
+                  setCorrection({ ...correction, markdown: e.target.value })
+                }
+                placeholder={"## Critère 1 — 6 pts\n\n- ce qui vaut le total\n- ce qui coûte des points"}
+                className={`${inputClass} font-mono text-[13px]`}
+              />
+            </label>
+            <div className="flex flex-col gap-1">
+              <span className="text-xs text-slate">Aperçu</span>
+              <div className="min-h-[160px] rounded-[9px] border border-border bg-surface p-3">
+                {correction.markdown?.trim() ? (
+                  <TexteMarkdown texte={correction.markdown} />
+                ) : (
+                  <p className="text-sm text-slate-light">
+                    L&apos;aperçu s&apos;affiche ici à mesure que vous écrivez.
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : correction ? (
         <div className="flex flex-col gap-4">
           {correction.proposition ? (
             <section>
