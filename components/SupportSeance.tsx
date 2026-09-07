@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { saveSupport } from "@/app/actions/seances";
+import { saveSupport, viderSupport } from "@/app/actions/seances";
 import { useToast } from "@/components/ui/Toast";
+import { ConfirmModal } from "@/components/ui/Modal";
 import BandeauIa from "@/components/BandeauIa";
 import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
@@ -13,7 +14,14 @@ import DiaporamaCours from "@/components/DiaporamaCours";
 import { estRedige, type Support } from "@/lib/support";
 import DocumentRedige from "@/components/DocumentRedige";
 import { ListeRessources } from "@/components/RessourcesSupport";
-import { Download, FileDown, PenLine, Save, Sparkles } from "lucide-react";
+import {
+  Download,
+  FileDown,
+  PenLine,
+  Save,
+  Sparkles,
+  Trash2,
+} from "lucide-react";
 import { getEtablissement } from "@/app/actions/etablissement";
 import { marqueDe } from "@/lib/pdf-marque";
 
@@ -58,6 +66,7 @@ export default function SupportSeance({
   };
   const [busy, setBusy] = useState(false);
   const [enExport, setEnExport] = useState(false);
+  const [aVider, setAVider] = useState(false);
   const [avertissements, setAvertissements] = useState<string[]>([]);
   // Un cours se projette autant qu'il s'édite : les deux vues portent le même
   // contenu, on bascule plutôt que d'empiler.
@@ -189,6 +198,35 @@ export default function SupportSeance({
     }
   }
 
+  /**
+   * Repart de zéro.
+   *
+   * L'état local est remis à nul en même temps que la base : sans quoi
+   * l'écran continuerait d'afficher le cours qu'il vient de supprimer, et le
+   * bouton « Enregistrer » le réécrirait au clic suivant.
+   */
+  async function vider() {
+    setBusy(true);
+    try {
+      const versions = await viderSupport(contexte.seanceId);
+      setSupport(null);
+      setAvertissements([]);
+      setVue("edition");
+      setAVider(false);
+      toast(
+        versions > 1
+          ? `Support vidé — ${versions} versions supprimées.`
+          : "Support vidé.",
+        "success",
+      );
+      router.refresh();
+    } catch {
+      toast("Le support n'a pas pu être vidé.", "error");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <div>
       <div className="flex flex-wrap items-center gap-2">
@@ -217,6 +255,20 @@ export default function SupportSeance({
         <Button icon={Save} size="sm" onClick={enregistrer} disabled={busy || !support}>
           Enregistrer
         </Button>
+        {/* Vider est le seul chemin pour reprendre un cours de zéro : générer
+            comme rédiger partent du support en place. Le bouton reste discret
+            — c'est un geste rare, et il ne se rattrape pas. */}
+        {support || version ? (
+          <Button
+            variant="ghost"
+            size="sm"
+            icon={Trash2}
+            onClick={() => setAVider(true)}
+            disabled={busy}
+          >
+            Vider le support
+          </Button>
+        ) : null}
         {/* L'export jsPDF ne sert plus un cours rédigé : il perdrait ses
             tableaux et ses encadrés, que le moteur ne sait pas dessiner. Pour
             celui-là, ce sont les deux boutons d'impression — document A4 dans
@@ -630,6 +682,16 @@ export default function SupportSeance({
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        open={aVider}
+        title="Vider le support ?"
+        message="Le cours de cette séance sera supprimé, toutes versions comprises, et vous repartirez d'une page blanche. Si la séance partage son contenu avec un autre groupe, il est vidé pour les deux. La fiche de préparation, les présences et le contrôle ne sont pas concernés."
+        confirmLabel="Vider"
+        onConfirm={vider}
+        onClose={() => setAVider(false)}
+        busy={busy}
+      />
     </div>
   );
 }

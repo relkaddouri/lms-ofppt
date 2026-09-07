@@ -495,14 +495,46 @@ function grilleEncadres(
       return { intitule, corps };
     });
 
+    // L'intitulé se replie sur la largeur de l'encadré. Écrit d'un seul jet,
+    // « FONCTIONNALITÉ · CE QUE LE PRODUIT FAIT » sortait de sa boîte et
+    // passait sous celle d'à côté, qui le recouvrait.
+    const intitules = contenus.map((c) =>
+      c.intitule
+        ? enLignes(
+            doc,
+            morceaux(c.intitule, {
+              role: "mono",
+              couleur: COULEURS.ardoiseClaire,
+              pt: pts(10.5),
+            }),
+            largeurCase - marge * 2,
+          )
+        : [],
+    );
+    const interIntitule = pts(10.5) * 1.5 * 0.3528;
+
     // La hauteur d'un encadré se mesure en le rendant à blanc : son contenu
     // est un document à son tour, il peut porter une liste ou un tableau.
-    const hauteurs = contenus.map((c) => {
+    const hauteurs = contenus.map((c, k) => {
       const feint: Flux = { doc, y: 0, pages: 0 };
       const h = rendre(feint, c.corps, 0, largeurCase - marge * 2, true);
-      return h + marge * 2 + (c.intitule ? mm(20) : 0);
+      return (
+        h +
+        marge * 2 +
+        (intitules[k]!.length > 0
+          ? intitules[k]!.length * interIntitule + mm(8)
+          : 0)
+      );
     });
-    const hauteur = Math.max(...hauteurs);
+
+    // Les encadrés d'une rangée s'alignent sur le plus haut — c'est ce qui
+    // fait la régularité de la grille. Mais seulement s'ils sont comparables :
+    // une définition de deux lignes posée à côté d'un exemple de dix se
+    // retrouvait dans une boîte aux trois quarts vide. Passé cet écart, chacun
+    // reprend sa hauteur.
+    const plusHaut = Math.max(...hauteurs);
+    const comparables = Math.min(...hauteurs) >= plusHaut * 0.6;
+    const hauteur = plusHaut;
 
     if (!mesurer) {
       place(f, hauteur);
@@ -519,15 +551,27 @@ function grilleEncadres(
       doc.setFillColor(...teinte.fond);
       doc.setDrawColor(...teinte.trait);
       doc.setLineWidth(0.3);
-      doc.roundedRect(cx, y, largeurCase, hauteur, mm(12), mm(12), "FD");
+      doc.roundedRect(
+        cx,
+        y,
+        largeurCase,
+        comparables ? hauteur : hauteurs[k]!,
+        mm(12),
+        mm(12),
+        "FD",
+      );
 
       const c = contenus[k]!;
       let cy = y + marge;
-      if (c.intitule) {
-        police(doc, "mono", pts(10.5));
-        doc.setTextColor(...COULEURS.ardoiseClaire);
-        doc.text(c.intitule, cx + marge, cy + mm(8));
-        cy += mm(20);
+      if (intitules[k]!.length > 0) {
+        cy = poserLignes(
+          doc,
+          intitules[k]!,
+          cx + marge,
+          cy + interIntitule * 0.75,
+          interIntitule,
+        );
+        cy += mm(8) - interIntitule * 0.75;
       }
       // Le contenu d'un encadré ne pagine pas : la boîte est posée d'un bloc,
       // donc son intérieur suit la boîte.

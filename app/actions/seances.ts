@@ -291,6 +291,36 @@ export async function saveSupport(
 }
 
 /**
+ * Vide le support d'une séance (PRD §4.4).
+ *
+ * Reprendre un cours de zéro n'était pas possible : « Générer » et « Rédiger »
+ * partent tous deux du support en place, et rien ne permettait de le retirer.
+ * Le formateur restait avec un contenu dont il ne voulait plus.
+ *
+ * Toutes les versions partent, pas seulement la dernière : n'effacer que
+ * celle-ci ferait remonter la précédente, et le support paraîtrait revenir
+ * tout seul. Le geste est donc franc, et l'écran le fait confirmer.
+ *
+ * L'écriture vise la séance qui porte le contenu, comme `saveSupport` : vider
+ * depuis un groupe vide bien pour les deux quand la séance est partagée —
+ * c'est la contrepartie du partage, et l'écran le dit.
+ */
+export async function viderSupport(seanceId: string): Promise<number> {
+  const supabase = await createClient();
+  const source = await sourceContenu(seanceId);
+
+  const { data, error } = await supabase
+    .from("supports_seance")
+    .delete()
+    .eq("seance_id", source)
+    .select("id");
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/groupes", "layout");
+  return data?.length ?? 0;
+}
+
+/**
  * Détail d'une séance, lue depuis un groupe donné.
  *
  * Le groupe vient de l'appelant, pas de la séance : une séance FAD partagée

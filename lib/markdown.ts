@@ -29,11 +29,13 @@ export function segmenter(ligne: string): Segment[] {
     }
     const t = trouve[0];
     if (t.startsWith("**")) {
-      segments.push({ texte: t.slice(2, -2), gras: true, italique: false, code: false });
+      segments.push({ texte: desechapper(t.slice(2, -2)), gras: true, italique: false, code: false });
     } else if (t.startsWith("`")) {
+      // Le contenu d'un code littéral se rend tel quel : la barre oblique y
+      // est un caractère, pas une échappée.
       segments.push({ texte: t.slice(1, -1), gras: false, italique: false, code: true });
     } else {
-      segments.push({ texte: t.slice(1, -1), gras: false, italique: true, code: false });
+      segments.push({ texte: desechapper(t.slice(1, -1)), gras: false, italique: true, code: false });
     }
     position = debut + t.length;
   }
@@ -41,8 +43,23 @@ export function segmenter(ligne: string): Segment[] {
   return segments.length > 0 ? segments : [brut(ligne)];
 }
 
+/**
+ * Rend un caractère échappé à lui-même : `\[qui\]` devient `[qui]`.
+ *
+ * Un formateur qui écrit un gabarit à trous — « Des [qui], dans [quel
+ * contexte] » — échappe ses crochets pour qu'un éditeur markdown n'y voie pas
+ * un lien. Sans cette règle, les barres obliques ressortaient telles quelles à
+ * l'écran comme dans le PDF, au milieu de la phrase à recopier.
+ *
+ * L'ensemble est celui de CommonMark, restreint à la ponctuation : une barre
+ * oblique devant une lettre reste une barre oblique.
+ */
+function desechapper(texte: string): string {
+  return texte.replace(/\\([\\`*_{}[\]()#+\-.!>|~])/g, "$1");
+}
+
 function brut(texte: string): Segment {
-  return { texte, gras: false, italique: false, code: false };
+  return { texte: desechapper(texte), gras: false, italique: false, code: false };
 }
 
 /** Retire le balisage sans le rendre, pour mesurer ou pour un usage nu. */
@@ -56,6 +73,7 @@ export function texteNu(markdown: string): string {
     .replace(/\*([^*]+)\*/g, "$1")
     .replace(/`([^`]+)`/g, "$1")
     .replace(/^\s*(?:---|\*\*\*|___)\s*$/gm, "")
+    .replace(/\\([\\`*_{}[\]()#+\-.!>|~])/g, "$1")
     .trim();
 }
 
