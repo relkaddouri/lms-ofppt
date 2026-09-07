@@ -474,55 +474,81 @@ export default function GroupeDetail({
         ) : null}
       </Modal>
 
+      {/* Trois états, et non deux : le lien est parti, le compte est ouvert
+          mais le courriel n'est pas parti, ou l'invitation n'a pas abouti du
+          tout. Le troisième passait auparavant par une exception, que Next
+          masque en production — le formateur lisait « Minified React error
+          #441 » au lieu du nom du problème. */}
       <Modal
         open={invitation !== null}
         onClose={() => setInvitation(null)}
         title={
-          invitation?.envoi.envoye
-            ? invitation.existant
-              ? "Nouveau lien envoyé"
-              : "Stagiaire invité"
-            : "Lien à transmettre vous-même"
+          !invitation
+            ? ""
+            : !invitation.ok
+              ? "Invitation impossible"
+              : invitation.envoi.envoye
+                ? invitation.existant
+                  ? "Nouveau lien envoyé"
+                  : "Stagiaire invité"
+                : "Lien à transmettre vous-même"
         }
         description={
-          invitation?.envoi.envoye
-            ? `Le lien est parti à ${invitation.email}. Le stagiaire choisira lui-même son mot de passe — vous ne le connaîtrez jamais.`
-            : `Le compte est bien créé, mais le courriel n'est pas parti. Transmettez ce lien à ${invitation?.email ?? ""} par un autre moyen.`
+          !invitation
+            ? ""
+            : !invitation.ok
+              ? `Rien n'a changé pour ${invitation.qui} : aucun courriel n'est parti, et son compte est resté tel quel.`
+              : invitation.envoi.envoye
+                ? `Le lien est parti à ${invitation.email}. Le stagiaire choisira lui-même son mot de passe — vous ne le connaîtrez jamais.`
+                : `Le compte est bien créé, mais le courriel n'est pas parti. Transmettez ce lien à ${invitation.email} par un autre moyen.`
         }
       >
-        {/* Ne jamais laisser croire qu'un courriel est parti quand il ne
-            l'est pas : le formateur agirait sur une invitation fantôme. La
-            raison est celle du service d'envoi, telle quelle. */}
-        {invitation && !invitation.envoi.envoye ? (
-          <p className="mb-3 rounded-xl border border-tint-alert-strong bg-alert-wash px-3 py-2 text-sm text-coral-dark">
-            Envoi impossible : {invitation.envoi.raison}
-          </p>
+        {invitation && !invitation.ok ? (
+          <div className="rounded-xl border border-tint-alert-strong bg-alert-wash px-3.5 py-3">
+            {invitation.email ? (
+              <p className="font-mono text-[12.5px] text-coral-dark">
+                {invitation.email}
+              </p>
+            ) : null}
+            <p className="mt-1 text-sm text-coral-dark">{invitation.raison}</p>
+          </div>
+        ) : invitation ? (
+          <>
+            {/* Ne jamais laisser croire qu'un courriel est parti quand il ne
+                l'est pas : le formateur agirait sur une invitation fantôme.
+                La raison est celle du service d'envoi, telle quelle. */}
+            {!invitation.envoi.envoye ? (
+              <p className="mb-3 rounded-xl border border-tint-alert-strong bg-alert-wash px-3 py-2 text-sm text-coral-dark">
+                Envoi impossible : {invitation.envoi.raison}
+              </p>
+            ) : null}
+            <div className="flex gap-2">
+              <input
+                readOnly
+                value={invitation.lien}
+                aria-label="Lien d'invitation"
+                onFocus={(e) => e.currentTarget.select()}
+                className={inputClass}
+              />
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  navigator.clipboard.writeText(invitation.lien);
+                  toast("Lien copié");
+                }}
+              >
+                Copier
+              </Button>
+            </div>
+            <p className="mt-2 text-xs text-slate">
+              Ce lien ouvre une session : ne le publiez pas, transmettez-le
+              directement au stagiaire concerné.
+              {invitation.envoi.envoye
+                ? " Il est conservé ici au cas où le courriel n'arriverait pas."
+                : ""}
+            </p>
+          </>
         ) : null}
-        <div className="flex gap-2">
-          <input
-            readOnly
-            value={invitation?.lien ?? ""}
-            aria-label="Lien d'invitation"
-            onFocus={(e) => e.currentTarget.select()}
-            className={inputClass}
-          />
-          <Button
-            variant="secondary"
-            onClick={() => {
-              navigator.clipboard.writeText(invitation?.lien ?? "");
-              toast("Lien copié");
-            }}
-          >
-            Copier
-          </Button>
-        </div>
-        <p className="mt-2 text-xs text-slate">
-          Ce lien ouvre une session : ne le publiez pas, transmettez-le
-          directement au stagiaire concerné.
-          {invitation?.envoi.envoye
-            ? " Il est conservé ici au cas où le courriel n'arriverait pas."
-            : ""}
-        </p>
       </Modal>
         </div>
     </section>
