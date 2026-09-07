@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { Resend } from "resend";
+import { envoyerCourriel } from "@/lib/courriel";
 import { revalidatePath } from "next/cache";
 
 export type Annonce = {
@@ -29,10 +29,6 @@ async function notifyStagiaires(
   groupeId: string,
   annonce: { titre: string; contenu?: string | null },
 ) {
-  const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.RESEND_FROM ?? "Pédago <onboarding@resend.dev>";
-  if (!apiKey) return;
-
   const supabase = await createClient();
 
   const { data: groupe } = await supabase
@@ -53,8 +49,6 @@ async function notifyStagiaires(
 
   if (!emails.length) return;
 
-  const resend = new Resend(apiKey);
-
   const text = [
     `Nouvelle annonce pour le groupe ${groupe?.nom ?? ""}:`,
     ``,
@@ -65,20 +59,26 @@ async function notifyStagiaires(
     `— Pédago`,
   ].join("\n");
 
-  const results = await Promise.allSettled(
+  // `envoyerCourriel` ne jette pas : elle rend l'échec. L'ancien décompte
+  // portait sur les promesses rejetées, or `resend.emails.send()` tient la
+  // sienne même quand l'API refuse — chaque échec était donc compté comme un
+  // succès.
+  const resultats = await Promise.all(
     emails.map((email) =>
-      resend.emails.send({
-        from,
-        to: email,
-        subject: `Annonce : ${annonce.titre}`,
-        text,
+      envoyerCourriel({
+        a: email,
+        sujet: `Annonce : ${annonce.titre}`,
+        texte: text,
       }),
     ),
   );
 
-  const failures = results.filter((r) => r.status === "rejected").length;
-  if (failures > 0) {
-    console.error(`${failures} email(s) non envoyé(s).`);
+  const echecs = resultats.filter((r) => !r.envoye);
+  if (echecs.length > 0) {
+    console.error(
+      `[annonce] ${echecs.length} courriel(s) non parti(s) sur ${emails.length} :`,
+      [...new Set(echecs.map((e) => (e.envoye ? "" : e.raison)))].join(" · "),
+    );
   }
 }
 

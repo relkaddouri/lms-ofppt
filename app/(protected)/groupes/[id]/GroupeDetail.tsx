@@ -15,7 +15,10 @@ import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import { initials } from "@/lib/format";
 import { Check, Mail, Pencil, Plus, Save, Trash2, X } from "lucide-react";
-import { inviterStagiaire } from "@/app/actions/invitations";
+import {
+  inviterStagiaire,
+  type ResultatInvitation,
+} from "@/app/actions/invitations";
 import Modal from "@/components/ui/Modal";
 import { inputStyles as inputClass } from "@/components/ui/Input";
 
@@ -29,13 +32,10 @@ export default function GroupeDetail({
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [confirmId, setConfirmId] = useState<string | null>(null);
-  // Le lien est rendu au formateur : sans serveur d'envoi configuré, un
-  // courriel échouerait en silence.
-  const [invitation, setInvitation] = useState<{
-    lien: string;
-    email: string;
-    existant: boolean;
-  } | null>(null);
+  // Le type vient de l'action et n'est pas recopié : la forme locale avait
+  // déjà divergé une fois, et rien ne l'avait signalé tant que personne
+  // n'ajoutait de champ.
+  const [invitation, setInvitation] = useState<ResultatInvitation | null>(null);
 
   async function inviter(stagiaireId: string) {
     try {
@@ -367,12 +367,26 @@ export default function GroupeDetail({
         open={invitation !== null}
         onClose={() => setInvitation(null)}
         title={
-          invitation?.existant
-            ? "Lien d'accès renvoyé"
-            : "Stagiaire invité"
+          invitation?.envoi.envoye
+            ? invitation.existant
+              ? "Nouveau lien envoyé"
+              : "Stagiaire invité"
+            : "Lien à transmettre vous-même"
         }
-        description={`Transmettez ce lien à ${invitation?.email ?? ""}. Il choisira lui-même son mot de passe — vous ne le connaîtrez jamais.`}
+        description={
+          invitation?.envoi.envoye
+            ? `Le lien est parti à ${invitation.email}. Le stagiaire choisira lui-même son mot de passe — vous ne le connaîtrez jamais.`
+            : `Le compte est bien créé, mais le courriel n'est pas parti. Transmettez ce lien à ${invitation?.email ?? ""} par un autre moyen.`
+        }
       >
+        {/* Ne jamais laisser croire qu'un courriel est parti quand il ne
+            l'est pas : le formateur agirait sur une invitation fantôme. La
+            raison est celle du service d'envoi, telle quelle. */}
+        {invitation && !invitation.envoi.envoye ? (
+          <p className="mb-3 rounded-xl border border-tint-alert-strong bg-alert-wash px-3 py-2 text-sm text-coral-dark">
+            Envoi impossible : {invitation.envoi.raison}
+          </p>
+        ) : null}
         <div className="flex gap-2">
           <input
             readOnly
@@ -394,6 +408,9 @@ export default function GroupeDetail({
         <p className="mt-2 text-xs text-slate">
           Ce lien ouvre une session : ne le publiez pas, transmettez-le
           directement au stagiaire concerné.
+          {invitation?.envoi.envoye
+            ? " Il est conservé ici au cas où le courriel n'arriverait pas."
+            : ""}
         </p>
       </Modal>
         </div>
