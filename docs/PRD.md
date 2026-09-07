@@ -266,6 +266,8 @@ Pour chaque phase, l'écran affiche :
 
 **Regroupement des ressources liées à une séance, côté stagiaire.** Tout ce qui se rattache à une séance donnée — support de cours, support de TP, documents, liens, instructions — doit être **retrouvable au même endroit** depuis l'espace stagiaire, plutôt que dispersé. Ce qui est assigné comme devoir doit apparaître dans la vue "Devoirs" du stagiaire (§4.5) avec un lien clair vers la séance et ses ressources d'origine.
 
+**Rédaction manuelle en markdown — alternative obligatoire à la génération, ajout v3.** La génération IA ne doit jamais être le seul chemin pour produire un support de cours ou une grille de correction. Le formateur doit pouvoir, à tout moment, **écrire ou coller son propre contenu en markdown** à la place d'une génération — pas une fonctionnalité secondaire, une alternative de même niveau. Le contenu, qu'il soit généré ou rédigé à la main, est stocké en markdown et **rendu à l'écran et dans les PDF avec exactement le même traitement visuel** (typographie, couleurs, mise en page du design system) — la source de la rédaction ne doit jamais se voir dans le résultat. Ça s'applique aux deux documents (support de cours et grille de correction du support de TP), sans exception.
+
 ### 4.5 Espace stagiaire
 
 Le stagiaire dispose d'un **compte authentifié** (login + mot de passe) — pas d'un simple accès par lien public. Priorité forte donnée au **responsive mobile** : c'est le mode de consultation principal attendu.
@@ -318,6 +320,14 @@ Ce n'est pas un bug ni un oubli — la section est volontairement retirée, gard
 - Passation via le compte stagiaire authentifié (chronométrée), cohérent avec §4.5 — pas de lien public séparé. Correction assistée par IA avec justification du barème (leçons tirées des tests précédents : modèle de raisonnement séparé pour un rendu propre, validation du corrigé jamais exposée côté client, note toujours recalculée serveur)
 - Export imprimable (PDF) du contrôle et du corrigé
 - Traçabilité : le produit doit permettre de vérifier qu'un module a bien reçu son minimum réglementaire (2 CC + 1 EFM) avant la fin du module
+
+**Publication du résultat — décision manuelle du formateur, jamais immédiate, ajout v3.** Après avoir remis sa copie, le stagiaire **ne voit rien** — ni note, ni corrigé, ni indication d'un résultat en attente au-delà de la confirmation d'envoi. Le résultat n'apparaît que lorsque le formateur le publie explicitement, après avoir relu et validé la correction (même principe que le partage manuel de la grille de correction de TP — une action délibérée, jamais un affichage automatique dès la correction calculée côté serveur).
+
+**Forme du résultat publié — un document imprimé, pas un écran.** Une fois publié, le résultat s'exporte comme un **document PDF destiné à l'impression**, avec deux zones de signature manuscrite distinctes : une pour le formateur, une pour le stagiaire. Ces zones n'existent que dans le document imprimé — ce n'est pas une signature numérique capturée dans l'app, le stagiaire signe à la main sur le papier, comme un document administratif classique. La zone de signature du stagiaire porte un texte d'attestation, imprimé au-dessus de la ligne de signature :
+
+> *"Je soussigné(e) [Nom du stagiaire], déclare avoir pris connaissance du présent résultat, vérifié le recalcul des points obtenus, et atteste qu'il est exact."*
+
+Ce texte sert de preuve de vérification contradictoire, utile au formateur face à la Direction en cas de contestation ultérieure sur une note. *Formulation proposée à valider par le porteur de projet — modifiable avant l'implémentation si le libellé ne convient pas exactement.*
 
 **Règles réglementaires précises confirmées par le cahier du formateur officiel — à intégrer comme échéances/alertes dans le produit, pas juste comme texte informatif :**
 
