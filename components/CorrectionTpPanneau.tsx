@@ -13,7 +13,7 @@ import {
 } from "@/lib/correction";
 import { ConfirmModal } from "@/components/ui/Modal";
 import { Eye, EyeOff, Lock, PenLine, Save, Sparkles } from "lucide-react";
-import TexteMarkdown from "@/components/TexteMarkdown";
+import DocumentRedige from "@/components/DocumentRedige";
 import { inputStyles as inputClass } from "@/components/ui/Input";
 import { estRedigee } from "@/lib/correction";
 
@@ -276,7 +276,7 @@ export default function CorrectionTpPanneau({
               <span className="text-xs text-slate">Aperçu</span>
               <div className="min-h-[160px] rounded-[9px] border border-border bg-surface p-3">
                 {correction.markdown?.trim() ? (
-                  <TexteMarkdown texte={correction.markdown} />
+                  <DocumentRedige texte={correction.markdown} />
                 ) : (
                   <p className="text-sm text-slate-light">
                     L&apos;aperçu s&apos;affiche ici à mesure que vous écrivez.

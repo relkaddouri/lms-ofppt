@@ -1,4 +1,4 @@
-import TexteMarkdown from "@/components/TexteMarkdown";
+import DocumentRedige from "@/components/DocumentRedige";
 import { estRedige, type Support } from "@/lib/support";
 import { FigureSupport, ListeRessources } from "@/components/RessourcesSupport";
 
@@ -63,7 +63,7 @@ export default function SupportLecture({ support }: { support: Support }) {
     // contiendra. Deux rendus auraient divergé.
     return (
       <div className="doc-impression space-y-5">
-        <TexteMarkdown texte={support.markdown!} />
+        <DocumentRedige texte={support.markdown!} />
         <ListeRessources ressources={support.ressources ?? []} />
       </div>
     );

@@ -11,7 +11,7 @@ import { inputStyles as inputClass } from "@/components/ui/Input";
 import { slugify } from "@/lib/format";
 import DiaporamaCours from "@/components/DiaporamaCours";
 import { estRedige, type Support } from "@/lib/support";
-import TexteMarkdown from "@/components/TexteMarkdown";
+import DocumentRedige from "@/components/DocumentRedige";
 import { imprimer } from "@/lib/impression";
 import { ListeRessources } from "@/components/RessourcesSupport";
 import { Download, FileDown, PenLine, Save, Sparkles } from "lucide-react";
@@ -324,7 +324,7 @@ export default function SupportSeance({
               que le PDF montre ce que le formateur vient de relire. Le moteur
               jsPDF, lui, perdait les tableaux et les encadrés. */}
           <div className="doc-impression mt-3 rounded-[14px] border border-border bg-surface px-6 py-6 shadow-repos md:px-10 md:py-9">
-            <TexteMarkdown texte={support.markdown ?? ""} />
+            <DocumentRedige texte={support.markdown ?? ""} />
           </div>
         </div>
       ) : support.type === "theorique" && vue === "diaporama" ? (

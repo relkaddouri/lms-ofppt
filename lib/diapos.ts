@@ -47,15 +47,20 @@ export type Diapo =
 
 // ── Analyse en blocs ──────────────────────────────────────────────────────
 
-type Noeud =
+export type Noeud =
   | { k: "h"; niveau: number; texte: string }
   | { k: "p"; texte: string; brut: string }
-  | { k: "li"; texte: string; ordonnee: boolean }
+  | { k: "li"; texte: string; brut: string; ordonnee: boolean }
   | { k: "quote"; lignes: string[] }
   | { k: "table"; entetes: string[]; lignes: string[][] }
   | { k: "hr" };
 
-function analyser(markdown: string): Noeud[] {
+/**
+ * Exportée pour que le document A4 et le diaporama partent du même découpage.
+ * Deux analyses auraient divergé sur le premier cas tordu — un encadré qui
+ * contient un tableau, une liste qui suit un titre sans ligne vide.
+ */
+export function analyser(markdown: string): Noeud[] {
   const lignes = markdown.replace(/\r\n/g, "\n").split("\n");
   const noeuds: Noeud[] = [];
   let i = 0;
@@ -111,9 +116,11 @@ function analyser(markdown: string): Noeud[] {
     const puce = l.match(/^[-*+]\s+(.*)$/);
     const num = l.match(/^\d+[.)]\s+(.*)$/);
     if (puce || num) {
+      const contenu = puce ? puce[1]! : num![1]!;
       noeuds.push({
         k: "li",
-        texte: texteNu(puce ? puce[1]! : num![1]!),
+        texte: texteNu(contenu),
+        brut: contenu,
         ordonnee: Boolean(num),
       });
       i++;
