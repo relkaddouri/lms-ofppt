@@ -11,8 +11,9 @@ import { inputStyles as inputClass } from "@/components/ui/Input";
 import { slugify } from "@/lib/format";
 import DiaporamaCours from "@/components/DiaporamaCours";
 import { estRedige, type Support } from "@/lib/support";
+import TexteMarkdown from "@/components/TexteMarkdown";
 import { ListeRessources } from "@/components/RessourcesSupport";
-import { Download, PenLine, Save, Sparkles, Trash2 } from "lucide-react";
+import { Download, FileDown, PenLine, Save, Sparkles } from "lucide-react";
 import { getEtablissement } from "@/app/actions/etablissement";
 import { marqueDe } from "@/lib/pdf-marque";
 
@@ -59,7 +60,9 @@ export default function SupportSeance({
   const [avertissements, setAvertissements] = useState<string[]>([]);
   // Un cours se projette autant qu'il s'édite : les deux vues portent le même
   // contenu, on bascule plutôt que d'empiler.
-  const [vue, setVue] = useState<"edition" | "diaporama">("edition");
+  const [vue, setVue] = useState<"edition" | "document" | "diaporama">(
+    "edition",
+  );
 
   // Au sens de l'écran : le champ existe, même vide — sinon la zone se
   // refermerait à la première frappe effacée.
@@ -67,6 +70,17 @@ export default function SupportSeance({
     support?.type === "theorique" &&
     support.markdown !== null &&
     support.markdown !== undefined;
+
+  function telechargerMarkdown() {
+    if (!support || support.type !== "theorique" || !support.markdown) return;
+    const lien = document.createElement("a");
+    lien.href = URL.createObjectURL(
+      new Blob([support.markdown], { type: "text/markdown;charset=utf-8" }),
+    );
+    lien.download = `${slugify(support.titre, "support")}.md`;
+    lien.click();
+    URL.revokeObjectURL(lien.href);
+  }
 
   /**
    * Ouvre — ou referme — la zone de rédaction libre.
@@ -211,6 +225,20 @@ export default function SupportSeance({
         >
           Télécharger
         </Button>
+        {/* Le markdown se récupère tel quel : c'est la source, elle se
+            retravaille ailleurs, se met sous git, se recolle. Un support
+            qu'on ne peut sortir qu'en PDF est un support qu'on ne peut plus
+            reprendre. */}
+        {redige ? (
+          <Button
+            variant="ghost"
+            size="sm"
+            icon={FileDown}
+            onClick={telechargerMarkdown}
+          >
+            Télécharger en .md
+          </Button>
+        ) : null}
         {version ? (
           <Badge tone="success">version {version}</Badge>
         ) : (
@@ -227,6 +255,9 @@ export default function SupportSeance({
           {(
             [
               ["edition", "Édition"],
+              // Le document est l'aperçu d'un cours rédigé : c'est la forme
+              // qu'il a vraiment. Le diaporama sert à projeter, pas à relire.
+              ...(redige ? ([["document", "Document"]] as const) : []),
               ["diaporama", "Diaporama 16:9"],
             ] as const
           ).map(([cle, libelle]) => (
@@ -272,6 +303,10 @@ export default function SupportSeance({
             ? `Aucun support. Cette séance est ${pratique ? "pratique" : "théorique"} : la génération produira ${pratique ? "un énoncé de travaux pratiques" : "un support de cours"}.`
             : "Cette séance n'a pas de nature définie ; la génération produira un support de cours."}
         </p>
+      ) : support.type === "theorique" && redige && vue === "document" ? (
+        <div className="mt-4 rounded-[14px] border border-border bg-surface px-6 py-6 shadow-repos md:px-10 md:py-9">
+          <TexteMarkdown texte={support.markdown ?? ""} />
+        </div>
       ) : support.type === "theorique" && vue === "diaporama" ? (
         <div className="mt-4">
           <DiaporamaCours
