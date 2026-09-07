@@ -127,41 +127,153 @@ function dessinerCarte(
   }
 }
 
-/** Hauteur qu'une carte occupera, pour égaliser les rangées. */
+/**
+ * Hauteur naturelle d'une carte — ce que son contenu occupe réellement.
+ *
+ * Le plancher qui égalise les cartes d'une rangée est appliqué par l'appelant
+ * et non ici : une carte seule sur sa ligne n'a personne à égaler, et le
+ * plancher la laissait flotter dans une boîte aux trois quarts vide.
+ */
 function hauteurCarte(doc: jsPDF, c: Carte, largeur: number): number {
   const dispo = largeur - px(3);
   let h = py(2.66) * 2;
-  police(doc, "mono", 9.5);
   if (c.intitule) {
-    h += (doc.splitTextToSize(c.intitule, dispo) as string[]).length * taille(9.5) * 1.35 + py(0.6);
+    h += lignes(doc, c.intitule, dispo, "mono", 9.5) * taille(9.5) * 1.35 + py(0.6);
   }
-  police(doc, "corps", 14);
   if (c.titre) {
-    h += (doc.splitTextToSize(c.titre, dispo) as string[]).length * taille(14) * 1.35 + py(0.6);
+    h += lignes(doc, c.titre, dispo, "corpsGras", 14) * taille(14) * 1.35 + py(0.6);
   }
   for (const l of c.lignes) {
-    h += (doc.splitTextToSize(l.texte, dispo - (l.puce ? 4 : 0)) as string[]).length * taille(14) * 1.35 + py(0.3);
+    h +=
+      lignes(doc, l.texte, dispo - (l.puce ? 4 : 0), "corps", 14) *
+        taille(14) *
+        1.35 +
+      py(0.3);
   }
-  return Math.max(h, py(22.82));
+  return Math.max(h, py(9));
 }
 
-function dessinerBloc(doc: jsPDF, b: BlocDiapo, y: number): number {
+/** Nombre de lignes qu'un texte occupera dans une largeur donnée. */
+function lignes(
+  doc: jsPDF,
+  texte: string,
+  largeur: number,
+  role: "titre" | "corps" | "corpsGras" | "mono",
+  pt: number,
+): number {
+  police(doc, role, pt);
+  return Math.max(1, (doc.splitTextToSize(texte, largeur) as string[]).length);
+}
+
+/**
+ * L'ordonnée sous laquelle plus rien ne doit être dessiné.
+ *
+ * Le pied de page vit à 94,4 % ; on s'arrête franchement avant. C'est cette
+ * limite, et non le calcul de découpe, qui garantit qu'aucune ligne ne
+ * chevauche le pied : le modèle de diapositives estime un coût en lignes, ce
+ * qui est bon pour répartir la matière, mais seule la mesure faite ici, avec
+ * les vraies métriques des polices embarquées, sait ce qui tient vraiment.
+ */
+const BAS = py(90);
+
+/** L'ordonnée où le corps commence, sous un titre qui peut tenir deux lignes. */
+function hautDuCorps(doc: jsPDF, titre: string): number {
+  const n = lignes(doc, titre, LARGEUR, "titre", 26);
+  return Math.max(py(23.33), py(11.33) + n * taille(26) * 1.15 + py(3.5));
+}
+
+/** Le décor d'une diapositive de contenu, hors corps. Rend le haut du corps. */
+function cadre(
+  doc: jsPDF,
+  surtitre: string,
+  titre: string,
+  numero: number,
+  pied: string,
+): number {
+  doc.setFillColor(...COULEURS.blanc);
+  doc.rect(0, 0, L, H, "F");
+
+  pastilles(doc, px(4.65), py(7.73), px(1.2), px(1.575));
+  ecrire(doc, surtitre, px(10.88), py(6.67) + taille(10.5), px(71.25), {
+    role: "mono",
+    pt: 10.5,
+    couleur: COULEURS.ardoiseClaire,
+  });
+  ecrire(doc, titre, MARGE, py(11.33) + taille(26), LARGEUR, {
+    role: "titre",
+    pt: 26,
+    couleur: COULEURS.encre,
+    interligne: taille(26) * 1.15,
+  });
+
+  police(doc, "mono", 8.5);
+  doc.setTextColor(...COULEURS.ardoiseClaire);
+  doc.text(pied, MARGE, py(94.4) + taille(8.5));
+  doc.text(String(numero), L - MARGE, py(94.4) + taille(8.5), {
+    align: "right",
+  });
+
+  return hautDuCorps(doc, titre);
+}
+
+/**
+ * L'état d'un dessin en cours : la page courante et de quoi en ouvrir une.
+ *
+ * Le titre est conservé pour être repris, suivi de « (suite) », en tête de
+ * chaque page ajoutée — sans quoi une matière débordante atterrirait sur une
+ * page sans en-tête, orpheline de ce qu'elle continue.
+ */
+type Flux = {
+  doc: jsPDF;
+  surtitre: string;
+  titre: string;
+  pied: string;
+  numero: number;
+  y: number;
+};
+
+function suivante(f: Flux) {
+  f.doc.addPage([L, H], "landscape");
+  f.numero += 1;
+  const titre = /\(suite\)$/.test(f.titre) ? f.titre : `${f.titre} (suite)`;
+  f.titre = titre;
+  f.y = cadre(f.doc, f.surtitre, titre, f.numero, f.pied);
+}
+
+/** Réserve `hauteur` sur la page courante, en ouvrant la suivante s'il le faut. */
+function place(f: Flux, hauteur: number) {
+  if (f.y + hauteur > BAS && f.y > hautDuCorps(f.doc, f.titre)) suivante(f);
+}
+
+function dessinerBloc(f: Flux, b: BlocDiapo) {
+  const doc = f.doc;
+
   if (b.type === "sousTitre") {
-    return ecrire(doc, b.texte, MARGE, y + taille(16), LARGEUR, {
+    const h = lignes(doc, b.texte, LARGEUR, "titre", 16) * taille(16) * 1.35;
+    // Un sous-titre seul en bas de page n'a pas de sens : on lui demande la
+    // place de deux lignes de corps derrière lui.
+    place(f, h + taille(14) * 2.7);
+    f.y = ecrire(doc, b.texte, MARGE, f.y + taille(16), LARGEUR, {
       role: "titre",
       pt: 16,
       couleur: COULEURS.encre,
     });
+    return;
   }
 
   if (b.type === "texte") {
-    return ecrire(doc, b.texte, MARGE, y + taille(14), LARGEUR, { pt: 14 });
+    const h = lignes(doc, b.texte, LARGEUR, "corps", 14) * taille(14) * 1.35;
+    place(f, h);
+    f.y = ecrire(doc, b.texte, MARGE, f.y + taille(14), LARGEUR, { pt: 14 });
+    return;
   }
 
   if (b.type === "liste") {
-    let curseur = y;
     b.items.forEach((it, i) => {
-      curseur += taille(14);
+      const h =
+        lignes(doc, it, LARGEUR - 7, "corps", 14) * taille(14) * 1.35 + py(0.4);
+      place(f, h);
+      let curseur = f.y + taille(14);
       if (b.ordonnee) {
         police(doc, "mono", 11.5);
         doc.setTextColor(...COULEURS.ardoiseClaire);
@@ -170,71 +282,101 @@ function dessinerBloc(doc: jsPDF, b: BlocDiapo, y: number): number {
         doc.setFillColor(...COULEURS.sarcelle);
         doc.circle(MARGE + 1.2, curseur - taille(14) * 0.35, 0.8, "F");
       }
-      curseur = ecrire(doc, it, MARGE + 7, curseur, LARGEUR - 7, { pt: 14 });
-      curseur += py(0.4);
+      f.y = ecrire(doc, it, MARGE + 7, curseur, LARGEUR - 7, { pt: 14 }) + py(0.4);
     });
-    return curseur;
+    return;
   }
 
   if (b.type === "cartes") {
-    const colonnes = 2;
     const gouttiere = px(2.25);
-    const largeur = (LARGEUR - gouttiere) / colonnes;
-    let curseur = y;
-    for (let i = 0; i < b.cartes.length; i += colonnes) {
-      const rangee = b.cartes.slice(i, i + colonnes);
-      const h = Math.max(...rangee.map((c) => hauteurCarte(doc, c, largeur)));
+    for (let i = 0; i < b.cartes.length; i += 2) {
+      const rangee = b.cartes.slice(i, i + 2);
+      // Une carte seule prend toute la largeur : la demi-largeur laissait la
+      // moitié droite de la diapositive vide.
+      const seule = rangee.length === 1;
+      const largeur = seule ? LARGEUR : (LARGEUR - gouttiere) / 2;
+      const naturelle = Math.max(
+        ...rangee.map((c) => hauteurCarte(doc, c, largeur)),
+      );
+      // Le plancher n'égalise que des cartes qui se font face.
+      const h = seule ? naturelle : Math.max(naturelle, py(22.82));
+      place(f, h + py(2));
       rangee.forEach((c, k) => {
-        dessinerCarte(doc, c, MARGE + k * (largeur + gouttiere), curseur, largeur, h);
+        dessinerCarte(doc, c, MARGE + k * (largeur + gouttiere), f.y, largeur, h);
       });
-      curseur += h + py(2);
+      f.y += h + py(2);
     }
-    return curseur;
+    return;
   }
 
   // ── Tableau ──
   const colonnes = b.entetes.length;
   const largeur = LARGEUR / colonnes;
-  const hLigne = taille(11) * 2.1;
-  let curseur = y;
+  const hEntete = taille(11) * 2.1;
 
-  doc.setFillColor(...COULEURS.encre);
-  doc.rect(MARGE, curseur, LARGEUR, hLigne, "F");
-  police(doc, "corpsGras", 11);
-  doc.setTextColor(...COULEURS.blanc);
-  b.entetes.forEach((e, k) => {
-    doc.text(
-      (doc.splitTextToSize(e, largeur - 4) as string[])[0] ?? "",
-      MARGE + k * largeur + 2,
-      curseur + hLigne * 0.68,
-    );
-  });
-  curseur += hLigne;
+  const entete = () => {
+    doc.setFillColor(...COULEURS.encre);
+    doc.rect(MARGE, f.y, LARGEUR, hEntete, "F");
+    police(doc, "corpsGras", 11);
+    doc.setTextColor(...COULEURS.blanc);
+    b.entetes.forEach((e, k) => {
+      doc.text(
+        (doc.splitTextToSize(e, largeur - 4) as string[])[0] ?? "",
+        MARGE + k * largeur + 2,
+        f.y + hEntete * 0.68,
+      );
+    });
+    f.y += hEntete;
+  };
 
-  police(doc, "corps", 11);
-  for (const ligne of b.lignes) {
-    const hauteurs = ligne.map(
-      (c) => (doc.splitTextToSize(c, largeur - 4) as string[]).length,
-    );
-    const h = Math.max(1, ...hauteurs) * taille(11) * 1.35 + 2;
+  place(f, hEntete + taille(11) * 2.7);
+  entete();
+
+  const hauteurLigne = (ligne: string[]) =>
+    Math.max(1, ...ligne.map((c) => lignes(doc, c, largeur - 4, "corps", 11))) *
+      taille(11) *
+      1.35 +
+    2;
+
+  b.lignes.forEach((ligne, i) => {
+    const h = hauteurLigne(ligne);
+    // Garde contre la ligne orpheline : si l'avant-dernière tient mais que la
+    // dernière la suivrait seule sur la page suivante, on coupe une ligne plus
+    // tôt et les deux voyagent ensemble.
+    const derniere = b.lignes[i + 1];
+    const orpheline =
+      i === b.lignes.length - 2 &&
+      derniere !== undefined &&
+      f.y + h + hauteurLigne(derniere) > BAS;
+    if (f.y + h > BAS || orpheline) {
+      // L'en-tête est redessiné en tête de la page suivante : sans lui, les
+      // colonnes d'un tableau coupé ne se lisent plus.
+      suivante(f);
+      entete();
+    }
     doc.setDrawColor(...COULEURS.separateur);
     doc.setLineWidth(0.2);
-    doc.line(MARGE, curseur, MARGE + LARGEUR, curseur);
+    doc.line(MARGE, f.y, MARGE + LARGEUR, f.y);
     ligne.forEach((c, k) => {
       police(doc, k === 0 ? "corpsGras" : "corps", 11);
       doc.setTextColor(...(k === 0 ? COULEURS.encre : COULEURS.corps));
-      let sous = curseur + taille(11) * 1.15;
+      let sous = f.y + taille(11) * 1.15;
       for (const l of doc.splitTextToSize(c, largeur - 4) as string[]) {
         doc.text(l, MARGE + k * largeur + 2, sous);
         sous += taille(11) * 1.35;
       }
     });
-    curseur += h;
-  }
-  return curseur;
+    f.y += h;
+  });
 }
 
-function dessinerDiapo(doc: jsPDF, d: Diapo, numero: number, pied: string) {
+/** Dessine une diapositive et rend le nombre de pages qu'elle a occupées. */
+function dessinerDiapo(
+  doc: jsPDF,
+  d: Diapo,
+  numero: number,
+  pied: string,
+): number {
   if (d.type === "couverture" || d.type === "intercalaire") {
     doc.setFillColor(...COULEURS.encre);
     doc.rect(0, 0, L, H, "F");
@@ -242,28 +384,34 @@ function dessinerDiapo(doc: jsPDF, d: Diapo, numero: number, pied: string) {
 
     pastilles(doc, px(6), py(10.67), px(1.65), px(2.175));
 
-    ecrire(doc, d.surtitre, px(6), py(couverture ? 19.33 : 20) + taille(11), px(86.25), {
-      role: "mono",
-      pt: 11,
-      couleur: COULEURS.ardoiseClaire,
-    });
+    ecrire(
+      doc,
+      d.surtitre,
+      px(6),
+      py(couverture ? 19.33 : 20) + taille(11),
+      px(86.25),
+      { role: "mono", pt: 11, couleur: COULEURS.ardoiseClaire },
+    );
 
+    const pt = couverture ? 44 : 40;
+    // Le sous-titre suit le bas mesuré du titre. Posé à une ordonnée fixe, il
+    // passait sous un titre d'une ligne et par-dessus un titre de deux.
     let y = ecrire(
       doc,
       d.titre,
       px(6),
-      py(couverture ? 26.67 : 29.33) + taille(couverture ? 44 : 40),
+      py(couverture ? 26.67 : 29.33) + taille(pt),
       px(86.25),
       {
         role: "titre",
-        pt: couverture ? 44 : 40,
+        pt,
         couleur: COULEURS.blanc,
-        interligne: taille(couverture ? 44 : 40) * 1.12,
+        interligne: taille(pt) * 1.12,
       },
     );
 
     if (d.sousTitre) {
-      y = ecrire(doc, d.sousTitre, px(6), py(couverture ? 49.33 : 46), px(82.5), {
+      ecrire(doc, d.sousTitre, px(6), y + py(couverture ? 5 : 3.5), px(82.5), {
         pt: 18,
         couleur: COULEURS.bordureForte,
       });
@@ -275,54 +423,49 @@ function dessinerDiapo(doc: jsPDF, d: Diapo, numero: number, pied: string) {
         police(doc, "mono", 9.5);
         doc.setTextColor(...COULEURS.ardoiseClaire);
         doc.text(m.cle.toUpperCase(), px(6), curseur);
-        curseur = ecrire(doc, m.valeur, px(6), curseur + taille(12.5) * 1.3, px(86.25), {
-          pt: 12.5,
-          couleur: COULEURS.bordureForte,
-        });
+        curseur = ecrire(
+          doc,
+          m.valeur,
+          px(6),
+          curseur + taille(12.5) * 1.3,
+          px(86.25),
+          { pt: 12.5, couleur: COULEURS.bordureForte },
+        );
         curseur += py(1.2);
       }
     }
-    return;
+    return 1;
   }
 
-  doc.setFillColor(...COULEURS.blanc);
-  doc.rect(0, 0, L, H, "F");
-
-  pastilles(doc, px(4.65), py(7.73), px(1.2), px(1.575));
-  ecrire(doc, d.surtitre, px(10.88), py(6.67) + taille(10.5), px(71.25), {
-    role: "mono",
-    pt: 10.5,
-    couleur: COULEURS.ardoiseClaire,
-  });
-  ecrire(
+  const titre = d.type === "sommaire" ? "Sommaire" : d.titre;
+  const f: Flux = {
     doc,
-    d.type === "sommaire" ? "Sommaire" : d.titre,
-    MARGE,
-    py(11.33) + taille(26),
-    LARGEUR,
-    { role: "titre", pt: 26, couleur: COULEURS.encre, interligne: taille(26) * 1.15 },
-  );
+    surtitre: d.surtitre,
+    titre,
+    pied,
+    numero,
+    y: 0,
+  };
+  f.y = cadre(doc, d.surtitre, titre, numero, pied);
 
-  let y = py(23.33);
   if (d.type === "sommaire") {
     d.entrees.forEach((e, i) => {
-      y += taille(14) * 1.6;
+      const h = lignes(doc, e, LARGEUR - 8, "corps", 14) * taille(14) * 1.6;
+      place(f, h);
+      f.y += taille(14) * 1.6;
       police(doc, "titre", 11);
       doc.setTextColor(...COULEURS.sarcelle);
-      doc.text(String(i), MARGE, y);
-      ecrire(doc, e, MARGE + 8, y, LARGEUR - 8, { pt: 14 });
+      doc.text(String(i), MARGE, f.y);
+      ecrire(doc, e, MARGE + 8, f.y, LARGEUR - 8, { pt: 14 });
     });
   } else {
     for (const b of d.blocs) {
-      y = dessinerBloc(doc, b, y);
-      y += py(2.4);
+      dessinerBloc(f, b);
+      f.y += py(2.4);
     }
   }
 
-  police(doc, "mono", 8.5);
-  doc.setTextColor(...COULEURS.ardoiseClaire);
-  doc.text(pied, MARGE, py(94.4) + taille(8.5));
-  doc.text(String(numero), L - MARGE, py(94.4) + taille(8.5), { align: "right" });
+  return f.numero - numero + 1;
 }
 
 export async function telechargerDiapositivesPdf(
@@ -333,10 +476,15 @@ export async function telechargerDiapositivesPdf(
   const doc = new jsPDF({ unit: "mm", format: [L, H], orientation: "landscape" });
   await installerPolices(doc);
 
-  const diapos = decouperEnDiapositives(markdown, contexte);
+  // Une diapositive de contenu sans bloc ne porterait que son titre et son
+  // pied : une page blanche au milieu du diaporama.
+  const diapos = decouperEnDiapositives(markdown, contexte).filter(
+    (d) => d.type !== "contenu" || d.blocs.length > 0,
+  );
+  let numero = 1;
   diapos.forEach((d, i) => {
     if (i > 0) doc.addPage([L, H], "landscape");
-    dessinerDiapo(doc, d, i + 1, contexte.pied);
+    numero += dessinerDiapo(doc, d, numero, contexte.pied);
   });
 
   doc.save(nomFichier);

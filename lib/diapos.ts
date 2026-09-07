@@ -171,12 +171,25 @@ function enCarte(lignes: string[]): Carte {
     titre: gras ? gras[1]!.trim() : null,
     // La puce est conservée : une liste projetée se lit par ses puces, pas en
     // paragraphes collés les uns aux autres.
+    //
+    // Un tableau écrit à l'intérieur d'une citation — les blocs de données du
+    // cas fil rouge en sont pleins — devient « clé : valeur ». Le laisser tel
+    // quel affichait les barres verticales et la ligne de tirets à l'écran
+    // comme sur le papier.
     lignes: reste
       .slice(gras ? 1 : 0)
-      .map((l) => ({
-        texte: texteNu(l),
-        puce: /^\s*[-*+]\s+/.test(l),
-      }))
+      .filter((l) => !/^\s*\|[\s:|-]+\|\s*$/.test(l))
+      .map((l) => {
+        const cellules = l.trim().match(/^\|(.+)\|$/);
+        if (cellules) {
+          const parts = cellules[1]!
+            .split("|")
+            .map((c) => texteNu(c.trim()))
+            .filter(Boolean);
+          return { texte: parts.join(" : "), puce: parts.length > 1 };
+        }
+        return { texte: texteNu(l), puce: /^\s*[-*+]\s+/.test(l) };
+      })
       .filter((l) => l.texte),
     accent: "neutre",
   };
