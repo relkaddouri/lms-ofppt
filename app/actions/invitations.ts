@@ -50,7 +50,8 @@ async function origineDesLiens(): Promise<string> {
   );
 }
 
-export type ResultatInvitation = {
+export type InvitationReussie = {
+  ok: true;
   lien: string;
   email: string;
   /** Vrai si le compte existait déjà : le lien sert alors à le retrouver. */
@@ -58,6 +59,24 @@ export type ResultatInvitation = {
   /** Ce que le courriel a fait, mot pour mot, pour que l'écran le dise. */
   envoi: { envoye: true } | { envoye: false; raison: string };
 };
+
+/**
+ * Un échec que le formateur peut corriger — et qui se rend, ne se jette pas.
+ *
+ * Next masque en production tout ce qu'une Server Action laisse remonter :
+ * le formateur voyait « Minified React error #441 » là où le mode
+ * développement disait « Unable to validate email address: invalid format ».
+ * Une adresse mal saisie est exactement le genre de panne qu'on veut nommer.
+ * Ce qui est rendu traverse la frontière intact ; ce qui est jeté, non.
+ */
+export type InvitationEchouee = {
+  ok: false;
+  qui: string;
+  email: string | null;
+  raison: string;
+};
+
+export type ResultatInvitation = InvitationReussie | InvitationEchouee;
 
 /**
  * Ouvre le compte d'un stagiaire et lui envoie son lien.
@@ -70,7 +89,7 @@ export type ResultatInvitation = {
 async function inviterUn(
   stagiaire: StagiaireAInviter,
   origine: string,
-): Promise<ResultatInvitation> {
+): Promise<InvitationReussie> {
   if (!stagiaire.email?.trim()) {
     throw new Error(
       `${stagiaire.prenom} ${stagiaire.nom} n'a pas d'adresse e-mail : ajoutez-la avant d'inviter.`,
@@ -100,6 +119,26 @@ async function inviterUn(
       existant = true;
     } else {
       userId = cree.user.id;
+    }
+  }
+
+  // Filet pour les fiches modifiées avant que `updateStagiaire` ne renomme
+  // aussi le compte. Sans lui, le lien serait demandé pour une adresse sans
+  // compte et GoTrue répondrait « User with this email not found » — vrai,
+  // mais incompréhensible quand l'adresse est affichée juste à côté.
+  //
+  // On ne devine pas laquelle fait foi : envoyer à l'ancienne écrirait dans
+  // une boîte que le stagiaire a peut-être perdue, et c'est souvent la raison
+  // même du changement.
+  if (stagiaire.user_id) {
+    const { data: compte } = await service.auth.admin.getUserById(
+      stagiaire.user_id,
+    );
+    const adresseDuCompte = compte?.user?.email?.toLowerCase() ?? null;
+    if (adresseDuCompte && adresseDuCompte !== email) {
+      throw new Error(
+        `Sa fiche porte ${email}, mais son compte est resté ouvert à ${adresseDuCompte} — et c'est le compte qui reçoit le lien. Ouvrez sa fiche et réenregistrez son adresse : le compte suivra, et le lien partira au bon endroit.`,
+      );
     }
   }
 
@@ -158,7 +197,7 @@ async function inviterUn(
     console.error("[invitation] courriel non parti", email, envoi.raison);
   }
 
-  return { lien: lienFinal, email, existant, envoi };
+  return { ok: true, lien: lienFinal, email, existant, envoi };
 }
 
 export async function inviterStagiaire(
@@ -181,9 +220,20 @@ export async function inviterStagiaire(
     throw new Error("Stagiaire introuvable, ou hors de vos groupes.");
   }
 
-  const resultat = await inviterUn(stagiaire, await origineDesLiens());
-  revalidatePath(`/groupes/${stagiaire.groupe_id}`);
-  return resultat;
+  // Même traitement que l'envoi groupé : une invitation qui échoue pour une
+  // raison nommable est un résultat, pas une exception.
+  try {
+    const resultat = await inviterUn(stagiaire, await origineDesLiens());
+    revalidatePath(`/groupes/${stagiaire.groupe_id}`);
+    return resultat;
+  } catch (e) {
+    return {
+      ok: false,
+      qui: `${stagiaire.prenom} ${stagiaire.nom}`.trim(),
+      email: stagiaire.email,
+      raison: lisible(e),
+    };
+  }
 }
 
 /**
