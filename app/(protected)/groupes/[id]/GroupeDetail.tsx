@@ -17,7 +17,9 @@ import { initials } from "@/lib/format";
 import { Check, Mail, Pencil, Plus, Save, Trash2, X } from "lucide-react";
 import {
   inviterStagiaire,
+  inviterGroupe,
   type ResultatInvitation,
+  type ResultatInvitationGroupe,
 } from "@/app/actions/invitations";
 import Modal from "@/components/ui/Modal";
 import { inputStyles as inputClass } from "@/components/ui/Input";
@@ -36,6 +38,20 @@ export default function GroupeDetail({
   // déjà divergé une fois, et rien ne l'avait signalé tant que personne
   // n'ajoutait de champ.
   const [invitation, setInvitation] = useState<ResultatInvitation | null>(null);
+  const [envoiGroupe, setEnvoiGroupe] =
+    useState<ResultatInvitationGroupe | null>(null);
+  const [envoiEnCours, setEnvoiEnCours] = useState(false);
+
+  async function inviterTous() {
+    setEnvoiEnCours(true);
+    try {
+      setEnvoiGroupe(await inviterGroupe(groupeId));
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "Envoi impossible.", "error");
+    } finally {
+      setEnvoiEnCours(false);
+    }
+  }
 
   async function inviter(stagiaireId: string) {
     try {
@@ -132,9 +148,24 @@ export default function GroupeDetail({
     <section className="mt-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h2 className="font-display text-xl font-bold text-ink">Stagiaires</h2>
-        <Button icon={Plus} onClick={() => setAjoutOuvert(true)}>
-          Ajouter un stagiaire
-        </Button>
+        <div className="flex flex-wrap items-center gap-2.5">
+          {/* Les envois sont étalés à deux par seconde côté serveur : sur un
+              groupe entier l'action dure plusieurs secondes, d'où le libellé
+              d'attente plutôt qu'un bouton qui semble ne rien faire. */}
+          <Button
+            variant="secondary"
+            icon={Mail}
+            onClick={inviterTous}
+            loading={envoiEnCours}
+            loadingLabel="Envoi en cours…"
+            disabled={stagiaires.length === 0}
+          >
+            Envoyer le lien à tout le monde
+          </Button>
+          <Button icon={Plus} onClick={() => setAjoutOuvert(true)}>
+            Ajouter un stagiaire
+          </Button>
+        </div>
       </div>
 
       {/* Ajouter un stagiaire est un geste ponctuel : le formulaire déplié en
@@ -362,6 +393,86 @@ export default function GroupeDetail({
               )}
             </tbody>
           </table>
+
+      {/* Le compte rendu d'un envoi groupé n'est pas « c'est parti » : sur
+          quinze stagiaires, il y aura des adresses fausses et des comptes déjà
+          actifs. Chaque catégorie est nommée, et chaque échec porte sa
+          raison — la même que la modale unitaire affiche. */}
+      <Modal
+        open={envoiGroupe !== null}
+        onClose={() => setEnvoiGroupe(null)}
+        title="Envoi des liens d'accès"
+        description={
+          envoiGroupe
+            ? `${envoiGroupe.envoyes.length} lien${envoiGroupe.envoyes.length > 1 ? "s" : ""} envoyé${envoiGroupe.envoyes.length > 1 ? "s" : ""}` +
+              (envoiGroupe.ignores.length
+                ? ` · ${envoiGroupe.ignores.length} déjà connecté${envoiGroupe.ignores.length > 1 ? "s" : ""}`
+                : "") +
+              (envoiGroupe.echecs.length
+                ? ` · ${envoiGroupe.echecs.length} en échec`
+                : "")
+            : ""
+        }
+      >
+        {envoiGroupe ? (
+          <div className="flex flex-col gap-4">
+            {envoiGroupe.echecs.length > 0 ? (
+              <div className="rounded-xl border border-tint-alert-strong bg-alert-wash px-3.5 py-3">
+                <p className="text-sm font-semibold text-coral-dark">
+                  Ces stagiaires n&apos;ont rien reçu
+                </p>
+                <ul className="mt-2 flex list-none flex-col gap-2 p-0">
+                  {envoiGroupe.echecs.map((e) => (
+                    <li key={e.qui} className="text-sm text-coral-dark">
+                      <span className="font-medium">{e.qui}</span>
+                      {e.email ? (
+                        <span className="font-mono text-[12.5px]">
+                          {" "}
+                          · {e.email}
+                        </span>
+                      ) : null}
+                      <span className="block text-[13px]">{e.raison}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+
+            {envoiGroupe.envoyes.length > 0 ? (
+              <div>
+                <p className="text-sm font-semibold text-body">
+                  Liens envoyés
+                </p>
+                <p className="mt-1 text-[13.5px] text-slate-2">
+                  {envoiGroupe.envoyes.join(", ")}
+                </p>
+              </div>
+            ) : null}
+
+            {envoiGroupe.ignores.length > 0 ? (
+              <div>
+                <p className="text-sm font-semibold text-body">
+                  Déjà connectés, non relancés
+                </p>
+                <p className="mt-1 text-[13.5px] text-slate-2">
+                  {envoiGroupe.ignores.join(", ")}
+                </p>
+                <p className="mt-1 text-xs text-slate-light">
+                  Leur lien d&apos;invitation a déjà servi. Pour un mot de
+                  passe oublié, invitez-les individuellement.
+                </p>
+              </div>
+            ) : null}
+
+            {envoiGroupe.envoyes.length === 0 &&
+            envoiGroupe.echecs.length === 0 ? (
+              <p className="text-sm text-slate">
+                Tout le monde s&apos;est déjà connecté — personne à relancer.
+              </p>
+            ) : null}
+          </div>
+        ) : null}
+      </Modal>
 
       <Modal
         open={invitation !== null}

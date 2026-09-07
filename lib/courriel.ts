@@ -13,6 +13,11 @@ import { Resend } from "resend";
  * `{ error }` d'une promesse tenue. Le code des annonces comptait les
  * promesses rejetées — il n'en voyait donc aucune, et signalait un succès sur
  * chaque échec d'API.
+ *
+ * L'audit du tableau de bord Resend a montré ce que ça coûtait : sur un envoi
+ * d'annonce à quinze stagiaires, quatre requêtes ont été refusées en 429 et
+ * l'écran a affiché un succès. Rendre l'échec visible ne suffisait donc pas —
+ * il fallait cesser de le provoquer. D'où l'ordonnanceur ci-dessous.
  */
 
 export type ResultatEnvoi =
@@ -30,6 +35,47 @@ const EXPEDITEUR_BAC_A_SABLE = "Pédago <onboarding@resend.dev>";
 
 export function courrielConfigure(): boolean {
   return Boolean(process.env.RESEND_API_KEY && process.env.RESEND_FROM);
+}
+
+// ── Ordonnanceur ──────────────────────────────────────────────────────────
+
+/**
+ * Resend accepte deux requêtes par seconde. Un envoi de groupe les tirait
+ * toutes d'un coup.
+ */
+const INTERVALLE_MS = 500;
+
+/**
+ * Date du prochain créneau libre.
+ *
+ * Chaque appel réserve le sien puis avance le curseur, avant toute attente :
+ * JavaScript n'interrompt pas une fonction entre deux instructions
+ * synchrones, donc deux appels concurrents ne peuvent pas réserver le même
+ * créneau. C'est ce qui rend l'étalement correct sous `Promise.all`, sans
+ * verrou ni file explicite.
+ *
+ * La portée est le processus. Sur Vercel, un envoi de groupe tient dans une
+ * seule invocation, donc le compte est juste ; deux requêtes servies par deux
+ * instances pourraient encore se croiser. C'est le repli sur 429 ci-dessous
+ * qui couvre ce reste.
+ */
+let prochainCreneau = 0;
+
+async function attendreSonTour(): Promise<void> {
+  const maintenant = Date.now();
+  const creneau = Math.max(maintenant, prochainCreneau);
+  prochainCreneau = creneau + INTERVALLE_MS;
+  const attente = creneau - maintenant;
+  if (attente > 0) await new Promise((r) => setTimeout(r, attente));
+}
+
+/** Nombre de secondes à patienter, lu dans l'en-tête quand Resend le donne. */
+function delaiDeReprise(entetes: Record<string, string> | null): number {
+  const brut = entetes?.["retry-after"] ?? entetes?.["Retry-After"];
+  const secondes = brut ? Number(brut) : NaN;
+  return Number.isFinite(secondes) && secondes > 0
+    ? Math.min(secondes * 1000, 5000)
+    : 1000;
 }
 
 export async function envoyerCourriel({
@@ -53,13 +99,28 @@ export async function envoyerCourriel({
     };
   }
 
-  try {
-    const { error } = await new Resend(cle).emails.send({
+  const resend = new Resend(cle);
+  const envoi = () =>
+    resend.emails.send({
       from: process.env.RESEND_FROM ?? EXPEDITEUR_BAC_A_SABLE,
       to: a,
       subject: sujet,
       text: texte,
     });
+
+  try {
+    await attendreSonTour();
+    let { error, headers } = await envoi();
+
+    // Ceinture et bretelles : l'étalement ne connaît que ce processus. Si la
+    // limite tombe quand même — deux instances servies en parallèle — un seul
+    // second essai suffit, la fenêtre de Resend étant d'une seconde.
+    if (error?.name === "rate_limit_exceeded" || error?.statusCode === 429) {
+      await new Promise((r) => setTimeout(r, delaiDeReprise(headers)));
+      await attendreSonTour();
+      ({ error, headers } = await envoi());
+    }
+
     // Le cas qui manquait : une erreur d'API arrive ici, pas dans le `catch`.
     if (error) return { envoye: false, raison: error.message };
     return { envoye: true };
