@@ -10,13 +10,7 @@ import Badge from "@/components/ui/Badge";
 import { inputStyles as inputClass } from "@/components/ui/Input";
 import { slugify } from "@/lib/format";
 import DiaporamaCours from "@/components/DiaporamaCours";
-import {
-  estRedigee,
-  sectionRedigee,
-  type SectionCours,
-  type Support,
-} from "@/lib/support";
-import TexteMarkdown from "@/components/TexteMarkdown";
+import { estRedige, type Support } from "@/lib/support";
 import { ListeRessources } from "@/components/RessourcesSupport";
 import { Download, PenLine, Save, Sparkles, Trash2 } from "lucide-react";
 import { getEtablissement } from "@/app/actions/etablissement";
@@ -67,12 +61,23 @@ export default function SupportSeance({
   // contenu, on bascule plutôt que d'empiler.
   const [vue, setVue] = useState<"edition" | "diaporama">("edition");
 
+  // Au sens de l'écran : le champ existe, même vide — sinon la zone se
+  // refermerait à la première frappe effacée.
+  const redige =
+    support?.type === "theorique" &&
+    support.markdown !== null &&
+    support.markdown !== undefined;
+
   /**
-   * Ouvre une section rédigée : la première d'un support neuf, ou une de plus.
+   * Ouvre — ou referme — la zone de rédaction libre.
    *
-   * Sur un support pratique il n'y a pas de sections — le formateur y écrit
-   * déjà tout à la main. Le bouton n'y a donc pas de sens et l'action se
-   * contente de le dire.
+   * Une seule zone pour tout le cours : le formateur arrive avec son texte
+   * déjà écrit ailleurs et le colle. Lui demander de le découper en sections
+   * avant de pouvoir le coller serait lui faire faire le travail que
+   * l'application doit faire pour lui.
+   *
+   * Sur un énoncé de TP le bouton n'a pas de sens : il s'y saisit déjà tout à
+   * la main, champ par champ.
    */
   function redigerAlaMain() {
     if (support && support.type === "pratique") {
@@ -84,17 +89,18 @@ export default function SupportSeance({
         type: "theorique",
         titre: contexte.objectif || "Support de cours",
         introduction: "",
-        sections: [sectionRedigee("Contenu")],
+        sections: [],
         aRetenir: [],
         ressources: [],
+        markdown: "",
       });
       setIssuDuModele(false);
       return;
     }
-    setSupport({
-      ...support,
-      sections: [...support.sections, sectionRedigee()],
-    });
+    if (support.type !== "theorique") return;
+    // Repasser au structuré ne détruit rien tant qu'on n'enregistre pas.
+    setSupport({ ...support, markdown: redige ? null : (support.markdown ?? "") });
+    setIssuDuModele(false);
   }
 
   const pratique = contexte.nature === "pratique";
@@ -191,7 +197,7 @@ export default function SupportSeance({
           onClick={redigerAlaMain}
           disabled={busy}
         >
-          {support ? "Ajouter une section rédigée" : "Rédiger à la main"}
+          {redige ? "Reprendre le cours structuré" : "Rédiger / coller le cours"}
         </Button>
         <Button icon={Save} size="sm" onClick={enregistrer} disabled={busy || !support}>
           Enregistrer
@@ -275,6 +281,33 @@ export default function SupportSeance({
               .join(" · ")}
           />
         </div>
+      ) : support.type === "theorique" && redige ? (
+        // Une seule zone, et aucun aperçu à côté : l'aperçu, c'est l'onglet
+        // « Diaporama 16:9 » — celui que la classe verra. En doubler un ici
+        // reviendrait à montrer deux fois la même chose et à voler la moitié
+        // de la largeur au texte qu'on est en train de coller.
+        <div className="mt-4 space-y-3">
+          <label className="flex flex-col gap-1.5">
+            <span className="text-xs text-slate">
+              Collez votre cours ici — markdown : <code>##</code> pour un
+              titre, <code>-</code> pour une puce, <code>**gras**</code>.
+              Chaque titre ouvre une diapositive.
+            </span>
+            <textarea
+              rows={22}
+              value={support.markdown ?? ""}
+              onChange={(e) =>
+                setSupport({ ...support, markdown: e.target.value })
+              }
+              placeholder={"## Première idée\n\n- un point\n- un autre\n\n## Deuxième idée\n\nUn paragraphe avec un **mot important**."}
+              className={`${inputClass} font-mono text-[13px] leading-relaxed`}
+            />
+          </label>
+          <p className="text-[13px] text-slate-light">
+            Basculez sur <span className="font-medium text-body">Diaporama
+            16:9</span> pour voir le rendu.
+          </p>
+        </div>
       ) : support.type === "theorique" ? (
         <div className="mt-4 space-y-4">
           <input
@@ -294,28 +327,7 @@ export default function SupportSeance({
               className={`${inputClass} mt-1`}
             />
           </div>
-          {support.sections.map((sec, i) =>
-            estRedigee(sec) || sec.markdown === "" ? (
-              <SectionRedigee
-                key={i}
-                section={sec}
-                index={i}
-                onChange={(next) =>
-                  setSupport({
-                    ...support,
-                    sections: support.sections.map((x, k) =>
-                      k === i ? next : x,
-                    ),
-                  })
-                }
-                onRetirer={() =>
-                  setSupport({
-                    ...support,
-                    sections: support.sections.filter((_, k) => k !== i),
-                  })
-                }
-              />
-            ) : (
+          {support.sections.map((sec, i) => (
             <div key={i} className="rounded-lg border border-border p-3">
               <input
                 value={sec.titre}
@@ -393,8 +405,7 @@ export default function SupportSeance({
                 className={`${inputClass} mt-1`}
               />
             </div>
-            ),
-          )}
+          ))}
           <div>
             <label className="block text-xs text-slate">
               À retenir — un point par ligne
@@ -530,76 +541,6 @@ export default function SupportSeance({
           </div>
         </div>
       )}
-    </div>
-  );
-}
-
-/**
- * Édition d'une section rédigée à la main.
- *
- * Champ de saisie et aperçu côte à côte au-dessus de 768px, empilés en
- * dessous : écrire du markdown sans voir ce qu'il donne, c'est écrire à
- * l'aveugle — et l'aperçu utilise le même composant que la lecture stagiaire,
- * donc ce que le formateur voit là est littéralement ce que le stagiaire
- * verra.
- */
-function SectionRedigee({
-  section,
-  index,
-  onChange,
-  onRetirer,
-}: {
-  section: SectionCours;
-  index: number;
-  onChange: (s: SectionCours) => void;
-  onRetirer: () => void;
-}) {
-  return (
-    <div className="rounded-lg border border-border-strong p-3">
-      <div className="flex flex-wrap items-center gap-2">
-        <input
-          value={section.titre}
-          aria-label={`Titre de la section ${index + 1}`}
-          onChange={(e) => onChange({ ...section, titre: e.target.value })}
-          className={`${inputClass} font-medium`}
-        />
-        <Badge tone="info">rédigée</Badge>
-        <button
-          type="button"
-          onClick={onRetirer}
-          aria-label={`Retirer la section ${index + 1}`}
-          className="ml-auto flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-coral-dark transition-colors duration-150 ease-out hover:bg-alert-wash max-md:h-11 max-md:w-11"
-        >
-          <Trash2 size={15} aria-hidden />
-        </button>
-      </div>
-
-      <div className="mt-2 grid grid-cols-1 gap-3 md:grid-cols-2">
-        <label className="flex flex-col gap-1">
-          <span className="text-xs text-slate">
-            Markdown — titres, listes, gras, liens
-          </span>
-          <textarea
-            rows={10}
-            value={section.markdown ?? ""}
-            onChange={(e) => onChange({ ...section, markdown: e.target.value })}
-            placeholder={"## Une idée\n\n- un point\n- un autre\n\nUn **mot important**."}
-            className={`${inputClass} font-mono text-[13px]`}
-          />
-        </label>
-        <div className="flex flex-col gap-1">
-          <span className="text-xs text-slate">Aperçu</span>
-          <div className="min-h-[120px] rounded-[9px] border border-border bg-surface p-3">
-            {section.markdown?.trim() ? (
-              <TexteMarkdown texte={section.markdown} />
-            ) : (
-              <p className="text-sm text-slate-light">
-                L&apos;aperçu s&apos;affiche ici à mesure que vous écrivez.
-              </p>
-            )}
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

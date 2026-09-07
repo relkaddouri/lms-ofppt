@@ -1,5 +1,5 @@
 import TexteMarkdown from "@/components/TexteMarkdown";
-import { estRedigee, type Support } from "@/lib/support";
+import { estRedige, type Support } from "@/lib/support";
 import { FigureSupport, ListeRessources } from "@/components/RessourcesSupport";
 
 /**
@@ -56,15 +56,23 @@ export default function SupportLecture({ support }: { support: Support }) {
     );
   }
 
+  // Un cours rédigé à la main est ce texte, rien d'autre : ni sections, ni
+  // introduction saisies ailleurs (PRD §4.4).
+  if (estRedige(support)) {
+    return (
+      <div className="space-y-5">
+        <TexteMarkdown texte={support.markdown!} />
+        <ListeRessources ressources={support.ressources ?? []} />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-5">
       <p className="text-sm leading-relaxed text-ink">{support.introduction}</p>
 
       {support.sections.map((sec, i) => (
         <Bloc key={i} titre={sec.titre}>
-          {estRedigee(sec) ? (
-            <TexteMarkdown texte={sec.markdown!} />
-          ) : (
           <>
           <ul className="space-y-2">
             {sec.notions.map((n, k) => (
@@ -82,7 +90,6 @@ export default function SupportLecture({ support }: { support: Support }) {
             </p>
           ) : null}
           </>
-          )}
         </Bloc>
       ))}
 

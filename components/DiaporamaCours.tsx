@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { texteNu } from "@/lib/markdown";
-import { estRedigee } from "@/lib/support";
+import { decouperEnDiapos } from "@/lib/markdown";
+import { estRedige } from "@/lib/support";
 import Button from "@/components/ui/Button";
 import type { SupportTheorique } from "@/lib/support";
 import {
@@ -44,21 +44,28 @@ function decouper(support: SupportTheorique, sousTitre: string): Diapo[] {
   ];
 
   const total = support.sections.length;
-  support.sections.forEach((sec, i) => {
-    // Une section rédigée à la main devient des notions comme les autres : le
-    // balisage tombe, chaque ligne non vide fait un point, et la diapositive
-    // reste celle du reste du cours. Projeter du markdown brut devant une
-    // classe montrerait la source ; c'est exactement ce que le PRD interdit.
-    const points = estRedigee(sec)
-      ? texteNu(sec.markdown!)
-          .split("\n")
-          .map((l) => l.trim())
-          .filter(Boolean)
-      : sec.notions;
+  // Un cours rédigé à la main se découpe sur ses titres markdown : chacun
+  // ouvre une diapositive. C'est le seul aperçu que le formateur ait de son
+  // texte, et c'est exactement ce que la classe verra — projeter du markdown
+  // brut montrerait la source, ce que le §4.4 interdit.
+  if (estRedige(support)) {
+    decouperEnDiapos(support.markdown!, support.titre).forEach((d, i, tous) => {
+      diapos.push({
+        type: "section",
+        numero: i + 1,
+        total: tous.length,
+        titre: d.titre,
+        notions: d.points,
+        exemple: null,
+      });
+    });
+    return diapos;
+  }
 
+  support.sections.forEach((sec, i) => {
     const paquets: string[][] = [];
-    for (let k = 0; k < points.length; k += 4) {
-      paquets.push(points.slice(k, k + 4));
+    for (let k = 0; k < sec.notions.length; k += 4) {
+      paquets.push(sec.notions.slice(k, k + 4));
     }
     if (paquets.length === 0) paquets.push([]);
 

@@ -59,3 +59,59 @@ export function texteNu(markdown: string): string {
     .trim();
 }
 
+
+export type DiapoMarkdown = { titre: string; points: string[] };
+
+/**
+ * Découpe un cours rédigé en diapositives.
+ *
+ * Chaque titre markdown ouvre une diapositive ; ce qui suit en fait les
+ * points. Au-delà de quatre points, la diapositive est scindée — c'est la
+ * règle qui vaut déjà pour les cours générés, et le mur de texte qu'elle
+ * évite ne dépend pas de qui a écrit.
+ *
+ * Le texte avant le premier titre n'est pas perdu : il forme une diapositive
+ * d'ouverture sans titre. Un formateur qui colle son cours ne commence pas
+ * forcément par un `##`.
+ */
+export function decouperEnDiapos(
+  markdown: string,
+  titreParDefaut = "Cours",
+): DiapoMarkdown[] {
+  const groupes: DiapoMarkdown[] = [];
+  let courant: DiapoMarkdown | null = null;
+
+  for (const ligne of markdown.replace(/\r\n/g, "\n").split("\n")) {
+    const nue = ligne.trim();
+    if (!nue) continue;
+
+    const titre = nue.match(/^#{1,6}\s+(.*)$/);
+    if (titre) {
+      courant = { titre: titre[1]!.trim(), points: [] };
+      groupes.push(courant);
+      continue;
+    }
+
+    // Un filet ne dit rien à l'oral : il sépare, il ne se projette pas.
+    if (/^(?:---|\*\*\*|___)$/.test(nue)) continue;
+
+    if (!courant) {
+      courant = { titre: titreParDefaut, points: [] };
+      groupes.push(courant);
+    }
+    courant.points.push(texteNu(nue));
+  }
+
+  // Quatre points par diapositive, comme les cours générés.
+  const diapos: DiapoMarkdown[] = [];
+  for (const g of groupes) {
+    if (g.points.length === 0) {
+      diapos.push(g);
+      continue;
+    }
+    for (let k = 0; k < g.points.length; k += 4) {
+      diapos.push({ titre: g.titre, points: g.points.slice(k, k + 4) });
+    }
+  }
+  return diapos;
+}

@@ -41,34 +41,12 @@ export type SchemaSupport = {
   legende: string | null;
 };
 
-/**
- * Une section du cours — structurée, ou rédigée à la main (PRD §4.4).
- *
- * `markdown` renseigné, la section est ce texte : les notions, l'exemple et le
- * schéma sont alors ignorés. C'est l'alternative à la génération que le PRD
- * exige « de même niveau », posée comme une section parmi les autres plutôt
- * que comme un second document. La conséquence tient en une phrase : titre,
- * espacement, pagination et place dans le fil sont ceux de n'importe quelle
- * autre section, donc « exactement le même traitement visuel » n'est pas une
- * intention mais une mécanique.
- */
 export type SectionCours = {
   titre: string;
   notions: string[];
   exemple: string | null;
   schema: SchemaSupport | null;
-  markdown?: string | null;
 };
-
-/** Vrai si la section porte du texte rédigé plutôt qu'une structure. */
-export function estRedigee(section: SectionCours): boolean {
-  return typeof section.markdown === "string" && section.markdown.trim() !== "";
-}
-
-/** Une section vierge, prête à être rédigée. */
-export function sectionRedigee(titre = "Section rédigée"): SectionCours {
-  return { titre, notions: [], exemple: null, schema: null, markdown: "" };
-}
 
 export type SupportTheorique = {
   type: "theorique";
@@ -77,7 +55,28 @@ export type SupportTheorique = {
   sections: SectionCours[];
   aRetenir: string[];
   ressources: RessourceSupport[];
+  /**
+   * Le cours écrit ou collé à la main, d'un seul tenant (PRD §4.4).
+   *
+   * Une zone unique et non un champ par section : le formateur arrive avec son
+   * cours déjà écrit ailleurs, il le colle. Le découper en sections à la main
+   * avant de pouvoir le coller lui ferait faire le travail que l'application
+   * doit faire pour lui.
+   *
+   * Renseigné, il remplace les sections structurées — l'écran, le diaporama et
+   * le PDF le rendent tous par le même moteur markdown, avec la typographie du
+   * produit. Il n'y a donc pas d'aperçu séparé à côté du champ : le diaporama
+   * EST l'aperçu, et c'est ce que la classe verra.
+   */
+  markdown?: string | null;
 };
+
+/** Vrai si le support est rédigé à la main plutôt que structuré. */
+export function estRedige(support: {
+  markdown?: string | null;
+}): boolean {
+  return typeof support.markdown === "string" && support.markdown.trim() !== "";
+}
 
 export type CritereTp = { critere: string; points: number };
 
