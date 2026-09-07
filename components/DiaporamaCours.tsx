@@ -8,6 +8,7 @@ import { estRedige } from "@/lib/support";
 import Button from "@/components/ui/Button";
 import type { SupportTheorique } from "@/lib/support";
 import {
+  FileDown,
   ChevronLeft,
   ChevronRight,
   Maximize2,
@@ -172,10 +173,42 @@ export default function DiaporamaCours({
         >
           Présenter en plein écran
         </Button>
+        {/* Le PDF se produit en imprimant : c'est ainsi qu'a été fait le
+            support de référence, et le navigateur rend alors les tableaux,
+            les encadrés et les fonds que le moteur PDF maison ne sait pas
+            dessiner. La boîte d'impression est déjà celle du navigateur, on
+            n'a pas à en réécrire une. */}
+        {redigees ? (
+          <Button
+            variant="ghost"
+            size="sm"
+            icon={FileDown}
+            onClick={() => window.print()}
+          >
+            Télécharger en PDF 16:9
+          </Button>
+        ) : null}
         <span className="ml-auto font-mono text-xs text-slate">
           {index + 1} / {nombre}
         </span>
       </div>
+
+      {/* Toutes les diapositives, hors écran, pour l'impression seule. Les
+          rendre au moment du clic les ferait paginer après l'ouverture de la
+          boîte d'impression, donc trop tard. */}
+      {redigees ? (
+        <div className="diapo-impression" aria-hidden>
+          {redigees.map((d, i) => (
+            <div key={i} className="diapo-page">
+              <DiapoRedigee
+                diapo={d}
+                numero={i + 1}
+                pied={pied ?? sousTitre}
+              />
+            </div>
+          ))}
+        </div>
+      ) : null}
 
       <div
         ref={cadre}

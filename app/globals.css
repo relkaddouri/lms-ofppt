@@ -518,3 +518,73 @@ body {
   line-height: 1.6;
   color: var(--forest);
 }
+
+/* ── Impression d'un diaporama 16:9 ────────────────────────────────────────
+ *
+ * Le support de référence du porteur de projet est un PDF produit en
+ * imprimant une page HTML (Creator: Chromium). C'est aussi la voie retenue
+ * ici : le navigateur imprime les diapositives telles qu'il les affiche, donc
+ * avec les tableaux, les encadrés et les couleurs — ce qu'un moteur PDF écrit
+ * à la main perdrait, ou coûterait dix fois plus cher à retrouver.
+ *
+ * `visibility` et non `display` pour masquer le reste : couper les blocs de
+ * l'application avec `display: none` casse la mise en page des diapositives,
+ * qui vivent dans un conteneur imbriqué.
+ */
+
+@media screen {
+  .diapo-impression {
+    display: none;
+  }
+}
+
+@media print {
+  @page {
+    /* 13,333 × 7,5 pouces : le 16:9 de PowerPoint, celui du deck fourni. */
+    size: 338.7mm 190.5mm;
+    margin: 0;
+  }
+
+  html,
+  body {
+    background: #fff;
+  }
+
+  body * {
+    visibility: hidden !important;
+  }
+
+  .diapo-impression,
+  .diapo-impression * {
+    visibility: visible !important;
+  }
+
+  .diapo-impression {
+    position: absolute;
+    inset: 0;
+    display: block;
+  }
+
+  .diapo-impression > .diapo-page {
+    width: 338.7mm;
+    height: 190.5mm;
+    overflow: hidden;
+    container-type: size;
+    break-after: page;
+    page-break-after: always;
+  }
+
+  /* Sans quoi une page blanche s'ajoute à la fin. */
+  .diapo-impression > .diapo-page:last-child {
+    break-after: auto;
+    page-break-after: auto;
+  }
+
+  /* Les fonds encre des couvertures et des intercalaires doivent sortir :
+     sans cette règle, le navigateur les blanchit pour économiser l'encre et
+     le texte blanc disparaît sur fond blanc. */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
