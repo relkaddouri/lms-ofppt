@@ -535,10 +535,31 @@ body {
 
 /* Le conteneur des diapositives n'existe que pour l'impression : à l'écran, la
    navigation du diaporama montre une diapositive à la fois. Celui du document,
-   lui, est ce que le formateur lit — il reste visible, et sert les deux. */
+   lui, est ce que le formateur lit — il reste visible, et sert les deux.
+ *
+ * Hors champ, et non `display: none`. Une sous-arborescence en `display: none`
+ * n'est mise en page qu'à l'ouverture de l'impression : Chrome la peint alors
+ * avec la police de repli, celle que `next/font` construit sur Arial — d'où
+ * des PDF en Arial là où l'écran affichait Sora et Source Sans 3. Posée hors
+ * champ, elle est mise en page avec le reste, donc avec les vraies fontes.
+ *
+ * `position: fixed` la sort du flux : elle n'ajoute ni hauteur ni barre de
+ * défilement, et `aria-hidden` sur le conteneur la tient hors de la lecture
+ * d'écran. */
 @media screen {
   .diapo-impression {
-    display: none;
+    position: fixed;
+    top: 0;
+    left: -200vw;
+    width: 1280px;
+    pointer-events: none;
+  }
+
+  .diapo-impression > .diapo-page {
+    width: 1280px;
+    height: 720px;
+    overflow: hidden;
+    container-type: size;
   }
 }
 
