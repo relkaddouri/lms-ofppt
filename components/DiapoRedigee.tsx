@@ -22,7 +22,12 @@ const pt = (points: number) => `${(points / 96 / 13.3333) * 100}cqw`;
 
 const MARGE = 4.5; // % — bord gauche du contenu
 const LARGEUR = 90.75; // % — largeur utile
-const CORPS_HAUT = 23.33; // % — première ligne sous le titre
+// Le corps commençait à 23,33 % dans le support de référence, sous un titre
+// de 26 pt posé à 11,33 % : 11,33 + 26 × 1,15 / 540 pt, soit 5,54 %, laisse un
+// écart de 6,46 %. C'est ce chiffre qui sépare maintenant titre et corps, le
+// titre étant passé dans le flux.
+const ECART_TITRE = "6.46cqh";
+const CORPS_SEUL = 13.5; // % — première ligne quand le titre n'est pas repris
 
 function Pastilles({
   x,
@@ -113,12 +118,15 @@ function Bloc({ bloc }: { bloc: BlocDiapo }) {
         className="grid grid-cols-2"
         style={{ columnGap: "2.25%", rowGap: "2%" }}
       >
-        {bloc.cartes.map((c, k) => (
-          // Hauteur minimale, marges et écarts internes repris du deck : la
-          // carte y fait 22,82 % de la hauteur, son contenu commence à 2,66 %
-          // du haut et 1,5 % du bord. C'est cette hauteur fixe qui rend la
-          // grille régulière — des cartes ajustées à leur texte donnent des
-          // rangées bancales.
+        {bloc.cartes.map((c, k) => {
+          // Marges et écarts internes repris du deck : le contenu commence à
+          // 2,66 % du haut et 1,5 % du bord. La hauteur plancher de 22,82 %
+          // rend la grille régulière — des cartes ajustées à leur texte
+          // donnent des rangées bancales — mais elle n'a de sens qu'entre deux
+          // cartes qui se font face. Une carte seule prend toute la largeur et
+          // sa hauteur naturelle, plutôt que de flotter dans une demi-boîte.
+          const seule = k === bloc.cartes.length - 1 && k % 2 === 0;
+          return (
           <div
             key={k}
             className={`flex flex-col rounded-[0.6cqw] border ${
@@ -129,7 +137,8 @@ function Bloc({ bloc }: { bloc: BlocDiapo }) {
                   : "border-border bg-surface"
             }`}
             style={{
-              minHeight: "22.82cqh",
+              gridColumn: seule ? "1 / -1" : undefined,
+              minHeight: seule ? undefined : "22.82cqh",
               padding: "2.66cqh 1.5cqw",
               gap: "0.8cqh",
               // Une ombre très basse détache la carte du fond sans la faire
@@ -182,7 +191,8 @@ function Bloc({ bloc }: { bloc: BlocDiapo }) {
               </p>
             ))}
           </div>
-        ))}
+          );
+        })}
       </div>
     );
   }
@@ -193,12 +203,12 @@ function Bloc({ bloc }: { bloc: BlocDiapo }) {
         className="w-full border-collapse text-left"
         style={{ fontSize: pt(11) }}
       >
-        <thead className="bg-paper-alt">
+        <thead className="bg-ink">
           <tr>
             {bloc.entetes.map((e, k) => (
               <th
                 key={k}
-                className="border-b border-border font-medium text-slate"
+                className="font-semibold text-white"
                 style={{ padding: "0.7% 1%" }}
               >
                 {e}
@@ -256,35 +266,43 @@ export default function DiapoRedigee({
           {diapo.surtitre}
         </p>
 
-        <p
-          className="absolute font-display font-bold"
+        {/* Le sous-titre suit le titre au lieu d'être posé à une ordonnée
+            fixe : celle-ci laissait un trou sous un titre d'une ligne et
+            passait par-dessus un titre de deux. L'écart reproduit celui du
+            support de référence pour un titre d'une ligne. */}
+        <div
+          className="absolute"
           style={{
             left: "6%",
             top: couverture ? "26.67%" : "29.33%",
             width: "86.25%",
-            fontSize: pt(couverture ? 44 : 40),
-            lineHeight: 1.12,
-            letterSpacing: "-0.02em",
           }}
         >
-          {diapo.titre}
-        </p>
-
-        {diapo.sousTitre ? (
           <p
-            className="absolute"
+            className="font-display font-bold"
             style={{
-              left: "6%",
-              top: couverture ? "49.33%" : "46%",
-              width: "82.5%",
-              fontSize: pt(18),
-              lineHeight: 1.4,
-              color: "#DCE3EB",
+              fontSize: pt(couverture ? 44 : 40),
+              lineHeight: 1.12,
+              letterSpacing: "-0.02em",
             }}
           >
-            {diapo.sousTitre}
+            {diapo.titre}
           </p>
-        ) : null}
+
+          {diapo.sousTitre ? (
+            <p
+              style={{
+                marginTop: couverture ? "13.53cqh" : "8.37cqh",
+                width: "95.6%",
+                fontSize: pt(18),
+                lineHeight: 1.4,
+                color: "#DCE3EB",
+              }}
+            >
+              {diapo.sousTitre}
+            </p>
+          ) : null}
+        </div>
 
         {couverture && diapo.meta.length > 0 ? (
           <dl
@@ -321,6 +339,13 @@ export default function DiapoRedigee({
   }
 
   // ── Sommaire et contenu : fond clair, en-tête et pied fixes ─────────────
+  //
+  // Le titre n'est écrit qu'une fois par section. Les diapositives qui la
+  // poursuivent s'en passent — le surtitre court en haut de chacune et dit
+  // déjà où l'on est — et récupèrent en échange la hauteur du titre.
+  const titre =
+    diapo.type === "sommaire" ? "Sommaire" : diapo.suite ? null : diapo.titre;
+
   return (
     <div className="relative h-full w-full overflow-hidden bg-surface">
       <Pastilles x={4.65} y={7.73} taille={1.2} ecart={1.575} />
@@ -338,29 +363,32 @@ export default function DiapoRedigee({
         {diapo.surtitre}
       </p>
 
-      <p
-        className="absolute font-display font-bold text-ink"
-        style={{
-          left: `${MARGE}%`,
-          top: "11.33%",
-          width: `${LARGEUR}%`,
-          fontSize: pt(26),
-          lineHeight: 1.15,
-          letterSpacing: "-0.02em",
-        }}
-      >
-        {diapo.type === "sommaire" ? "Sommaire" : diapo.titre}
-      </p>
-
       <div
-        className="absolute overflow-hidden"
+        className="absolute flex flex-col overflow-hidden"
         style={{
           left: `${MARGE}%`,
-          top: `${CORPS_HAUT}%`,
+          top: titre ? "11.33%" : `${CORPS_SEUL}%`,
           width: `${LARGEUR}%`,
           bottom: "9.5%",
         }}
       >
+        {/* Le titre est dans le flux, non posé à une ordonnée fixe : sur deux
+            lignes il pousse le corps au lieu de l'écraser. L'écart sous lui
+            reproduit celui du support de référence pour une ligne. */}
+        {titre ? (
+          <p
+            className="shrink-0 font-display font-bold text-ink"
+            style={{
+              marginBottom: ECART_TITRE,
+              fontSize: pt(26),
+              lineHeight: 1.15,
+              letterSpacing: "-0.02em",
+            }}
+          >
+            {titre}
+          </p>
+        ) : null}
+
         {diapo.type === "sommaire" ? (
           // Deux colonnes, pastille numérotée : la forme du deck. Une colonne
           // unique laisserait la moitié droite vide sur un 16:9.

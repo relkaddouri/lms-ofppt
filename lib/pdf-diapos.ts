@@ -176,8 +176,14 @@ function lignes(
  */
 const BAS = py(90);
 
-/** L'ordonnée où le corps commence, sous un titre qui peut tenir deux lignes. */
-function hautDuCorps(doc: jsPDF, titre: string): number {
+/**
+ * L'ordonnée où le corps commence, sous un titre qui peut tenir deux lignes.
+ *
+ * Sans titre — la suite d'une section — le corps remonte sous le surtitre : la
+ * place gagnée est celle du titre qu'on ne réécrit pas.
+ */
+function hautDuCorps(doc: jsPDF, titre: string | null): number {
+  if (!titre) return py(13.5);
   const n = lignes(doc, titre, LARGEUR, "titre", 26);
   return Math.max(py(23.33), py(11.33) + n * taille(26) * 1.15 + py(3.5));
 }
@@ -186,7 +192,7 @@ function hautDuCorps(doc: jsPDF, titre: string): number {
 function cadre(
   doc: jsPDF,
   surtitre: string,
-  titre: string,
+  titre: string | null,
   numero: number,
   pied: string,
 ): number {
@@ -199,12 +205,14 @@ function cadre(
     pt: 10.5,
     couleur: COULEURS.ardoiseClaire,
   });
-  ecrire(doc, titre, MARGE, py(11.33) + taille(26), LARGEUR, {
-    role: "titre",
-    pt: 26,
-    couleur: COULEURS.encre,
-    interligne: taille(26) * 1.15,
-  });
+  if (titre) {
+    ecrire(doc, titre, MARGE, py(11.33) + taille(26), LARGEUR, {
+      role: "titre",
+      pt: 26,
+      couleur: COULEURS.encre,
+      interligne: taille(26) * 1.15,
+    });
+  }
 
   police(doc, "mono", 8.5);
   doc.setTextColor(...COULEURS.ardoiseClaire);
@@ -219,14 +227,15 @@ function cadre(
 /**
  * L'état d'un dessin en cours : la page courante et de quoi en ouvrir une.
  *
- * Le titre est conservé pour être repris, suivi de « (suite) », en tête de
- * chaque page ajoutée — sans quoi une matière débordante atterrirait sur une
- * page sans en-tête, orpheline de ce qu'elle continue.
+ * Le titre n'est écrit qu'une fois. Une section qui tient sur cinq pages ne le
+ * répète pas cinq fois, ni suivi de « (suite) » : le surtitre court en haut de
+ * chaque page et dit déjà où l'on est. Les pages suivantes gagnent en échange
+ * la hauteur du titre, ce qui en fait moins.
  */
 type Flux = {
   doc: jsPDF;
   surtitre: string;
-  titre: string;
+  titre: string | null;
   pied: string;
   numero: number;
   y: number;
@@ -235,9 +244,8 @@ type Flux = {
 function suivante(f: Flux) {
   f.doc.addPage([L, H], "landscape");
   f.numero += 1;
-  const titre = /\(suite\)$/.test(f.titre) ? f.titre : `${f.titre} (suite)`;
-  f.titre = titre;
-  f.y = cadre(f.doc, f.surtitre, titre, f.numero, f.pied);
+  f.titre = null;
+  f.y = cadre(f.doc, f.surtitre, null, f.numero, f.pied);
 }
 
 /** Réserve `hauteur` sur la page courante, en ouvrant la suivante s'il le faut. */
@@ -437,7 +445,9 @@ function dessinerDiapo(
     return 1;
   }
 
-  const titre = d.type === "sommaire" ? "Sommaire" : d.titre;
+  // Une diapositive qui poursuit sa section ne réécrit pas son titre.
+  const titre =
+    d.type === "sommaire" ? "Sommaire" : d.suite ? null : d.titre;
   const f: Flux = {
     doc,
     surtitre: d.surtitre,

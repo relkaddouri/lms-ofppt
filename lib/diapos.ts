@@ -11,7 +11,8 @@ import { texteNu } from "@/lib/markdown";
  * - une couverture, tirée du titre de niveau 1 et des métadonnées qui suivent ;
  * - un sommaire, construit sur les titres de niveau 2 ;
  * - un intercalaire par section, qui annonce ce qui vient ;
- * - des diapositives de contenu, paginées, la suite portant « (suite) ».
+ * - des diapositives de contenu, paginées, chacune reprenant le titre de sa
+ *   section — sans « (suite) », qui n'apprend rien et alourdit le titre.
  *
  * La pagination est le cœur : une diapositive projetée ne défile pas. Chaque
  * bloc porte donc un coût, et on ferme la diapositive avant de déborder plutôt
@@ -54,6 +55,7 @@ export type Diapo =
       type: "contenu";
       surtitre: string;
       titre: string;
+      /** Vrai dès la deuxième diapositive d'une même section. */
       suite: boolean;
       blocs: BlocDiapo[];
     };
@@ -409,9 +411,9 @@ export function decouperEnDiapositives(
   // Le sommaire dit ce que la séance va couvrir — sauf si l'auteur a écrit le
   // sien, ce que font les supports soignés. En ajouter un second serait
   // corriger un document qui n'a pas de défaut.
-  const aSonSommaire = sections.some((s) =>
-    /^(?:\d+[.)]\s*)?sommaire\b/i.test(s.titre.trim()),
-  );
+  const estSommaire = (titre: string) =>
+    /^(?:\d+[.)]\s*)?sommaire\b/i.test(titre.trim());
+  const aSonSommaire = sections.some((s) => estSommaire(s.titre));
   if (sections.length > 1 && !aSonSommaire) {
     diapos.push({
       type: "sommaire",
@@ -431,12 +433,17 @@ export function decouperEnDiapositives(
         ? premier.texte
         : null;
 
-    diapos.push({
-      type: "intercalaire",
-      surtitre: contexte.pied.toLocaleUpperCase("fr"),
-      titre: section.titre,
-      sousTitre: legende,
-    });
+    // Le sommaire écrit par l'auteur n'a pas d'intercalaire : annoncer
+    // « Sommaire » sur une page pleine, puis écrire « Sommaire » sur la
+    // suivante, c'est dire deux fois la même chose.
+    if (!estSommaire(section.titre)) {
+      diapos.push({
+        type: "intercalaire",
+        surtitre: contexte.pied.toLocaleUpperCase("fr"),
+        titre: section.titre,
+        sousTitre: legende,
+      });
+    }
 
     // ── Les blocs de la section, groupés puis paginés ────────────────────
     const blocs: BlocDiapo[] = [];
@@ -495,7 +502,7 @@ export function decouperEnDiapositives(
       diapos.push({
         type: "contenu",
         surtitre,
-        titre: premiere ? section.titre : `${section.titre} (suite)`,
+        titre: section.titre,
         suite: !premiere,
         blocs: paquet,
       });
