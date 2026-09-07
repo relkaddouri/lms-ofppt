@@ -9,7 +9,14 @@ import { FigureSupport, ListeRessources } from "@/components/RessourcesSupport";
  * un document. On ne lui montre pas un formulaire en lecture seule : il vient
  * réviser, pas relire une fiche de travail.
  */
-export default function SupportLecture({ support }: { support: Support }) {
+export default function SupportLecture({
+  support,
+  sousTitre,
+}: {
+  support: Support;
+  /** Module et séance, pour le surtitre de la couverture. */
+  sousTitre?: string | null;
+}) {
   if (support.type === "pratique") {
     const total = support.criteres.reduce((t, c) => t + c.points, 0);
     return (
@@ -63,7 +70,7 @@ export default function SupportLecture({ support }: { support: Support }) {
     // contiendra. Deux rendus auraient divergé.
     return (
       <div className="doc-impression space-y-5">
-        <DocumentRedige texte={support.markdown!} />
+        <DocumentRedige texte={support.markdown!} surtitre={sousTitre ?? null} />
         <ListeRessources ressources={support.ressources ?? []} />
       </div>
     );

@@ -57,7 +57,12 @@ export default async function CoursDetailPage({
         </div>
 
         <div className="mt-5">
-          <SupportLecture support={support.contenu} />
+          <SupportLecture
+            support={support.contenu}
+            sousTitre={[support.moduleNom, support.date ? formatDateJour(support.date) : null]
+              .filter(Boolean)
+              .join(" · ")}
+          />
         </div>
       </article>
 

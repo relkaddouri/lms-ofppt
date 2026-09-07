@@ -235,6 +235,73 @@ export type ContexteDiapos = {
   pied: string;
 };
 
+export type EnTeteDocument = {
+  titre: string;
+  sousTitre: string | null;
+  /** La ligne en italique sous le titre, quand il y en a une. */
+  legende: string | null;
+  meta: { cle: string; valeur: string }[];
+  /** Nombre de nœuds consommés en tête : le corps commence après. */
+  consommes: number;
+};
+
+/**
+ * L'en-tête d'un cours rédigé : titre, sous-titre, légende, métadonnées.
+ *
+ * Partagée par la couverture du diaporama et celle du document, pour qu'un
+ * même cours ne s'annonce pas de deux façons différentes selon le support.
+ *
+ * Les métadonnées se lisent sur la ligne brute et non sur le texte dépouillé :
+ * c'est le gras qui marque la clé. Sur « **Module** M202 — Analyser… », lire
+ * le texte nu ferait couper au petit bonheur, au milieu du titre du module.
+ */
+export function enTeteDocument(noeuds: Noeud[]): EnTeteDocument | null {
+  const iTitre = noeuds.findIndex((n) => n.k === "h" && n.niveau === 1);
+  if (iTitre === -1) return null;
+  const titre = noeuds[iTitre] as { texte: string };
+
+  let i = iTitre + 1;
+  let sousTitre: string | null = null;
+  let legende: string | null = null;
+  const meta: { cle: string; valeur: string }[] = [];
+
+  while (i < noeuds.length) {
+    const n = noeuds[i]!;
+    if (n.k === "h" && n.niveau === 2 && !sousTitre && meta.length === 0) {
+      sousTitre = n.texte;
+      i++;
+      continue;
+    }
+    if (n.k === "p") {
+      const cle = n.brut.match(/^\*\*(.{2,40}?)\*\*\s+(.{4,})$/);
+      if (cle) {
+        meta.push({ cle: cle[1]!.trim(), valeur: texteNu(cle[2]!).trim() });
+        i++;
+        continue;
+      }
+      if (!legende && /^\*[^*]+\*$/.test(n.brut.trim())) {
+        legende = n.texte;
+        i++;
+        continue;
+      }
+    }
+    // Le filet qui suit l'en-tête en fait partie : il le clôt.
+    if (n.k === "hr" && meta.length > 0) {
+      i++;
+      break;
+    }
+    break;
+  }
+
+  return {
+    titre: titre.texte,
+    sousTitre,
+    legende,
+    meta,
+    consommes: meta.length > 0 || sousTitre ? i : iTitre + 1,
+  };
+}
+
 export function decouperEnDiapositives(
   markdown: string,
   contexte: ContexteDiapos,

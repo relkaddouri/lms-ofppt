@@ -620,6 +620,14 @@ body {
 
   /* ── Document ───────────────────────────────────────────────────────── */
 
+  /* La couverture occupe sa page, le corps commence à la suivante. */
+  .doc-impression .doc-couverture {
+    min-height: 0;
+    height: calc(297mm - 36mm);
+    break-after: page;
+    page-break-after: always;
+  }
+
   /* Un titre seul en bas de page, sa suite sur la suivante : la règle
      typographique de base, que le navigateur n'applique pas d'office. */
   .doc-impression h1,

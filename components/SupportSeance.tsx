@@ -324,7 +324,12 @@ export default function SupportSeance({
               que le PDF montre ce que le formateur vient de relire. Le moteur
               jsPDF, lui, perdait les tableaux et les encadrés. */}
           <div className="doc-impression mt-3 rounded-[14px] border border-border bg-surface px-6 py-6 shadow-repos md:px-10 md:py-9">
-            <DocumentRedige texte={support.markdown ?? ""} />
+            <DocumentRedige
+              texte={support.markdown ?? ""}
+              surtitre={[contexte.moduleNom, contexte.groupeNom]
+                .filter(Boolean)
+                .join(" · ")}
+            />
           </div>
         </div>
       ) : support.type === "theorique" && vue === "diaporama" ? (

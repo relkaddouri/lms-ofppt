@@ -1,5 +1,5 @@
 import { Fragment } from "react";
-import { analyser, type Noeud } from "@/lib/diapos";
+import { analyser, enTeteDocument, type Noeud } from "@/lib/diapos";
 import { segmenter } from "@/lib/markdown";
 
 /**
@@ -150,7 +150,47 @@ function Encadres({ groupes }: { groupes: string[][] }) {
   );
 }
 
+/**
+ * Colonnes rendues en pastilles.
+ *
+ * Une colonne dont toutes les cellules tiennent en un mot court est une
+ * colonne de catégories — « Quanti », « Quali », « Mixte ». Le support de
+ * référence les pose en pastilles colorées : on les compare alors d'un coup
+ * d'œil au lieu de les lire ligne à ligne.
+ *
+ * La couleur suit l'ordre d'apparition des valeurs distinctes, pas leur
+ * contenu : rien à coder en dur, et deux tableaux du même document donnent la
+ * même couleur à la même valeur.
+ */
+const PASTILLES = [
+  "border-tint-teal-strong bg-tint-teal text-teal-dark",
+  "border-tint-green bg-success-wash text-green-dark",
+  "border-tint-alert-strong bg-alert-wash text-coral-dark",
+  "border-border bg-wash-strong text-slate-2",
+] as const;
+
+function colonnesEnPastilles(lignes: string[][], nbColonnes: number) {
+  const enPastille = new Set<number>();
+  const couleurs = new Map<string, string>();
+
+  for (let c = 0; c < nbColonnes; c++) {
+    const valeurs = lignes.map((l) => (l[c] ?? "").trim()).filter(Boolean);
+    if (valeurs.length < 3) continue;
+    if (!valeurs.every((v) => v.length <= 12 && !/\s/.test(v))) continue;
+    // Des valeurs toutes différentes ne sont pas des catégories : ce sont des
+    // données. Une catégorie se répète.
+    const distinctes = [...new Set(valeurs)];
+    if (distinctes.length > 4 || distinctes.length === valeurs.length) continue;
+    enPastille.add(c);
+    distinctes.forEach((v, i) => {
+      if (!couleurs.has(v)) couleurs.set(v, PASTILLES[i % PASTILLES.length]!);
+    });
+  }
+  return { enPastille, couleurs };
+}
+
 function Tableau({ entetes, lignes }: { entetes: string[]; lignes: string[][] }) {
+  const { enPastille, couleurs } = colonnesEnPastilles(lignes, entetes.length);
   return (
     <div className="overflow-x-auto rounded-[10px] border border-border">
       <table className="w-full border-collapse text-left text-[13px]">
@@ -175,7 +215,17 @@ function Tableau({ entetes, lignes }: { entetes: string[]; lignes: string[][] })
                     j === 0 ? "font-semibold text-ink" : "text-body"
                   }`}
                 >
-                  <Ligne>{c}</Ligne>
+                  {enPastille.has(j) && c.trim() ? (
+                    <span
+                      className={`inline-block whitespace-nowrap rounded-full border px-2 py-px text-[11.5px] font-semibold ${
+                        couleurs.get(c.trim()) ?? PASTILLES[3]
+                      }`}
+                    >
+                      {c.trim()}
+                    </span>
+                  ) : (
+                    <Ligne>{c}</Ligne>
+                  )}
                 </td>
               ))}
             </tr>
@@ -341,6 +391,133 @@ function Blocs({ texte }: { texte: string }) {
   );
 }
 
-export default function DocumentRedige({ texte }: { texte: string }) {
-  return <Blocs texte={texte} />;
+/**
+ * La page de couverture, reprise du support de référence.
+ *
+ * Un panneau encre encastré dans la page blanche, et non une page pleine :
+ * c'est ce qui lui donne l'air d'un document relié plutôt que d'une bannière.
+ * Le titre en haut, les métadonnées enfermées dans un cadre en bas, et entre
+ * les deux le vide — qui fait la moitié de l'effet.
+ *
+ * `break-after: page` à l'impression : le corps commence à la page suivante.
+ */
+function Couverture({
+  titre,
+  sousTitre,
+  legende,
+  meta,
+  surtitre,
+}: {
+  titre: string;
+  sousTitre: string | null;
+  legende: string | null;
+  meta: { cle: string; valeur: string }[];
+  surtitre: string | null;
+}) {
+  return (
+    <section className="doc-couverture flex min-h-[62vh] flex-col rounded-[14px] bg-ink px-8 py-9 text-white md:min-h-[900px] md:px-12 md:py-14">
+      <span aria-hidden className="mb-7 flex items-center gap-1.5">
+        {["bg-green", "bg-teal", "bg-coral"].map((c) => (
+          <span key={c} className={`h-2.5 w-2.5 rounded-full ${c}`} />
+        ))}
+      </span>
+
+      {surtitre ? (
+        <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-white/50">
+          {surtitre}
+        </p>
+      ) : null}
+
+      <h1 className="mt-3 font-display text-[34px] font-bold leading-[1.1] tracking-[-0.02em] md:text-[42px]">
+        {titre}
+      </h1>
+
+      {sousTitre ? (
+        <p className="mt-4 text-[17px] leading-relaxed text-white/75">
+          {sousTitre}
+        </p>
+      ) : null}
+
+      {legende ? (
+        <p className="mt-2 text-[14.5px] italic leading-relaxed text-white/55">
+          {legende}
+        </p>
+      ) : null}
+
+      {meta.length > 0 ? (
+        <div className="mt-auto pt-12">
+          <p className="font-mono text-[10.5px] uppercase tracking-[0.16em] text-white/40">
+            Support de cours du stagiaire
+          </p>
+          <dl className="mt-3 flex flex-col gap-1.5 rounded-[10px] bg-white/[0.06] px-5 py-4 text-[13.5px] leading-relaxed">
+            {meta.map((m) => (
+              <div key={m.cle} className="flex flex-wrap gap-x-2">
+                <dt className="font-semibold text-white/90">{m.cle}</dt>
+                <dd className="text-white/70">{m.valeur}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+export default function DocumentRedige({
+  texte,
+  surtitre,
+}: {
+  texte: string;
+  /** Module et groupe, pour le surtitre de la couverture. */
+  surtitre?: string | null;
+}) {
+  const noeuds = analyser(texte);
+  const entete = enTeteDocument(noeuds);
+
+  // Pas de couverture sans métadonnées : un texte collé à la va-vite n'a pas à
+  // se voir affublé d'une page de garde vide.
+  if (!entete || entete.meta.length === 0) return <Blocs texte={texte} />;
+
+  const corps = texte
+    .replace(/\r\n/g, "\n")
+    .split("\n")
+    .slice(lignesDeLEntete(texte, entete.consommes))
+    .join("\n");
+
+  return (
+    <div className="flex flex-col gap-6">
+      <Couverture
+        titre={entete.titre}
+        sousTitre={entete.sousTitre}
+        legende={entete.legende}
+        meta={entete.meta}
+        surtitre={surtitre ?? null}
+      />
+      <Blocs texte={corps} />
+    </div>
+  );
+}
+
+/**
+ * Où couper le markdown pour laisser la couverture derrière soi.
+ *
+ * `enTeteDocument` compte en nœuds, pas en lignes : on retrouve la ligne en
+ * comptant les blocs franchis. Plus simple et plus sûr que de recomposer le
+ * texte à partir des nœuds, qui perdrait les blancs et le balisage.
+ */
+function lignesDeLEntete(texte: string, noeudsConsommes: number): number {
+  const lignes = texte.replace(/\r\n/g, "\n").split("\n");
+  let vus = 0;
+  let i = 0;
+  while (i < lignes.length && vus < noeudsConsommes) {
+    const l = lignes[i]!.trim();
+    i++;
+    if (!l) continue;
+    vus++;
+    // Une citation ou un tableau occupe plusieurs lignes pour un seul nœud.
+    if (l.startsWith(">")) {
+      while (i < lignes.length && lignes[i]!.trim().startsWith(">")) i++;
+    }
+  }
+  return i;
 }
