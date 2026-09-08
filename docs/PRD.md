@@ -333,6 +333,8 @@ Ce n'est pas un bug ni un oubli — la section est volontairement retirée, gard
 
 Ce texte sert de preuve de vérification contradictoire, utile au formateur face à la Direction en cas de contestation ultérieure sur une note. *Formulation proposée à valider par le porteur de projet — modifiable avant l'implémentation si le libellé ne convient pas exactement.*
 
+**Ce que le document doit contenir pour que l'attestation ait un sens — ajout du 8 septembre 2026, demande du porteur de projet.** Le stagiaire déclare avoir « vérifié le recalcul des points » : il faut donc qu'il ait de quoi vérifier. Sous chaque question, le document porte l'énoncé complet, les points obtenus sur le barème, **la réponse qu'il a écrite**, **la réponse attendue** et **le commentaire du formateur sur cette question**. Un relevé de notes sans ces trois éléments ne se vérifie pas : il se subit. Une question ne se coupe jamais entre deux pages, faute de quoi le commentaire se retrouve orphelin en tête de page et manque à celui qui relit avant de signer.
+
 **Règles réglementaires précises confirmées par le cahier du formateur officiel — à intégrer comme échéances/alertes dans le produit, pas juste comme texte informatif :**
 
 *Contrôles continus (CC)* :

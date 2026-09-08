@@ -160,10 +160,16 @@ export default function CorrectionManager({
           datePublication: formatDate(new Date().toISOString()),
           note,
           total: totalAttendu,
+          // La réponse, le corrigé et le commentaire partent avec les points :
+          // sans eux, le stagiaire atteste avoir « vérifié le recalcul » sans
+          // rien avoir à vérifier.
           lignes: reponses.map((r) => ({
             enonce: r.enonce,
             bareme: Number(r.bareme ?? 0),
             points: Number(r.points ?? 0),
+            reponse: r.reponse,
+            corrige: r.corrige,
+            commentaire: r.commentaire,
           })),
         },
         `${slugify(`resultat ${copie.nom_complet}`, "resultat")}.pdf`,
