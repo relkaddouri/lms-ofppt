@@ -3,20 +3,12 @@
 import { useEffect, useRef, useState } from "react";
 import { getPassations, type Passation } from "@/app/actions/controles";
 import Link from "next/link";
-import {
-  ClipboardList,
-  Download,
-  FileSignature,
-  Files,
-  PenLine,
-} from "lucide-react";
+import { ClipboardList, FileSignature, Files, PenLine } from "lucide-react";
 import Badge from "@/components/ui/Badge";
 import Button, { buttonStyles } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
 
-import { formatDateTime, slugify } from "@/lib/format";
-import { getEtablissement } from "@/app/actions/etablissement";
-import { marqueDe } from "@/lib/pdf-marque";
+import { formatDateTime } from "@/lib/format";
 import {
   telechargerEmargement,
   telechargerLotResultats,
@@ -48,7 +40,6 @@ export default function CopiesManager({
   const [passations, setPassations] = useState<Passation[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [busy, setBusy] = useState(false);
   const [busySigne, setBusySigne] = useState(false);
   const [busyLot, setBusyLot] = useState<"lot" | "emargement" | null>(null);
   // Coché par défaut : le dossier remis à l'administration s'ouvre sur la
@@ -82,45 +73,7 @@ export default function CopiesManager({
     };
   }, [controleId]);
 
-  async function handleDownloadPdf() {
-    if (!selected) return;
-    setBusy(true);
-    try {
-      const [{ telechargerCopiePdf }, marque] = await Promise.all([
-        import("@/lib/pdf-copie"),
-        getEtablissement(),
-      ]);
-      await telechargerCopiePdf(
-        {
-          titre: controleTitre || "Contrôle",
-          stagiaire: selected.nom_complet,
-          email: selected.email,
-          dateRemise: formatDateTime(selected.submitted_at),
-          note: Number(selected.note) || 0,
-          total: totalAttendu,
-          questions: (selected.responses ?? []).map((d) => ({
-            enonce: d.enonce,
-            bareme: d.bareme,
-            points: d.points ?? 0,
-            commentaire: d.commentaire,
-            reponse: d.reponse,
-            corrige: d.corrige,
-          })),
-          // Le formateur archive la copie avec le corrigé de référence.
-          avecCorrige: true,
-        },
-        `copie-${slugify(selected.nom_complet, "copie")}-${slugify(controleTitre || "controle", "controle")}.pdf`,
-        marqueDe(marque),
-      );
-    } catch (err) {
-      toast(
-        err instanceof Error ? err.message : "Erreur de génération du PDF",
-        "error",
-      );
-    } finally {
-      setBusy(false);
-    }
-  }
+
 
   /**
    * Le résultat à signer, depuis la liste des copies.
@@ -284,20 +237,9 @@ export default function CopiesManager({
                     {formatDateTime(selected.submitted_at)}
                   </p>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  icon={Download}
-                  onClick={handleDownloadPdf}
-                  loading={busy}
-                  loadingLabel="Génération…"
-                >
-                  Télécharger la copie (PDF)
-                </Button>
-                {/* Deux documents distincts : la copie sert à archiver le
-                    détail des réponses, le résultat à faire signer. Le second
-                    n'a de sens qu'une fois publié — le bouton n'apparaît donc
-                    qu'à ce moment-là plutôt que de mener à un refus. */}
+                {/* Le résultat n'a de sens qu'une fois publié : le bouton
+                    n'apparaît donc qu'à ce moment-là plutôt que de mener à un
+                    refus. */}
                 {selected.publie_le ? (
                   <Button
                     variant="ghost"
