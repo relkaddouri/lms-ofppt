@@ -1,6 +1,7 @@
 import { jsPDF } from "jspdf";
 import { dessinerEntete, type Marque } from "@/lib/pdf-marque";
 import { COULEURS, installerPolices, police } from "@/lib/pdf-theme";
+import { insecable } from "@/lib/typographie";
 
 /**
  * Résultat publié d'un contrôle, à imprimer et faire signer (PRD §4.7).
@@ -102,22 +103,38 @@ export async function construireResultatPdf(
   doc.line(X, y, X + LARGEUR, y);
   y += 5;
 
+  const INTERLIGNE = 4.4;
+
   r.lignes.forEach((l, i) => {
-    if (y > 235) {
-      doc.addPage();
-      y = 20;
-    }
     police(doc, "corps", 9);
-    doc.setTextColor(...COULEURS.corps);
     const lignes: string[] = doc.splitTextToSize(
-      `${i + 1}. ${l.enonce}`,
+      insecable(`${i + 1}. ${l.enonce}`),
       LARGEUR - 30,
     );
-    doc.text(lignes[0]!, X, y);
+
+    // L'énoncé est écrit en entier. N'en garder que la première ligne le
+    // coupait en silence — « en trois temps : humain, comparé, » — sur un
+    // document qui vaut preuve : le stagiaire signait pour une question dont
+    // il manquait la fin, et c'est précisément ce que l'attestation prétend
+    // établir.
+    const hauteur = Math.max(5.5, lignes.length * INTERLIGNE + 1.1);
+    // La place est réservée avant la coupure : un énoncé de trois lignes ne
+    // commence pas en bas d'une page pour finir sur la suivante.
+    if (y + hauteur > 235) {
+      doc.addPage();
+      y = 20;
+      police(doc, "corps", 9);
+    }
+
+    doc.setTextColor(...COULEURS.corps);
+    lignes.forEach((ligne, k) => doc.text(ligne, X, y + k * INTERLIGNE));
+
+    // La note reste alignée sur la première ligne de l'énoncé : c'est là qu'on
+    // la cherche du regard en descendant la colonne.
     police(doc, "mono", 9);
     doc.setTextColor(...COULEURS.encre);
     doc.text(`${l.points} / ${l.bareme}`, X + LARGEUR, y, { align: "right" });
-    y += 5.5;
+    y += hauteur;
   });
 
   y += 2;
