@@ -67,6 +67,27 @@ export function formatHeure(valeur: string | null | undefined): string {
 }
 
 /**
+ * L'heure de fin d'une épreuve : son début plus sa durée.
+ *
+ * Elle ne se stocke nulle part — la stocker, c'est se donner deux vérités qui
+ * finissent par se contredire quand la durée change.
+ */
+export function finEpreuve(debut: string, heures: number): string {
+  const [hh, mm] = debut.slice(0, 5).split(":").map(Number);
+  const total = (hh ?? 0) * 60 + (mm ?? 0) + Math.round(heures * 60);
+  return `${String(Math.floor(total / 60) % 24).padStart(2, "0")}:${String(
+    total % 60,
+  ).padStart(2, "0")}`;
+}
+
+/** « 2 h 30 » à partir de 2,5 — la durée telle qu'elle se dit. */
+export function dureeEnTexte(heures: number): string {
+  const h = Math.floor(heures);
+  const m = Math.round((heures - h) * 60);
+  return m === 0 ? `${h} h` : `${h} h ${String(m).padStart(2, "0")}`;
+}
+
+/**
  * Les quatre créneaux fixes de la grille calendrier (PRD §4.10).
  *
  * Base commune à toute la semaine, en blocs de 2 h 30 : c'est la granularité

@@ -1,5 +1,5 @@
 import { jsPDF } from "jspdf";
-import { dessinerEntete, type Marque } from "@/lib/pdf-marque";
+import { dessinerLogo, type Marque } from "@/lib/pdf-marque";
 import { COULEURS, installerPolices, police } from "@/lib/pdf-theme";
 import { insecable } from "@/lib/typographie";
 
@@ -29,17 +29,41 @@ export type LigneResultat = {
   commentaire?: string | null;
 };
 
+/**
+ * Le cartouche d'identification, en tête du document.
+ *
+ * Un résultat signé est une pièce administrative : il doit dire de lui-même
+ * d'où il vient, sans qu'on ait à ouvrir l'application. Établissement,
+ * filière, groupe, module, formateur, épreuve, date et horaire — c'est ce que
+ * la Direction cherche en le prenant en main, et ce qu'aucune ligne de
+ * contexte en petits caractères ne remplaçait.
+ *
+ * Chaque champ est facultatif : une ligne sans valeur ne s'imprime pas plutôt
+ * que d'afficher une étiquette sur du vide.
+ */
+export type Identification = {
+  etablissement?: string | null;
+  filiere?: string | null;
+  groupe?: string | null;
+  anneeScolaire?: string | null;
+  module?: string | null;
+  formateur?: string | null;
+  matricule?: string | null;
+  /** « Lundi 07/09/2026 ». */
+  dateEpreuve?: string | null;
+  /** « de 8 h 30 à 11 h · 2 h 30 », déduit de l'emploi du temps. */
+  horaire?: string | null;
+};
+
 export type ResultatControle = {
   titre: string;
   stagiaire: string;
-  /** Groupe, module, code opérationnel — ce qui situe l'épreuve. */
-  contexte?: string | null;
   /** « Contrôle continu » ou « Épreuve de fin de module ». */
   nature: string;
-  dateEpreuve?: string | null;
   datePublication: string;
   note: number;
   total: number;
+  identification: Identification;
   lignes: LigneResultat[];
 };
 
@@ -58,43 +82,126 @@ export async function construireResultatPdf(
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   await installerPolices(doc);
 
-  let y = dessinerEntete(doc, marque, X, 14, LARGEUR) + 6;
+  // ── En-tête : le logo seul ───────────────────────────────────────────────
+  //
+  // Le nom du centre n'est plus posé à côté du logo : il le répétait presque
+  // mot pour mot, et les deux se disputaient la largeur. Il descend dans le
+  // cartouche, où il est une donnée du document parmi les autres.
+  const largeurLogo = dessinerLogo(doc, marque, X, 13, 13, LARGEUR * 0.4);
 
-  police(doc, "titre", 16);
+  police(doc, "titre", 17);
   doc.setTextColor(...COULEURS.encre);
-  doc.text("Résultat d'évaluation", X, y);
-  y += 8;
+  doc.text("Résultat d'évaluation", X + (largeurLogo > 0 ? largeurLogo + 7 : 0), 22);
 
-  police(doc, "corps", 10);
-  doc.setTextColor(...COULEURS.corps);
-  doc.text(r.titre, X, y);
-  y += 5;
-
-  police(doc, "corps", 9);
+  police(doc, "mono", 8);
+  doc.setTextColor(...COULEURS.ardoiseClaire);
+  doc.text(r.nature.toLocaleUpperCase("fr"), X + LARGEUR, 17, { align: "right" });
+  police(doc, "corps", 8.5);
   doc.setTextColor(...COULEURS.ardoise);
-  const situe = [r.nature, r.contexte, r.dateEpreuve ? `épreuve du ${r.dateEpreuve}` : null]
-    .filter(Boolean)
-    .join(" · ");
-  doc.text(situe, X, y);
-  y += 8;
+  doc.text(`Publié le ${r.datePublication}`, X + LARGEUR, 22, { align: "right" });
 
-  doc.setDrawColor(...COULEURS.bordureForte).setLineWidth(0.4);
-  doc.line(X, y, X + LARGEUR, y);
-  y += 9;
+  let y = 32;
+
+  // ── Cartouche d'identification ───────────────────────────────────────────
+  //
+  // Un tableau à filets plutôt qu'une ligne de texte gris : c'est la forme
+  // qu'ont les documents de l'établissement, et surtout la seule qui se
+  // parcoure du regard quand on cherche un champ précis.
+  const id = r.identification;
+  const rangs: [string, string | null | undefined][][] = [
+    [["ÉTABLISSEMENT", id.etablissement]],
+    [
+      ["FILIÈRE", id.filiere],
+      ["ANNÉE SCOLAIRE", id.anneeScolaire],
+    ],
+    [
+      ["GROUPE", id.groupe],
+      ["FORMATEUR", [id.formateur, id.matricule && `mat. ${id.matricule}`]
+        .filter(Boolean)
+        .join(" · ") || null],
+    ],
+    [["MODULE", id.module]],
+    [["ÉPREUVE", r.titre]],
+    [
+      ["DATE", id.dateEpreuve],
+      ["HORAIRE", id.horaire],
+    ],
+  ];
+
+  const retenus = rangs
+    .map((rang) => rang.filter(([, valeur]) => valeur?.trim()))
+    .filter((rang) => rang.length > 0);
+
+  if (retenus.length > 0) {
+    const LARGEUR_ETIQUETTE = 30;
+    const hautCartouche = y;
+
+    retenus.forEach((rang, i) => {
+      const colonne = LARGEUR / rang.length;
+      const place = colonne - LARGEUR_ETIQUETTE - 6;
+
+      // La hauteur du rang suit son contenu. Fixée à une ligne, elle coupait
+      // « Digital Design, option UX Design · 2e année » au milieu du mot — sur
+      // un cartouche d'identification, une valeur tronquée ne vaut rien.
+      police(doc, "corps", 8.8);
+      const cellules = rang.map(([etiquette, valeur]) => ({
+        etiquette,
+        lignes: doc.splitTextToSize(insecable(valeur!.trim()), place) as string[],
+      }));
+      const hauteur = Math.max(
+        8,
+        ...cellules.map((c) => c.lignes.length * 4.2 + 3.6),
+      );
+
+      if (i > 0) {
+        doc.setDrawColor(...COULEURS.bordure).setLineWidth(0.2);
+        doc.line(X, y, X + LARGEUR, y);
+      }
+      cellules.forEach((cellule, k) => {
+        const cx = X + k * colonne;
+        if (k > 0) {
+          doc.setDrawColor(...COULEURS.bordure).setLineWidth(0.2);
+          doc.line(cx, y, cx, y + hauteur);
+        }
+        police(doc, "mono", 6.8);
+        doc.setTextColor(...COULEURS.ardoiseClaire);
+        doc.text(cellule.etiquette, cx + 3, y + 5.4);
+        police(doc, "corps", 8.8);
+        doc.setTextColor(...COULEURS.encre);
+        cellule.lignes.forEach((ligne, l) =>
+          doc.text(ligne, cx + LARGEUR_ETIQUETTE, y + 5.4 + l * 4.2),
+        );
+      });
+      y += hauteur;
+    });
+
+    doc.setDrawColor(...COULEURS.bordureForte).setLineWidth(0.3);
+    doc.rect(X, hautCartouche, LARGEUR, y - hautCartouche);
+    y += 9;
+  }
 
   // ── Identité et note ─────────────────────────────────────────────────────
-  police(doc, "corps", 9);
-  doc.setTextColor(...COULEURS.ardoise);
-  doc.text("STAGIAIRE", X, y);
-  doc.text("NOTE", X + LARGEUR, y, { align: "right" });
-  y += 6;
+  //
+  // Sur fond encre : c'est la seule information qu'on cherche à un mètre de
+  // distance, et un document administratif la met en évidence plutôt que de
+  // la fondre dans le corps du texte.
+  const HAUTEUR_BANDE = 16;
+  doc.setFillColor(...COULEURS.encre);
+  doc.rect(X, y, LARGEUR, HAUTEUR_BANDE, "F");
+
+  police(doc, "mono", 6.8);
+  doc.setTextColor(...COULEURS.ardoiseClaire);
+  doc.text("STAGIAIRE", X + 4, y + 5.6);
+  doc.text("NOTE", X + LARGEUR - 4, y + 5.6, { align: "right" });
 
   police(doc, "titre", 13);
-  doc.setTextColor(...COULEURS.encre);
-  doc.text(r.stagiaire, X, y);
-  police(doc, "titre", 18);
-  doc.text(`${r.note} / ${r.total}`, X + LARGEUR, y + 1, { align: "right" });
-  y += 12;
+  doc.setTextColor(...COULEURS.blanc);
+  doc.text(r.stagiaire, X + 4, y + 12.4);
+  police(doc, "titre", 15);
+  doc.text(`${r.note} / ${r.total}`, X + LARGEUR - 4, y + 12.6, {
+    align: "right",
+  });
+  y += HAUTEUR_BANDE + 10;
 
   // ── Le détail des points, ce que l'attestation dit avoir vérifié ─────────
   //
@@ -182,12 +289,19 @@ export async function construireResultatPdf(
       hauteurBloc(l.corrige) +
       hauteurBloc(l.commentaire);
 
-    if (y + hauteurQuestion > BAS && hauteurQuestion <= BAS - HAUT) {
+    const coupe =
+      (y + hauteurQuestion > BAS && hauteurQuestion <= BAS - HAUT) ||
+      y + enonce.length * INTERLIGNE + 12 > BAS;
+    if (coupe) {
       doc.addPage();
       y = HAUT;
-    } else if (y + enonce.length * INTERLIGNE + 12 > BAS) {
-      doc.addPage();
-      y = HAUT;
+    } else if (i > 0) {
+      // Le filet sépare deux questions ; il se pose donc avant la suivante et
+      // non après la précédente, sans quoi il restait seul en bas d'une page
+      // dont la question suivante était partie.
+      doc.setDrawColor(...COULEURS.separateur).setLineWidth(0.2);
+      doc.line(X, y, X + LARGEUR, y);
+      y += 5;
     }
 
     const yEnonce = y;
@@ -230,11 +344,6 @@ export async function construireResultatPdf(
     bloc("COMMENTAIRE DU FORMATEUR", l.commentaire, COULEURS.ardoiseClaire);
 
     y += 1.5;
-    if (i < r.lignes.length - 1 && y < BAS) {
-      doc.setDrawColor(...COULEURS.separateur).setLineWidth(0.2);
-      doc.line(X, y, X + LARGEUR, y);
-      y += 5;
-    }
   });
 
   if (y + 24 > BAS) {
