@@ -11,10 +11,27 @@ export type Stagiaire = {
   email: string | null;
   /** Code d'Enregistrement du Formé — l'identifiant OFPPT du stagiaire. */
   cef: string | null;
+  /** Code National de l'Étudiant, réclamé par les pièces officielles. */
+  cne: string | null;
   groupe_id: string;
   /** Compte du stagiaire ; nul tant qu'il n'a pas été invité. */
   user_id: string | null;
 };
+
+/**
+ * `cne` en attendant les types regénérés (migration 079).
+ *
+ * La colonne existe en base mais pas encore dans `database.types.ts`, qui se
+ * régénère après `supabase db push`. Les deux béquilles sont isolées ici —
+ * deux lignes à retirer — plutôt que des `as unknown as` dispersés qui
+ * éteindraient le typage sur des requêtes entières, ce que les points de
+ * vigilance du backlog reprochent aux casts existants.
+ */
+const COLONNES_STAGIAIRE = "id, nom, prenom, email, cef, cne, groupe_id, user_id";
+
+function colonneCne(cne?: string) {
+  return { cne: cne?.trim() || null } as unknown as Record<string, never>;
+}
 
 export async function getStagiairesByGroupe(
   groupeId: string,
@@ -22,12 +39,12 @@ export async function getStagiairesByGroupe(
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("stagiaires")
-    .select("id, nom, prenom, email, cef, groupe_id, user_id")
+    .select(COLONNES_STAGIAIRE)
     .eq("groupe_id", groupeId)
     .order("nom");
 
   if (error) throw new Error(error.message);
-  return data as Stagiaire[];
+  return data as unknown as Stagiaire[];
 }
 
 export async function getStagiairesCount(groupeId: string): Promise<number> {
@@ -50,7 +67,13 @@ function messageCef(message: string): string {
 
 export async function addStagiaire(
   groupeId: string,
-  input: { nom: string; prenom: string; email?: string; cef?: string },
+  input: {
+    nom: string;
+    prenom: string;
+    email?: string;
+    cef?: string;
+    cne?: string;
+  },
 ) {
   const supabase = await createClient();
   const { error } = await supabase.from("stagiaires").insert({
@@ -59,6 +82,7 @@ export async function addStagiaire(
     prenom: input.prenom,
     email: input.email?.trim() || null,
     cef: input.cef?.trim() || null,
+    ...colonneCne(input.cne),
   });
 
   if (error) throw new Error(messageCef(error.message));
@@ -84,7 +108,13 @@ export async function addStagiaire(
 export async function updateStagiaire(
   id: string,
   groupeId: string,
-  input: { nom: string; prenom: string; email?: string; cef?: string },
+  input: {
+    nom: string;
+    prenom: string;
+    email?: string;
+    cef?: string;
+    cne?: string;
+  },
 ): Promise<{ avertissement?: string }> {
   const supabase = await createClient();
 
@@ -103,6 +133,7 @@ export async function updateStagiaire(
       prenom: input.prenom,
       email: input.email?.trim() || null,
       cef: input.cef?.trim() || null,
+      ...colonneCne(input.cne),
     })
     .eq("id", id);
 
@@ -152,6 +183,7 @@ export type StagiaireImportRow = {
   prenom: string;
   email: string | null;
   cef: string | null;
+  cne: string | null;
 };
 
 export async function bulkImportStagiaires(
@@ -169,6 +201,7 @@ export async function bulkImportStagiaires(
       prenom: row.prenom,
       email: row.email ?? null,
       cef: row.cef ?? null,
+      ...colonneCne(row.cne ?? undefined),
     })),
   );
 

@@ -62,12 +62,13 @@ export default function GroupeDetail({
   }
   const [editingId, setEditingId] = useState<string | null>(null);
   const [ajoutOuvert, setAjoutOuvert] = useState(false);
-  const [form, setForm] = useState({ nom: "", prenom: "", email: "", cef: "" });
+  const [form, setForm] = useState({ nom: "", prenom: "", email: "", cef: "", cne: "" });
   const [editForm, setEditForm] = useState({
     nom: "",
     prenom: "",
     email: "",
     cef: "",
+    cne: "",
   });
   const toast = useToast();
 
@@ -75,7 +76,7 @@ export default function GroupeDetail({
   function fermerAjout() {
     if (busy) return;
     setAjoutOuvert(false);
-    setForm({ nom: "", prenom: "", email: "", cef: "" });
+    setForm({ nom: "", prenom: "", email: "", cef: "", cne: "" });
   }
 
   async function handleAdd(e: React.FormEvent) {
@@ -87,8 +88,9 @@ export default function GroupeDetail({
         prenom: form.prenom,
         email: form.email || undefined,
         cef: form.cef || undefined,
+        cne: form.cne || undefined,
       });
-      setForm({ nom: "", prenom: "", email: "", cef: "" });
+      setForm({ nom: "", prenom: "", email: "", cef: "", cne: "" });
       setAjoutOuvert(false);
       toast("Stagiaire ajouté");
       router.refresh();
@@ -118,6 +120,7 @@ export default function GroupeDetail({
       prenom: s.prenom,
       email: s.email ?? "",
       cef: s.cef ?? "",
+      cne: s.cne ?? "",
     });
   }
 
@@ -133,6 +136,7 @@ export default function GroupeDetail({
         prenom: editForm.prenom,
         email: editForm.email || undefined,
         cef: editForm.cef || undefined,
+        cne: editForm.cne || undefined,
       });
       setEditingId(null);
       // Le renommage du compte peut échouer là où la fiche passe : le dire,
@@ -182,15 +186,27 @@ export default function GroupeDetail({
         description="Le CEF suffit à lui donner accès à son espace."
       >
         <form onSubmit={handleAdd} className="space-y-4">
-          <Input
-            id="cef"
-            label="CEF"
-            inputMode="numeric"
-            autoFocus
-            hint="Identifiant OFPPT, sert à se connecter"
-            value={form.cef}
-            onChange={(e) => setForm({ ...form, cef: e.target.value })}
-          />
+          {/* Les deux identifiants côte à côte : ils se recopient d'un même
+              document et se vérifient l'un contre l'autre. */}
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <Input
+              id="cef"
+              label="CEF"
+              inputMode="numeric"
+              autoFocus
+              hint="Identifiant OFPPT, sert à se connecter"
+              value={form.cef}
+              onChange={(e) => setForm({ ...form, cef: e.target.value })}
+            />
+            <Input
+              id="cne"
+              label="CNE"
+              inputMode="numeric"
+              hint="Code national, pour les pièces officielles"
+              value={form.cne}
+              onChange={(e) => setForm({ ...form, cne: e.target.value })}
+            />
+          </div>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <Input
               id="nom"
@@ -262,13 +278,21 @@ export default function GroupeDetail({
                   editingId === s.id ? (
                     <tr key={s.id} className="border-t border-border bg-paper">
                       <td className="px-4 py-3">
-                        <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+                        <div className="grid grid-cols-1 gap-3 md:grid-cols-5">
                           <Input
                             value={editForm.cef}
                             onChange={(e) =>
                               setEditForm({ ...editForm, cef: e.target.value })
                             }
                             placeholder="CEF"
+                            inputMode="numeric"
+                          />
+                          <Input
+                            value={editForm.cne}
+                            onChange={(e) =>
+                              setEditForm({ ...editForm, cne: e.target.value })
+                            }
+                            placeholder="CNE"
                             inputMode="numeric"
                           />
                           <Input
@@ -325,14 +349,22 @@ export default function GroupeDetail({
                             </p>
                             <p className="truncate text-xs text-slate">
                               {/* Le CEF passe devant : c'est lui que le
-                                  formateur retrouve dans ses listes. */}
+                                  formateur retrouve dans ses listes. Le CNE
+                                  suit, en retrait, parce qu'il ne sert qu'aux
+                                  pièces qui sortent de l'établissement. */}
                               {s.cef ? (
                                 <span className="font-mono text-slate-2">
                                   {s.cef}
                                 </span>
                               ) : null}
-                              {s.cef && s.email ? " · " : ""}
-                              {s.email ?? (s.cef ? "" : "—")}
+                              {s.cne ? (
+                                <span className="font-mono text-slate-light">
+                                  {s.cef ? " · " : ""}
+                                  CNE {s.cne}
+                                </span>
+                              ) : null}
+                              {(s.cef || s.cne) && s.email ? " · " : ""}
+                              {s.email ?? (s.cef || s.cne ? "" : "—")}
                               {s.user_id ? (
                                 <span className="ml-1.5 text-green-dark">
                                   · compte actif

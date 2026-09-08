@@ -73,14 +73,20 @@ export function dessinerResultat(
   police(doc, "titre", 13);
   doc.setTextColor(...COULEURS.blanc);
   doc.text(r.stagiaire, X + 4, y + 12.4);
-  // Le CEF suit le nom : c'est lui qui distingue deux homonymes, et il n'a de
-  // sens qu'accolé à celui qu'il identifie. La largeur du nom se mesure avec
-  // la police du nom, avant d'en changer.
+  // Les identifiants suivent le nom : ils distinguent deux homonymes, et
+  // n'ont de sens qu'accolés à celui qu'ils identifient. La largeur du nom se
+  // mesure avec la police du nom, avant d'en changer.
   const largeurNom = doc.getTextWidth(r.stagiaire);
-  if (id.cef?.trim()) {
+  const identifiants = [
+    id.cef?.trim() ? `CEF ${id.cef.trim()}` : null,
+    id.cne?.trim() ? `CNE ${id.cne.trim()}` : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+  if (identifiants) {
     police(doc, "mono", 8);
     doc.setTextColor(...COULEURS.ardoiseClaire);
-    doc.text(`CEF ${id.cef.trim()}`, X + 4 + largeurNom + 4, y + 12.4);
+    doc.text(identifiants, X + 4 + largeurNom + 4, y + 12.4);
   }
   police(doc, "titre", 15);
   doc.text(`${r.note} / ${r.total}`, X + LARGEUR - 4, y + 12.6, {
@@ -301,6 +307,7 @@ export function dessinerResultat(
     "PÉDAGO — RÉSULTAT D'ÉVALUATION",
     `Stagiaire : ${r.stagiaire}`,
     id.cef?.trim() ? `CEF : ${id.cef.trim()}` : null,
+    id.cne?.trim() ? `CNE : ${id.cne.trim()}` : null,
     `Note : ${r.note} / ${r.total}`,
     [r.nature, id.module, id.dateEpreuve].filter(Boolean).join(" · "),
     `Réf. : ${r.reference}`,
