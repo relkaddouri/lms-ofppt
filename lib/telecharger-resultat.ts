@@ -90,6 +90,20 @@ export async function telechargerLotResultats(
     ])}.pdf`,
     {
       marque: marqueDe(etablissement),
+      // La page de garde ouvre toujours le dossier : elle se détache pour être
+      // collée sur la chemise, et un dossier sans elle n'est identifiable
+      // qu'en l'ouvrant.
+      garde: {
+        titre: dossier.titre,
+        nature: dossier.nature,
+        identification: dossier.identification,
+        effectif: dossier.stagiaires.length,
+        copies: dossier.resultats.length,
+        moyenne: dossier.moyenne,
+        total: dossier.total,
+        avecEmargement,
+        dateEdition: new Date().toLocaleDateString("fr-FR"),
+      },
       emargement: avecEmargement
         ? {
             titre: dossier.titre,

@@ -510,6 +510,10 @@ export type DossierControle = {
   resultats: ResultatControle[];
   /** Les stagiaires du groupe, dans l'ordre où ils émargent. */
   stagiaires: { cef: string | null; nom: string }[];
+  /** Le total du barème : 20 pour un contrôle continu, 40 pour un EFM. */
+  total: number;
+  /** Moyenne des copies publiées, `null` s'il n'y en a aucune. */
+  moyenne: number | null;
 };
 
 export async function getDossierControle(
@@ -658,6 +662,11 @@ export async function getDossierControle(
     dateFichier: dateEpreuve,
     identification,
     resultats,
+    total: efm ? 40 : 20,
+    moyenne:
+      resultats.length > 0
+        ? resultats.reduce((t, r) => t + r.note, 0) / resultats.length
+        : null,
     stagiaires: (stagiairesRes.data ?? []).map((s) => ({
       cef: s.cef,
       nom: `${s.nom} ${s.prenom}`.trim(),
