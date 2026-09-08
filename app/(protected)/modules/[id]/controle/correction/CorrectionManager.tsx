@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   corrigerPassation,
   publierResultat,
+  getDebutEpreuve,
   type Controle,
   type Passation,
   type PassationDetail,
@@ -14,7 +15,8 @@ import Avatar from "@/components/ui/Avatar";
 import Button from "@/components/ui/Button";
 import { inputStyles } from "@/components/ui/Input";
 import { useToast } from "@/components/ui/Toast";
-import { formatDate, formatDateTime, slugify } from "@/lib/format";
+import { formatDate, formatDateJour, formatDateTime, slugify } from "@/lib/format";
+import { dureeEnTexte, finEpreuve, formatHeure } from "@/lib/creneaux";
 import { getEtablissement } from "@/app/actions/etablissement";
 import { marqueDe } from "@/lib/pdf-marque";
 import { ChevronRight, Download, Eye, EyeOff, X, Zap } from "lucide-react";
@@ -49,6 +51,9 @@ export default function CorrectionManager({
   moduleNom,
   moduleCode,
   groupeId,
+  groupeNom,
+  filiere,
+  anneeGroupe,
   controles,
   controleId,
   copies,
@@ -58,6 +63,9 @@ export default function CorrectionManager({
   moduleNom: string;
   moduleCode: string | null;
   groupeId: string;
+  groupeNom: string | null;
+  filiere: string | null;
+  anneeGroupe: number | null;
   controles: Controle[];
   controleId: string | null;
   copies: Passation[];
@@ -139,25 +147,54 @@ export default function CorrectionManager({
     if (!copie) return;
     setBusyPublication(true);
     try {
-      const [{ telechargerResultatPdf }, etablissement] = await Promise.all([
-        import("@/lib/pdf-resultat"),
-        getEtablissement(),
-      ]);
+      const ctl = controles.find((c) => c.id === controleId) ?? null;
+      const dateEpreuve = ctl?.date_administration ?? ctl?.date_prevue ?? null;
+
+      // L'horaire vient de l'emploi du temps : le contrôle est programmé un
+      // jour donné, et ce jour-là le groupe a un créneau. Le redemander au
+      // formateur aurait créé une seconde vérité.
+      const [{ telechargerResultatPdf }, etablissement, debut] =
+        await Promise.all([
+          import("@/lib/pdf-resultat"),
+          getEtablissement(),
+          getDebutEpreuve(groupeId, dateEpreuve),
+        ]);
+
+      const duree = Number(ctl?.duree_heures ?? 0);
+      const horaire = debut
+        ? [
+            `de ${formatHeure(debut)} à ${formatHeure(finEpreuve(debut, duree))}`,
+            duree > 0 ? `durée ${dureeEnTexte(duree)}` : null,
+          ]
+            .filter(Boolean)
+            .join(" · ")
+        : null;
       await telechargerResultatPdf(
         {
-          titre: controles.find((c) => c.id === controleId)?.titre ?? "Contrôle",
+          titre: ctl?.titre?.trim() || "Contrôle sans intitulé",
           stagiaire: copie.nom_complet,
-          contexte: [moduleCode, moduleNom].filter(Boolean).join(" — "),
           nature:
-            baremeAttendu(
-              controles.find((c) => c.id === controleId)?.type ?? null,
-            ) === 40
+            baremeAttendu(ctl?.type ?? null) === 40
               ? "Épreuve de fin de module"
               : "Contrôle continu",
-          dateEpreuve: copie.submitted_at
-            ? formatDate(copie.submitted_at)
-            : null,
           datePublication: formatDate(new Date().toISOString()),
+          identification: {
+            etablissement: etablissement.nom,
+            filiere: [filiere, anneeGroupe ? `${anneeGroupe}e année` : null]
+              .filter(Boolean)
+              .join(" · "),
+            groupe: groupeNom,
+            anneeScolaire: etablissement.anneeScolaire,
+            module: [moduleCode, moduleNom].filter(Boolean).join(" — "),
+            formateur: etablissement.nomFormateur,
+            matricule: etablissement.matricule,
+            dateEpreuve: dateEpreuve
+              ? formatDateJour(dateEpreuve)
+              : copie.submitted_at
+                ? formatDate(copie.submitted_at)
+                : null,
+            horaire,
+          },
           note,
           total: totalAttendu,
           // La réponse, le corrigé et le commentaire partent avec les points :

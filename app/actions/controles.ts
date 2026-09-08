@@ -464,6 +464,39 @@ export async function getContenuCouvert(
  * suivante, et savoir quand un résultat est parti est ce qui permet de le
  * vérifier.
  */
+/**
+ * L'heure à laquelle l'épreuve commence, lue dans l'emploi du temps.
+ *
+ * Elle ne se ressaisit pas : le contrôle est programmé un jour donné, et ce
+ * jour-là le groupe a un créneau — c'est celui-là. Demander l'heure au
+ * formateur aurait créé une seconde vérité, qui aurait fini par contredire la
+ * première. L'heure de fin ne se stocke pas davantage : c'est le début plus la
+ * durée du contrôle, déjà connue.
+ *
+ * Rend `null` quand aucune séance ne tombe ce jour-là — un contrôle programmé
+ * hors créneau, ou une date encore vide. Le document dit alors la date sans
+ * l'horaire plutôt que d'en inventer un.
+ */
+export async function getDebutEpreuve(
+  groupeId: string,
+  date: string | null,
+): Promise<string | null> {
+  if (!date) return null;
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("seances")
+    .select("heure_debut, seance_groupes!inner(groupe_id)")
+    .eq("seance_groupes.groupe_id", groupeId)
+    .eq("date", date)
+    .order("heure_debut", { ascending: true, nullsFirst: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  return data?.heure_debut ?? null;
+}
+
 export async function publierResultat(
   passationId: string,
   publier: boolean,
