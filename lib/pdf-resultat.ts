@@ -2,6 +2,7 @@ import { jsPDF } from "jspdf";
 import { dessinerLogo, type Marque } from "@/lib/pdf-marque";
 import { COULEURS, installerPolices, police } from "@/lib/pdf-theme";
 import { insecable } from "@/lib/typographie";
+import { dessinerQr, tailleQr } from "@/lib/pdf-qr";
 
 /**
  * Résultat publié d'un contrôle, à imprimer et faire signer (PRD §4.7).
@@ -43,6 +44,8 @@ export type LigneResultat = {
  */
 export type Identification = {
   etablissement?: string | null;
+  /** Le Code d'Enregistrement du Formé — l'identifiant OFPPT du stagiaire. */
+  cef?: string | null;
   filiere?: string | null;
   groupe?: string | null;
   anneeScolaire?: string | null;
@@ -63,6 +66,8 @@ export type ResultatControle = {
   datePublication: string;
   note: number;
   total: number;
+  /** L'identifiant de la copie, porté par le QR code au bas du document. */
+  reference: string;
   identification: Identification;
   lignes: LigneResultat[];
 };
@@ -197,6 +202,15 @@ export async function construireResultatPdf(
   police(doc, "titre", 13);
   doc.setTextColor(...COULEURS.blanc);
   doc.text(r.stagiaire, X + 4, y + 12.4);
+  // Le CEF suit le nom : c'est lui qui distingue deux homonymes, et il n'a de
+  // sens qu'accolé à celui qu'il identifie. La largeur du nom se mesure avec
+  // la police du nom, avant d'en changer.
+  const largeurNom = doc.getTextWidth(r.stagiaire);
+  if (id.cef?.trim()) {
+    police(doc, "mono", 8);
+    doc.setTextColor(...COULEURS.ardoiseClaire);
+    doc.text(`CEF ${id.cef.trim()}`, X + 4 + largeurNom + 4, y + 12.4);
+  }
   police(doc, "titre", 15);
   doc.text(`${r.note} / ${r.total}`, X + LARGEUR - 4, y + 12.6, {
     align: "right",
@@ -401,6 +415,60 @@ export async function construireResultatPdf(
   doc.setTextColor(...COULEURS.ardoiseClaire);
   doc.text("Date et signature", X, basLignes + 4);
   doc.text("Date et signature", X + colonne + 10, basLignes + 4);
+
+  // ── Le sceau : un QR code sous les signatures ────────────────────────────
+  //
+  // Ce que le document affirme sur papier, le code le porte sous forme
+  // lisible par une machine : qui, quelle note, quelle épreuve, et la
+  // référence de la copie. Un exemplaire imprimé se vérifie alors d'un coup
+  // de téléphone, sans ouvrir l'application — c'est ce qui distingue une
+  // pièce signée d'une feuille imprimable par n'importe qui.
+  //
+  // Le contenu est du texte simple et non une URL : un téléphone l'affiche
+  // tel quel, sans réseau et sans page à ouvrir.
+  const sceau = [
+    "PÉDAGO — RÉSULTAT D'ÉVALUATION",
+    `Stagiaire : ${r.stagiaire}`,
+    id.cef?.trim() ? `CEF : ${id.cef.trim()}` : null,
+    `Note : ${r.note} / ${r.total}`,
+    [r.nature, id.module, id.dateEpreuve].filter(Boolean).join(" · "),
+    `Réf. : ${r.reference}`,
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  // La taille suit la densité du code : un QR plus fourni a des modules plus
+  // fins, et sous 0,6 mm un téléphone ne le lit plus sur une impression
+  // ordinaire. On l'agrandit plutôt que de laisser le code devenir illisible.
+  const modules = tailleQr(sceau);
+  const COTE = Math.max(24, Math.min(34, modules * 0.62));
+  const yQr = basLignes + 12;
+
+  dessinerQr(doc, sceau, X, yQr, COTE);
+
+  police(doc, "mono", 6.8);
+  doc.setTextColor(...COULEURS.ardoiseClaire);
+  doc.text("VÉRIFICATION", X + COTE + 6, yQr + 4);
+
+  police(doc, "corps", 8);
+  doc.setTextColor(...COULEURS.corps);
+  const explication: string[] = doc.splitTextToSize(
+    insecable(
+      "Ce code porte le nom du stagiaire, sa note et la référence de cette copie. Le lire avec un téléphone permet de vérifier qu'un exemplaire imprimé correspond bien au résultat publié.",
+    ),
+    LARGEUR - COTE - 6,
+  );
+  explication.forEach((ligne, i) =>
+    doc.text(ligne, X + COTE + 6, yQr + 10 + i * 4),
+  );
+
+  police(doc, "mono", 7);
+  doc.setTextColor(...COULEURS.ardoiseClaire);
+  doc.text(
+    `Réf. ${r.reference}`,
+    X + COTE + 6,
+    yQr + 10 + explication.length * 4 + 3,
+  );
 
   // ── Pied de page ─────────────────────────────────────────────────────────
   const pages = doc.getNumberOfPages();

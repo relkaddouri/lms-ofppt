@@ -206,12 +206,16 @@ export default function CorrectionManager({
               ? "Épreuve de fin de module"
               : "Contrôle continu",
           datePublication: formatDate(new Date().toISOString()),
+          // L'identifiant de la copie : ce que le QR code porte, et ce qui
+          // permet de retrouver l'original derrière un exemplaire papier.
+          reference: copie.id,
           identification: {
             etablissement: etablissement.nom,
             filiere: [filiere, anneeGroupe ? `${anneeGroupe}e année` : null]
               .filter(Boolean)
               .join(" · "),
             groupe: groupeNom,
+            cef: copie.cef,
             anneeScolaire: etablissement.anneeScolaire,
             module: [moduleCode, moduleNom].filter(Boolean).join(" — "),
             formateur: etablissement.nomFormateur,
