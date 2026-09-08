@@ -29,10 +29,6 @@ export type PageDeGarde = {
   effectif: number;
   /** Copies dont le résultat est publié, celles que le dossier contient. */
   copies: number;
-  /** Moyenne des copies publiées, `null` s'il n'y en a aucune. */
-  moyenne: number | null;
-  /** Le total du barème — 20 pour un CC, 40 pour un EFM. */
-  total: number;
   /** Vrai si la feuille d'émargement est jointe derrière. */
   avecEmargement: boolean;
   /** La date d'édition du dossier. */
@@ -148,29 +144,31 @@ export function dessinerPageDeGarde(
     { maxWidth: LARGEUR - 32 },
   );
 
-  // ── Les trois chiffres ───────────────────────────────────────────────────
+  // ── Les chiffres du dossier ──────────────────────────────────────────────
+  //
+  // Ce qui se vérifie d'un coup d'œil avant de ranger la chemise : combien de
+  // stagiaires étaient concernés, combien de copies sont dedans. La moyenne du
+  // groupe n'y figure pas — une page de garde annonce un contenu, elle ne
+  // commente pas un résultat.
   let y = HAUT_PANNEAU + hauteurPanneau + 12;
+  const chiffres: [string, string, readonly [number, number, number]][] = [
+    [String(g.effectif), "Stagiaires du groupe", COULEURS.sarcelle],
+    [String(g.copies), "Copies au dossier", COULEURS.vert],
+  ];
   const gouttiere = 6;
-  const largeurTuile = (LARGEUR - gouttiere * 2) / 3;
-  tuile(doc, String(g.effectif), "Stagiaires du groupe", X, y, largeurTuile, COULEURS.sarcelle);
-  tuile(
-    doc,
-    String(g.copies),
-    "Copies au dossier",
-    X + largeurTuile + gouttiere,
-    y,
-    largeurTuile,
-    COULEURS.vert,
-  );
-  tuile(
-    doc,
-    g.moyenne === null ? "—" : `${g.moyenne.toFixed(2)} / ${g.total}`,
-    "Moyenne du groupe",
-    X + (largeurTuile + gouttiere) * 2,
-    y,
-    largeurTuile,
-    COULEURS.encre,
-  );
+  const largeurTuile =
+    (LARGEUR - gouttiere * (chiffres.length - 1)) / chiffres.length;
+  chiffres.forEach(([valeur, intitule, accent], i) => {
+    tuile(
+      doc,
+      valeur,
+      intitule,
+      X + i * (largeurTuile + gouttiere),
+      y,
+      largeurTuile,
+      accent,
+    );
+  });
   y += 34;
 
   // ── L'identification, aérée ──────────────────────────────────────────────
@@ -206,7 +204,7 @@ export function dessinerPageDeGarde(
   const hautContenu = y;
   const pieces = [
     g.avecEmargement ? "Feuille d'émargement signée par les stagiaires" : null,
-    `${g.copies} résultat${g.copies > 1 ? "s" : ""} d'évaluation, à faire signer`,
+    `${g.copies} résultat${g.copies > 1 ? "s" : ""} d'évaluation`,
   ].filter(Boolean) as string[];
   const hauteurContenu = 14 + pieces.length * 6;
   doc.setFillColor(...COULEURS.blanc);

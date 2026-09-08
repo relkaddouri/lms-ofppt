@@ -99,8 +99,6 @@ export async function telechargerLotResultats(
         identification: dossier.identification,
         effectif: dossier.stagiaires.length,
         copies: dossier.resultats.length,
-        moyenne: dossier.moyenne,
-        total: dossier.total,
         avecEmargement,
         dateEdition: new Date().toLocaleDateString("fr-FR"),
       },
