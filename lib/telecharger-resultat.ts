@@ -50,7 +50,22 @@ export async function telechargerResultatSigne(
   return true;
 }
 
-/** Le nom d'un fichier de résultat, selon la convention arrêtée. */
+/**
+ * Le nom d'un fichier, selon la convention arrêtée par le porteur de projet.
+ *
+ * `Dossier_CC1_DDOUX201_M104_2026-09-07` : la pièce, l'épreuve, le groupe, le
+ * module, la date. Un segment sans valeur disparaît plutôt que de laisser un
+ * trou entre deux tirets bas, et la date reste en ISO pour que les fichiers se
+ * trient d'eux-mêmes.
+ *
+ * La durée du contrôle n'y figure pas, bien qu'elle ait été proposée. Elle
+ * n'identifie rien — deux contrôles ne peuvent pas partager le même code
+ * d'épreuve sur le même groupe, le même module et le même jour — et elle se
+ * modifie : la changer après coup donnerait un second fichier pour le même
+ * dossier, à côté de celui déjà classé. Un nom de fichier porte des
+ * identifiants, pas des attributs ; la durée vit sur la page de garde et dans
+ * le cartouche, où elle reste juste.
+ */
 function nommer(parties: (string | null | undefined)[]): string {
   return parties.filter(Boolean).join("_");
 }
@@ -80,12 +95,12 @@ export async function telechargerLotResultats(
   await telechargerLotPdf(
     dossier.resultats,
     `${nommer([
-      "RESULTATS",
+      "Dossier",
+      dossier.codeEpreuve,
       dossier.identification.groupe
         ? slugify(dossier.identification.groupe)
         : null,
       dossier.codeModule ? slugify(dossier.codeModule) : null,
-      dossier.codeEpreuve,
       dossier.dateFichier ?? maintenant(),
     ])}.pdf`,
     {
@@ -141,12 +156,12 @@ export async function telechargerEmargement(
       stagiaires: dossier.stagiaires,
     },
     `${nommer([
-      "EMARGEMENT",
+      "Emargement",
+      dossier.codeEpreuve,
       dossier.identification.groupe
         ? slugify(dossier.identification.groupe)
         : null,
       dossier.codeModule ? slugify(dossier.codeModule) : null,
-      dossier.codeEpreuve,
       dossier.dateFichier ?? maintenant(),
     ])}.pdf`,
     marqueDe(etablissement),
