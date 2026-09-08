@@ -143,3 +143,37 @@ export function ressourceHonoree(annoncee: string, support: Support): boolean {
   if (mots.length === 0) return foin.includes(aiguille);
   return mots.every((m) => foin.includes(m));
 }
+
+/**
+ * À qui un support est destiné (PRD §4.4).
+ *
+ * `stagiaire` : le document remis, lisible dans son espace. `formateur` : la
+ * version que le formateur garde pour lui — conduite de séance, réponses
+ * attendues —, que la policy `supports_lecture_stagiaire` ne sert jamais à un
+ * stagiaire. Les deux vivent dans la même table, avec les mêmes versions et le
+ * même partage entre séances miroir.
+ */
+export type DestinataireSupport = "stagiaire" | "formateur";
+
+/**
+ * `destinataire` en attendant les types regénérés.
+ *
+ * La colonne existe en base — migration 078 — mais pas encore dans
+ * `database.types.ts`, qui se regénère après `supabase db push`. Les deux
+ * béquilles sont isolées ici : deux lignes à retirer, plutôt que six
+ * `as unknown as` dispersés qui éteindraient le typage sur des requêtes
+ * entières, ce qui est précisément ce que les points de vigilance du backlog
+ * reprochent aux soixante casts existants.
+ */
+type FiltreColonne = { eq: (colonne: string, valeur: string) => unknown };
+
+export function parDestinataire<T>(requete: T, destinataire: DestinataireSupport): T {
+  return (requete as unknown as FiltreColonne).eq(
+    "destinataire",
+    destinataire,
+  ) as T;
+}
+
+export function colonneDestinataire(destinataire: DestinataireSupport) {
+  return { destinataire } as unknown as Record<string, never>;
+}

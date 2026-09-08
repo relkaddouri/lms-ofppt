@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { parDestinataire } from "@/lib/support";
 import type { CycleModule } from "@/lib/modules";
 import { revalidatePath } from "next/cache";
 import { getPortee } from "@/app/actions/annees";
@@ -401,10 +402,12 @@ export async function getDocumentsModule(
   const sources = [...new Set(sourceDe.values())];
 
   const [supportsRes, correctionsRes] = await Promise.all([
-    supabase
-      .from("supports_seance")
-      .select("seance_id")
-      .in("seance_id", sources),
+    // Seul le support du stagiaire compte comme « support fait » : celui du
+    // formateur ne se remet pas, il ne remplit pas la case.
+    parDestinataire(
+      supabase.from("supports_seance").select("seance_id").in("seance_id", sources),
+      "stagiaire",
+    ),
     supabase
       .from("corrections_tp")
       .select("seance_id")
@@ -513,12 +516,16 @@ export async function getCompilationModule(
     retenues.map((s) => [s.id, s.contenu_source_id ?? s.id]),
   );
 
-  const { data: supports } = await supabase
-    .from("supports_seance")
-    .select("seance_id, contenu, version, type")
-    .in("seance_id", [...new Set(sourceDe.values())])
-    .eq("type", genre === "pratique" ? "pratique" : "theorique")
-    .order("version", { ascending: false });
+  // Le classeur compile ce qui a été remis aux stagiaires. Le support que le
+  // formateur garde pour lui n'y entre pas.
+  const { data: supports } = await parDestinataire(
+    supabase
+      .from("supports_seance")
+      .select("seance_id, contenu, version, type")
+      .in("seance_id", [...new Set(sourceDe.values())])
+      .eq("type", genre === "pratique" ? "pratique" : "theorique"),
+    "stagiaire",
+  ).order("version", { ascending: false });
 
   const dernier = new Map<string, Support>();
   for (const s of supports ?? []) {

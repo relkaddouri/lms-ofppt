@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { saveSupport, viderSupport } from "@/app/actions/seances";
+import type { DestinataireSupport } from "@/lib/support";
 import { useToast } from "@/components/ui/Toast";
 import { ConfirmModal } from "@/components/ui/Modal";
 import BandeauIa from "@/components/BandeauIa";
@@ -46,10 +47,19 @@ export default function SupportSeance({
   contexte,
   initial,
   version,
+  destinataire = "stagiaire",
 }: {
   contexte: ContexteSupport;
   initial: unknown | null;
   version: number | null;
+  /**
+   * À qui ce support est destiné.
+   *
+   * Le même composant sert les deux : mêmes générations, même rédaction
+   * markdown, même diaporama, mêmes PDF. Dupliquer l'écran aurait garanti
+   * qu'une amélioration apportée à l'un manque à l'autre au bout d'un mois.
+   */
+  destinataire?: DestinataireSupport;
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -87,7 +97,7 @@ export default function SupportSeance({
     lien.href = URL.createObjectURL(
       new Blob([support.markdown], { type: "text/markdown;charset=utf-8" }),
     );
-    lien.download = `${slugify(support.titre, "support")}.md`;
+    lien.download = `${slugify(support.titre, "support")}${suffixe}.md`;
     lien.click();
     URL.revokeObjectURL(lien.href);
   }
@@ -128,6 +138,14 @@ export default function SupportSeance({
   }
 
   const pratique = contexte.nature === "pratique";
+  // Le pied de page dit de quel document il s'agit : deux PDF côte à côte dans
+  // un dossier de téléchargements ne se distingueraient pas autrement.
+  const natureDocument =
+    destinataire === "formateur" ? "Support du formateur" : "Support du stagiaire";
+  // Et le nom du fichier aussi : les deux supports d'une même séance portent
+  // le même titre, donc le même nom de fichier, et le second écraserait le
+  // premier dans le dossier de téléchargements.
+  const suffixe = destinataire === "formateur" ? "-formateur" : "";
 
   async function generer() {
     setBusy(true);
@@ -154,7 +172,12 @@ export default function SupportSeance({
     if (!support) return;
     setBusy(true);
     try {
-      const v = await saveSupport(contexte.seanceId, support.type, support);
+      const v = await saveSupport(
+        contexte.seanceId,
+        support.type,
+        support,
+        destinataire,
+      );
       // Enregistrer, c'est valider : le support n'est plus un brouillon.
       setIssuDuModele(false);
       toast(`Version ${v} enregistrée`);
@@ -208,7 +231,7 @@ export default function SupportSeance({
   async function vider() {
     setBusy(true);
     try {
-      const versions = await viderSupport(contexte.seanceId);
+      const versions = await viderSupport(contexte.seanceId, destinataire);
       setSupport(null);
       setAvertissements([]);
       setVue("edition");
@@ -385,12 +408,12 @@ export default function SupportSeance({
                     pied: [
                       contexte.moduleNom,
                       contexte.groupeNom,
-                      "Support du stagiaire",
+                      natureDocument,
                     ]
                       .filter(Boolean)
                       .join(" · "),
                   },
-                  `${slugify(support.titre, "document")}-a4.pdf`,
+                  `${slugify(support.titre, "document")}${suffixe}-a4.pdf`,
                 );
               } finally {
                 setEnExport(false);
@@ -414,7 +437,8 @@ export default function SupportSeance({
         <div className="mt-4">
           <DiaporamaCours
             support={support}
-            pied={[contexte.moduleNom, contexte.groupeNom, "Support du stagiaire"]
+            suffixeFichier={suffixe}
+            pied={[contexte.moduleNom, contexte.groupeNom, natureDocument]
               .filter(Boolean)
               .join(" · ")}
             sousTitre={[contexte.moduleNom, contexte.groupeNom]

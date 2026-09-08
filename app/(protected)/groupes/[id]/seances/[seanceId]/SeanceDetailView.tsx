@@ -27,7 +27,7 @@ import {
   type SeanceDetail,
   type RemarqueSeance,
 } from "@/app/actions/seances";
-import { Check, CheckCheck, Play, Plus, Trash2 } from "lucide-react";
+import { Check, CheckCheck, Lock, Play, Plus, Trash2 } from "lucide-react";
 
 export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
   const router = useRouter();
@@ -47,7 +47,7 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
   // Trois moments distincts : préparer, projeter, tenir le cahier. Les empiler
   // obligeait à traverser mille pixels de formulaire pour atteindre le support.
   const [onglet, setOnglet] = useState<
-    "preparation" | "support" | "deroulement"
+    "preparation" | "support" | "support-formateur" | "deroulement"
   >("preparation");
 
   const minutesSeance = seance.duree_prevue
@@ -310,7 +310,11 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
       <div
         role="tablist"
         aria-label="Vue de la séance"
-        className="mt-6 flex items-stretch gap-1.5 border-t border-separator px-1"
+        // Quatre onglets ne tiennent plus sur 375px : la barre défile
+        // horizontalement plutôt que de couper un libellé. C'est un
+        // défilement contenu, pas celui de la page — ce que le §3bis
+        // interdit, c'est le second.
+        className="mt-6 flex items-stretch gap-1.5 overflow-x-auto border-t border-separator px-1"
       >
         {(
           [
@@ -319,6 +323,15 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
               cle: "support" as const,
               label: "Support",
               compte: seance.questions.length,
+            },
+            // Le support du formateur est un second document, pas une variante
+            // du premier : il a son onglet, à côté, et non une bascule à
+            // l'intérieur du Support — sans quoi on ne saurait jamais lequel on
+            // est en train de modifier.
+            {
+              cle: "support-formateur" as const,
+              label: "Support formateur",
+              compte: 0,
             },
             { cle: "deroulement" as const, label: "Déroulement", compte: 0 },
           ]
@@ -331,7 +344,7 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
               role="tab"
               aria-selected={actif}
               onClick={() => setOnglet(o.cle)}
-              className={`flex items-center gap-2 whitespace-nowrap border-b-2 px-2.5 py-3.5 text-sm transition-colors duration-150 ease-out hover:text-ink ${
+              className={`flex shrink-0 items-center gap-2 whitespace-nowrap border-b-2 px-2.5 py-3.5 text-sm transition-colors duration-150 ease-out hover:text-ink ${
                 actif
                   ? "border-b-ink font-semibold text-ink"
                   : "border-b-transparent text-slate-2"
@@ -456,6 +469,52 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
                 />
               </div>
             ) : null}
+          </section>
+        ) : onglet === "support-formateur" ? (
+          <section className="overflow-hidden rounded-[14px] border border-border bg-surface shadow-repos">
+            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-separator bg-paper-alt px-6 py-[18px]">
+              <div className="flex flex-col gap-[3px]">
+                <h2 className="font-display text-base font-semibold text-ink">
+                  Support du formateur
+                </h2>
+                <p className="text-[13px] text-slate-light">
+                  Le vôtre : conduite de séance, réponses attendues, ce que vous
+                  projetez pour vous. Jamais servi aux stagiaires.
+                </p>
+              </div>
+              <div className="flex items-center gap-2.5">
+                {/* La mention est portée par l'écran, mais c'est la policy
+                    `supports_lecture_stagiaire` qui la tient. */}
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-border-strong bg-paper px-2.5 py-1 text-[12.5px] font-medium text-slate-2">
+                  <Lock size={13} aria-hidden />
+                  Privé
+                </span>
+                {seance.supportFormateurVersion ? (
+                  <span className="font-mono text-[12.5px] text-slate-2">
+                    Version {seance.supportFormateurVersion}
+                  </span>
+                ) : null}
+              </div>
+            </div>
+            <div className="px-6 py-[22px]">
+              <SupportSeance
+                destinataire="formateur"
+                contexte={{
+                  seanceId: seance.id,
+                  moduleNom: seance.moduleNom,
+                  groupeNom: seance.groupeNom,
+                  date: seance.date,
+                  dateFormatee: seance.date ? formatDateJour(seance.date) : null,
+                  dureeHeures: seance.duree_prevue
+                    ? Number(seance.duree_prevue)
+                    : null,
+                  objectif: seance.objectifIntitule,
+                  nature: seance.nature,
+                }}
+                initial={seance.supportFormateurContenu}
+                version={seance.supportFormateurVersion}
+              />
+            </div>
           </section>
         ) : (
           <div className="grid items-start gap-5 lg:[grid-template-columns:minmax(0,1.15fr)_minmax(0,1fr)]">

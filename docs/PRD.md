@@ -252,6 +252,10 @@ Pour chaque phase, l'écran affiche :
 
 **Cohérence stricte entre fiche et support — ajout v3, non négociable.** Tout document, vidéo, lien ou ressource **mentionné dans la fiche de préparation** doit être **effectivement présent et trouvable dans le support** — pour la partie théorique comme pour la partie pratique. Si la fiche évoque "voir la vidéo sur X" ou "document de référence Y", ce n'est jamais une référence dans le vide : le support doit contenir cette ressource ou un lien direct vers elle. La génération IA du support doit lire la fiche associée et s'assurer que toutes ses références y sont honorées.
 
+**Deux supports par séance — ajout du 8 septembre 2026, demande du porteur de projet.** Le formateur prépare deux documents distincts, et l'application n'en portait qu'un. Le **support du stagiaire** est celui qui est remis : il dit ce qu'il faut retenir, il est lisible dans l'espace stagiaire, il porte les questions qu'on lui pose. Le **support du formateur** est le sien : conduite de séance, réponses attendues, ce qu'il projette pour lui. Il n'est **jamais servi à un stagiaire**, et cette garantie est portée par la policy de lecture, pas par un filtre applicatif.
+
+Les deux sont le même objet à tous les autres égards : même rédaction markdown, même génération, même diaporama 16:9, mêmes PDF, même historique de versions, même partage entre séances parallèles. Ils se distinguent par leur destinataire, par leur onglet, et par le pied de page et le nom de fichier de leurs documents — deux PDF de la même séance ne doivent pas se confondre dans un dossier de téléchargements.
+
 **Support riche — pas un contenu minimal.** Le support ne doit pas se limiter à du texte brut : la génération doit intégrer, quand c'est pertinent, des **schémas, images, liens vers des articles de référence** et tout élément qui approfondit et enrichit l'explication. L'objectif est un support que le stagiaire peut consulter en autonomie et qui reste utile même hors de la présence du formateur, pas juste un squelette de diaporama.
 
 **Deux documents distincts par module — support théorique et support pratique**, tranché par le porteur de projet :
