@@ -79,6 +79,7 @@ export async function POST(request: Request) {
     .select("contenu")
     .eq("seance_id", source)
     .eq("type", "pratique")
+    .eq("destinataire", "stagiaire")
     .order("version", { ascending: false })
     .limit(1)
     .maybeSingle();

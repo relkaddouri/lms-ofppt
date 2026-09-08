@@ -56,11 +56,15 @@ function titreSupport(contenu: unknown, secours: string): string {
 export async function getMesSupports(): Promise<SupportListe[]> {
   const supabase = await createClient();
 
+  // La policy `supports_lecture_stagiaire` refuse déjà les supports du
+  // formateur ; le filtre le dit aussi dans la requête, pour qu'on lise ici ce
+  // qui est servi sans avoir à relire la migration.
   const { data, error } = await supabase
     .from("supports_seance")
     .select(
       "id, seance_id, type, contenu, version, seances(date, modules(nom, competences(code_operationnel)))",
     )
+    .eq("destinataire", "stagiaire")
     .order("version", { ascending: false });
 
   if (error) throw new Error(error.message);
@@ -196,12 +200,15 @@ export async function getSupportDetail(
 ): Promise<SupportDetail | null> {
   const supabase = await createClient();
 
+  // Lu par identifiant : le filtre compte double ici, un identifiant pouvant
+  // être collé dans l'URL. La policy reste la garantie, il en est la trace.
   const { data, error } = await supabase
     .from("supports_seance")
     .select(
       "id, contenu, seance_id, seances(date, modules(nom, competences(code_operationnel)), seance_groupes(groupe_id))",
     )
     .eq("id", supportId)
+    .eq("destinataire", "stagiaire")
     .maybeSingle();
 
   if (error) throw new Error(error.message);

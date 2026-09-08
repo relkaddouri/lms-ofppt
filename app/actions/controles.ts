@@ -296,9 +296,7 @@ export async function getPassations(controleId: string): Promise<Passation[]> {
     .order("submitted_at", { ascending: true });
 
   if (error) throw new Error(error.message);
-  // `publie_le` n'entrera dans `database.types.ts` qu'après `supabase db push`
-  // et une régénération des types (migration 077). À retirer ce jour-là.
-  return (data ?? []) as unknown as Passation[];
+  return (data ?? []) as Passation[];
 }
 
 /**
@@ -473,11 +471,9 @@ export async function publierResultat(
   const supabase = await createClient();
   const publieLe = publier ? new Date().toISOString() : null;
 
-  // Même dette que ci-dessus : la colonne existe en base, pas encore dans les
-  // types générés.
   const { error } = await supabase
     .from("passations_controle")
-    .update({ publie_le: publieLe } as unknown as Record<string, never>)
+    .update({ publie_le: publieLe })
     .eq("id", passationId);
 
   if (error) throw new Error(error.message);

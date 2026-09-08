@@ -107,11 +107,20 @@ export default function DiaporamaCours({
   support,
   sousTitre,
   pied,
+  suffixeFichier,
 }: {
   support: SupportTheorique;
   sousTitre: string;
   /** Ce que le pied de page répète — module, élément, nature du document. */
   pied?: string;
+  /**
+   * Ce qui distingue le fichier téléchargé.
+   *
+   * Les deux supports d'une séance portent le même titre : sans suffixe, le
+   * diaporama du formateur écraserait celui du stagiaire dans le dossier de
+   * téléchargements.
+   */
+  suffixeFichier?: string;
 }) {
   // Un cours rédigé a sa propre grammaire de diapositives : couverture,
   // sommaire, intercalaires, contenu paginé. Elle est reprise du support de
@@ -139,7 +148,7 @@ export default function DiaporamaCours({
       await telechargerDiapositivesPdf(
         support.markdown!,
         { surtitre: pied ?? sousTitre, pied: pied ?? sousTitre },
-        `${slugify(support.titre, "diaporama")}-16-9.pdf`,
+        `${slugify(support.titre, "diaporama")}${suffixeFichier ?? ""}-16-9.pdf`,
       );
     } finally {
       setEnExport(false);

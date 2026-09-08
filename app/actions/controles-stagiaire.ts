@@ -56,24 +56,8 @@ export async function getMesControles(): Promise<ControleStagiaire[]> {
   // copie a été rendue sans jamais dire ce qu'elle vaut — sans elle, une copie
   // en attente disparaîtrait de l'écran et le stagiaire croirait l'avoir
   // perdue.
-  //
-  // Le cast est la dette connue des chaînes `select` (BACKLOG, points de
-  // vigilance) : `database.types.ts` se régénère depuis la base, donc la vue
-  // n'y figurera qu'une fois la migration poussée.
-  type LectureRemises = {
-    select: (colonnes: string) => {
-      eq: (
-        colonne: string,
-        valeur: string,
-      ) => PromiseLike<{
-        data: { id: string; controle_id: string }[] | null;
-        error: { message: string } | null;
-      }>;
-    };
-  };
-  const remisesRes = await (
-    supabase.from as unknown as (table: string) => LectureRemises
-  )("v_mes_remises")
+  const remisesRes = await supabase
+    .from("v_mes_remises")
     .select("id, controle_id")
     .eq("stagiaire_id", moi.id);
 

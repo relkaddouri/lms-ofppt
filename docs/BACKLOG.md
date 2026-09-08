@@ -400,6 +400,13 @@ L'espace formateur était pensé desktop-only ; il doit désormais fonctionner s
   **Test** : mesuré à 375px et contre-mesuré à 1280px. À 375 : `scrollWidth === clientWidth`, zéro élément hors page, 88 blocs empilés, aucun tableau visible, corps à 16px. À 1280 : 17 tableaux visibles, zéro bloc empilé, corps à 14px, tableaux à 13px, grille à trois colonnes — le rendu de bureau est inchangé, ce qui vaut aussi pour l'onglet Document du formateur.
   **Non vérifié à l'écran réel** : la page stagiaire elle-même, faute de session ouverte ; la mesure a porté sur `DocumentRedige` monté dans le même cadre que `SupportLecture`.
 
+- [x] **8.11 — Un second support par séance, celui du formateur** (PRD §4.4) : le formateur prépare deux documents et l'application n'en portait qu'un. Le support du stagiaire est remis ; le sien — conduite de séance, réponses attendues — n'a jamais eu d'endroit où vivre.
+  - **Une colonne, pas une table.** `supports_seance.destinataire` (`stagiaire` | `formateur`, migration `078`). C'est le même objet : mêmes versions, même partage entre séances miroir, même diaporama, mêmes PDF. Une seconde table aurait dupliqué le schéma, les policies et les index, et les aurait laissés diverger au premier changement. L'unicité passe de `(seance_id, version)` à `(seance_id, destinataire, version)` — sans quoi les deux supports se seraient disputé le numéro 1 ; la contrainte est retrouvée par sa définition, son nom ayant été donné par Postgres.
+  - **La garantie est dans la policy, pas dans les `select`.** `supports_lecture_stagiaire` ajoute `destinataire = 'stagiaire'` : une requête qui oublierait le filtre ne suffit pas à montrer au stagiaire ce qui ne lui est pas destiné. Les cinq lectures côté application le filtrent aussi, pour que l'intention se lise dans le code.
+  - **Un composant, deux destinataires.** `SupportSeance` prend une prop plutôt que d'être dupliqué : dupliquer l'écran aurait garanti qu'une amélioration apportée à l'un manque à l'autre au bout d'un mois. Le pied de page et le nom de fichier portent le suffixe, faute de quoi le second PDF écraserait le premier dans le dossier de téléchargements.
+  - **Quatre onglets ne tiennent plus sur 375px** : la barre défile horizontalement plutôt que de couper un libellé — défilement contenu, pas celui de la page.
+  **Test** : compilation verte, garde « use server » passée. **Non vérifié à l'écran** : la migration `078` n'est pas appliquée, donc l'onglet ne peut rien enregistrer tant que `npx supabase db push` n'a pas tourné.
+
 ---
 
 ## Points de vigilance — pas des atomes

@@ -1,6 +1,7 @@
 import { jsPDF } from "jspdf";
 import { dessinerEntete, type Marque } from "@/lib/pdf-marque";
 import { COULEURS, installerPolices, police } from "@/lib/pdf-theme";
+import { insecable } from "@/lib/typographie";
 
 /**
  * Résultat publié d'un contrôle, à imprimer et faire signer (PRD §4.7).
@@ -20,6 +21,12 @@ export type LigneResultat = {
   enonce: string;
   bareme: number;
   points: number;
+  /** Ce que le stagiaire a écrit. Absent des documents produits avant §4.7. */
+  reponse?: string | null;
+  /** La réponse attendue, telle que le formateur l'a préparée. */
+  corrige?: string | null;
+  /** Ce que le formateur a écrit sur cette question en particulier. */
+  commentaire?: string | null;
 };
 
 export type ResultatControle = {
@@ -93,33 +100,147 @@ export async function construireResultatPdf(
   //
   // Sans lui, « vérifié le recalcul des points obtenus » ne veut rien dire :
   // le stagiaire doit avoir sous les yeux ce qu'il atteste avoir recompté.
+  //
+  // Et pas seulement les points. Une note ne se vérifie pas contre elle-même :
+  // il faut relire ce qu'on a écrit, ce qui était attendu, et ce que le
+  // formateur en a dit. Les trois sont donc ici, sous chaque question. C'est ce
+  // qui distingue ce document d'un relevé de notes.
   police(doc, "corps", 9);
   doc.setTextColor(...COULEURS.ardoise);
-  doc.text("DÉTAIL DES POINTS", X, y);
+  doc.text("DÉTAIL PAR QUESTION", X, y);
   y += 5;
 
   doc.setDrawColor(...COULEURS.separateur).setLineWidth(0.2);
   doc.line(X, y, X + LARGEUR, y);
   y += 5;
 
-  r.lignes.forEach((l, i) => {
-    if (y > 235) {
-      doc.addPage();
-      y = 20;
+  const INTERLIGNE = 4.4;
+  /** Le retrait des trois blocs sous un énoncé. */
+  const RETRAIT = 6;
+  /** Le haut d'une page ajoutée, et le bas sous lequel plus rien ne s'écrit. */
+  const HAUT = 20;
+  const BAS = 268;
+
+  /** Écrit un texte replié en changeant de page au besoin. */
+  const couler = (
+    texte: string,
+    x: number,
+    largeur: number,
+    depart: number,
+    couleur: readonly [number, number, number],
+    pt = 8.5,
+  ): number => {
+    police(doc, "corps", pt);
+    const lignes: string[] = doc.splitTextToSize(insecable(texte), largeur);
+    let curseur = depart;
+    for (const ligne of lignes) {
+      if (curseur > BAS) {
+        doc.addPage();
+        curseur = HAUT;
+      }
+      police(doc, "corps", pt);
+      doc.setTextColor(...couleur);
+      doc.text(ligne, x, curseur);
+      curseur += 4;
     }
-    police(doc, "corps", 9);
-    doc.setTextColor(...COULEURS.corps);
-    const lignes: string[] = doc.splitTextToSize(
-      `${i + 1}. ${l.enonce}`,
+    return curseur;
+  };
+
+  r.lignes.forEach((l, i) => {
+    police(doc, "corpsGras", 9);
+    const enonce: string[] = doc.splitTextToSize(
+      insecable(`${i + 1}. ${l.enonce}`),
       LARGEUR - 30,
     );
-    doc.text(lignes[0]!, X, y);
+
+    // L'énoncé est écrit en entier. N'en garder que la première ligne le
+    // coupait en silence — « en trois temps : humain, comparé, » — sur un
+    // document qui vaut preuve : le stagiaire signait pour une question dont
+    // il manquait la fin, et c'est précisément ce que l'attestation prétend
+    // établir.
+
+    /** Ce qu'un bloc étiqueté occupera, 0 s'il n'a rien à dire. */
+    const hauteurBloc = (texte: string | null | undefined): number => {
+      if (!texte?.trim()) return 0;
+      police(doc, "corps", 8.5);
+      const n: number = doc.splitTextToSize(
+        insecable(texte.trim()),
+        LARGEUR - RETRAIT,
+      ).length;
+      return 3.8 + n * 4 + 1.8;
+    };
+
+    // Une question passe d'un bloc sur la page suivante plutôt que d'être
+    // coupée en deux : c'est ainsi qu'un commentaire se retrouvait seul en
+    // tête de page, détaché de la question qu'il commente — et donc manqué par
+    // celui qui relit avant de signer. Une question plus haute qu'une page
+    // entière reste coupée, faute de mieux, et ses blocs se répartissent.
+    const hauteurQuestion =
+      enonce.length * INTERLIGNE +
+      1.6 +
+      hauteurBloc(l.reponse) +
+      hauteurBloc(l.corrige) +
+      hauteurBloc(l.commentaire);
+
+    if (y + hauteurQuestion > BAS && hauteurQuestion <= BAS - HAUT) {
+      doc.addPage();
+      y = HAUT;
+    } else if (y + enonce.length * INTERLIGNE + 12 > BAS) {
+      doc.addPage();
+      y = HAUT;
+    }
+
+    const yEnonce = y;
+    police(doc, "corpsGras", 9);
+    doc.setTextColor(...COULEURS.encre);
+    enonce.forEach((ligne, k) => doc.text(ligne, X, y + k * INTERLIGNE));
+
+    // La note reste alignée sur la première ligne de l'énoncé : c'est là qu'on
+    // la cherche du regard en descendant la colonne.
     police(doc, "mono", 9);
     doc.setTextColor(...COULEURS.encre);
-    doc.text(`${l.points} / ${l.bareme}`, X + LARGEUR, y, { align: "right" });
-    y += 5.5;
+    doc.text(`${l.points} / ${l.bareme}`, X + LARGEUR, yEnonce, {
+      align: "right",
+    });
+    y += enonce.length * INTERLIGNE + 1.6;
+
+    /** Un bloc étiqueté sous l'énoncé, sauté s'il n'a rien à dire. */
+    const bloc = (
+      etiquette: string,
+      texte: string | null | undefined,
+      couleurEtiquette: readonly [number, number, number],
+    ) => {
+      if (!texte?.trim()) return;
+      // L'étiquette ne se sépare pas de sa première ligne.
+      if (y + 8 > BAS) {
+        doc.addPage();
+        y = HAUT;
+      }
+      police(doc, "mono", 7);
+      doc.setTextColor(...couleurEtiquette);
+      doc.text(etiquette, X + RETRAIT, y);
+      y = couler(texte.trim(), X + RETRAIT, LARGEUR - RETRAIT, y + 3.8, COULEURS.corps);
+      y += 1.8;
+    };
+
+    // La réponse attendue porte le seul point de couleur : c'est ce que le
+    // stagiaire cherche en premier quand il conteste un point.
+    bloc("VOTRE RÉPONSE", l.reponse, COULEURS.ardoiseClaire);
+    bloc("RÉPONSE ATTENDUE", l.corrige, COULEURS.sarcelle);
+    bloc("COMMENTAIRE DU FORMATEUR", l.commentaire, COULEURS.ardoiseClaire);
+
+    y += 1.5;
+    if (i < r.lignes.length - 1 && y < BAS) {
+      doc.setDrawColor(...COULEURS.separateur).setLineWidth(0.2);
+      doc.line(X, y, X + LARGEUR, y);
+      y += 5;
+    }
   });
 
+  if (y + 24 > BAS) {
+    doc.addPage();
+    y = HAUT;
+  }
   y += 2;
   doc.setDrawColor(...COULEURS.bordureForte).setLineWidth(0.4);
   doc.line(X, y, X + LARGEUR, y);

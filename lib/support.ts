@@ -143,3 +143,14 @@ export function ressourceHonoree(annoncee: string, support: Support): boolean {
   if (mots.length === 0) return foin.includes(aiguille);
   return mots.every((m) => foin.includes(m));
 }
+
+/**
+ * À qui un support est destiné (PRD §4.4).
+ *
+ * `stagiaire` : le document remis, lisible dans son espace. `formateur` : la
+ * version que le formateur garde pour lui — conduite de séance, réponses
+ * attendues —, que la policy `supports_lecture_stagiaire` ne sert jamais à un
+ * stagiaire. Les deux vivent dans la même table, avec les mêmes versions et le
+ * même partage entre séances miroir.
+ */
+export type DestinataireSupport = "stagiaire" | "formateur";

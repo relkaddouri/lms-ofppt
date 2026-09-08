@@ -252,6 +252,10 @@ Pour chaque phase, l'écran affiche :
 
 **Cohérence stricte entre fiche et support — ajout v3, non négociable.** Tout document, vidéo, lien ou ressource **mentionné dans la fiche de préparation** doit être **effectivement présent et trouvable dans le support** — pour la partie théorique comme pour la partie pratique. Si la fiche évoque "voir la vidéo sur X" ou "document de référence Y", ce n'est jamais une référence dans le vide : le support doit contenir cette ressource ou un lien direct vers elle. La génération IA du support doit lire la fiche associée et s'assurer que toutes ses références y sont honorées.
 
+**Deux supports par séance — ajout du 8 septembre 2026, demande du porteur de projet.** Le formateur prépare deux documents distincts, et l'application n'en portait qu'un. Le **support du stagiaire** est celui qui est remis : il dit ce qu'il faut retenir, il est lisible dans l'espace stagiaire, il porte les questions qu'on lui pose. Le **support du formateur** est le sien : conduite de séance, réponses attendues, ce qu'il projette pour lui. Il n'est **jamais servi à un stagiaire**, et cette garantie est portée par la policy de lecture, pas par un filtre applicatif.
+
+Les deux sont le même objet à tous les autres égards : même rédaction markdown, même génération, même diaporama 16:9, mêmes PDF, même historique de versions, même partage entre séances parallèles. Ils se distinguent par leur destinataire, par leur onglet, et par le pied de page et le nom de fichier de leurs documents — deux PDF de la même séance ne doivent pas se confondre dans un dossier de téléchargements.
+
 **Support riche — pas un contenu minimal.** Le support ne doit pas se limiter à du texte brut : la génération doit intégrer, quand c'est pertinent, des **schémas, images, liens vers des articles de référence** et tout élément qui approfondit et enrichit l'explication. L'objectif est un support que le stagiaire peut consulter en autonomie et qui reste utile même hors de la présence du formateur, pas juste un squelette de diaporama.
 
 **Deux documents distincts par module — support théorique et support pratique**, tranché par le porteur de projet :
@@ -328,6 +332,8 @@ Ce n'est pas un bug ni un oubli — la section est volontairement retirée, gard
 > *"Je soussigné(e) [Nom du stagiaire], déclare avoir pris connaissance du présent résultat, vérifié le recalcul des points obtenus, et atteste qu'il est exact."*
 
 Ce texte sert de preuve de vérification contradictoire, utile au formateur face à la Direction en cas de contestation ultérieure sur une note. *Formulation proposée à valider par le porteur de projet — modifiable avant l'implémentation si le libellé ne convient pas exactement.*
+
+**Ce que le document doit contenir pour que l'attestation ait un sens — ajout du 8 septembre 2026, demande du porteur de projet.** Le stagiaire déclare avoir « vérifié le recalcul des points » : il faut donc qu'il ait de quoi vérifier. Sous chaque question, le document porte l'énoncé complet, les points obtenus sur le barème, **la réponse qu'il a écrite**, **la réponse attendue** et **le commentaire du formateur sur cette question**. Un relevé de notes sans ces trois éléments ne se vérifie pas : il se subit. Une question ne se coupe jamais entre deux pages, faute de quoi le commentaire se retrouve orphelin en tête de page et manque à celui qui relit avant de signer.
 
 **Règles réglementaires précises confirmées par le cahier du formateur officiel — à intégrer comme échéances/alertes dans le produit, pas juste comme texte informatif :**
 

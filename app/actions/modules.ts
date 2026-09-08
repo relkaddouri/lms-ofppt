@@ -401,10 +401,13 @@ export async function getDocumentsModule(
   const sources = [...new Set(sourceDe.values())];
 
   const [supportsRes, correctionsRes] = await Promise.all([
+    // Seul le support du stagiaire compte comme « support fait » : celui du
+    // formateur ne se remet pas, il ne remplit pas la case.
     supabase
       .from("supports_seance")
       .select("seance_id")
-      .in("seance_id", sources),
+      .in("seance_id", sources)
+      .eq("destinataire", "stagiaire"),
     supabase
       .from("corrections_tp")
       .select("seance_id")
@@ -513,11 +516,14 @@ export async function getCompilationModule(
     retenues.map((s) => [s.id, s.contenu_source_id ?? s.id]),
   );
 
+  // Le classeur compile ce qui a été remis aux stagiaires. Le support que le
+  // formateur garde pour lui n'y entre pas.
   const { data: supports } = await supabase
     .from("supports_seance")
     .select("seance_id, contenu, version, type")
     .in("seance_id", [...new Set(sourceDe.values())])
     .eq("type", genre === "pratique" ? "pratique" : "theorique")
+    .eq("destinataire", "stagiaire")
     .order("version", { ascending: false });
 
   const dernier = new Map<string, Support>();

@@ -1829,6 +1829,7 @@ export type Database = {
         Row: {
           contenu: Json
           created_at: string
+          destinataire: string
           id: string
           seance_id: string
           type: string
@@ -1837,6 +1838,7 @@ export type Database = {
         Insert: {
           contenu: Json
           created_at?: string
+          destinataire?: string
           id?: string
           seance_id: string
           type: string
@@ -1845,6 +1847,7 @@ export type Database = {
         Update: {
           contenu?: Json
           created_at?: string
+          destinataire?: string
           id?: string
           seance_id?: string
           type?: string

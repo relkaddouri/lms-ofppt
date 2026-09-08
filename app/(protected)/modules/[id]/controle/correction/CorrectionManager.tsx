@@ -103,9 +103,18 @@ export default function CorrectionManager({
 
   const active = reponses[index] ?? null;
   const corrigees = reponses.filter(estCorrigee).length;
-  const [publie, setPublie] = useState<boolean>(
-    Boolean(copies.find((c) => c.id === copieInitiale)?.publie_le),
-  );
+  // La publication se lit sur la copie ouverte, et non dans un booléen figé à
+  // l'ouverture de l'écran. Passer à la copie suivante ne remonte pas le
+  // composant : l'état gardait la valeur de la copie précédente, et le bouton
+  // proposait de dépublier une copie jamais publiée — ou l'inverse, plus grave,
+  // en laissant croire qu'un résultat était parti.
+  //
+  // Les bascules faites dans la session sont retenues à part : la liste vient
+  // du serveur et ne se rafraîchit pas au clic.
+  const [publications, setPublications] = useState<Record<string, boolean>>({});
+  const publie = copie
+    ? (publications[copie.id] ?? Boolean(copie.publie_le))
+    : false;
   const [busyPublication, setBusyPublication] = useState(false);
 
   async function basculerPublication(publier: boolean) {
@@ -113,7 +122,7 @@ export default function CorrectionManager({
     setBusyPublication(true);
     try {
       await publierResultat(copie.id, publier);
-      setPublie(publier);
+      setPublications((p) => ({ ...p, [copie.id]: publier }));
       toast(
         publier
           ? `Résultat publié — ${copie.nom_complet} le voit désormais.`
@@ -151,10 +160,16 @@ export default function CorrectionManager({
           datePublication: formatDate(new Date().toISOString()),
           note,
           total: totalAttendu,
+          // La réponse, le corrigé et le commentaire partent avec les points :
+          // sans eux, le stagiaire atteste avoir « vérifié le recalcul » sans
+          // rien avoir à vérifier.
           lignes: reponses.map((r) => ({
             enonce: r.enonce,
             bareme: Number(r.bareme ?? 0),
             points: Number(r.points ?? 0),
+            reponse: r.reponse,
+            corrige: r.corrige,
+            commentaire: r.commentaire,
           })),
         },
         `${slugify(`resultat ${copie.nom_complet}`, "resultat")}.pdf`,

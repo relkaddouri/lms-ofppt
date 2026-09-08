@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import type { DestinataireSupport } from "@/lib/support";
 import { libelleModule } from "@/lib/modules";
 import { revalidatePath } from "next/cache";
 import {
@@ -241,6 +242,9 @@ export type SeanceDetail = {
   ficheVersion: number | null;
   supportContenu: unknown | null;
   supportVersion: number | null;
+  /** Le support que le formateur garde pour lui — jamais servi au stagiaire. */
+  supportFormateurContenu: unknown | null;
+  supportFormateurVersion: number | null;
   /** Correction du TP, réservée au formateur et postérieure à la séance (§4.4). */
   correction: CorrectionTp | null;
   correctionVersion: number | null;
@@ -265,6 +269,7 @@ export async function saveSupport(
   seanceId: string,
   type: "theorique" | "pratique",
   contenu: Json,
+  destinataire: DestinataireSupport = "stagiaire",
 ) {
   const supabase = await createClient();
   // §4.3bis : le support suit la même règle que la fiche — il s'écrit sur la
@@ -275,6 +280,7 @@ export async function saveSupport(
     .from("supports_seance")
     .select("version")
     .eq("seance_id", source)
+    .eq("destinataire", destinataire)
     .order("version", { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -283,7 +289,7 @@ export async function saveSupport(
   const version = (derniere?.version ?? 0) + 1;
   const { error } = await supabase
     .from("supports_seance")
-    .insert({ seance_id: source, type, contenu, version });
+    .insert({ seance_id: source, type, contenu, version, destinataire });
   if (error) throw new Error(error.message);
 
   revalidatePath("/groupes");
@@ -305,14 +311,20 @@ export async function saveSupport(
  * depuis un groupe vide bien pour les deux quand la séance est partagée —
  * c'est la contrepartie du partage, et l'écran le dit.
  */
-export async function viderSupport(seanceId: string): Promise<number> {
+export async function viderSupport(
+  seanceId: string,
+  destinataire: DestinataireSupport = "stagiaire",
+): Promise<number> {
   const supabase = await createClient();
   const source = await sourceContenu(seanceId);
 
+  // Le destinataire borne la suppression : vider le support du formateur ne
+  // touche pas à celui du stagiaire, et réciproquement.
   const { data, error } = await supabase
     .from("supports_seance")
     .delete()
     .eq("seance_id", source)
+    .eq("destinataire", destinataire)
     .select("id");
   if (error) throw new Error(error.message);
 
@@ -386,8 +398,14 @@ export async function getSeanceDetail(
   // §4.3bis : une séance miroir lit la fiche et le support de sa source.
   const sourceDuContenu = s.contenu_source_id ?? s.id;
 
-  const [stagiairesRes, presencesRes, remarquesRes, ficheRes, supportRes] =
-    await Promise.all([
+  const [
+    stagiairesRes,
+    presencesRes,
+    remarquesRes,
+    ficheRes,
+    supportRes,
+    supportFormateurRes,
+  ] = await Promise.all([
     supabase
       .from("stagiaires")
       .select("id, nom, prenom")
@@ -413,6 +431,15 @@ export async function getSeanceDetail(
       .from("supports_seance")
       .select("id, contenu, version")
       .eq("seance_id", sourceDuContenu)
+      .eq("destinataire", "stagiaire")
+      .order("version", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    supabase
+      .from("supports_seance")
+      .select("id, contenu, version")
+      .eq("seance_id", sourceDuContenu)
+      .eq("destinataire", "formateur")
       .order("version", { ascending: false })
       .limit(1)
       .maybeSingle(),
@@ -464,6 +491,10 @@ export async function getSeanceDetail(
     supportContenu: supportRes.data?.contenu ?? null,
     supportVersion: supportRes.data?.version ?? null,
     supportId: supportRes.data?.id ?? null,
+    // Le support que le formateur garde pour lui. Les questions des stagiaires
+    // ne s'y rattachent pas : ils n'y ont pas accès.
+    supportFormateurContenu: supportFormateurRes.data?.contenu ?? null,
+    supportFormateurVersion: supportFormateurRes.data?.version ?? null,
     questions: supportRes.data?.id
       ? await chargerQuestions(supportRes.data.id, groupeId)
       : [],
