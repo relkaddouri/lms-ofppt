@@ -107,6 +107,13 @@ export type PassationDetail = {
 export type Passation = {
   id: string;
   controle_id: string;
+  /**
+   * Le CEF du stagiaire, quand la copie est rattachée à son compte.
+   *
+   * Nul pour les copies antérieures au rattachement (migration 038), qui
+   * n'étaient identifiées que par le nom saisi au clavier.
+   */
+  cef?: string | null;
   /** Date de publication du résultat au stagiaire, `null` tant qu'il attend. */
   publie_le?: string | null;
   nom_complet: string;
@@ -287,16 +294,23 @@ export async function deleteControle(id: string, moduleId: string) {
 
 export async function getPassations(controleId: string): Promise<Passation[]> {
   const supabase = await createClient();
+  // Le CEF vient de la fiche du stagiaire : il nomme le document remis, et
+  // c'est le seul identifiant qui distingue deux homonymes.
   const { data, error } = await supabase
     .from("passations_controle")
     .select(
-      "id, controle_id, nom_complet, email, note, responses, submitted_at, publie_le",
+      "id, controle_id, nom_complet, email, note, responses, submitted_at, publie_le, stagiaires(cef)",
     )
     .eq("controle_id", controleId)
     .order("submitted_at", { ascending: true });
 
   if (error) throw new Error(error.message);
-  return (data ?? []) as Passation[];
+  return (data ?? []).map((p) => {
+    const { stagiaires, ...reste } = p as typeof p & {
+      stagiaires: { cef: string | null } | null;
+    };
+    return { ...reste, cef: stagiaires?.cef ?? null } as Passation;
+  });
 }
 
 /**

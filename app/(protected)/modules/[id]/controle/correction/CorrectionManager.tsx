@@ -15,7 +15,13 @@ import Avatar from "@/components/ui/Avatar";
 import Button from "@/components/ui/Button";
 import { inputStyles } from "@/components/ui/Input";
 import { useToast } from "@/components/ui/Toast";
-import { formatDate, formatDateJour, formatDateTime, slugify } from "@/lib/format";
+import {
+  formatDate,
+  formatDateJour,
+  formatDateTime,
+  maintenant,
+  slugify,
+} from "@/lib/format";
 import { dureeEnTexte, finEpreuve, formatHeure } from "@/lib/creneaux";
 import { getEtablissement } from "@/app/actions/etablissement";
 import { marqueDe } from "@/lib/pdf-marque";
@@ -150,6 +156,28 @@ export default function CorrectionManager({
       const ctl = controles.find((c) => c.id === controleId) ?? null;
       const dateEpreuve = ctl?.date_administration ?? ctl?.date_prevue ?? null;
 
+      /**
+       * Le code de l'épreuve : CC1, CC2… ou EFML / EFMR.
+       *
+       * Le rang n'est stocké nulle part — il se lit dans l'ordre des contrôles
+       * du même type sur ce groupe et ce module, qui est celui dans lequel ils
+       * ont été passés. Le stocker aurait obligé à le renuméroter à chaque
+       * contrôle inséré entre deux autres.
+       */
+      const codeEpreuve = (() => {
+        if (!ctl) return "controle";
+        if (ctl.type === "EFM") {
+          return ctl.type_efm === "regional" ? "EFMR" : "EFML";
+        }
+        const quand = (c: (typeof controles)[number]) =>
+          c.date_administration ?? c.date_prevue ?? c.created_at;
+        const memeType = controles
+          .filter((c) => c.type === ctl.type)
+          .sort((a, b) => quand(a).localeCompare(quand(b)));
+        const rang = memeType.findIndex((c) => c.id === ctl.id) + 1;
+        return rang > 0 ? `CC${rang}` : "CC";
+      })();
+
       // L'horaire vient de l'emploi du temps : le contrôle est programmé un
       // jour donné, et ce jour-là le groupe a un créneau. Le redemander au
       // formateur aurait créé une seconde vérité.
@@ -209,7 +237,21 @@ export default function CorrectionManager({
             commentaire: r.commentaire,
           })),
         },
-        `${slugify(`resultat ${copie.nom_complet}`, "resultat")}.pdf`,
+        // NOM_MODULE_CEF_ÉPREUVE_DATE, dans cet ordre : le nom d'abord, parce
+        // que c'est par lui qu'on cherche un document déjà classé. La date est
+        // en ISO — les barres obliques sont interdites dans un nom de fichier,
+        // et « 07-09-2026 » ne se trie pas chronologiquement. Un segment sans
+        // valeur, un CEF absent par exemple, disparaît plutôt que de laisser
+        // un trou entre deux tirets bas.
+        `${[
+          slugify(copie.nom_complet, "stagiaire"),
+          moduleCode ? slugify(moduleCode) : null,
+          copie.cef ? slugify(copie.cef) : null,
+          codeEpreuve,
+          dateEpreuve ?? maintenant(),
+        ]
+          .filter(Boolean)
+          .join("_")}.pdf`,
         marqueDe(etablissement),
       );
     } catch (e) {
