@@ -1,8 +1,16 @@
 import { jsPDF } from "jspdf";
-import { dessinerLogo, type Marque } from "@/lib/pdf-marque";
+import type { Marque } from "@/lib/pdf-marque";
+import { dessinerCartouche, LARGEUR, X } from "@/lib/pdf-cartouche";
 import { COULEURS, installerPolices, police } from "@/lib/pdf-theme";
 import { insecable } from "@/lib/typographie";
 import { dessinerQr, tailleQr } from "@/lib/pdf-qr";
+import type {
+  Identification,
+  LigneResultat,
+  ResultatControle,
+} from "@/lib/resultat";
+
+export type { Identification, LigneResultat, ResultatControle };
 
 /**
  * Résultat publié d'un contrôle, à imprimer et faire signer (PRD §4.7).
@@ -18,173 +26,36 @@ import { dessinerQr, tailleQr } from "@/lib/pdf-qr";
  * note est contestée plus tard. Elle est reprise mot pour mot du PRD.
  */
 
-export type LigneResultat = {
-  enonce: string;
-  bareme: number;
-  points: number;
-  /** Ce que le stagiaire a écrit. Absent des documents produits avant §4.7. */
-  reponse?: string | null;
-  /** La réponse attendue, telle que le formateur l'a préparée. */
-  corrige?: string | null;
-  /** Ce que le formateur a écrit sur cette question en particulier. */
-  commentaire?: string | null;
-};
-
-/**
- * Le cartouche d'identification, en tête du document.
- *
- * Un résultat signé est une pièce administrative : il doit dire de lui-même
- * d'où il vient, sans qu'on ait à ouvrir l'application. Établissement,
- * filière, groupe, module, formateur, épreuve, date et horaire — c'est ce que
- * la Direction cherche en le prenant en main, et ce qu'aucune ligne de
- * contexte en petits caractères ne remplaçait.
- *
- * Chaque champ est facultatif : une ligne sans valeur ne s'imprime pas plutôt
- * que d'afficher une étiquette sur du vide.
- */
-export type Identification = {
-  etablissement?: string | null;
-  /** Le Code d'Enregistrement du Formé — l'identifiant OFPPT du stagiaire. */
-  cef?: string | null;
-  filiere?: string | null;
-  groupe?: string | null;
-  anneeScolaire?: string | null;
-  module?: string | null;
-  formateur?: string | null;
-  matricule?: string | null;
-  /** « Lundi 07/09/2026 ». */
-  dateEpreuve?: string | null;
-  /** « de 8 h 30 à 11 h · 2 h 30 », déduit de l'emploi du temps. */
-  horaire?: string | null;
-};
-
-export type ResultatControle = {
-  titre: string;
-  stagiaire: string;
-  /** « Contrôle continu » ou « Épreuve de fin de module ». */
-  nature: string;
-  datePublication: string;
-  note: number;
-  total: number;
-  /** L'identifiant de la copie, porté par le QR code au bas du document. */
-  reference: string;
-  identification: Identification;
-  lignes: LigneResultat[];
-};
-
-const X = 16;
-const LARGEUR = 178;
-
 /** Le texte d'attestation, validé par le porteur de projet (PRD §4.7). */
 export function attestation(stagiaire: string): string {
   return `Je soussigné(e) ${stagiaire}, déclare avoir pris connaissance du présent résultat, vérifié le recalcul des points obtenus, et atteste qu'il est exact.`;
 }
 
-export async function construireResultatPdf(
+/**
+ * Dessine un résultat dans un document, à partir de la page courante.
+ *
+ * Séparé de la création du document pour que le lot puisse enchaîner les
+ * copies dans un seul fichier : le formateur qui publie une classe entière
+ * lance une impression, pas vingt-cinq.
+ */
+export function dessinerResultat(
+  doc: jsPDF,
   r: ResultatControle,
   marque?: Marque,
-): Promise<jsPDF> {
-  const doc = new jsPDF({ unit: "mm", format: "a4" });
-  await installerPolices(doc);
-
-  // ── En-tête : le logo seul ───────────────────────────────────────────────
-  //
-  // Le nom du centre n'est plus posé à côté du logo : il le répétait presque
-  // mot pour mot, et les deux se disputaient la largeur. Il descend dans le
-  // cartouche, où il est une donnée du document parmi les autres.
-  const largeurLogo = dessinerLogo(doc, marque, X, 13, 13, LARGEUR * 0.4);
-
-  police(doc, "titre", 17);
-  doc.setTextColor(...COULEURS.encre);
-  doc.text("Résultat d'évaluation", X + (largeurLogo > 0 ? largeurLogo + 7 : 0), 22);
-
-  police(doc, "mono", 8);
-  doc.setTextColor(...COULEURS.ardoiseClaire);
-  doc.text(r.nature.toLocaleUpperCase("fr"), X + LARGEUR, 17, { align: "right" });
-  police(doc, "corps", 8.5);
-  doc.setTextColor(...COULEURS.ardoise);
-  doc.text(`Publié le ${r.datePublication}`, X + LARGEUR, 22, { align: "right" });
-
-  let y = 32;
-
-  // ── Cartouche d'identification ───────────────────────────────────────────
-  //
-  // Un tableau à filets plutôt qu'une ligne de texte gris : c'est la forme
-  // qu'ont les documents de l'établissement, et surtout la seule qui se
-  // parcoure du regard quand on cherche un champ précis.
+): void {
+  const premierePage = doc.getCurrentPageInfo().pageNumber;
   const id = r.identification;
-  const rangs: [string, string | null | undefined][][] = [
-    [["ÉTABLISSEMENT", id.etablissement]],
-    [
-      ["FILIÈRE", id.filiere],
-      ["ANNÉE SCOLAIRE", id.anneeScolaire],
-    ],
-    [
-      ["GROUPE", id.groupe],
-      ["FORMATEUR", [id.formateur, id.matricule && `mat. ${id.matricule}`]
-        .filter(Boolean)
-        .join(" · ") || null],
-    ],
-    [["MODULE", id.module]],
-    [["ÉPREUVE", r.titre]],
-    [
-      ["DATE", id.dateEpreuve],
-      ["HORAIRE", id.horaire],
-    ],
-  ];
-
-  const retenus = rangs
-    .map((rang) => rang.filter(([, valeur]) => valeur?.trim()))
-    .filter((rang) => rang.length > 0);
-
-  if (retenus.length > 0) {
-    const LARGEUR_ETIQUETTE = 30;
-    const hautCartouche = y;
-
-    retenus.forEach((rang, i) => {
-      const colonne = LARGEUR / rang.length;
-      const place = colonne - LARGEUR_ETIQUETTE - 6;
-
-      // La hauteur du rang suit son contenu. Fixée à une ligne, elle coupait
-      // « Digital Design, option UX Design · 2e année » au milieu du mot — sur
-      // un cartouche d'identification, une valeur tronquée ne vaut rien.
-      police(doc, "corps", 8.8);
-      const cellules = rang.map(([etiquette, valeur]) => ({
-        etiquette,
-        lignes: doc.splitTextToSize(insecable(valeur!.trim()), place) as string[],
-      }));
-      const hauteur = Math.max(
-        8,
-        ...cellules.map((c) => c.lignes.length * 4.2 + 3.6),
-      );
-
-      if (i > 0) {
-        doc.setDrawColor(...COULEURS.bordure).setLineWidth(0.2);
-        doc.line(X, y, X + LARGEUR, y);
-      }
-      cellules.forEach((cellule, k) => {
-        const cx = X + k * colonne;
-        if (k > 0) {
-          doc.setDrawColor(...COULEURS.bordure).setLineWidth(0.2);
-          doc.line(cx, y, cx, y + hauteur);
-        }
-        police(doc, "mono", 6.8);
-        doc.setTextColor(...COULEURS.ardoiseClaire);
-        doc.text(cellule.etiquette, cx + 3, y + 5.4);
-        police(doc, "corps", 8.8);
-        doc.setTextColor(...COULEURS.encre);
-        cellule.lignes.forEach((ligne, l) =>
-          doc.text(ligne, cx + LARGEUR_ETIQUETTE, y + 5.4 + l * 4.2),
-        );
-      });
-      y += hauteur;
-    });
-
-    doc.setDrawColor(...COULEURS.bordureForte).setLineWidth(0.3);
-    doc.rect(X, hautCartouche, LARGEUR, y - hautCartouche);
-    y += 9;
-  }
-
+  let y = dessinerCartouche(
+    doc,
+    {
+      titre: "Résultat d'évaluation",
+      nature: r.nature,
+      epreuve: r.titre,
+      mention: `Publié le ${r.datePublication}`,
+      identification: id,
+    },
+    marque,
+  );
   // ── Identité et note ─────────────────────────────────────────────────────
   //
   // Sur fond encre : c'est la seule information qu'on cherche à un mètre de
@@ -471,8 +342,13 @@ export async function construireResultatPdf(
   );
 
   // ── Pied de page ─────────────────────────────────────────────────────────
-  const pages = doc.getNumberOfPages();
-  for (let p = 1; p <= pages; p++) {
+  //
+  // Numéroté à l'intérieur du résultat et non du fichier : dans un lot, le
+  // stagiaire reçoit ses deux pages détachées du reste, et « page 2 / 2 » lui
+  // dit qu'il les a toutes. « Page 14 / 31 » ne lui dirait rien.
+  const derniere = doc.getNumberOfPages();
+  const total = derniere - premierePage + 1;
+  for (let p = premierePage; p <= derniere; p++) {
     doc.setPage(p);
     police(doc, "corps", 7.5);
     doc.setTextColor(...COULEURS.muet);
@@ -482,9 +358,19 @@ export async function construireResultatPdf(
       289,
       { maxWidth: LARGEUR - 30 },
     );
-    doc.text(`Page ${p} / ${pages}`, X + LARGEUR, 289, { align: "right" });
+    doc.text(`Page ${p - premierePage + 1} / ${total}`, X + LARGEUR, 289, {
+      align: "right",
+    });
   }
+}
 
+export async function construireResultatPdf(
+  r: ResultatControle,
+  marque?: Marque,
+): Promise<jsPDF> {
+  const doc = new jsPDF({ unit: "mm", format: "a4" });
+  await installerPolices(doc);
+  dessinerResultat(doc, r, marque);
   return doc;
 }
 

@@ -3,14 +3,17 @@
 import { useEffect, useRef, useState } from "react";
 import { getPassations, type Passation } from "@/app/actions/controles";
 import Link from "next/link";
-import { Download, PenLine } from "lucide-react";
+import { ClipboardList, FileSignature, Files, PenLine } from "lucide-react";
 import Badge from "@/components/ui/Badge";
 import Button, { buttonStyles } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
 
-import { formatDateTime, slugify } from "@/lib/format";
-import { getEtablissement } from "@/app/actions/etablissement";
-import { marqueDe } from "@/lib/pdf-marque";
+import { formatDateTime } from "@/lib/format";
+import {
+  telechargerEmargement,
+  telechargerLotResultats,
+  telechargerResultatSigne,
+} from "@/lib/telecharger-resultat";
 
 function noteTone(note: number): "success" | "info" | "danger" {
   if (note >= 10) return "success";
@@ -37,7 +40,11 @@ export default function CopiesManager({
   const [passations, setPassations] = useState<Passation[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [busy, setBusy] = useState(false);
+  const [busySigne, setBusySigne] = useState(false);
+  const [busyLot, setBusyLot] = useState<"lot" | "emargement" | null>(null);
+  // Coché par défaut : le dossier remis à l'administration s'ouvre sur la
+  // présence. Le formateur qui n'imprime que pour rendre les copies décoche.
+  const [avecEmargement, setAvecEmargement] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const toast = useToast();
 
@@ -66,43 +73,71 @@ export default function CopiesManager({
     };
   }, [controleId]);
 
-  async function handleDownloadPdf() {
+
+
+  /**
+   * Le résultat à signer, depuis la liste des copies.
+   *
+   * Le même document que sur l'écran de correction, par le même chemin : le
+   * formateur qui vient de publier une série de copies les édite ici, l'une
+   * après l'autre, sans repasser par la correction de chacune.
+   */
+  async function handleResultatSigne() {
     if (!selected) return;
-    setBusy(true);
+    setBusySigne(true);
     try {
-      const [{ telechargerCopiePdf }, marque] = await Promise.all([
-        import("@/lib/pdf-copie"),
-        getEtablissement(),
-      ]);
-      await telechargerCopiePdf(
-        {
-          titre: controleTitre || "Contrôle",
-          stagiaire: selected.nom_complet,
-          email: selected.email,
-          dateRemise: formatDateTime(selected.submitted_at),
-          note: Number(selected.note) || 0,
-          total: totalAttendu,
-          questions: (selected.responses ?? []).map((d) => ({
-            enonce: d.enonce,
-            bareme: d.bareme,
-            points: d.points ?? 0,
-            commentaire: d.commentaire,
-            reponse: d.reponse,
-            corrige: d.corrige,
-          })),
-          // Le formateur archive la copie avec le corrigé de référence.
-          avecCorrige: true,
-        },
-        `copie-${slugify(selected.nom_complet, "copie")}-${slugify(controleTitre || "controle", "controle")}.pdf`,
-        marqueDe(marque),
-      );
+      const fait = await telechargerResultatSigne(selected.id);
+      if (!fait) {
+        toast(
+          "Publiez d'abord le résultat, depuis l'écran de correction.",
+          "error",
+        );
+      }
     } catch (err) {
       toast(
         err instanceof Error ? err.message : "Erreur de génération du PDF",
         "error",
       );
     } finally {
-      setBusy(false);
+      setBusySigne(false);
+    }
+  }
+
+  /** Toutes les copies publiées, en un fichier. */
+  async function handleLot() {
+    setBusyLot("lot");
+    try {
+      const nombre = await telechargerLotResultats(controleId, avecEmargement);
+      if (nombre === 0) {
+        toast("Aucun résultat publié pour ce contrôle.", "error");
+      } else {
+        toast(
+          `${nombre} résultat${nombre > 1 ? "s" : ""} dans un seul fichier.`,
+        );
+      }
+    } catch (err) {
+      toast(
+        err instanceof Error ? err.message : "Erreur de génération du PDF",
+        "error",
+      );
+    } finally {
+      setBusyLot(null);
+    }
+  }
+
+  /** La feuille d'émargement seule, imprimable avant l'épreuve. */
+  async function handleEmargement() {
+    setBusyLot("emargement");
+    try {
+      const fait = await telechargerEmargement(controleId);
+      if (!fait) toast("Contrôle introuvable.", "error");
+    } catch (err) {
+      toast(
+        err instanceof Error ? err.message : "Erreur de génération du PDF",
+        "error",
+      );
+    } finally {
+      setBusyLot(null);
     }
   }
 
@@ -120,6 +155,45 @@ export default function CopiesManager({
           leur espace, une fois le contrôle validé.
         </p>
       ) : (
+        <>
+        {/* ── Le dossier complet ────────────────────────────────────────
+            Deux documents que l'administration attend ensemble : qui était
+            présent, puis ce que chacun a obtenu. Ils vivent au-dessus de la
+            liste parce qu'ils portent sur le contrôle entier, pas sur la
+            copie sélectionnée. */}
+        <div className="mb-5 flex flex-wrap items-center gap-3 rounded-[14px] border border-border bg-surface p-[18px] shadow-repos">
+          <Button
+            variant="secondary"
+            size="sm"
+            icon={Files}
+            onClick={handleLot}
+            loading={busyLot === "lot"}
+            loadingLabel="Assemblage…"
+          >
+            Toutes les copies (PDF)
+          </Button>
+          <label className="flex cursor-pointer items-center gap-2 text-sm text-body">
+            <input
+              type="checkbox"
+              checked={avecEmargement}
+              onChange={(e) => setAvecEmargement(e.target.checked)}
+              className="h-4 w-4 accent-ink"
+            />
+            Joindre la feuille d&apos;émargement en tête
+          </label>
+          <Button
+            variant="ghost"
+            size="sm"
+            icon={ClipboardList}
+            onClick={handleEmargement}
+            loading={busyLot === "emargement"}
+            loadingLabel="Génération…"
+            className="ml-auto"
+          >
+            Feuille d&apos;émargement seule
+          </Button>
+        </div>
+
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-[340px_1fr]">
           <div className="rounded-[14px] border border-border bg-surface shadow-repos p-3">
             <h2 className="px-1 text-sm font-medium text-ink">
@@ -163,16 +237,21 @@ export default function CopiesManager({
                     {formatDateTime(selected.submitted_at)}
                   </p>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  icon={Download}
-                  onClick={handleDownloadPdf}
-                  loading={busy}
-                  loadingLabel="Génération…"
-                >
-                  Télécharger la copie (PDF)
-                </Button>
+                {/* Le résultat n'a de sens qu'une fois publié : le bouton
+                    n'apparaît donc qu'à ce moment-là plutôt que de mener à un
+                    refus. */}
+                {selected.publie_le ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    icon={FileSignature}
+                    onClick={handleResultatSigne}
+                    loading={busySigne}
+                    loadingLabel="Génération…"
+                  >
+                    Résultat à signer (PDF)
+                  </Button>
+                ) : null}
                 {/* La liste ne fait que montrer ; corriger se passe sur
                     l'écran dédié, copie par copie. */}
                 <Link
@@ -240,6 +319,7 @@ export default function CopiesManager({
             </div>
           ) : null}
         </div>
+        </>
       )}
 
     </div>

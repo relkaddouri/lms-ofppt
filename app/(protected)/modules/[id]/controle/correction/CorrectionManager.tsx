@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import {
   corrigerPassation,
   publierResultat,
-  getDebutEpreuve,
   type Controle,
   type Passation,
   type PassationDetail,
@@ -15,16 +14,8 @@ import Avatar from "@/components/ui/Avatar";
 import Button from "@/components/ui/Button";
 import { inputStyles } from "@/components/ui/Input";
 import { useToast } from "@/components/ui/Toast";
-import {
-  formatDate,
-  formatDateJour,
-  formatDateTime,
-  maintenant,
-  slugify,
-} from "@/lib/format";
-import { dureeEnTexte, finEpreuve, formatHeure } from "@/lib/creneaux";
-import { getEtablissement } from "@/app/actions/etablissement";
-import { marqueDe } from "@/lib/pdf-marque";
+import { formatDateTime } from "@/lib/format";
+import { telechargerResultatSigne } from "@/lib/telecharger-resultat";
 import { ChevronRight, Download, Eye, EyeOff, X, Zap } from "lucide-react";
 import { libelleModule } from "@/lib/modules";
 import BandeauIa from "@/components/BandeauIa";
@@ -57,9 +48,6 @@ export default function CorrectionManager({
   moduleNom,
   moduleCode,
   groupeId,
-  groupeNom,
-  filiere,
-  anneeGroupe,
   controles,
   controleId,
   copies,
@@ -69,9 +57,6 @@ export default function CorrectionManager({
   moduleNom: string;
   moduleCode: string | null;
   groupeId: string;
-  groupeNom: string | null;
-  filiere: string | null;
-  anneeGroupe: number | null;
   controles: Controle[];
   controleId: string | null;
   copies: Passation[];
@@ -153,117 +138,15 @@ export default function CorrectionManager({
     if (!copie) return;
     setBusyPublication(true);
     try {
-      const ctl = controles.find((c) => c.id === controleId) ?? null;
-      const dateEpreuve = ctl?.date_administration ?? ctl?.date_prevue ?? null;
-
-      /**
-       * Le code de l'épreuve : CC1, CC2… ou EFML / EFMR.
-       *
-       * Le rang n'est stocké nulle part — il se lit dans l'ordre des contrôles
-       * du même type sur ce groupe et ce module, qui est celui dans lequel ils
-       * ont été passés. Le stocker aurait obligé à le renuméroter à chaque
-       * contrôle inséré entre deux autres.
-       */
-      const codeEpreuve = (() => {
-        if (!ctl) return "controle";
-        if (ctl.type === "EFM") {
-          return ctl.type_efm === "regional" ? "EFMR" : "EFML";
-        }
-        const quand = (c: (typeof controles)[number]) =>
-          c.date_administration ?? c.date_prevue ?? c.created_at;
-        const memeType = controles
-          .filter((c) => c.type === ctl.type)
-          .sort((a, b) => quand(a).localeCompare(quand(b)));
-        const rang = memeType.findIndex((c) => c.id === ctl.id) + 1;
-        return rang > 0 ? `CC${rang}` : "CC";
-      })();
-
-      // L'horaire vient de l'emploi du temps : le contrôle est programmé un
-      // jour donné, et ce jour-là le groupe a un créneau. Le redemander au
-      // formateur aurait créé une seconde vérité.
-      const [{ telechargerResultatPdf }, etablissement, debut] =
-        await Promise.all([
-          import("@/lib/pdf-resultat"),
-          getEtablissement(),
-          getDebutEpreuve(groupeId, dateEpreuve),
-        ]);
-
-      const duree = Number(ctl?.duree_heures ?? 0);
-      const horaire = debut
-        ? [
-            `de ${formatHeure(debut)} à ${formatHeure(finEpreuve(debut, duree))}`,
-            duree > 0 ? `durée ${dureeEnTexte(duree)}` : null,
-          ]
-            .filter(Boolean)
-            .join(" · ")
-        : null;
-      await telechargerResultatPdf(
-        {
-          titre: ctl?.titre?.trim() || "Contrôle sans intitulé",
-          stagiaire: copie.nom_complet,
-          nature:
-            baremeAttendu(ctl?.type ?? null) === 40
-              ? "Épreuve de fin de module"
-              : "Contrôle continu",
-          datePublication: formatDate(new Date().toISOString()),
-          // L'identifiant de la copie : ce que le QR code porte, et ce qui
-          // permet de retrouver l'original derrière un exemplaire papier.
-          reference: copie.id,
-          identification: {
-            etablissement: etablissement.nom,
-            filiere: [filiere, anneeGroupe ? `${anneeGroupe}e année` : null]
-              .filter(Boolean)
-              .join(" · "),
-            groupe: groupeNom,
-            cef: copie.cef,
-            anneeScolaire: etablissement.anneeScolaire,
-            module: [moduleCode, moduleNom].filter(Boolean).join(" — "),
-            formateur: etablissement.nomFormateur,
-            matricule: etablissement.matricule,
-            dateEpreuve: dateEpreuve
-              ? formatDateJour(dateEpreuve)
-              : copie.submitted_at
-                ? formatDate(copie.submitted_at)
-                : null,
-            horaire,
-          },
-          note,
-          total: totalAttendu,
-          // La réponse, le corrigé et le commentaire partent avec les points :
-          // sans eux, le stagiaire atteste avoir « vérifié le recalcul » sans
-          // rien avoir à vérifier.
-          lignes: reponses.map((r) => ({
-            enonce: r.enonce,
-            bareme: Number(r.bareme ?? 0),
-            points: Number(r.points ?? 0),
-            reponse: r.reponse,
-            corrige: r.corrige,
-            commentaire: r.commentaire,
-          })),
-        },
-        // NOM_MODULE_CEF_ÉPREUVE_DATE, dans cet ordre : le nom d'abord, parce
-        // que c'est par lui qu'on cherche un document déjà classé. La date est
-        // en ISO — les barres obliques sont interdites dans un nom de fichier,
-        // et « 07-09-2026 » ne se trie pas chronologiquement. Un segment sans
-        // valeur, un CEF absent par exemple, disparaît plutôt que de laisser
-        // un trou entre deux tirets bas.
-        `${[
-          slugify(copie.nom_complet, "stagiaire"),
-          moduleCode ? slugify(moduleCode) : null,
-          copie.cef ? slugify(copie.cef) : null,
-          codeEpreuve,
-          dateEpreuve ?? maintenant(),
-        ]
-          .filter(Boolean)
-          .join("_")}.pdf`,
-        marqueDe(etablissement),
-      );
+      const fait = await telechargerResultatSigne(copie.id);
+      if (!fait) toast("Publiez le résultat avant de l'éditer.", "error");
     } catch (e) {
       toast(e instanceof Error ? e.message : "Export impossible.", "error");
     } finally {
       setBusyPublication(false);
     }
   }
+
 
   const note = useMemo(
     () => reponses.reduce((s, r) => s + (Number(r.points) || 0), 0),
