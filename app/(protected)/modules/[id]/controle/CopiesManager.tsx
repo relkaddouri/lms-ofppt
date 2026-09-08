@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { getPassations, type Passation } from "@/app/actions/controles";
 import Link from "next/link";
-import { Download, PenLine } from "lucide-react";
+import { Download, FileSignature, PenLine } from "lucide-react";
 import Badge from "@/components/ui/Badge";
 import Button, { buttonStyles } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
@@ -11,6 +11,7 @@ import { useToast } from "@/components/ui/Toast";
 import { formatDateTime, slugify } from "@/lib/format";
 import { getEtablissement } from "@/app/actions/etablissement";
 import { marqueDe } from "@/lib/pdf-marque";
+import { telechargerResultatSigne } from "@/lib/telecharger-resultat";
 
 function noteTone(note: number): "success" | "info" | "danger" {
   if (note >= 10) return "success";
@@ -38,6 +39,7 @@ export default function CopiesManager({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [busySigne, setBusySigne] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const toast = useToast();
 
@@ -103,6 +105,34 @@ export default function CopiesManager({
       );
     } finally {
       setBusy(false);
+    }
+  }
+
+  /**
+   * Le résultat à signer, depuis la liste des copies.
+   *
+   * Le même document que sur l'écran de correction, par le même chemin : le
+   * formateur qui vient de publier une série de copies les édite ici, l'une
+   * après l'autre, sans repasser par la correction de chacune.
+   */
+  async function handleResultatSigne() {
+    if (!selected) return;
+    setBusySigne(true);
+    try {
+      const fait = await telechargerResultatSigne(selected.id);
+      if (!fait) {
+        toast(
+          "Publiez d'abord le résultat, depuis l'écran de correction.",
+          "error",
+        );
+      }
+    } catch (err) {
+      toast(
+        err instanceof Error ? err.message : "Erreur de génération du PDF",
+        "error",
+      );
+    } finally {
+      setBusySigne(false);
     }
   }
 
@@ -173,6 +203,22 @@ export default function CopiesManager({
                 >
                   Télécharger la copie (PDF)
                 </Button>
+                {/* Deux documents distincts : la copie sert à archiver le
+                    détail des réponses, le résultat à faire signer. Le second
+                    n'a de sens qu'une fois publié — le bouton n'apparaît donc
+                    qu'à ce moment-là plutôt que de mener à un refus. */}
+                {selected.publie_le ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    icon={FileSignature}
+                    onClick={handleResultatSigne}
+                    loading={busySigne}
+                    loadingLabel="Génération…"
+                  >
+                    Résultat à signer (PDF)
+                  </Button>
+                ) : null}
                 {/* La liste ne fait que montrer ; corriger se passe sur
                     l'écran dédié, copie par copie. */}
                 <Link

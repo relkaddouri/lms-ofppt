@@ -3,6 +3,13 @@ import { dessinerLogo, type Marque } from "@/lib/pdf-marque";
 import { COULEURS, installerPolices, police } from "@/lib/pdf-theme";
 import { insecable } from "@/lib/typographie";
 import { dessinerQr, tailleQr } from "@/lib/pdf-qr";
+import type {
+  Identification,
+  LigneResultat,
+  ResultatControle,
+} from "@/lib/resultat";
+
+export type { Identification, LigneResultat, ResultatControle };
 
 /**
  * Résultat publié d'un contrôle, à imprimer et faire signer (PRD §4.7).
@@ -17,60 +24,6 @@ import { dessinerQr, tailleQr } from "@/lib/pdf-qr";
  * document : elle vaut vérification contradictoire face à la Direction si une
  * note est contestée plus tard. Elle est reprise mot pour mot du PRD.
  */
-
-export type LigneResultat = {
-  enonce: string;
-  bareme: number;
-  points: number;
-  /** Ce que le stagiaire a écrit. Absent des documents produits avant §4.7. */
-  reponse?: string | null;
-  /** La réponse attendue, telle que le formateur l'a préparée. */
-  corrige?: string | null;
-  /** Ce que le formateur a écrit sur cette question en particulier. */
-  commentaire?: string | null;
-};
-
-/**
- * Le cartouche d'identification, en tête du document.
- *
- * Un résultat signé est une pièce administrative : il doit dire de lui-même
- * d'où il vient, sans qu'on ait à ouvrir l'application. Établissement,
- * filière, groupe, module, formateur, épreuve, date et horaire — c'est ce que
- * la Direction cherche en le prenant en main, et ce qu'aucune ligne de
- * contexte en petits caractères ne remplaçait.
- *
- * Chaque champ est facultatif : une ligne sans valeur ne s'imprime pas plutôt
- * que d'afficher une étiquette sur du vide.
- */
-export type Identification = {
-  etablissement?: string | null;
-  /** Le Code d'Enregistrement du Formé — l'identifiant OFPPT du stagiaire. */
-  cef?: string | null;
-  filiere?: string | null;
-  groupe?: string | null;
-  anneeScolaire?: string | null;
-  module?: string | null;
-  formateur?: string | null;
-  matricule?: string | null;
-  /** « Lundi 07/09/2026 ». */
-  dateEpreuve?: string | null;
-  /** « de 8 h 30 à 11 h · 2 h 30 », déduit de l'emploi du temps. */
-  horaire?: string | null;
-};
-
-export type ResultatControle = {
-  titre: string;
-  stagiaire: string;
-  /** « Contrôle continu » ou « Épreuve de fin de module ». */
-  nature: string;
-  datePublication: string;
-  note: number;
-  total: number;
-  /** L'identifiant de la copie, porté par le QR code au bas du document. */
-  reference: string;
-  identification: Identification;
-  lignes: LigneResultat[];
-};
 
 const X = 16;
 const LARGEUR = 178;

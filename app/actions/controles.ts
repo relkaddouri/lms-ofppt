@@ -1,6 +1,10 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { getEtablissement } from "@/app/actions/etablissement";
+import { formatDate, formatDateJour } from "@/lib/format";
+import { dureeEnTexte, finEpreuve, formatHeure } from "@/lib/creneaux";
+import type { ResultatControle } from "@/lib/resultat";
 import { revalidatePath } from "next/cache";
 
 export type TypeControle = "CC" | "EFM";
@@ -478,6 +482,149 @@ export async function getContenuCouvert(
  * suivante, et savoir quand un résultat est parti est ce qui permet de le
  * vérifier.
  */
+/**
+ * Le résultat à signer, assemblé pour le document (PRD §4.7).
+ *
+ * Assemblé ici et non dans l'écran : les deux écrans qui le proposent — la
+ * liste des copies et la correction — n'ont pas les mêmes données sous la
+ * main, et recopier l'assemblage dans les deux aurait garanti qu'ils
+ * divergent. L'un demande une copie par son identifiant, le serveur rend le
+ * document entier.
+ *
+ * Rend `null` si le résultat n'est pas publié : le document porte la mention
+ * « publié le », et l'éditer avant que le stagiaire n'ait rien reçu ferait
+ * signer une pièce qui n'existe pas encore.
+ */
+export async function getResultatASigner(
+  passationId: string,
+): Promise<ResultatControle | null> {
+  const supabase = await createClient();
+
+  const { data: copie, error } = await supabase
+    .from("passations_controle")
+    .select(
+      "id, controle_id, nom_complet, note, responses, publie_le, submitted_at, stagiaires(cef)",
+    )
+    .eq("id", passationId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!copie?.publie_le) return null;
+
+  // Les colonnes sont écrites en toutes lettres plutôt que reprises de
+  // `COLONNES_CONTROLE` : une chaîne partagée est opaque au typage de
+  // PostgREST, qui rend alors un type d'erreur et impose un cast — soit
+  // exactement la dette que le backlog recense en point de vigilance.
+  const { data: controle } = await supabase
+    .from("controles")
+    .select(
+      "id, groupe_id, module_id, titre, duree_heures, type, type_efm, date_prevue, date_administration, created_at",
+    )
+    .eq("id", copie.controle_id)
+    .maybeSingle();
+  if (!controle) return null;
+
+  const [moduleRes, groupeRes, freres, etablissement, debut] = await Promise.all([
+    supabase
+      .from("modules")
+      .select("nom, competences(code_operationnel)")
+      .eq("id", controle.module_id)
+      .maybeSingle(),
+    supabase
+      .from("groupes")
+      .select("nom, annee, specialites(nom)")
+      .eq("id", controle.groupe_id)
+      .maybeSingle(),
+    supabase
+      .from("controles")
+      .select("id, type, date_prevue, date_administration, created_at")
+      .eq("groupe_id", controle.groupe_id)
+      .eq("module_id", controle.module_id)
+      .eq("type", controle.type),
+    getEtablissement(),
+    getDebutEpreuve(
+      controle.groupe_id,
+      controle.date_administration ?? controle.date_prevue ?? null,
+    ),
+  ]);
+
+  // Le rang du contrôle parmi ceux du même type : CC1, CC2… Il n'est stocké
+  // nulle part, sans quoi il faudrait renuméroter à chaque contrôle inséré
+  // entre deux autres.
+  const quand = (c: {
+    date_prevue: string | null;
+    date_administration: string | null;
+    created_at: string;
+  }) => c.date_administration ?? c.date_prevue ?? c.created_at;
+  const rang =
+    (freres.data ?? [])
+      .slice()
+      .sort((a, b) => quand(a).localeCompare(quand(b)))
+      .findIndex((c) => c.id === controle.id) + 1;
+
+  const dateEpreuve =
+    controle.date_administration ?? controle.date_prevue ?? null;
+  const duree = Number(controle.duree_heures ?? 0);
+  const codeModule = moduleRes.data?.competences?.code_operationnel ?? null;
+  const efm = controle.type === "EFM";
+
+  return {
+    titre: controle.titre?.trim() || "Contrôle sans intitulé",
+    stagiaire: copie.nom_complet,
+    nature: efm ? "Épreuve de fin de module" : "Contrôle continu",
+    datePublication: formatDate(copie.publie_le),
+    note: Number(copie.note) || 0,
+    total: efm ? 40 : 20,
+    reference: copie.id,
+    codeEpreuve: efm
+      ? controle.type_efm === "regional"
+        ? "EFMR"
+        : "EFML"
+      : `CC${rang > 0 ? rang : ""}`,
+    dateFichier: dateEpreuve ?? copie.submitted_at?.slice(0, 10) ?? null,
+    cef: copie.stagiaires?.cef ?? null,
+    codeModule,
+    identification: {
+      etablissement: etablissement.nom,
+      cef: copie.stagiaires?.cef ?? null,
+      filiere: [
+        groupeRes.data?.specialites?.nom,
+        groupeRes.data?.annee ? `${groupeRes.data.annee}e année` : null,
+      ]
+        .filter(Boolean)
+        .join(" · "),
+      groupe: groupeRes.data?.nom ?? null,
+      anneeScolaire: etablissement.anneeScolaire,
+      module: [codeModule, moduleRes.data?.nom].filter(Boolean).join(" — "),
+      formateur: etablissement.nomFormateur,
+      matricule: etablissement.matricule,
+      // À défaut de date programmée, celle de la remise : pour un contrôle
+      // passé dans l'application, c'est le jour de l'épreuve, et c'est plus
+      // utile qu'une case vide sur un document d'archive.
+      dateEpreuve: dateEpreuve
+        ? formatDateJour(dateEpreuve)
+        : copie.submitted_at
+          ? formatDate(copie.submitted_at)
+          : null,
+      horaire: debut
+        ? [
+            `de ${formatHeure(debut)} à ${formatHeure(finEpreuve(debut, duree))}`,
+            duree > 0 ? `durée ${dureeEnTexte(duree)}` : null,
+          ]
+            .filter(Boolean)
+            .join(" · ")
+        : null,
+    },
+    lignes: ((copie.responses ?? []) as unknown as PassationDetail[]).map((d) => ({
+      enonce: d.enonce,
+      bareme: Number(d.bareme ?? 0),
+      points: Number(d.points ?? 0),
+      reponse: d.reponse,
+      corrige: d.corrige,
+      commentaire: d.commentaire,
+    })),
+  };
+}
+
 /**
  * L'heure à laquelle l'épreuve commence, lue dans l'emploi du temps.
  *
