@@ -1,5 +1,4 @@
 import { createClient } from "@/lib/supabase/server";
-import { parDestinataire } from "@/lib/support";
 import { appelerLlm, chargerConfigLlm, ErreurLlm } from "@/lib/llm";
 import { verifierQuota, QUOTA_GENERATION } from "@/lib/rate-limit";
 import { NextResponse } from "next/server";
@@ -75,14 +74,12 @@ export async function POST(request: Request) {
   // L'énoncé, tel qu'il a été remis — celui de la séance source quand la
   // séance est un miroir (§4.3bis).
   const source = await sourceContenu(seanceId);
-  const { data: supportRow } = await parDestinataire(
-    supabase
-      .from("supports_seance")
-      .select("contenu")
-      .eq("seance_id", source)
-      .eq("type", "pratique"),
-    "stagiaire",
-  )
+  const { data: supportRow } = await supabase
+    .from("supports_seance")
+    .select("contenu")
+    .eq("seance_id", source)
+    .eq("type", "pratique")
+    .eq("destinataire", "stagiaire")
     .order("version", { ascending: false })
     .limit(1)
     .maybeSingle();

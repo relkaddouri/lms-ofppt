@@ -1,11 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import {
-  colonneDestinataire,
-  parDestinataire,
-  type DestinataireSupport,
-} from "@/lib/support";
+import type { DestinataireSupport } from "@/lib/support";
 import { libelleModule } from "@/lib/modules";
 import { revalidatePath } from "next/cache";
 import {
@@ -280,13 +276,11 @@ export async function saveSupport(
   // séance qui porte le contenu, pour que les deux groupes le partagent.
   const source = await sourceContenu(seanceId);
 
-  const { data: derniere, error: errLecture } = await parDestinataire(
-    supabase
-      .from("supports_seance")
-      .select("version")
-      .eq("seance_id", source),
-    destinataire,
-  )
+  const { data: derniere, error: errLecture } = await supabase
+    .from("supports_seance")
+    .select("version")
+    .eq("seance_id", source)
+    .eq("destinataire", destinataire)
     .order("version", { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -295,13 +289,7 @@ export async function saveSupport(
   const version = (derniere?.version ?? 0) + 1;
   const { error } = await supabase
     .from("supports_seance")
-    .insert({
-      seance_id: source,
-      type,
-      contenu,
-      version,
-      ...colonneDestinataire(destinataire),
-    });
+    .insert({ seance_id: source, type, contenu, version, destinataire });
   if (error) throw new Error(error.message);
 
   revalidatePath("/groupes");
@@ -332,10 +320,12 @@ export async function viderSupport(
 
   // Le destinataire borne la suppression : vider le support du formateur ne
   // touche pas à celui du stagiaire, et réciproquement.
-  const { data, error } = await parDestinataire(
-    supabase.from("supports_seance").delete().eq("seance_id", source),
-    destinataire,
-  ).select("id");
+  const { data, error } = await supabase
+    .from("supports_seance")
+    .delete()
+    .eq("seance_id", source)
+    .eq("destinataire", destinataire)
+    .select("id");
   if (error) throw new Error(error.message);
 
   revalidatePath("/groupes", "layout");
@@ -437,23 +427,19 @@ export async function getSeanceDetail(
       .order("version", { ascending: false })
       .limit(1)
       .maybeSingle(),
-    parDestinataire(
-      supabase
-        .from("supports_seance")
-        .select("id, contenu, version")
-        .eq("seance_id", sourceDuContenu),
-      "stagiaire",
-    )
+    supabase
+      .from("supports_seance")
+      .select("id, contenu, version")
+      .eq("seance_id", sourceDuContenu)
+      .eq("destinataire", "stagiaire")
       .order("version", { ascending: false })
       .limit(1)
       .maybeSingle(),
-    parDestinataire(
-      supabase
-        .from("supports_seance")
-        .select("id, contenu, version")
-        .eq("seance_id", sourceDuContenu),
-      "formateur",
-    )
+    supabase
+      .from("supports_seance")
+      .select("id, contenu, version")
+      .eq("seance_id", sourceDuContenu)
+      .eq("destinataire", "formateur")
       .order("version", { ascending: false })
       .limit(1)
       .maybeSingle(),
