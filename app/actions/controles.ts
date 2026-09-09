@@ -624,13 +624,6 @@ export async function getDossierControle(
       : null,
   };
 
-  // Troisième béquille de la migration 079, isolée comme les deux autres :
-  // `cne` n'entrera dans `database.types.ts` qu'après `supabase db push` et
-  // une régénération. À retirer ce jour-là.
-  type Identifiants = { cef: string | null; cne: string | null } | null;
-  const identifiants = (c: { stagiaires: unknown }): Identifiants =>
-    c.stagiaires as Identifiants;
-
   const resultats: ResultatControle[] = (copiesRes.data ?? [])
     .filter((c) => c.publie_le)
     .map((c) => ({
@@ -643,14 +636,14 @@ export async function getDossierControle(
       reference: c.id,
       codeEpreuve,
       codeModule,
-      cef: identifiants(c)?.cef ?? null,
+      cef: c.stagiaires?.cef ?? null,
       // À défaut de date programmée, celle de la remise : pour un contrôle
       // passé dans l'application, c'est le jour de l'épreuve.
       dateFichier: dateEpreuve ?? c.submitted_at?.slice(0, 10) ?? null,
       identification: {
         ...identification,
-        cef: identifiants(c)?.cef ?? null,
-        cne: identifiants(c)?.cne ?? null,
+        cef: c.stagiaires?.cef ?? null,
+        cne: c.stagiaires?.cne ?? null,
         dateEpreuve:
           identification.dateEpreuve ??
           (c.submitted_at ? formatDate(c.submitted_at) : null),

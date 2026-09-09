@@ -18,33 +18,18 @@ export type Stagiaire = {
   user_id: string | null;
 };
 
-/**
- * `cne` en attendant les types regénérés (migration 079).
- *
- * La colonne existe en base mais pas encore dans `database.types.ts`, qui se
- * régénère après `supabase db push`. Les deux béquilles sont isolées ici —
- * deux lignes à retirer — plutôt que des `as unknown as` dispersés qui
- * éteindraient le typage sur des requêtes entières, ce que les points de
- * vigilance du backlog reprochent aux casts existants.
- */
-const COLONNES_STAGIAIRE = "id, nom, prenom, email, cef, cne, groupe_id, user_id";
-
-function colonneCne(cne?: string) {
-  return { cne: cne?.trim() || null } as unknown as Record<string, never>;
-}
-
 export async function getStagiairesByGroupe(
   groupeId: string,
 ): Promise<Stagiaire[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("stagiaires")
-    .select(COLONNES_STAGIAIRE)
+    .select("id, nom, prenom, email, cef, cne, groupe_id, user_id")
     .eq("groupe_id", groupeId)
     .order("nom");
 
   if (error) throw new Error(error.message);
-  return data as unknown as Stagiaire[];
+  return data as Stagiaire[];
 }
 
 export async function getStagiairesCount(groupeId: string): Promise<number> {
@@ -82,7 +67,7 @@ export async function addStagiaire(
     prenom: input.prenom,
     email: input.email?.trim() || null,
     cef: input.cef?.trim() || null,
-    ...colonneCne(input.cne),
+    cne: input.cne?.trim() || null,
   });
 
   if (error) throw new Error(messageCef(error.message));
@@ -133,7 +118,7 @@ export async function updateStagiaire(
       prenom: input.prenom,
       email: input.email?.trim() || null,
       cef: input.cef?.trim() || null,
-      ...colonneCne(input.cne),
+      cne: input.cne?.trim() || null,
     })
     .eq("id", id);
 
@@ -201,7 +186,7 @@ export async function bulkImportStagiaires(
       prenom: row.prenom,
       email: row.email ?? null,
       cef: row.cef ?? null,
-      ...colonneCne(row.cne ?? undefined),
+      cne: row.cne ?? null,
     })),
   );
 
