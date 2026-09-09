@@ -1734,6 +1734,7 @@ export type Database = {
       stagiaires: {
         Row: {
           cef: string | null
+          cne: string | null
           created_at: string
           email: string | null
           groupe_id: string | null
@@ -1744,6 +1745,7 @@ export type Database = {
         }
         Insert: {
           cef?: string | null
+          cne?: string | null
           created_at?: string
           email?: string | null
           groupe_id?: string | null
@@ -1754,6 +1756,7 @@ export type Database = {
         }
         Update: {
           cef?: string | null
+          cne?: string | null
           created_at?: string
           email?: string | null
           groupe_id?: string | null
