@@ -19,6 +19,7 @@ type ParsedRow = {
   prenom: string;
   email: string;
   cef: string;
+  cne: string;
   valid: boolean;
   error?: string;
 };
@@ -43,6 +44,7 @@ function normaliserEntete(valeur: string): string {
 /** Intitulés acceptés pour chaque champ, tels qu'on les rencontre. */
 const ALIAS: Record<string, string[]> = {
   cef: ["cef", "codecef", "matricule", "numerocef"],
+  cne: ["cne", "codecne", "cnestagiaire", "numerocne"],
   nom: ["nom", "nomdefamille"],
   prenom: ["prenom", "prenoms"],
   email: ["email", "mail", "adresseemail", "courriel"],
@@ -98,6 +100,7 @@ export default function StagiaireCsvImport({
           const email = getField(raw, "email");
           // Les listes officielles de l'OFPPT nomment cette colonne « CEF ».
           const cef = getField(raw, "cef");
+          const cne = getField(raw, "cne");
 
           const errors: string[] = [];
           if (!nom) errors.push("nom manquant");
@@ -110,6 +113,7 @@ export default function StagiaireCsvImport({
             prenom,
             email,
             cef,
+            cne,
             valid: errors.length === 0,
             error: errors.length ? errors.join(", ") : undefined,
           };
@@ -136,6 +140,7 @@ export default function StagiaireCsvImport({
         prenom: r.prenom,
         email: r.email || null,
         cef: r.cef || null,
+        cne: r.cne || null,
       }));
 
     if (!validRows.length) return;
@@ -171,7 +176,8 @@ export default function StagiaireCsvImport({
           Importer depuis un CSV
         </Button>
         <span className="text-xs text-slate">
-          Colonnes attendues : <span className="font-mono">cef, nom, prenom, email</span>
+          Colonnes attendues :{" "}
+          <span className="font-mono">cef, cne, nom, prenom, email</span>
         </span>
         <input
           ref={inputRef}

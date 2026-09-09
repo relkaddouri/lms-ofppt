@@ -1,6 +1,7 @@
 import {
   getDossierControle,
   getResultatASigner,
+  getSujetControle,
 } from "@/app/actions/controles";
 import { getEtablissement } from "@/app/actions/etablissement";
 import { marqueDe } from "@/lib/pdf-marque";
@@ -163,6 +164,36 @@ export async function telechargerEmargement(
         : null,
       dossier.codeModule ? slugify(dossier.codeModule) : null,
       dossier.dateFichier ?? maintenant(),
+    ])}.pdf`,
+    marqueDe(etablissement),
+  );
+  return true;
+}
+
+/**
+ * Le sujet vierge, à faire viser par le chef de pôle.
+ *
+ * Il ne dépend d'aucune copie : il s'édite avant l'épreuve, quand rien n'a
+ * encore été composé. C'est aussi pourquoi il n'exige pas de résultat publié,
+ * contrairement au dossier.
+ */
+export async function telechargerSujet(controleId: string): Promise<boolean> {
+  const [sujet, etablissement] = await Promise.all([
+    getSujetControle(controleId),
+    getEtablissement(),
+  ]);
+  if (!sujet || sujet.questions.length === 0) return false;
+
+  const { telechargerSujetPdf } = await import("@/lib/pdf-sujet");
+
+  await telechargerSujetPdf(
+    sujet,
+    `${nommer([
+      "Sujet",
+      sujet.codeEpreuve,
+      sujet.groupe ? slugify(sujet.groupe) : null,
+      sujet.codeModule ? slugify(sujet.codeModule) : null,
+      sujet.dateFichier ?? maintenant(),
     ])}.pdf`,
     marqueDe(etablissement),
   );

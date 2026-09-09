@@ -11,6 +11,8 @@ export type Stagiaire = {
   email: string | null;
   /** Code d'Enregistrement du Formé — l'identifiant OFPPT du stagiaire. */
   cef: string | null;
+  /** Code National de l'Étudiant, réclamé par les pièces officielles. */
+  cne: string | null;
   groupe_id: string;
   /** Compte du stagiaire ; nul tant qu'il n'a pas été invité. */
   user_id: string | null;
@@ -22,7 +24,7 @@ export async function getStagiairesByGroupe(
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("stagiaires")
-    .select("id, nom, prenom, email, cef, groupe_id, user_id")
+    .select("id, nom, prenom, email, cef, cne, groupe_id, user_id")
     .eq("groupe_id", groupeId)
     .order("nom");
 
@@ -50,7 +52,13 @@ function messageCef(message: string): string {
 
 export async function addStagiaire(
   groupeId: string,
-  input: { nom: string; prenom: string; email?: string; cef?: string },
+  input: {
+    nom: string;
+    prenom: string;
+    email?: string;
+    cef?: string;
+    cne?: string;
+  },
 ) {
   const supabase = await createClient();
   const { error } = await supabase.from("stagiaires").insert({
@@ -59,6 +67,7 @@ export async function addStagiaire(
     prenom: input.prenom,
     email: input.email?.trim() || null,
     cef: input.cef?.trim() || null,
+    cne: input.cne?.trim() || null,
   });
 
   if (error) throw new Error(messageCef(error.message));
@@ -84,7 +93,13 @@ export async function addStagiaire(
 export async function updateStagiaire(
   id: string,
   groupeId: string,
-  input: { nom: string; prenom: string; email?: string; cef?: string },
+  input: {
+    nom: string;
+    prenom: string;
+    email?: string;
+    cef?: string;
+    cne?: string;
+  },
 ): Promise<{ avertissement?: string }> {
   const supabase = await createClient();
 
@@ -103,6 +118,7 @@ export async function updateStagiaire(
       prenom: input.prenom,
       email: input.email?.trim() || null,
       cef: input.cef?.trim() || null,
+      cne: input.cne?.trim() || null,
     })
     .eq("id", id);
 
@@ -152,6 +168,7 @@ export type StagiaireImportRow = {
   prenom: string;
   email: string | null;
   cef: string | null;
+  cne: string | null;
 };
 
 export async function bulkImportStagiaires(
@@ -169,6 +186,7 @@ export async function bulkImportStagiaires(
       prenom: row.prenom,
       email: row.email ?? null,
       cef: row.cef ?? null,
+      cne: row.cne ?? null,
     })),
   );
 

@@ -34,6 +34,10 @@ export type Identification = {
   etablissement?: string | null;
   /** Le Code d'Enregistrement du Formé — l'identifiant OFPPT du stagiaire. */
   cef?: string | null;
+  /** Le Code National de l'Étudiant, réclamé par les pièces officielles. */
+  cne?: string | null;
+  /** « Théorique », « Pratique » ou « Mixte » — la forme de l'épreuve. */
+  forme?: string | null;
   filiere?: string | null;
   groupe?: string | null;
   anneeScolaire?: string | null;
