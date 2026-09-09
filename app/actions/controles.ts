@@ -681,6 +681,62 @@ export async function getDossierControle(
 }
 
 /**
+ * Le sujet vierge d'un contrôle, tel qu'il part au visa (PRD §4.7).
+ *
+ * Il ne dépend d'aucune copie : le chef de pôle le vise avant l'épreuve,
+ * quand rien n'a encore été composé. Il réutilise le cartouche du dossier,
+ * pour que le sujet visé et les résultats qui en sortiront s'annoncent de la
+ * même façon.
+ */
+export type SujetControle = {
+  titre: string;
+  nature: string;
+  identification: Identification;
+  consignes: string | null;
+  questions: {
+    type: string;
+    enonce: string;
+    bareme: number;
+    options: { texte: string }[];
+  }[];
+  total: number;
+  codeEpreuve: string;
+  codeModule: string | null;
+  dateFichier: string | null;
+  groupe: string | null;
+};
+
+export async function getSujetControle(
+  controleId: string,
+): Promise<SujetControle | null> {
+  const [dossier, detail] = await Promise.all([
+    getDossierControle(controleId),
+    getControle(controleId),
+  ]);
+  if (!dossier || !detail) return null;
+
+  const questions = detail.questions.map((q) => ({
+    type: q.type,
+    enonce: q.enonce ?? "",
+    bareme: Number(q.bareme) || 0,
+    options: (q.options ?? []).map((o) => ({ texte: o.texte })),
+  }));
+
+  return {
+    titre: dossier.titre,
+    nature: dossier.nature,
+    identification: dossier.identification,
+    consignes: detail.consignes,
+    questions,
+    total: questions.reduce((t, q) => t + q.bareme, 0),
+    codeEpreuve: dossier.codeEpreuve,
+    codeModule: dossier.codeModule,
+    dateFichier: dossier.dateFichier,
+    groupe: dossier.identification.groupe ?? null,
+  };
+}
+
+/**
  * Le résultat à signer d'une copie, tiré du dossier de son contrôle.
  *
  * Rend `null` si le résultat n'est pas publié.

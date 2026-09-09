@@ -3,7 +3,13 @@
 import { useEffect, useRef, useState } from "react";
 import { getPassations, type Passation } from "@/app/actions/controles";
 import Link from "next/link";
-import { ClipboardList, FileSignature, Files, PenLine } from "lucide-react";
+import {
+  ClipboardList,
+  FileCheck2,
+  FileSignature,
+  Files,
+  PenLine,
+} from "lucide-react";
 import Badge from "@/components/ui/Badge";
 import Button, { buttonStyles } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
@@ -13,6 +19,7 @@ import {
   telechargerEmargement,
   telechargerLotResultats,
   telechargerResultatSigne,
+  telechargerSujet,
 } from "@/lib/telecharger-resultat";
 
 function noteTone(note: number): "success" | "info" | "danger" {
@@ -41,7 +48,9 @@ export default function CopiesManager({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [busySigne, setBusySigne] = useState(false);
-  const [busyLot, setBusyLot] = useState<"lot" | "emargement" | null>(null);
+  const [busyLot, setBusyLot] = useState<
+    "lot" | "emargement" | "sujet" | null
+  >(null);
   // Coché par défaut : le dossier remis à l'administration s'ouvre sur la
   // présence. Le formateur qui n'imprime que pour rendre les copies décoche.
   const [avecEmargement, setAvecEmargement] = useState(true);
@@ -125,6 +134,22 @@ export default function CopiesManager({
     }
   }
 
+  /** Le sujet vierge, à faire viser avant l'épreuve. */
+  async function handleSujet() {
+    setBusyLot("sujet");
+    try {
+      const fait = await telechargerSujet(controleId);
+      if (!fait) toast("Ce contrôle n'a aucune question.", "error");
+    } catch (err) {
+      toast(
+        err instanceof Error ? err.message : "Erreur de génération du PDF",
+        "error",
+      );
+    } finally {
+      setBusyLot(null);
+    }
+  }
+
   /** La feuille d'émargement seule, imprimable avant l'épreuve. */
   async function handleEmargement() {
     setBusyLot("emargement");
@@ -181,6 +206,19 @@ export default function CopiesManager({
             />
             Joindre la feuille d&apos;émargement en tête
           </label>
+          {/* Le sujet et l'émargement s'éditent avant l'épreuve, le lot
+              après : les deux premiers vont donc ensemble, à droite. */}
+          <Button
+            variant="ghost"
+            size="sm"
+            icon={FileCheck2}
+            onClick={handleSujet}
+            loading={busyLot === "sujet"}
+            loadingLabel="Génération…"
+            className="ml-auto"
+          >
+            Sujet à viser
+          </Button>
           <Button
             variant="ghost"
             size="sm"
@@ -188,7 +226,6 @@ export default function CopiesManager({
             onClick={handleEmargement}
             loading={busyLot === "emargement"}
             loadingLabel="Génération…"
-            className="ml-auto"
           >
             Feuille d&apos;émargement seule
           </Button>
