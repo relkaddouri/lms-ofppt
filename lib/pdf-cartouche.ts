@@ -46,9 +46,20 @@ export function dessinerCartouche(
   doc.setTextColor(...COULEURS.encre);
   doc.text(entete.titre, X + (largeurLogo > 0 ? largeurLogo + 7 : 0), 22);
 
+  // La nature et la forme sur la même ligne : « CONTRÔLE CONTINU ·
+  // THÉORIQUE ». C'est la première question qu'on se pose devant un document
+  // d'évaluation, et elle n'était nulle part.
   police(doc, "mono", 8);
   doc.setTextColor(...COULEURS.ardoiseClaire);
-  doc.text(entete.nature.toLocaleUpperCase("fr"), X + LARGEUR, 17, { align: "right" });
+  doc.text(
+    [entete.nature, entete.identification.forme]
+      .filter(Boolean)
+      .join(" · ")
+      .toLocaleUpperCase("fr"),
+    X + LARGEUR,
+    17,
+    { align: "right" },
+  );
   police(doc, "corps", 8.5);
   doc.setTextColor(...COULEURS.ardoise);
   if (entete.mention) {

@@ -119,6 +119,9 @@ export function dessinerResultat(
   const HAUT = 20;
   const BAS = 268;
 
+  /** Le retrait du texte d'un bloc, filet compris. */
+  const RETRAIT_TEXTE = RETRAIT + 5;
+
   /** Écrit un texte replié en changeant de page au besoin. */
   const couler = (
     texte: string,
@@ -139,16 +142,16 @@ export function dessinerResultat(
       police(doc, "corps", pt);
       doc.setTextColor(...couleur);
       doc.text(ligne, x, curseur);
-      curseur += 4;
+      curseur += 4.4;
     }
     return curseur;
   };
 
   r.lignes.forEach((l, i) => {
-    police(doc, "corpsGras", 9);
+    police(doc, "corpsGras", 9.5);
     const enonce: string[] = doc.splitTextToSize(
-      insecable(`${i + 1}. ${l.enonce}`),
-      LARGEUR - 30,
+      insecable(l.enonce),
+      LARGEUR - 42,
     );
 
     // L'énoncé est écrit en entier. N'en garder que la première ligne le
@@ -160,12 +163,12 @@ export function dessinerResultat(
     /** Ce qu'un bloc étiqueté occupera, 0 s'il n'a rien à dire. */
     const hauteurBloc = (texte: string | null | undefined): number => {
       if (!texte?.trim()) return 0;
-      police(doc, "corps", 8.5);
+      police(doc, "corps", 9);
       const n: number = doc.splitTextToSize(
         insecable(texte.trim()),
-        LARGEUR - RETRAIT,
+        LARGEUR - RETRAIT_TEXTE - 4,
       ).length;
-      return 3.8 + n * 4 + 1.8;
+      return 4.2 + n * 4.4 + 3.4;
     };
 
     // Une question passe d'un bloc sur la page suivante plutôt que d'être
@@ -196,45 +199,93 @@ export function dessinerResultat(
     }
 
     const yEnonce = y;
-    police(doc, "corpsGras", 9);
-    doc.setTextColor(...COULEURS.encre);
-    enonce.forEach((ligne, k) => doc.text(ligne, X, y + k * INTERLIGNE));
 
-    // La note reste alignée sur la première ligne de l'énoncé : c'est là qu'on
-    // la cherche du regard en descendant la colonne.
-    police(doc, "mono", 9);
+    // Le numéro dans une pastille encre : il ancre la question et remplace le
+    // « 1. » collé à l'énoncé, qu'on ne distinguait pas du texte.
+    doc.setFillColor(...COULEURS.encre);
+    doc.roundedRect(X, yEnonce - 3.4, 7, 5.6, 1, 1, "F");
+    police(doc, "mono", 7.5);
+    doc.setTextColor(...COULEURS.blanc);
+    doc.text(String(i + 1), X + 3.5, yEnonce + 0.6, { align: "center" });
+
+    police(doc, "corpsGras", 9.5);
     doc.setTextColor(...COULEURS.encre);
-    doc.text(`${l.points} / ${l.bareme}`, X + LARGEUR, yEnonce, {
-      align: "right",
+    enonce.forEach((ligne, k) => doc.text(ligne, X + 10, y + k * INTERLIGNE));
+
+    // La note dans une pastille elle aussi, alignée sur la première ligne de
+    // l'énoncé : c'est là qu'on la cherche en descendant la colonne, et un
+    // chiffre encadré se retrouve plus vite qu'un chiffre posé.
+    const note = `${l.points} / ${l.bareme}`;
+    police(doc, "mono", 8.5);
+    const largeurNote = doc.getTextWidth(note) + 7;
+    doc.setFillColor(...COULEURS.lavis);
+    doc.roundedRect(
+      X + LARGEUR - largeurNote,
+      yEnonce - 3.6,
+      largeurNote,
+      6,
+      1.2,
+      1.2,
+      "F",
+    );
+    doc.setTextColor(...COULEURS.encre);
+    doc.text(note, X + LARGEUR - largeurNote / 2, yEnonce + 0.7, {
+      align: "center",
     });
-    y += enonce.length * INTERLIGNE + 1.6;
+    y += enonce.length * INTERLIGNE + 2.4;
 
-    /** Un bloc étiqueté sous l'énoncé, sauté s'il n'a rien à dire. */
+    /**
+     * Un bloc étiqueté sous l'énoncé, sauté s'il n'a rien à dire.
+     *
+     * Un filet vertical le tient, et un fond léger distingue la réponse
+     * attendue. Sans eux, les trois blocs n'étaient séparés que par une
+     * étiquette de sept points : on ne savait pas, en diagonale, où finissait
+     * ce que le stagiaire avait écrit et où commençait ce qu'on attendait.
+     */
     const bloc = (
       etiquette: string,
       texte: string | null | undefined,
-      couleurEtiquette: readonly [number, number, number],
+      accent: readonly [number, number, number],
+      fond?: readonly [number, number, number],
     ) => {
       if (!texte?.trim()) return;
+      const hauteur = hauteurBloc(texte);
       // L'étiquette ne se sépare pas de sa première ligne.
-      if (y + 8 > BAS) {
+      if (y + Math.min(hauteur, 12) > BAS) {
         doc.addPage();
         y = HAUT;
       }
+      const haut = y;
+      if (fond) {
+        doc.setFillColor(...fond);
+        doc.rect(X + RETRAIT, haut - 2.6, LARGEUR - RETRAIT, hauteur, "F");
+      }
       police(doc, "mono", 7);
-      doc.setTextColor(...couleurEtiquette);
-      doc.text(etiquette, X + RETRAIT, y);
-      y = couler(texte.trim(), X + RETRAIT, LARGEUR - RETRAIT, y + 3.8, COULEURS.corps);
+      doc.setTextColor(...accent);
+      doc.text(etiquette, X + RETRAIT_TEXTE, y + 1);
+
+      y = couler(
+        texte.trim(),
+        X + RETRAIT_TEXTE,
+        LARGEUR - RETRAIT_TEXTE - 4,
+        y + 5.2,
+        COULEURS.corps,
+        9,
+      );
+      y += 1.6;
+
+      doc.setFillColor(...accent);
+      doc.rect(X + RETRAIT, haut - 2.6, 0.9, y - haut + 1.2, "F");
       y += 1.8;
     };
 
-    // La réponse attendue porte le seul point de couleur : c'est ce que le
-    // stagiaire cherche en premier quand il conteste un point.
+    // La réponse attendue porte le seul point de couleur et le seul fond :
+    // c'est ce qu'on cherche en premier quand on conteste un point.
     bloc("VOTRE RÉPONSE", l.reponse, COULEURS.ardoiseClaire);
-    bloc("RÉPONSE ATTENDUE", l.corrige, COULEURS.sarcelle);
-    bloc("COMMENTAIRE DU FORMATEUR", l.commentaire, COULEURS.ardoiseClaire);
+    bloc("RÉPONSE ATTENDUE", l.corrige, COULEURS.sarcelle, [233, 242, 247]);
+    bloc("COMMENTAIRE DU FORMATEUR", l.commentaire, COULEURS.bordureForte);
 
-    y += 1.5;
+    y += 2.5;
   });
 
   if (y + 24 > BAS) {

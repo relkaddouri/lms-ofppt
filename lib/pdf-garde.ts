@@ -138,7 +138,7 @@ export function dessinerPageDeGarde(
   police(doc, "corps", 11);
   doc.setTextColor(...COULEURS.bordureForte);
   doc.text(
-    [g.nature, id.module].filter(Boolean).join(" · "),
+    [g.nature, id.forme, id.module].filter(Boolean).join(" · "),
     X + 16,
     HAUT_PANNEAU + 44 + titre.length * 12 + 4,
     { maxWidth: LARGEUR - 32 },

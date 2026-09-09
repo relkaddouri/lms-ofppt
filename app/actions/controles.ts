@@ -524,7 +524,7 @@ export async function getDossierControle(
   const { data: controle, error } = await supabase
     .from("controles")
     .select(
-      "id, groupe_id, module_id, titre, duree_heures, type, type_efm, date_prevue, date_administration, created_at",
+      "id, groupe_id, module_id, titre, duree_heures, type, type_efm, format, date_prevue, date_administration, created_at",
     )
     .eq("id", controleId)
     .maybeSingle();
@@ -593,8 +593,15 @@ export async function getDossierControle(
       : "EFML"
     : `CC${rang > 0 ? rang : ""}`;
 
+  const FORMES: Record<string, string> = {
+    theorique: "Théorique",
+    pratique: "Pratique",
+    mixte: "Mixte",
+  };
+
   const identification: Identification = {
     etablissement: etablissement.nom,
+    forme: FORMES[controle.format] ?? null,
     filiere: [
       groupeRes.data?.specialites?.nom,
       groupeRes.data?.annee ? `${groupeRes.data.annee}e année` : null,

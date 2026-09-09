@@ -36,6 +36,8 @@ export type Identification = {
   cef?: string | null;
   /** Le Code National de l'Étudiant, réclamé par les pièces officielles. */
   cne?: string | null;
+  /** « Théorique », « Pratique » ou « Mixte » — la forme de l'épreuve. */
+  forme?: string | null;
   filiere?: string | null;
   groupe?: string | null;
   anneeScolaire?: string | null;
