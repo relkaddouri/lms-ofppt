@@ -92,6 +92,7 @@ export default function PanneauNotifications({
   titre = "Notifications",
   resume = resumeFormateur,
   vide = "Aucun contrôle en brouillon, aucune question sans réponse, aucune copie à corriger.",
+  actions,
 }: {
   ouvert: boolean;
   onFermer: () => void;
@@ -109,6 +110,14 @@ export default function PanneauNotifications({
   resume?: (nombre: number) => string;
   /** Ce qui s'affiche quand il n'y a rien : le sens diffère d'un espace à l'autre. */
   vide?: string;
+  /**
+   * Réglages propres à l'espace, posés à gauche de la fermeture.
+   *
+   * Le son des nouveautés se coupe ici et nulle part ailleurs : lui inventer
+   * un écran de préférences pour une case aurait éloigné le réglage de ce
+   * qu'il règle.
+   */
+  actions?: React.ReactNode;
 }) {
   const [entrees, setEntrees] = useState<Notification[] | null>(null);
 
@@ -164,14 +173,17 @@ export default function PanneauNotifications({
                 {String(entrees.length).padStart(2, "0")}
               </span>
             ) : null}
+            <span className="ml-auto flex items-center gap-1.5">
+              {actions}
             <button
               type="button"
               aria-label="Fermer"
               onClick={onFermer}
-              className="ml-auto flex h-[34px] w-[34px] items-center justify-center rounded-[9px] border border-border bg-surface text-slate-2 transition-colors duration-150 ease-out hover:bg-paper"
+              className="flex h-[34px] w-[34px] items-center justify-center rounded-[9px] border border-border bg-surface text-slate-2 transition-colors duration-150 ease-out hover:bg-paper"
             >
               <X size={15} strokeWidth={2.2} aria-hidden />
             </button>
+            </span>
           </div>
           <span className="text-[13.5px] text-slate-light">
             {entrees === null ? "Chargement…" : resume(entrees.length)}
