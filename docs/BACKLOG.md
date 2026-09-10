@@ -409,6 +409,34 @@ L'espace formateur était pensé desktop-only ; il doit désormais fonctionner s
 
 ---
 
+## Phase 9 — Le dossier d'épreuve, le stagiaire, et ce qui prévient
+
+Les demandes du porteur de projet depuis le 7 septembre 2026, consignées après coup : le journal s'était arrêté à 8.11 pendant que les atomes continuaient. Regroupées par sujet plutôt qu'un point par commit — l'ordre chronologique exact est dans `git log`.
+
+- [x] **9.1 — Le dossier d'épreuve s'imprime d'un seul geste** (PRD §4.9) : le résultat à signer est devenu une pièce administrative — cartouche d'identification partagé (`lib/pdf-cartouche.ts`), horaire d'épreuve lu dans l'emploi du temps et non saisi, réponse du stagiaire, réponse attendue et commentaire du formateur par question, QR code vectoriel sous les signatures (UUID, nom, note), CEF **et** CNE. Autour de lui : une feuille d'émargement d'une page, une page de garde à coller sur le dossier physique, un sujet vierge à faire viser par le chef de pôle, et un bouton unique qui assemble le tout — `Dossier_CC1_DDOUX201_M104_2026-09-07.pdf`.
+  **Test** : PDF produits en Node, audités à la page avec pdf.js (débordement, chevauchement, page vide, échappements résiduels), rendus avec `@napi-rs/canvas`, QR relus avec `jsqr`. Treize copies de test créées puis supprimées par identifiant, sauvegarde JSON écrite avant, comptages avant/après relevés.
+
+- [x] **9.2 — Commenter un cours était impossible depuis la migration 052** : `poser_question_support` lisait `seances.groupe_id`, colonne supprimée le jour où une séance est devenue partagée entre groupes. Aucun stagiaire n'a jamais pu poser de question, et le formateur n'a jamais rien reçu à répondre. Migration `080` la réécrit sur `seance_groupes`, séances miroir comprises. Le panneau du formateur gagne au passage les commentaires d'annonce et les « j'aime », qu'il ne recevait pas non plus.
+  **Test** : RPC appelée en conditions réelles — l'erreur `42703 column s.groupe_id does not exist` reproduite avant, la question posée après. Un `404 PGRST202` sur une RPC appelée à vide signifie « aucune surcharge ne correspond », pas « fonction absente » : trois faux négatifs de vérification viennent de là.
+
+- [x] **9.3 — La photo du stagiaire, des deux côtés** (migrations `081`, `083`) : bucket `photos`, policies sur `storage.objects`, et le même composant dans l'en-tête de l'espace stagiaire et dans la fiche du formateur — chacun peut la poser, chacun peut la retirer.
+
+- [x] **9.4 — Le stagiaire de la journée** (PRD §4.5, migration `082`) : le formateur note la participation sur 10, un visage à la fois ; `designer_stagiaire_du_jour` tranche, compte la série et publie l'annonce d'un seul tenant. Le départage entre notes égales revient au moins récemment distingué — une distinction qui revient toujours au même cesse d'encourager les autres. Le groupe l'apprend en arrivant, une fois, feux d'artifice compris ; le formateur peut revoir la même fête depuis la séance.
+  **Test** : départage simulé en lecture seule sur les seize stagiaires réels de DDOUX201 avant d'écrire la fonction. Séance de test créée puis supprimée à la demande, comptages avant/après relevés.
+
+- [x] **9.5 — Le graphe du tableau de bord montrait le futur, donc zéro** : la fenêtre allait jusqu'à la fin de la période et le cumulatif repartait à zéro à son début. Bornée à aujourd'hui, amorcée avec tout ce qui précède. Les heures réalisées se placent désormais à la **date de la séance** et non à celle du pointage : un rattrapage de trois séances saisi un dimanche soir dessinait une marche là où il n'y en avait pas.
+
+- [x] **9.6 — Ouvrir une séance n'allume plus l'onglet « Stagiaires »** : `ongletGroupeActif` ne reconnaissait pas le segment `seances` et retombait sur le premier onglet. Rattaché à « Progression », d'où l'on vient. Le fil d'Ariane qui redisait le groupe et la section — déjà écrits deux fois au-dessus — cède la place à `RetourListe`, un lien qui ne dit qu'une chose.
+
+- [x] **9.7 — Un fil de commentaires ne déroule plus tout** : les quatre derniers, et « Voir les N commentaires précédents » pour le reste. Dans les deux espaces, le composant étant partagé.
+
+- [x] **9.8 — Une notification mène au commentaire, pas à la page** : chaque commentaire et chaque question porte son ancre (`#commentaire-<id>`, `#question-<id>`) ; le fil replié se déplie tout seul quand l'ancre le désigne, défile jusqu'à lui et le surligne trois secondes. Les liens du panneau formateur pointent l'ancre, l'onglet Support d'une séance s'ouvre par `?onglet=`. Un fil de dix-sept réponses ne se parcourt pas pour retrouver celle qui a sonné.
+
+- [x] **9.9 — Le stagiaire est prévenu de ce qui se passe dans son groupe** : sa cloche était inerte depuis toujours, le panneau n'existant que côté formateur. `getNotificationsStagiaire` lui remonte les annonces, les commentaires de ses camarades et les réponses du formateur aux questions de cours, sur quatorze jours — jamais ses propres mots. Un seul `PanneauNotifications` pour les deux espaces, paramétré par sa source, son titre, son résumé et son état vide : deux panneaux auraient divergé au premier correctif. La pastille compte ce qui est arrivé depuis la dernière ouverture, retenue dans le navigateur — il n'y a rien à marquer comme lu en base, puisque rien ne se résout.
+  **Test** : compilation et build verts, gardes passées ; requêtes rejouées en SQL sur les données réelles pour un stagiaire tiré au sort — 1 annonce, 16 commentaires de camarades et 1 réponse du formateur remontent sur la fenêtre de quatorze jours. **Non vérifié à l'écran** : faute de session stagiaire ouverte.
+
+---
+
 ## Points de vigilance — pas des atomes
 
 À garder en tête à chaque changement de schéma, sans traitement immédiat.
