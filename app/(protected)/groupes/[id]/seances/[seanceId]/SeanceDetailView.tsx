@@ -12,6 +12,11 @@ import { ConfirmModal } from "@/components/ui/Modal";
 import { inputStyles as inputClass } from "@/components/ui/Input";
 import { useToast } from "@/components/ui/Toast";
 import ModaleNotation from "@/components/ModaleNotation";
+import { FeteDistinction } from "@/components/ModaleDistinction";
+import {
+  getDistinctionDeSeance,
+  type DistinctionAFeter,
+} from "@/app/actions/distinction";
 import FicheSeance from "@/components/FicheSeance";
 import SupportSeance from "@/components/SupportSeance";
 import QuestionsSupport from "@/components/QuestionsSupport";
@@ -28,7 +33,15 @@ import {
   type SeanceDetail,
   type RemarqueSeance,
 } from "@/app/actions/seances";
-import { Check, CheckCheck, Lock, Play, Plus, Trash2 } from "lucide-react";
+import {
+  Check,
+  CheckCheck,
+  Crown,
+  Lock,
+  Play,
+  Plus,
+  Trash2,
+} from "lucide-react";
 
 export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
   const router = useRouter();
@@ -44,6 +57,8 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
     seance.contenu_realise ?? "",
   );
   const [notationOuverte, setNotationOuverte] = useState(false);
+  // L'aperçu de la fête : ce que le groupe verra en ouvrant l'application.
+  const [apercuFete, setApercuFete] = useState<DistinctionAFeter | null>(null);
   const [estFad, setEstFad] = useState(seance.est_fad);
   const [lienTeams, setLienTeams] = useState(seance.lien_teams ?? "");
   // Trois moments distincts : préparer, projeter, tenir le cahier. Les empiler
@@ -171,6 +186,15 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
    */
   function marquerFaite() {
     enregistrerDeroulement("fait", () => setNotationOuverte(true));
+  }
+
+  /** Revoir la fête telle que le groupe la découvrira. */
+  function ouvrirApercu() {
+    startTransition(async () => {
+      const d = await getDistinctionDeSeance(seance.id).catch(() => null);
+      if (d) setApercuFete(d);
+      else toast("Aucun stagiaire n'a encore été distingué sur cette séance.");
+    });
   }
 
   function enregistrerDeroulement(
@@ -776,6 +800,18 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
                   >
                     Enregistrer
                   </Button>
+                  {/* L'aperçu n'apparaît qu'une fois la séance close : avant,
+                      il n'y a rien à prévisualiser. */}
+                  {seance.statut === "fait" ? (
+                    <Button
+                      variant="ghost"
+                      icon={Crown}
+                      onClick={ouvrirApercu}
+                      disabled={enCours}
+                    >
+                      Aperçu de la fête
+                    </Button>
+                  ) : null}
                   <Button
                     icon={Check}
                     className="min-w-[200px] flex-1 justify-center"
@@ -792,6 +828,14 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
           </div>
         )}
       </div>
+
+      {apercuFete ? (
+        <FeteDistinction
+          fete={apercuFete}
+          apercu
+          onFermer={() => setApercuFete(null)}
+        />
+      ) : null}
 
       <ModaleNotation
         seanceId={seance.id}

@@ -114,32 +114,24 @@ function Feux({ actif }: { actif: boolean }) {
   );
 }
 
-export default function ModaleDistinction() {
-  const [fete, setFete] = useState<DistinctionAFeter | null>(null);
-
-  useEffect(() => {
-    let annule = false;
-    getDistinctionAFeter()
-      .then((d) => {
-        if (!annule) setFete(d);
-      })
-      // Silencieux : rater une fête n'est pas une erreur à signaler au
-      // stagiaire, qui n'y peut rien et n'attendait rien.
-      .catch(() => {});
-    return () => {
-      annule = true;
-    };
-  }, []);
-
-  if (!fete) return null;
-
+/**
+ * La fête elle-même, sans savoir d'où vient la distinction.
+ *
+ * Séparée du chargement pour que l'aperçu du formateur montre exactement ce
+ * que le stagiaire verra. Deux rendus distincts auraient fini par diverger, et
+ * l'aperçu aurait cessé d'être un aperçu.
+ */
+export function FeteDistinction({
+  fete,
+  onFermer,
+  apercu = false,
+}: {
+  fete: DistinctionAFeter;
+  onFermer: () => void;
+  /** En aperçu, le bouton dit ce qu'il fait : il ferme, il ne remercie pas. */
+  apercu?: boolean;
+}) {
   const nom = `${fete.prenom} ${fete.nom}`.trim();
-
-  async function fermer() {
-    const id = fete?.id;
-    setFete(null);
-    if (id) await marquerDistinctionVue(id).catch(() => {});
-  }
 
   return (
     <div
@@ -194,15 +186,51 @@ export default function ModaleDistinction() {
             </p>
           ) : null}
 
-          <Button onClick={fermer} className="mt-1 w-full justify-center">
-            {fete.cestMoi ? "Merci !" : "Le féliciter"}
+          <Button onClick={onFermer} className="mt-1 w-full justify-center">
+            {apercu ? "Fermer l'aperçu" : fete.cestMoi ? "Merci !" : "Le féliciter"}
           </Button>
 
           <p className="text-[12.5px] text-slate-light">
-            Une annonce vous attend dans le fil pour le féliciter.
+            {apercu
+              ? "Voilà ce que le groupe verra en ouvrant l'application."
+              : "Une annonce vous attend dans le fil pour le féliciter."}
           </p>
         </div>
       </div>
     </div>
+  );
+}
+
+/**
+ * Ce que le stagiaire voit en arrivant : la fête, une fois, puis plus jamais.
+ */
+export default function ModaleDistinction() {
+  const [fete, setFete] = useState<DistinctionAFeter | null>(null);
+
+  useEffect(() => {
+    let annule = false;
+    getDistinctionAFeter()
+      .then((d) => {
+        if (!annule) setFete(d);
+      })
+      // Silencieux : rater une fête n'est pas une erreur à signaler au
+      // stagiaire, qui n'y peut rien et n'attendait rien.
+      .catch(() => {});
+    return () => {
+      annule = true;
+    };
+  }, []);
+
+  if (!fete) return null;
+
+  return (
+    <FeteDistinction
+      fete={fete}
+      onFermer={() => {
+        const id = fete.id;
+        setFete(null);
+        void marquerDistinctionVue(id).catch(() => {});
+      }}
+    />
   );
 }

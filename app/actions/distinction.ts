@@ -228,3 +228,34 @@ export async function marquerDistinctionVue(
     .upsert({ distinction_id: distinctionId }, { ignoreDuplicates: true });
   if (error) throw new Error(error.message);
 }
+
+/**
+ * La distinction d'une séance, telle que le formateur peut la revoir.
+ *
+ * Même forme que ce que reçoit le stagiaire, pour que l'aperçu soit un
+ * aperçu et non une approximation. Deux différences, assumées : elle ne
+ * regarde pas si elle a déjà été vue — un aperçu se rouvre autant qu'on veut —
+ * et `cestMoi` est faux, le formateur n'étant pas celui qu'on distingue.
+ */
+export async function getDistinctionDeSeance(
+  seanceId: string,
+): Promise<DistinctionAFeter | null> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("distinctions_jour")
+    .select("id, serie, date, stagiaires(nom, prenom, photo)")
+    .eq("seance_id", seanceId)
+    .maybeSingle();
+  if (error || !data) return null;
+
+  return {
+    id: data.id,
+    nom: data.stagiaires?.nom ?? "",
+    prenom: data.stagiaires?.prenom ?? "",
+    photo: data.stagiaires?.photo ?? null,
+    serie: data.serie,
+    date: data.date,
+    cestMoi: false,
+  };
+}
