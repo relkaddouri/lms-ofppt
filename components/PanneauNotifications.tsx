@@ -67,6 +67,15 @@ function tranche(iso: string): string {
 }
 
 /**
+ * Chez le formateur, une notification est une tâche : le résumé le dit.
+ * Chez le stagiaire elle n'appelle aucune action, d'où le prop `resume`.
+ */
+function resumeFormateur(nombre: number): string {
+  if (nombre === 0) return "Rien n'attend votre intervention.";
+  return `${nombre} élément${nombre > 1 ? "s" : ""} en attente de votre intervention`;
+}
+
+/**
  * Panneau latéral des notifications.
  *
  * Le projet n'a pas de journal d'événements : chaque entrée est déduite de
@@ -79,16 +88,34 @@ function tranche(iso: string): string {
 export default function PanneauNotifications({
   ouvert,
   onFermer,
+  charger = getNotifications,
+  titre = "Notifications",
+  resume = resumeFormateur,
+  vide = "Aucun contrôle en brouillon, aucune question sans réponse, aucune copie à corriger.",
 }: {
   ouvert: boolean;
   onFermer: () => void;
+  /**
+   * D'où viennent les entrées.
+   *
+   * Le panneau sert les deux espaces : au formateur ce qui attend une action,
+   * au stagiaire ce qui vient de se passer. Seule la source change — les
+   * tuiles, le découpage par période et le clavier sont les mêmes, et un
+   * second panneau aurait divergé au premier correctif.
+   */
+  charger?: () => Promise<Notification[]>;
+  titre?: string;
+  /** La ligne sous le titre : « 3 éléments… » chez le formateur, « 3 nouveautés » chez le stagiaire. */
+  resume?: (nombre: number) => string;
+  /** Ce qui s'affiche quand il n'y a rien : le sens diffère d'un espace à l'autre. */
+  vide?: string;
 }) {
   const [entrees, setEntrees] = useState<Notification[] | null>(null);
 
   useEffect(() => {
     if (!ouvert) return;
     let annule = false;
-    getNotifications()
+    charger()
       .then((n) => {
         if (!annule) setEntrees(n);
       })
@@ -98,7 +125,7 @@ export default function PanneauNotifications({
     return () => {
       annule = true;
     };
-  }, [ouvert]);
+  }, [ouvert, charger]);
 
   useEffect(() => {
     if (!ouvert) return;
@@ -124,13 +151,13 @@ export default function PanneauNotifications({
       <aside
         role="dialog"
         aria-modal="true"
-        aria-label="Notifications"
+        aria-label={titre}
         className="fixed inset-y-0 right-0 z-50 flex w-[424px] max-w-[92vw] flex-col border-l border-border bg-surface shadow-panneau"
       >
         <div className="flex flex-none flex-col gap-3.5 border-b border-separator px-6 pb-[18px] pt-[22px]">
           <div className="flex items-center gap-3">
             <h2 className="font-display text-xl font-semibold text-ink">
-              Notifications
+              {titre}
             </h2>
             {entrees && entrees.length > 0 ? (
               <span className="rounded-full bg-coral px-2.5 py-0.5 font-mono text-[12.5px] font-semibold text-white">
@@ -147,11 +174,7 @@ export default function PanneauNotifications({
             </button>
           </div>
           <span className="text-[13.5px] text-slate-light">
-            {entrees === null
-              ? "Chargement…"
-              : entrees.length === 0
-                ? "Rien n'attend votre intervention."
-                : `${entrees.length} élément${entrees.length > 1 ? "s" : ""} en attente de votre intervention`}
+            {entrees === null ? "Chargement…" : resume(entrees.length)}
           </span>
         </div>
 
@@ -224,8 +247,7 @@ export default function PanneauNotifications({
 
           {entrees !== null && entrees.length === 0 ? (
             <p className="px-6 py-12 text-center text-[14.5px] text-slate-light">
-              Aucun contrôle en brouillon, aucune question sans réponse, aucune
-              copie à corriger.
+              {vide}
             </p>
           ) : null}
         </div>

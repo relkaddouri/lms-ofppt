@@ -4,8 +4,9 @@ import { getIdentiteStagiaire } from "@/app/actions/stagiaire";
 import { NavigationHaute, NavigationBasse } from "./BarreNavigation";
 import PhotoStagiaire from "@/components/PhotoStagiaire";
 import ModaleDistinction from "@/components/ModaleDistinction";
+import ClocheStagiaire from "@/components/ClocheStagiaire";
 import { signOutAction } from "@/app/actions/auth";
-import { Bell, LogOut } from "lucide-react";
+import { LogOut } from "lucide-react";
 
 export default async function EspaceStagiaireLayout({
   children,
@@ -54,17 +55,11 @@ export default async function EspaceStagiaireLayout({
           <span className="ml-auto flex items-center gap-2">
             <NavigationHaute />
 
-            {/* La cloche de la maquette : le panneau de notifications n'existe
-                pas encore, le bouton reste donc visible et inerte plutôt
-                qu'absent — il annonce ce qui vient. */}
-            <button
-              type="button"
-              aria-label="Notifications"
-              disabled
-              className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border bg-surface text-slate-2 md:hidden"
-            >
-              <Bell size={18} aria-hidden />
-            </button>
+            {/* La cloche mène au commentaire lui-même, pas à la page qui le
+                contient : c'est tout l'objet de l'ancre posée sur chaque
+                commentaire. Elle reste dans l'en-tête aux deux tailles — la
+                barre du bas ne tient que la navigation (§6). */}
+            <ClocheStagiaire />
 
             {/* La déconnexion tient dans l'en-tête : la barre du bas est
                 réservée à la navigation, et un cinquième onglet la
