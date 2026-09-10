@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import RetourListe from "@/components/RetourListe";
 import Button, { buttonStyles } from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
 import Avatar from "@/components/ui/Avatar";
@@ -229,8 +230,12 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
 
   return (
     <div>
+      <RetourListe
+        href={`/groupes/${seance.groupe_id}/progression`}
+        libelle="la progression"
+      />
 
-      <header className="mt-6 flex flex-wrap items-start justify-between gap-6">
+      <header className="mt-4 flex flex-wrap items-start justify-between gap-6">
         <div className="flex min-w-0 items-start gap-4">
           {seance.objectifCode ? (
             <span className="mt-1 flex h-9 shrink-0 items-center justify-center rounded-[9px] bg-wash px-2.5 font-mono text-xs font-semibold text-slate-2">

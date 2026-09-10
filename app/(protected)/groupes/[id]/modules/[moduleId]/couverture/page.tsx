@@ -1,6 +1,7 @@
 import { getCouvertureModule } from "@/app/actions/couverture";
 import { getGroupeModules } from "@/app/actions/groupes";
 import { libelleModule } from "@/lib/modules";
+import RetourListe from "@/components/RetourListe";
 import CouvertureVue from "./CouvertureVue";
 
 export const metadata = { title: "Couverture du référentiel" };
@@ -18,7 +19,8 @@ export default async function CouverturePage({
   const module = modules.find((m) => m.module_id === moduleId);
 
   return (
-    <div className="p-8">
+    <div className="flex flex-col gap-2 p-8">
+      <RetourListe href={`/groupes/${id}/modules`} libelle="les modules" />
       <CouvertureVue couverture={couverture} groupeId={id} />
     </div>
   );
