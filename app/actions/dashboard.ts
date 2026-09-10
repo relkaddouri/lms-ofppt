@@ -223,105 +223,11 @@ export async function getDashboardData(): Promise<{
     actuel: points.length > 0 ? points[points.length - 1]!.realise : 0,
     gain:
       points.length > 1
-        ? Math.round((points[points.length - 1]!.realise - points[0]!.realise) * 10) /
-          10
+        ? Math.round(
+            (points[points.length - 1]!.realise - points[0]!.realise) * 10,
+          ) / 10
         : 0,
   };
 
   return { stats, groupes: groupesProgression, evolution };
-}
-
-/**
- * Compteur de la cloche : ce qui attend une action du formateur.
- *
- * Le panneau de notifications a son propre écran et son propre atome ; ce
- * compteur existe pour que le badge de la barre supérieure dise la vérité dès
- * maintenant plutôt que d'afficher un nombre décoratif.
- *
- * Trois sources, et non deux : aux contrôles en brouillon et aux questions de
- * stagiaires sans réponse s'ajoutent les commentaires d'annonce. C'étaient les
- * seuls messages de stagiaires que le compteur ignorait — les réactions
- * « j'aime » n'appellent pas de réponse, et un rendu de devoir se suit depuis
- * l'écran du devoir, pas depuis une notification.
- *
- * « Sans réponse » se lit ici comme « rien du formateur ne lui a succédé sur
- * ce fil ». La définition tient avant même que le formateur puisse répondre
- * depuis son écran : tant que c'est le cas, tout commentaire compte, ce qui
- * est exactement la vérité.
- */
-export async function getCompteurNotifications(): Promise<number> {
-  const supabase = await createClient();
-
-  const [controlesRes, questionsRes, reponsesRes, commentairesRes, profilsRes] =
-    await Promise.all([
-      supabase
-        .from("controles")
-        .select("id", { count: "exact", head: true })
-        .eq("statut", "brouillon"),
-      supabase.from("questions_support").select("id"),
-      supabase.from("reponses_question").select("question_id"),
-      supabase
-        .from("commentaires_annonce")
-        .select("id, annonce_id, auteur_id, created_at")
-        .order("created_at"),
-      supabase.from("profils").select("id, role"),
-    ]);
-
-  if (controlesRes.error) throw new Error(controlesRes.error.message);
-  if (questionsRes.error) throw new Error(questionsRes.error.message);
-  if (reponsesRes.error) throw new Error(reponsesRes.error.message);
-  if (commentairesRes.error) throw new Error(commentairesRes.error.message);
-  if (profilsRes.error) throw new Error(profilsRes.error.message);
-
-  const repondues = new Set(
-    (reponsesRes.data ?? []).map((r) => r.question_id as string),
-  );
-  const sansReponse = (questionsRes.data ?? []).filter(
-    (q) => !repondues.has(q.id as string),
-  ).length;
-
-  return (
-    (controlesRes.count ?? 0) +
-    sansReponse +
-    commentairesEnAttente(commentairesRes.data ?? [], profilsRes.data ?? [])
-  );
-}
-
-type CommentaireBrut = {
-  annonce_id: string;
-  auteur_id: string;
-  created_at: string;
-};
-
-/**
- * Commentaires de stagiaires auxquels rien n'a succédé du formateur.
- *
- * On compare par fil et par date plutôt que de compter tout ce qui n'est pas
- * lu : un formateur qui a répondu une fois à la fin d'une discussion y a
- * répondu, même si trois commentaires l'ont précédé. Compter chaque message
- * ferait sonner le badge pour une conversation déjà close.
- */
-function commentairesEnAttente(
-  commentaires: CommentaireBrut[],
-  profils: { id: string; role: string | null }[],
-): number {
-  const stagiaires = new Set(
-    profils.filter((p) => p.role === "stagiaire").map((p) => p.id),
-  );
-
-  // Dernier mot du formateur sur chaque fil.
-  const derniereReponse = new Map<string, string>();
-  for (const c of commentaires) {
-    if (stagiaires.has(c.auteur_id)) continue;
-    const vue = derniereReponse.get(c.annonce_id);
-    if (!vue || c.created_at > vue) {
-      derniereReponse.set(c.annonce_id, c.created_at);
-    }
-  }
-
-  return commentaires.filter((c) => {
-    if (!stagiaires.has(c.auteur_id)) return false;
-    const reponse = derniereReponse.get(c.annonce_id);
-    return !reponse || c.created_at > reponse;
-  }).length;
 }

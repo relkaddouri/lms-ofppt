@@ -48,7 +48,9 @@ export async function getNotifications(): Promise<Notification[]> {
     await Promise.all([
       supabase
         .from("controles")
-        .select("id, titre, created_at, module_id, groupe_id, modules(competences(code_operationnel))")
+        .select(
+          "id, titre, created_at, module_id, groupe_id, modules(competences(code_operationnel))",
+        )
         .eq("statut", "brouillon")
         .order("created_at", { ascending: false })
         .limit(20),
@@ -74,19 +76,29 @@ export async function getNotifications(): Promise<Notification[]> {
 
   // Les réactions du fil se lisent à part : elles ne dépendent d'aucune des
   // cinq lectures ci-dessus et n'ont pas à les retarder si elles échouent.
-  const [commentairesRes, reactionsRes, profilsRes] = await Promise.all([
-    supabase
-      .from("commentaires_annonce")
-      .select("id, annonce_id, auteur_id, texte, created_at, annonces(titre, groupe_id)")
-      .order("created_at", { ascending: false })
-      .limit(60),
-    supabase
-      .from("reactions_annonce")
-      .select("annonce_id, user_id, created_at, annonces(titre, groupe_id)")
-      .order("created_at", { ascending: false })
-      .limit(30),
-    supabase.from("profils").select("id, role"),
-  ]);
+  const [commentairesRes, reactionsRes, comptesStagiairesRes] =
+    await Promise.all([
+      supabase
+        .from("commentaires_annonce")
+        .select(
+          "id, annonce_id, auteur_id, texte, created_at, annonces(titre, groupe_id)",
+        )
+        .order("created_at", { ascending: false })
+        .limit(60),
+      supabase
+        .from("reactions_annonce")
+        .select("annonce_id, user_id, created_at, annonces(titre, groupe_id)")
+        .order("created_at", { ascending: false })
+        .limit(30),
+      // Qui est stagiaire ? La question se pose à `stagiaires` et non à
+      // `profils` : la policy de `profils` ne rend au formateur que sa propre
+      // ligne — `profils_lecture_crochet_jeton` est réservée au crochet de
+      // jeton, donc à `supabase_auth_admin`. L'ensemble revenait vide, et comme
+      // il sert de filtre, **aucun commentaire ni aucun j'aime n'a jamais été
+      // notifié**. `stagiaires` répond mieux à la question posée : est stagiaire
+      // celui qui est inscrit dans un des groupes du formateur.
+      supabase.from("stagiaires").select("user_id").not("user_id", "is", null),
+    ]);
 
   const notifications: Notification[] = [];
 
@@ -97,7 +109,9 @@ export async function getNotifications(): Promise<Notification[]> {
       created_at: string;
       module_id: string;
       groupe_id: string;
-      modules: { competences: { code_operationnel: string | null } | null } | null;
+      modules: {
+        competences: { code_operationnel: string | null } | null;
+      } | null;
     };
     notifications.push({
       id: `controle-${r.id}`,
@@ -150,9 +164,9 @@ export async function getNotifications(): Promise<Notification[]> {
   // compare par fil et par date. Un formateur qui a répondu une fois à la fin
   // d'une discussion y a répondu, même si trois commentaires l'ont précédé.
   const stagiaires = new Set(
-    (profilsRes.data ?? [])
-      .filter((p) => p.role === "stagiaire")
-      .map((p) => p.id as string),
+    (comptesStagiairesRes.data ?? [])
+      .map((s) => s.user_id)
+      .filter((id): id is string => id !== null),
   );
 
   type CommentaireLu = {
@@ -163,7 +177,8 @@ export async function getNotifications(): Promise<Notification[]> {
     created_at: string;
     annonces: { titre: string | null; groupe_id: string } | null;
   };
-  const commentaires = (commentairesRes.data ?? []) as unknown as CommentaireLu[];
+  const commentaires = (commentairesRes.data ??
+    []) as unknown as CommentaireLu[];
 
   const dernierMotDuFormateur = new Map<string, string>();
   for (const c of commentaires) {
@@ -205,7 +220,12 @@ export async function getNotifications(): Promise<Notification[]> {
   };
   const parAnnonce = new Map<
     string,
-    { nombre: number; date: string; titre: string | null; groupe: string | null }
+    {
+      nombre: number;
+      date: string;
+      titre: string | null;
+      groupe: string | null;
+    }
   >();
   for (const r of (reactionsRes.data ?? []) as unknown as ReactionLue[]) {
     if (!stagiaires.has(r.user_id)) continue;

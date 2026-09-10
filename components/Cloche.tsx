@@ -153,15 +153,18 @@ export default function Cloche({
   }, [cleVues, mesure]);
 
   const basculerSon = useCallback(() => {
-    setAvecSon((actif) => {
-      const cible = !actif;
-      sonActif.current = cible;
-      ecrire(cleSon, cible ? "1" : "0");
-      // Le son se fait entendre au moment où on l'allume : sans cela, on
-      // coche une case sans savoir ce qu'on vient d'autoriser.
-      if (cible) jouerCarillon();
-      return cible;
-    });
+    // L'état courant se lit dans la référence et non dans une fonction de mise
+    // à jour : React peut rappeler celle-ci — il le fait systématiquement en
+    // développement — et le carillon sonnait deux fois. Une fonction de mise à
+    // jour doit rester pure ; le réglage vit de toute façon dans la référence,
+    // que la boucle de relecture consulte à chaque tour.
+    const cible = !sonActif.current;
+    sonActif.current = cible;
+    setAvecSon(cible);
+    ecrire(cleSon, cible ? "1" : "0");
+    // Le son se fait entendre au moment où on l'allume : sans cela, on coche
+    // une case sans savoir ce qu'on vient d'autoriser.
+    if (cible) jouerCarillon();
   }, [cleSon]);
 
   return (
