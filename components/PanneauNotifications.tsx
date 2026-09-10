@@ -6,6 +6,8 @@ import {
   CalendarClock,
   ClipboardCheck,
   FileCheck2,
+  Heart,
+  MessageCircle,
   MessageCircleQuestion,
   X,
 } from "lucide-react";
@@ -31,6 +33,14 @@ const GENRES: Record<
     fond: "bg-tint-teal",
     encre: "text-teal-dark",
   },
+  // Le fil : une bulle pour ce qui appelle une réponse, un cœur pour ce qui
+  // n'en appelle pas. La distinction se voit avant d'être lue.
+  commentaire: {
+    Icone: MessageCircle,
+    fond: "bg-tint-teal",
+    encre: "text-teal-dark",
+  },
+  jaime: { Icone: Heart, fond: "bg-success-wash", encre: "text-green-dark" },
   copie: { Icone: ClipboardCheck, fond: "bg-wash", encre: "text-slate-2" },
   devoir: { Icone: ClipboardCheck, fond: "bg-wash", encre: "text-slate-2" },
   stage: { Icone: CalendarClock, fond: "bg-wash", encre: "text-slate-2" },

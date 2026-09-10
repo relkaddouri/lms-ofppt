@@ -5,6 +5,8 @@ import { createClient } from "@/lib/supabase/server";
 export type GenreNotification =
   | "controle"
   | "question"
+  | "commentaire"
+  | "jaime"
   | "copie"
   | "devoir"
   | "stage";
@@ -25,13 +27,19 @@ export type Notification = {
 };
 
 /**
- * Ce qui attend une action du formateur.
+ * Ce qui attend une action du formateur, et ce qui vient de se passer.
  *
  * Le projet n'a pas de table d'événements : ces entrées sont déduites de
  * l'état courant — un contrôle resté en brouillon, une question sans réponse,
  * une copie dont une question n'est pas notée. C'est ce qui explique
  * l'absence de « marquer comme lu » : il n'y a rien à marquer, seulement des
  * tâches qui disparaissent quand on les traite.
+ *
+ * Les « j'aime » font exception et l'assument. Ils n'appellent aucune action
+ * et ne disparaîtront donc jamais d'eux-mêmes : ils sont bornés aux plus
+ * récents, et rangés après le reste. Le formateur voulait savoir que sa classe
+ * réagit ; le taire au motif que ce n'est pas une tâche revenait à décider
+ * pour lui de ce qui l'intéresse.
  */
 export async function getNotifications(): Promise<Notification[]> {
   const supabase = await createClient();
@@ -61,6 +69,22 @@ export async function getNotifications(): Promise<Notification[]> {
         .order("date_rendu", { ascending: false })
         .limit(20),
     ]);
+
+  // Les réactions du fil se lisent à part : elles ne dépendent d'aucune des
+  // cinq lectures ci-dessus et n'ont pas à les retarder si elles échouent.
+  const [commentairesRes, reactionsRes, profilsRes] = await Promise.all([
+    supabase
+      .from("commentaires_annonce")
+      .select("id, annonce_id, auteur_id, texte, created_at, annonces(titre, groupe_id)")
+      .order("created_at", { ascending: false })
+      .limit(60),
+    supabase
+      .from("reactions_annonce")
+      .select("annonce_id, user_id, created_at, annonces(titre, groupe_id)")
+      .order("created_at", { ascending: false })
+      .limit(30),
+    supabase.from("profils").select("id, role"),
+  ]);
 
   const notifications: Notification[] = [];
 
@@ -112,6 +136,98 @@ export async function getNotifications(): Promise<Notification[]> {
     });
   }
 
+  // ── Le fil : commentaires en attente, puis réactions ────────────────────
+  //
+  // La règle du commentaire en attente est celle du tableau de bord : on
+  // compare par fil et par date. Un formateur qui a répondu une fois à la fin
+  // d'une discussion y a répondu, même si trois commentaires l'ont précédé.
+  const stagiaires = new Set(
+    (profilsRes.data ?? [])
+      .filter((p) => p.role === "stagiaire")
+      .map((p) => p.id as string),
+  );
+
+  type CommentaireLu = {
+    id: string;
+    annonce_id: string;
+    auteur_id: string;
+    texte: string;
+    created_at: string;
+    annonces: { titre: string | null; groupe_id: string } | null;
+  };
+  const commentaires = (commentairesRes.data ?? []) as unknown as CommentaireLu[];
+
+  const dernierMotDuFormateur = new Map<string, string>();
+  for (const c of commentaires) {
+    if (stagiaires.has(c.auteur_id)) continue;
+    const vue = dernierMotDuFormateur.get(c.annonce_id);
+    if (!vue || c.created_at > vue) {
+      dernierMotDuFormateur.set(c.annonce_id, c.created_at);
+    }
+  }
+
+  for (const c of commentaires) {
+    if (!stagiaires.has(c.auteur_id)) continue;
+    const repondu = dernierMotDuFormateur.get(c.annonce_id);
+    if (repondu && c.created_at <= repondu) continue;
+    notifications.push({
+      id: `commentaire-${c.id}`,
+      genre: "commentaire",
+      texte: "Un stagiaire a commenté une annonce",
+      reference: c.annonces?.titre ?? null,
+      extrait: c.texte,
+      auteur: null,
+      date: c.created_at,
+      href: c.annonces?.groupe_id
+        ? `/groupes/${c.annonces.groupe_id}/annonces`
+        : "/groupes",
+    });
+  }
+
+  // Les « j'aime » se groupent par annonce : quinze lignes identiques pour un
+  // même billet noieraient tout le reste du panneau.
+  type ReactionLue = {
+    annonce_id: string;
+    /** `user_id` et non `auteur_id` : la table des réactions nomme ainsi. */
+    user_id: string;
+    created_at: string;
+    annonces: { titre: string | null; groupe_id: string } | null;
+  };
+  const parAnnonce = new Map<
+    string,
+    { nombre: number; date: string; titre: string | null; groupe: string | null }
+  >();
+  for (const r of (reactionsRes.data ?? []) as unknown as ReactionLue[]) {
+    if (!stagiaires.has(r.user_id)) continue;
+    const vue = parAnnonce.get(r.annonce_id);
+    if (vue) {
+      vue.nombre += 1;
+      if (r.created_at > vue.date) vue.date = r.created_at;
+    } else {
+      parAnnonce.set(r.annonce_id, {
+        nombre: 1,
+        date: r.created_at,
+        titre: r.annonces?.titre ?? null,
+        groupe: r.annonces?.groupe_id ?? null,
+      });
+    }
+  }
+  for (const [annonceId, r] of parAnnonce) {
+    notifications.push({
+      id: `jaime-${annonceId}`,
+      genre: "jaime",
+      texte:
+        r.nombre > 1
+          ? `${r.nombre} stagiaires ont aimé une annonce`
+          : "Un stagiaire a aimé une annonce",
+      reference: r.titre,
+      extrait: null,
+      auteur: null,
+      date: r.date,
+      href: r.groupe ? `/groupes/${r.groupe}/annonces` : "/groupes",
+    });
+  }
+
   for (const p of copiesRes.data ?? []) {
     const r = p as unknown as {
       id: string;
@@ -158,5 +274,11 @@ export async function getNotifications(): Promise<Notification[]> {
     });
   }
 
-  return notifications.sort((a, b) => b.date.localeCompare(a.date)).slice(0, 40);
+  // Les « j'aime » passent après tout le reste à date égale : ils
+  // n'appellent aucune action, et les laisser remonter en tête repousserait
+  // hors du panneau ce qui en attend une.
+  const rang = (n: Notification) => (n.genre === "jaime" ? 1 : 0);
+  return notifications
+    .sort((a, b) => rang(a) - rang(b) || b.date.localeCompare(a.date))
+    .slice(0, 40);
 }
