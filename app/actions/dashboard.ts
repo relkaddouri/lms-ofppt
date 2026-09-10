@@ -163,15 +163,32 @@ export async function getDashboardData(): Promise<{
     }
   }
 
+  // La fenêtre s'arrête aujourd'hui. Le calendrier est généré pour l'année
+  // entière — cent cinquante séances planifiées jusqu'en mai —, si bien que
+  // les « trente dernières dates » tombaient toutes dans le futur : une
+  // fenêtre où rien n'a encore été fait, donc une courbe plate à zéro sur un
+  // axe qui parlait de l'an prochain.
+  const aujourdhui = maintenant();
   const jours = [...new Set([...faitParJour.keys(), ...prevuParJour.keys()])]
+    .filter((j) => j <= aujourdhui)
     .sort()
     .slice(-30);
 
   const pourcent = (heures: number) =>
     masseTotale > 0 ? Math.round((heures / masseTotale) * 1000) / 10 : 0;
 
+  // Ce qui précède la fenêtre est déjà acquis : la courbe part du niveau
+  // atteint, elle ne le redécouvre pas. Repartir de zéro effaçait les heures
+  // faites avant les trente derniers jours — c'est-à-dire, en début d'année,
+  // à peu près tout.
+  const debut = jours[0];
   let cumulFait = 0;
   let cumulPrevu = 0;
+  if (debut) {
+    for (const [j, h] of faitParJour) if (j < debut) cumulFait += h;
+    for (const [j, h] of prevuParJour) if (j < debut) cumulPrevu += h;
+  }
+
   const points: EvolutionPoint[] = jours.map((date) => {
     cumulFait += faitParJour.get(date) ?? 0;
     cumulPrevu += prevuParJour.get(date) ?? 0;
