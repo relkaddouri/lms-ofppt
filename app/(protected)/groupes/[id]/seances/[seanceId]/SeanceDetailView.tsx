@@ -11,6 +11,7 @@ import Interrupteur from "@/components/ui/Interrupteur";
 import { ConfirmModal } from "@/components/ui/Modal";
 import { inputStyles as inputClass } from "@/components/ui/Input";
 import { useToast } from "@/components/ui/Toast";
+import ModaleNotation from "@/components/ModaleNotation";
 import FicheSeance from "@/components/FicheSeance";
 import SupportSeance from "@/components/SupportSeance";
 import QuestionsSupport from "@/components/QuestionsSupport";
@@ -42,6 +43,7 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
   const [contenuRealise, setContenuRealise] = useState(
     seance.contenu_realise ?? "",
   );
+  const [notationOuverte, setNotationOuverte] = useState(false);
   const [estFad, setEstFad] = useState(seance.est_fad);
   const [lienTeams, setLienTeams] = useState(seance.lien_teams ?? "");
   // Trois moments distincts : préparer, projeter, tenir le cahier. Les empiler
@@ -161,7 +163,20 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
     });
   }
 
-  function enregistrerDeroulement(statut?: "a_faire" | "fait") {
+  /**
+   * Clore la séance, c'est deux choses : consigner le déroulement, puis noter
+   * la participation. La notation s'ouvre donc après l'enregistrement, et non
+   * à sa place — un formateur pressé doit pouvoir fermer la modale sans avoir
+   * perdu ce qu'il venait d'écrire.
+   */
+  function marquerFaite() {
+    enregistrerDeroulement("fait", () => setNotationOuverte(true));
+  }
+
+  function enregistrerDeroulement(
+    statut?: "a_faire" | "fait",
+    ensuite?: () => void,
+  ) {
     startTransition(async () => {
       try {
         await majSeance(seance.id, {
@@ -174,6 +189,7 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
             : "Déroulement enregistré.",
         );
         router.refresh();
+        ensuite?.();
       } catch (e) {
         toast(
           e instanceof Error ? e.message : "Enregistrement impossible.",
@@ -763,11 +779,11 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
                   <Button
                     icon={Check}
                     className="min-w-[200px] flex-1 justify-center"
-                    onClick={() => enregistrerDeroulement("fait")}
-                    disabled={enCours || seance.statut === "fait"}
+                    onClick={marquerFaite}
+                    disabled={enCours}
                   >
                     {seance.statut === "fait"
-                      ? "Séance marquée faite"
+                      ? "Noter la participation"
                       : "Marquer la séance faite"}
                   </Button>
                 </div>
@@ -776,6 +792,21 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
           </div>
         )}
       </div>
+
+      <ModaleNotation
+        seanceId={seance.id}
+        ouverte={notationOuverte}
+        onFermer={() => setNotationOuverte(false)}
+        onCloture={(gagnant) => {
+          setNotationOuverte(false);
+          toast(
+            gagnant
+              ? `${gagnant} est le stagiaire de la journée.`
+              : "Séance close. Personne à distinguer.",
+          );
+          router.refresh();
+        }}
+      />
 
       <ConfirmModal
         open={remarqueASupprimer !== null}

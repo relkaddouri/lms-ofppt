@@ -3,6 +3,7 @@ import { getUser } from "@/lib/supabase/server";
 import { getIdentiteStagiaire } from "@/app/actions/stagiaire";
 import { NavigationHaute, NavigationBasse } from "./BarreNavigation";
 import PhotoStagiaire from "@/components/PhotoStagiaire";
+import ModaleDistinction from "@/components/ModaleDistinction";
 import { signOutAction } from "@/app/actions/auth";
 import { Bell, LogOut } from "lucide-react";
 
@@ -21,6 +22,10 @@ export default async function EspaceStagiaireLayout({
 
   return (
     <div className="min-h-dvh bg-paper">
+      {/* Dans le gabarit et non sur une page : la fête doit s'ouvrir à
+          l'arrivée, quel que soit l'écran par lequel le stagiaire entre. */}
+      <ModaleDistinction />
+
       <header className="sticky top-0 z-30 border-b border-separator bg-surface">
         <div className="mx-auto flex max-w-lg items-center gap-3 px-5 pb-3.5 pt-4 md:max-w-4xl md:gap-6 md:px-6 md:py-3">
           {/* Sa photo se change là où il se voit : l'en-tête est le seul
