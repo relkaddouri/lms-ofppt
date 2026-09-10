@@ -152,9 +152,24 @@ export async function getDashboardData(): Promise<{
     if (heures <= 0) continue;
 
     if (s.statut === "fait") {
-      const quand = s.updated_at ?? s.created_at;
+      // Les heures se placent à la date de la séance, non au jour où elle a
+      // été cochée. Le prévisionnel est déjà à la date planifiée : garder le
+      // réalisé au jour de saisie revenait à comparer deux échelles — le
+      // calendrier de formation d'un côté, les habitudes de saisie de l'autre
+      // — et l'écart entre les deux courbes, seule chose que ce graphe existe
+      // pour montrer, ne voulait alors rien dire. Une séance pointée le
+      // lendemain faisait un pic là où il n'y avait qu'un jour de retard
+      // administratif.
+      //
+      // Le prix en est assumé : la courbe se corrige rétroactivement quand une
+      // séance ancienne est cochée. C'est ce qu'on veut d'un indicateur
+      // d'avancement — la vérité corrigée plutôt que la trace de la saisie.
+      //
+      // Sans date, le jour du pointage sert de repli : une séance faite doit
+      // compter quelque part.
+      const quand = s.date ?? s.updated_at ?? s.created_at;
       if (quand) {
-        const j = jour(quand);
+        const j = s.date ?? jour(quand);
         faitParJour.set(j, (faitParJour.get(j) ?? 0) + heures);
       }
     }
