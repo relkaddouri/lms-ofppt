@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import Breadcrumb from "@/components/Breadcrumb";
 import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
 import { inputStyles as inputClass } from "@/components/ui/Input";
@@ -149,14 +148,6 @@ export default function RepartitionManager({
 
   return (
     <div className="flex flex-col gap-6 px-6 py-10 md:px-10 md:pb-14">
-      <Breadcrumb
-        items={[
-          { label: "Groupes", href: "/groupes" },
-          { label: plan.groupeNom, href: `/groupes/${groupeId}` },
-          { label: "Modules", href: `/groupes/${groupeId}/modules` },
-          { label: "Répartition horaire" },
-        ]}
-      />
 
       <header className="flex flex-col gap-2">
         <span className="font-mono text-[11.5px] uppercase tracking-[0.12em] text-slate-light">

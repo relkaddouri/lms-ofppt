@@ -1,6 +1,5 @@
 import { getCouvertureModule } from "@/app/actions/couverture";
 import { getGroupeModules } from "@/app/actions/groupes";
-import Breadcrumb from "@/components/Breadcrumb";
 import { libelleModule } from "@/lib/modules";
 import CouvertureVue from "./CouvertureVue";
 
@@ -20,19 +19,6 @@ export default async function CouverturePage({
 
   return (
     <div className="p-8">
-      <Breadcrumb
-        items={[
-          { label: "Groupes", href: "/groupes" },
-          { label: "Modules", href: `/groupes/${id}/modules` },
-          {
-            label: module
-              ? libelleModule(module.code_operationnel, module.nom)
-              : "Module",
-            href: `/groupes/${id}/modules/${moduleId}`,
-          },
-          { label: "Couverture" },
-        ]}
-      />
       <CouvertureVue couverture={couverture} groupeId={id} />
     </div>
   );

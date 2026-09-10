@@ -2,7 +2,6 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import Breadcrumb from "@/components/Breadcrumb";
 import Link from "next/link";
 import Button, { buttonStyles } from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
@@ -230,17 +229,6 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
 
   return (
     <div>
-      <Breadcrumb
-        items={[
-          { label: "Groupes", href: "/groupes" },
-          { label: seance.groupeNom, href: `/groupes/${seance.groupe_id}` },
-          {
-            label: "Progression",
-            href: `/groupes/${seance.groupe_id}/progression`,
-          },
-          { label: seance.date ? formatDateJour(seance.date) : "Séance" },
-        ]}
-      />
 
       <header className="mt-6 flex flex-wrap items-start justify-between gap-6">
         <div className="flex min-w-0 items-start gap-4">
