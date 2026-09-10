@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { getUser } from "@/lib/supabase/server";
 import { getIdentiteStagiaire } from "@/app/actions/stagiaire";
 import { NavigationHaute, NavigationBasse } from "./BarreNavigation";
-import Avatar from "@/components/ui/Avatar";
+import PhotoStagiaire from "@/components/PhotoStagiaire";
 import { signOutAction } from "@/app/actions/auth";
 import { Bell, LogOut } from "lucide-react";
 
@@ -23,11 +23,16 @@ export default async function EspaceStagiaireLayout({
     <div className="min-h-dvh bg-paper">
       <header className="sticky top-0 z-30 border-b border-separator bg-surface">
         <div className="mx-auto flex max-w-lg items-center gap-3 px-5 pb-3.5 pt-4 md:max-w-4xl md:gap-6 md:px-6 md:py-3">
-          <Avatar
+          {/* Sa photo se change là où il se voit : l'en-tête est le seul
+              endroit de son espace où il est représenté, et lui inventer un
+              écran « Mon compte » pour un seul réglage aurait ajouté un
+              cinquième onglet à une barre qui en tient quatre (§6). */}
+          <PhotoStagiaire
+            stagiaireId={identite.stagiaireId}
             prenom={identite.prenom}
             nom={identite.nom}
-            taille="lg"
-            className="md:h-9 md:w-9 md:text-[13px]"
+            photo={identite.photo}
+            compact
           />
           <span className="flex min-w-0 flex-col gap-0.5">
             <span className="truncate font-display text-[16.5px] font-semibold text-ink md:text-sm">
