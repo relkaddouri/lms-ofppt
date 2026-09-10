@@ -20,18 +20,6 @@ export type Stagiaire = {
   user_id: string | null;
 };
 
-/**
- * `photo` et sa fonction, en attendant les types regénérés (migration 081).
- *
- * La colonne et la fonction existent dans la migration mais pas encore dans
- * `database.types.ts`, qui se régénère après `supabase db push`. Les deux
- * béquilles sont isolées ici — deux lignes à retirer ce jour-là — plutôt que
- * des casts dispersés qui éteindraient le typage sur des requêtes entières.
- */
-type AppelRpc = (nom: string, args: Record<string, unknown>) => Promise<{
-  error: { message: string } | null;
-}>;
-
 export async function getStagiairesByGroupe(
   groupeId: string,
 ): Promise<Stagiaire[]> {
@@ -43,7 +31,7 @@ export async function getStagiairesByGroupe(
     .order("nom");
 
   if (error) throw new Error(error.message);
-  return data as unknown as Stagiaire[];
+  return data as Stagiaire[];
 }
 
 export async function getStagiairesCount(groupeId: string): Promise<number> {
@@ -227,10 +215,13 @@ export async function enregistrerPhoto(
   chemin: string | null,
 ): Promise<void> {
   const supabase = await createClient();
-  const { error } = await (supabase.rpc as unknown as AppelRpc)(
-    "enregistrer_photo_stagiaire",
-    { p_stagiaire: stagiaireId, p_chemin: chemin },
-  );
+  // Omettre le chemin, c'est retirer la photo : la fonction a une valeur par
+  // défaut pour ça (migration 083), ce qui évite un `null` que les types
+  // refuseraient — et un cast pour les faire taire.
+  const { error } = await supabase.rpc("enregistrer_photo_stagiaire", {
+    p_stagiaire: stagiaireId,
+    ...(chemin ? { p_chemin: chemin } : {}),
+  });
   if (error) throw new Error(error.message);
 
   revalidatePath("/groupes");

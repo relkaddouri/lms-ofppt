@@ -27,8 +27,6 @@ export async function getIdentiteStagiaire(): Promise<IdentiteStagiaire | null> 
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("stagiaires")
-    // `photo` : colonne de la migration 081, absente des types tant qu'elle
-    // n'est pas poussée. Le cast plus bas la couvre déjà.
     .select("id, nom, prenom, photo, groupe_id, groupes(nom, annee)")
     .eq("user_id", user.id)
     .maybeSingle();
