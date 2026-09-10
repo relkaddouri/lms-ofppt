@@ -12,10 +12,9 @@ import {
   X,
 } from "lucide-react";
 import Avatar from "./ui/Avatar";
-import {
-  getNotifications,
-  type GenreNotification,
-  type Notification,
+import type {
+  GenreNotification,
+  Notification,
 } from "@/app/actions/notifications";
 
 /** Tuile d'icône par genre, aux teintes de statut du système. */
@@ -58,21 +57,10 @@ function quand(iso: string): string {
 
 /** Aujourd'hui / Hier / Plus tôt — le découpage de la maquette. */
 function tranche(iso: string): string {
-  const jours = Math.floor(
-    (Date.now() - new Date(iso).getTime()) / 86400000,
-  );
+  const jours = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
   if (jours < 1) return "AUJOURD'HUI";
   if (jours < 2) return "HIER";
   return "PLUS TÔT";
-}
-
-/**
- * Chez le formateur, une notification est une tâche : le résumé le dit.
- * Chez le stagiaire elle n'appelle aucune action, d'où le prop `resume`.
- */
-function resumeFormateur(nombre: number): string {
-  if (nombre === 0) return "Rien n'attend votre intervention.";
-  return `${nombre} élément${nombre > 1 ? "s" : ""} en attente de votre intervention`;
 }
 
 /**
@@ -88,10 +76,10 @@ function resumeFormateur(nombre: number): string {
 export default function PanneauNotifications({
   ouvert,
   onFermer,
-  charger = getNotifications,
-  titre = "Notifications",
-  resume = resumeFormateur,
-  vide = "Aucun contrôle en brouillon, aucune question sans réponse, aucune copie à corriger.",
+  charger,
+  titre,
+  resume,
+  vide,
   actions,
 }: {
   ouvert: boolean;
@@ -104,12 +92,12 @@ export default function PanneauNotifications({
    * tuiles, le découpage par période et le clavier sont les mêmes, et un
    * second panneau aurait divergé au premier correctif.
    */
-  charger?: () => Promise<Notification[]>;
-  titre?: string;
+  charger: () => Promise<Notification[]>;
+  titre: string;
   /** La ligne sous le titre : « 3 éléments… » chez le formateur, « 3 nouveautés » chez le stagiaire. */
-  resume?: (nombre: number) => string;
+  resume: (nombre: number) => string;
   /** Ce qui s'affiche quand il n'y a rien : le sens diffère d'un espace à l'autre. */
-  vide?: string;
+  vide: string;
   /**
    * Réglages propres à l'espace, posés à gauche de la fermeture.
    *
@@ -175,14 +163,14 @@ export default function PanneauNotifications({
             ) : null}
             <span className="ml-auto flex items-center gap-1.5">
               {actions}
-            <button
-              type="button"
-              aria-label="Fermer"
-              onClick={onFermer}
-              className="flex h-[34px] w-[34px] items-center justify-center rounded-[9px] border border-border bg-surface text-slate-2 transition-colors duration-150 ease-out hover:bg-paper"
-            >
-              <X size={15} strokeWidth={2.2} aria-hidden />
-            </button>
+              <button
+                type="button"
+                aria-label="Fermer"
+                onClick={onFermer}
+                className="flex h-[34px] w-[34px] items-center justify-center rounded-[9px] border border-border bg-surface text-slate-2 transition-colors duration-150 ease-out hover:bg-paper"
+              >
+                <X size={15} strokeWidth={2.2} aria-hidden />
+              </button>
             </span>
           </div>
           <span className="text-[13.5px] text-slate-light">

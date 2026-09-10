@@ -1,11 +1,30 @@
 "use client";
 
-import { useState } from "react";
-import { Bell, Menu, Search } from "lucide-react";
+import { Menu, Search } from "lucide-react";
 import Avatar from "./ui/Avatar";
-import PanneauNotifications from "./PanneauNotifications";
+import Cloche from "./Cloche";
+import { getNotifications } from "@/app/actions/notifications";
 import SelecteurAnnee from "./SelecteurAnnee";
 import type { AnneeScolaire } from "@/lib/annees";
+import type { Notification } from "@/app/actions/notifications";
+
+/**
+ * Ce qui vaut un carillon côté formateur.
+ *
+ * Les rappels qu'il se donne à lui-même — un contrôle laissé en brouillon,
+ * une échéance de stage — remplissent le panneau sans rien apprendre :
+ * il vient de les écrire. Restent les gestes des stagiaires, qui eux
+ * arrivent sans prévenir.
+ */
+function vientDunStagiaire(n: Notification): boolean {
+  return (
+    n.genre === "question" ||
+    n.genre === "commentaire" ||
+    n.genre === "jaime" ||
+    n.genre === "copie" ||
+    n.genre === "devoir"
+  );
+}
 
 export default function Topbar({
   email,
@@ -15,16 +34,16 @@ export default function Topbar({
   onMenuClick,
 }: {
   email: string | null;
-  /** Compteur du badge de la cloche. Zéro tant qu'aucune source ne l'alimente. */
+  /**
+   * Compteur rendu par le serveur, affiché avant que la cloche ait relu.
+   * Elle le tient à jour ensuite, toutes les quarante-cinq secondes.
+   */
   notifications?: number;
   annees: AnneeScolaire[];
   anneeCouranteId: string | null;
   onMenuClick: () => void;
 }) {
-  const [panneau, setPanneau] = useState(false);
-
   return (
-    <>
     <header className="flex h-[68px] flex-none items-center justify-between gap-6 border-b border-border bg-surface px-5 md:px-10">
       <div className="flex min-w-0 items-center gap-3">
         <button
@@ -59,31 +78,28 @@ export default function Topbar({
           <Search size={18} strokeWidth={2} aria-hidden />
         </button>
 
-        <button
-          type="button"
-          onClick={() => setPanneau(true)}
-          aria-label={`Notifications (${notifications})`}
-          aria-haspopup="dialog"
-          className="relative flex h-10 w-10 items-center justify-center rounded-[10px] border border-border bg-surface text-slate-2 transition-colors duration-150 ease-out hover:bg-paper hover:text-ink"
-        >
-          <Bell size={18} strokeWidth={2} aria-hidden />
-          {notifications > 0 ? (
-            <span className="absolute -right-[5px] -top-[5px] flex h-[19px] min-w-[19px] items-center justify-center rounded-full border-2 border-surface bg-coral px-1 font-mono text-[11px] font-semibold text-white">
-              {notifications}
-            </span>
-          ) : null}
-        </button>
+        {/* La cloche sonne aussi de ce côté : une question de stagiaire posée
+            pendant qu'on prépare une séance n'a aucune raison d'attendre le
+            prochain coup d'œil au coin de l'écran. */}
+        <Cloche
+          charger={getNotifications}
+          titre="Notifications"
+          vide="Aucun contrôle en brouillon, aucune question sans réponse, aucune copie à corriger."
+          resume={(n) =>
+            n === 0
+              ? "Rien n'attend votre intervention."
+              : `${n} élément${n > 1 ? "s" : ""} en attente de votre intervention`
+          }
+          cle="notifications"
+          mesure="total"
+          sonnePour={vientDunStagiaire}
+          compteInitial={notifications}
+        />
 
         <span className="mx-1 hidden h-6 w-0.5 bg-separator sm:block" />
         <span className="hidden text-[13px] text-slate sm:block">{email}</span>
         <Avatar prenom={email ?? "F"} />
       </div>
     </header>
-
-    <PanneauNotifications
-      ouvert={panneau}
-      onFermer={() => setPanneau(false)}
-    />
-    </>
   );
 }
