@@ -11,10 +11,10 @@ import type { Notification } from "@/app/actions/notifications";
 /**
  * Ce qui vaut un carillon côté formateur.
  *
- * Les rappels qu'il se donne à lui-même — un contrôle laissé en brouillon,
- * une échéance de stage — remplissent le panneau sans rien apprendre :
- * il vient de les écrire. Restent les gestes des stagiaires, qui eux
- * arrivent sans prévenir.
+ * Le rappel qu'il se donne à lui-même — un contrôle laissé en brouillon,
+ * seul genre du panneau dont il soit l'auteur — le remplit sans rien lui
+ * apprendre : il vient de l'écrire. Restent les gestes des stagiaires, qui
+ * eux arrivent sans prévenir.
  */
 function vientDunStagiaire(n: Notification): boolean {
   return (
