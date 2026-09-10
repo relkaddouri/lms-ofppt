@@ -13,6 +13,8 @@ export type Stagiaire = {
   cef: string | null;
   /** Code National de l'Étudiant, réclamé par les pièces officielles. */
   cne: string | null;
+  /** Chemin de la photo dans le bucket, nul tant qu'il n'y en a pas. */
+  photo: string | null;
   groupe_id: string;
   /** Compte du stagiaire ; nul tant qu'il n'a pas été invité. */
   user_id: string | null;
@@ -24,7 +26,7 @@ export async function getStagiairesByGroupe(
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("stagiaires")
-    .select("id, nom, prenom, email, cef, cne, groupe_id, user_id")
+    .select("id, nom, prenom, email, cef, cne, photo, groupe_id, user_id")
     .eq("groupe_id", groupeId)
     .order("nom");
 
@@ -193,4 +195,35 @@ export async function bulkImportStagiaires(
   if (error) throw new Error(error.message);
   revalidatePath(`/groupes/${groupeId}`);
   return { imported: rows.length };
+}
+
+/**
+ * Enregistre la photo d'un stagiaire, une fois le fichier déposé.
+ *
+ * L'écriture passe par une fonction et non par un `update` : la policy de
+ * `stagiaires` réserve l'écriture au formateur, si bien qu'un stagiaire
+ * pourrait déposer son fichier sans jamais pouvoir l'inscrire sur sa fiche.
+ * La fonction ne touche que la colonne `photo` — un stagiaire ne se renomme
+ * pas, ne change pas de groupe et ne se donne pas un CEF.
+ *
+ * Le dépôt du fichier lui-même se fait depuis le navigateur, directement vers
+ * le stockage : faire transiter deux mégaoctets par une Server Action pour
+ * les réémettre ensuite n'ajouterait qu'une latence.
+ */
+export async function enregistrerPhoto(
+  stagiaireId: string,
+  chemin: string | null,
+): Promise<void> {
+  const supabase = await createClient();
+  // Omettre le chemin, c'est retirer la photo : la fonction a une valeur par
+  // défaut pour ça (migration 083), ce qui évite un `null` que les types
+  // refuseraient — et un cast pour les faire taire.
+  const { error } = await supabase.rpc("enregistrer_photo_stagiaire", {
+    p_stagiaire: stagiaireId,
+    ...(chemin ? { p_chemin: chemin } : {}),
+  });
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/groupes");
+  revalidatePath("/espace-stagiaire", "layout");
 }

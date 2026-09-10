@@ -152,9 +152,24 @@ export async function getDashboardData(): Promise<{
     if (heures <= 0) continue;
 
     if (s.statut === "fait") {
-      const quand = s.updated_at ?? s.created_at;
+      // Les heures se placent à la date de la séance, non au jour où elle a
+      // été cochée. Le prévisionnel est déjà à la date planifiée : garder le
+      // réalisé au jour de saisie revenait à comparer deux échelles — le
+      // calendrier de formation d'un côté, les habitudes de saisie de l'autre
+      // — et l'écart entre les deux courbes, seule chose que ce graphe existe
+      // pour montrer, ne voulait alors rien dire. Une séance pointée le
+      // lendemain faisait un pic là où il n'y avait qu'un jour de retard
+      // administratif.
+      //
+      // Le prix en est assumé : la courbe se corrige rétroactivement quand une
+      // séance ancienne est cochée. C'est ce qu'on veut d'un indicateur
+      // d'avancement — la vérité corrigée plutôt que la trace de la saisie.
+      //
+      // Sans date, le jour du pointage sert de repli : une séance faite doit
+      // compter quelque part.
+      const quand = s.date ?? s.updated_at ?? s.created_at;
       if (quand) {
-        const j = jour(quand);
+        const j = s.date ?? jour(quand);
         faitParJour.set(j, (faitParJour.get(j) ?? 0) + heures);
       }
     }
@@ -163,15 +178,32 @@ export async function getDashboardData(): Promise<{
     }
   }
 
+  // La fenêtre s'arrête aujourd'hui. Le calendrier est généré pour l'année
+  // entière — cent cinquante séances planifiées jusqu'en mai —, si bien que
+  // les « trente dernières dates » tombaient toutes dans le futur : une
+  // fenêtre où rien n'a encore été fait, donc une courbe plate à zéro sur un
+  // axe qui parlait de l'an prochain.
+  const aujourdhui = maintenant();
   const jours = [...new Set([...faitParJour.keys(), ...prevuParJour.keys()])]
+    .filter((j) => j <= aujourdhui)
     .sort()
     .slice(-30);
 
   const pourcent = (heures: number) =>
     masseTotale > 0 ? Math.round((heures / masseTotale) * 1000) / 10 : 0;
 
+  // Ce qui précède la fenêtre est déjà acquis : la courbe part du niveau
+  // atteint, elle ne le redécouvre pas. Repartir de zéro effaçait les heures
+  // faites avant les trente derniers jours — c'est-à-dire, en début d'année,
+  // à peu près tout.
+  const debut = jours[0];
   let cumulFait = 0;
   let cumulPrevu = 0;
+  if (debut) {
+    for (const [j, h] of faitParJour) if (j < debut) cumulFait += h;
+    for (const [j, h] of prevuParJour) if (j < debut) cumulPrevu += h;
+  }
+
   const points: EvolutionPoint[] = jours.map((date) => {
     cumulFait += faitParJour.get(date) ?? 0;
     cumulPrevu += prevuParJour.get(date) ?? 0;
@@ -191,105 +223,11 @@ export async function getDashboardData(): Promise<{
     actuel: points.length > 0 ? points[points.length - 1]!.realise : 0,
     gain:
       points.length > 1
-        ? Math.round((points[points.length - 1]!.realise - points[0]!.realise) * 10) /
-          10
+        ? Math.round(
+            (points[points.length - 1]!.realise - points[0]!.realise) * 10,
+          ) / 10
         : 0,
   };
 
   return { stats, groupes: groupesProgression, evolution };
-}
-
-/**
- * Compteur de la cloche : ce qui attend une action du formateur.
- *
- * Le panneau de notifications a son propre écran et son propre atome ; ce
- * compteur existe pour que le badge de la barre supérieure dise la vérité dès
- * maintenant plutôt que d'afficher un nombre décoratif.
- *
- * Trois sources, et non deux : aux contrôles en brouillon et aux questions de
- * stagiaires sans réponse s'ajoutent les commentaires d'annonce. C'étaient les
- * seuls messages de stagiaires que le compteur ignorait — les réactions
- * « j'aime » n'appellent pas de réponse, et un rendu de devoir se suit depuis
- * l'écran du devoir, pas depuis une notification.
- *
- * « Sans réponse » se lit ici comme « rien du formateur ne lui a succédé sur
- * ce fil ». La définition tient avant même que le formateur puisse répondre
- * depuis son écran : tant que c'est le cas, tout commentaire compte, ce qui
- * est exactement la vérité.
- */
-export async function getCompteurNotifications(): Promise<number> {
-  const supabase = await createClient();
-
-  const [controlesRes, questionsRes, reponsesRes, commentairesRes, profilsRes] =
-    await Promise.all([
-      supabase
-        .from("controles")
-        .select("id", { count: "exact", head: true })
-        .eq("statut", "brouillon"),
-      supabase.from("questions_support").select("id"),
-      supabase.from("reponses_question").select("question_id"),
-      supabase
-        .from("commentaires_annonce")
-        .select("id, annonce_id, auteur_id, created_at")
-        .order("created_at"),
-      supabase.from("profils").select("id, role"),
-    ]);
-
-  if (controlesRes.error) throw new Error(controlesRes.error.message);
-  if (questionsRes.error) throw new Error(questionsRes.error.message);
-  if (reponsesRes.error) throw new Error(reponsesRes.error.message);
-  if (commentairesRes.error) throw new Error(commentairesRes.error.message);
-  if (profilsRes.error) throw new Error(profilsRes.error.message);
-
-  const repondues = new Set(
-    (reponsesRes.data ?? []).map((r) => r.question_id as string),
-  );
-  const sansReponse = (questionsRes.data ?? []).filter(
-    (q) => !repondues.has(q.id as string),
-  ).length;
-
-  return (
-    (controlesRes.count ?? 0) +
-    sansReponse +
-    commentairesEnAttente(commentairesRes.data ?? [], profilsRes.data ?? [])
-  );
-}
-
-type CommentaireBrut = {
-  annonce_id: string;
-  auteur_id: string;
-  created_at: string;
-};
-
-/**
- * Commentaires de stagiaires auxquels rien n'a succédé du formateur.
- *
- * On compare par fil et par date plutôt que de compter tout ce qui n'est pas
- * lu : un formateur qui a répondu une fois à la fin d'une discussion y a
- * répondu, même si trois commentaires l'ont précédé. Compter chaque message
- * ferait sonner le badge pour une conversation déjà close.
- */
-function commentairesEnAttente(
-  commentaires: CommentaireBrut[],
-  profils: { id: string; role: string | null }[],
-): number {
-  const stagiaires = new Set(
-    profils.filter((p) => p.role === "stagiaire").map((p) => p.id),
-  );
-
-  // Dernier mot du formateur sur chaque fil.
-  const derniereReponse = new Map<string, string>();
-  for (const c of commentaires) {
-    if (stagiaires.has(c.auteur_id)) continue;
-    const vue = derniereReponse.get(c.annonce_id);
-    if (!vue || c.created_at > vue) {
-      derniereReponse.set(c.annonce_id, c.created_at);
-    }
-  }
-
-  return commentaires.filter((c) => {
-    if (!stagiaires.has(c.auteur_id)) return false;
-    const reponse = derniereReponse.get(c.annonce_id);
-    return !reponse || c.created_at > reponse;
-  }).length;
 }

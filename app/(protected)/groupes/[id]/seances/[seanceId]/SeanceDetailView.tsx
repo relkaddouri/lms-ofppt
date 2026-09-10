@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
-import Breadcrumb from "@/components/Breadcrumb";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import RetourListe from "@/components/RetourListe";
 import Button, { buttonStyles } from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
 import Avatar from "@/components/ui/Avatar";
@@ -11,6 +11,12 @@ import Interrupteur from "@/components/ui/Interrupteur";
 import { ConfirmModal } from "@/components/ui/Modal";
 import { inputStyles as inputClass } from "@/components/ui/Input";
 import { useToast } from "@/components/ui/Toast";
+import ModaleNotation from "@/components/ModaleNotation";
+import { FeteDistinction } from "@/components/ModaleDistinction";
+import {
+  getDistinctionDeSeance,
+  type DistinctionAFeter,
+} from "@/app/actions/distinction";
 import FicheSeance from "@/components/FicheSeance";
 import SupportSeance from "@/components/SupportSeance";
 import QuestionsSupport from "@/components/QuestionsSupport";
@@ -27,7 +33,15 @@ import {
   type SeanceDetail,
   type RemarqueSeance,
 } from "@/app/actions/seances";
-import { Check, CheckCheck, Lock, Play, Plus, Trash2 } from "lucide-react";
+import {
+  Check,
+  CheckCheck,
+  Crown,
+  Lock,
+  Play,
+  Plus,
+  Trash2,
+} from "lucide-react";
 
 export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
   const router = useRouter();
@@ -42,13 +56,27 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
   const [contenuRealise, setContenuRealise] = useState(
     seance.contenu_realise ?? "",
   );
+  const [notationOuverte, setNotationOuverte] = useState(false);
+  // L'aperçu de la fête : ce que le groupe verra en ouvrant l'application.
+  const [apercuFete, setApercuFete] = useState<DistinctionAFeter | null>(null);
   const [estFad, setEstFad] = useState(seance.est_fad);
   const [lienTeams, setLienTeams] = useState(seance.lien_teams ?? "");
   // Trois moments distincts : préparer, projeter, tenir le cahier. Les empiler
   // obligeait à traverser mille pixels de formulaire pour atteindre le support.
+  // L'onglet d'arrivée peut être imposé par l'adresse : une notification qui
+  // pointe une question de cours doit ouvrir l'onglet où elle se trouve, sans
+  // quoi le lien mène à la bonne page et à la mauvaise vue.
+  const recherche = useSearchParams();
+  const ongletDemande = recherche.get("onglet");
   const [onglet, setOnglet] = useState<
     "preparation" | "support" | "support-formateur" | "deroulement"
-  >("preparation");
+  >(
+    ongletDemande === "support" ||
+      ongletDemande === "support-formateur" ||
+      ongletDemande === "deroulement"
+      ? ongletDemande
+      : "preparation",
+  );
 
   const minutesSeance = seance.duree_prevue
     ? Math.round(Number(seance.duree_prevue) * 60)
@@ -161,7 +189,29 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
     });
   }
 
-  function enregistrerDeroulement(statut?: "a_faire" | "fait") {
+  /**
+   * Clore la séance, c'est deux choses : consigner le déroulement, puis noter
+   * la participation. La notation s'ouvre donc après l'enregistrement, et non
+   * à sa place — un formateur pressé doit pouvoir fermer la modale sans avoir
+   * perdu ce qu'il venait d'écrire.
+   */
+  function marquerFaite() {
+    enregistrerDeroulement("fait", () => setNotationOuverte(true));
+  }
+
+  /** Revoir la fête telle que le groupe la découvrira. */
+  function ouvrirApercu() {
+    startTransition(async () => {
+      const d = await getDistinctionDeSeance(seance.id).catch(() => null);
+      if (d) setApercuFete(d);
+      else toast("Aucun stagiaire n'a encore été distingué sur cette séance.");
+    });
+  }
+
+  function enregistrerDeroulement(
+    statut?: "a_faire" | "fait",
+    ensuite?: () => void,
+  ) {
     startTransition(async () => {
       try {
         await majSeance(seance.id, {
@@ -174,6 +224,7 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
             : "Déroulement enregistré.",
         );
         router.refresh();
+        ensuite?.();
       } catch (e) {
         toast(
           e instanceof Error ? e.message : "Enregistrement impossible.",
@@ -190,19 +241,12 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
 
   return (
     <div>
-      <Breadcrumb
-        items={[
-          { label: "Groupes", href: "/groupes" },
-          { label: seance.groupeNom, href: `/groupes/${seance.groupe_id}` },
-          {
-            label: "Progression",
-            href: `/groupes/${seance.groupe_id}/progression`,
-          },
-          { label: seance.date ? formatDateJour(seance.date) : "Séance" },
-        ]}
+      <RetourListe
+        href={`/groupes/${seance.groupe_id}/progression`}
+        libelle="la progression"
       />
 
-      <header className="mt-6 flex flex-wrap items-start justify-between gap-6">
+      <header className="mt-4 flex flex-wrap items-start justify-between gap-6">
         <div className="flex min-w-0 items-start gap-4">
           {seance.objectifCode ? (
             <span className="mt-1 flex h-9 shrink-0 items-center justify-center rounded-[9px] bg-wash px-2.5 font-mono text-xs font-semibold text-slate-2">
@@ -760,14 +804,26 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
                   >
                     Enregistrer
                   </Button>
+                  {/* L'aperçu n'apparaît qu'une fois la séance close : avant,
+                      il n'y a rien à prévisualiser. */}
+                  {seance.statut === "fait" ? (
+                    <Button
+                      variant="ghost"
+                      icon={Crown}
+                      onClick={ouvrirApercu}
+                      disabled={enCours}
+                    >
+                      Aperçu de la fête
+                    </Button>
+                  ) : null}
                   <Button
                     icon={Check}
                     className="min-w-[200px] flex-1 justify-center"
-                    onClick={() => enregistrerDeroulement("fait")}
-                    disabled={enCours || seance.statut === "fait"}
+                    onClick={marquerFaite}
+                    disabled={enCours}
                   >
                     {seance.statut === "fait"
-                      ? "Séance marquée faite"
+                      ? "Noter la participation"
                       : "Marquer la séance faite"}
                   </Button>
                 </div>
@@ -776,6 +832,29 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
           </div>
         )}
       </div>
+
+      {apercuFete ? (
+        <FeteDistinction
+          fete={apercuFete}
+          apercu
+          onFermer={() => setApercuFete(null)}
+        />
+      ) : null}
+
+      <ModaleNotation
+        seanceId={seance.id}
+        ouverte={notationOuverte}
+        onFermer={() => setNotationOuverte(false)}
+        onCloture={(gagnant) => {
+          setNotationOuverte(false);
+          toast(
+            gagnant
+              ? `${gagnant} est le stagiaire de la journée.`
+              : "Séance close. Personne à distinguer.",
+          );
+          router.refresh();
+        }}
+      />
 
       <ConfirmModal
         open={remarqueASupprimer !== null}

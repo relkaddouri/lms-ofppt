@@ -205,6 +205,42 @@ body {
   }
 }
 
+/* La cloche qui sonne : le son attire l'oreille, ce mouvement dit où
+   regarder. Deux allers-retours et c'est fini — une cloche qui s'agite
+   longtemps devient un objet clignotant, que l'œil apprend à ignorer. */
+@keyframes cloche-sonne {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  15% {
+    transform: rotate(-11deg);
+  }
+  30% {
+    transform: rotate(9deg);
+  }
+  45% {
+    transform: rotate(-6deg);
+  }
+  60% {
+    transform: rotate(4deg);
+  }
+  75% {
+    transform: rotate(-2deg);
+  }
+}
+
+.cloche-sonne {
+  animation: cloche-sonne 0.8s ease-in-out;
+  transform-origin: 50% 20%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cloche-sonne {
+    animation: none;
+  }
+}
+
 .pdf-capture {
   position: absolute;
   left: -9999px;

@@ -6,14 +6,15 @@ import {
   CalendarClock,
   ClipboardCheck,
   FileCheck2,
+  Heart,
+  MessageCircle,
   MessageCircleQuestion,
   X,
 } from "lucide-react";
 import Avatar from "./ui/Avatar";
-import {
-  getNotifications,
-  type GenreNotification,
-  type Notification,
+import type {
+  GenreNotification,
+  Notification,
 } from "@/app/actions/notifications";
 
 /** Tuile d'icône par genre, aux teintes de statut du système. */
@@ -31,6 +32,14 @@ const GENRES: Record<
     fond: "bg-tint-teal",
     encre: "text-teal-dark",
   },
+  // Le fil : une bulle pour ce qui appelle une réponse, un cœur pour ce qui
+  // n'en appelle pas. La distinction se voit avant d'être lue.
+  commentaire: {
+    Icone: MessageCircle,
+    fond: "bg-tint-teal",
+    encre: "text-teal-dark",
+  },
+  jaime: { Icone: Heart, fond: "bg-success-wash", encre: "text-green-dark" },
   copie: { Icone: ClipboardCheck, fond: "bg-wash", encre: "text-slate-2" },
   devoir: { Icone: ClipboardCheck, fond: "bg-wash", encre: "text-slate-2" },
   stage: { Icone: CalendarClock, fond: "bg-wash", encre: "text-slate-2" },
@@ -48,9 +57,7 @@ function quand(iso: string): string {
 
 /** Aujourd'hui / Hier / Plus tôt — le découpage de la maquette. */
 function tranche(iso: string): string {
-  const jours = Math.floor(
-    (Date.now() - new Date(iso).getTime()) / 86400000,
-  );
+  const jours = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
   if (jours < 1) return "AUJOURD'HUI";
   if (jours < 2) return "HIER";
   return "PLUS TÔT";
@@ -69,16 +76,43 @@ function tranche(iso: string): string {
 export default function PanneauNotifications({
   ouvert,
   onFermer,
+  charger,
+  titre,
+  resume,
+  vide,
+  actions,
 }: {
   ouvert: boolean;
   onFermer: () => void;
+  /**
+   * D'où viennent les entrées.
+   *
+   * Le panneau sert les deux espaces : au formateur ce qui attend une action,
+   * au stagiaire ce qui vient de se passer. Seule la source change — les
+   * tuiles, le découpage par période et le clavier sont les mêmes, et un
+   * second panneau aurait divergé au premier correctif.
+   */
+  charger: () => Promise<Notification[]>;
+  titre: string;
+  /** La ligne sous le titre : « 3 éléments… » chez le formateur, « 3 nouveautés » chez le stagiaire. */
+  resume: (nombre: number) => string;
+  /** Ce qui s'affiche quand il n'y a rien : le sens diffère d'un espace à l'autre. */
+  vide: string;
+  /**
+   * Réglages propres à l'espace, posés à gauche de la fermeture.
+   *
+   * Le son des nouveautés se coupe ici et nulle part ailleurs : lui inventer
+   * un écran de préférences pour une case aurait éloigné le réglage de ce
+   * qu'il règle.
+   */
+  actions?: React.ReactNode;
 }) {
   const [entrees, setEntrees] = useState<Notification[] | null>(null);
 
   useEffect(() => {
     if (!ouvert) return;
     let annule = false;
-    getNotifications()
+    charger()
       .then((n) => {
         if (!annule) setEntrees(n);
       })
@@ -88,7 +122,7 @@ export default function PanneauNotifications({
     return () => {
       annule = true;
     };
-  }, [ouvert]);
+  }, [ouvert, charger]);
 
   useEffect(() => {
     if (!ouvert) return;
@@ -114,34 +148,33 @@ export default function PanneauNotifications({
       <aside
         role="dialog"
         aria-modal="true"
-        aria-label="Notifications"
+        aria-label={titre}
         className="fixed inset-y-0 right-0 z-50 flex w-[424px] max-w-[92vw] flex-col border-l border-border bg-surface shadow-panneau"
       >
         <div className="flex flex-none flex-col gap-3.5 border-b border-separator px-6 pb-[18px] pt-[22px]">
           <div className="flex items-center gap-3">
             <h2 className="font-display text-xl font-semibold text-ink">
-              Notifications
+              {titre}
             </h2>
             {entrees && entrees.length > 0 ? (
               <span className="rounded-full bg-coral px-2.5 py-0.5 font-mono text-[12.5px] font-semibold text-white">
                 {String(entrees.length).padStart(2, "0")}
               </span>
             ) : null}
-            <button
-              type="button"
-              aria-label="Fermer"
-              onClick={onFermer}
-              className="ml-auto flex h-[34px] w-[34px] items-center justify-center rounded-[9px] border border-border bg-surface text-slate-2 transition-colors duration-150 ease-out hover:bg-paper"
-            >
-              <X size={15} strokeWidth={2.2} aria-hidden />
-            </button>
+            <span className="ml-auto flex items-center gap-1.5">
+              {actions}
+              <button
+                type="button"
+                aria-label="Fermer"
+                onClick={onFermer}
+                className="flex h-[34px] w-[34px] items-center justify-center rounded-[9px] border border-border bg-surface text-slate-2 transition-colors duration-150 ease-out hover:bg-paper"
+              >
+                <X size={15} strokeWidth={2.2} aria-hidden />
+              </button>
+            </span>
           </div>
           <span className="text-[13.5px] text-slate-light">
-            {entrees === null
-              ? "Chargement…"
-              : entrees.length === 0
-                ? "Rien n'attend votre intervention."
-                : `${entrees.length} élément${entrees.length > 1 ? "s" : ""} en attente de votre intervention`}
+            {entrees === null ? "Chargement…" : resume(entrees.length)}
           </span>
         </div>
 
@@ -214,8 +247,7 @@ export default function PanneauNotifications({
 
           {entrees !== null && entrees.length === 0 ? (
             <p className="px-6 py-12 text-center text-[14.5px] text-slate-light">
-              Aucun contrôle en brouillon, aucune question sans réponse, aucune
-              copie à corriger.
+              {vide}
             </p>
           ) : null}
         </div>

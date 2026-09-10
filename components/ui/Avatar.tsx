@@ -1,4 +1,5 @@
 import { initials } from "@/lib/format";
+import { urlPhoto } from "@/lib/photos";
 
 export type AvatarTaille = "xs" | "sm" | "md" | "lg";
 
@@ -43,6 +44,8 @@ export default function Avatar({
   neutre = false,
   /** Anneau blanc pour les avatars empilés qui se chevauchent. */
   empile = false,
+  /** Chemin de la photo dans le bucket ; les initiales restent le défaut. */
+  photo,
   className = "",
 }: {
   nom?: string | null;
@@ -51,6 +54,7 @@ export default function Avatar({
   texte?: string;
   neutre?: boolean;
   empile?: boolean;
+  photo?: string | null;
   className?: string;
 }) {
   const libelle = `${prenom ?? ""} ${nom ?? ""}`.trim();
@@ -58,20 +62,40 @@ export default function Avatar({
     ? "bg-wash text-slate-2"
     : `${fondDe(libelle || "?")} text-white`;
 
+  const cadre = [
+    "flex shrink-0 items-center justify-center overflow-hidden rounded-full font-semibold",
+    texte ? "font-mono" : "font-display",
+    tailles[taille],
+    empile ? "border-2 border-surface -ml-[9px] first:ml-0" : "",
+    className,
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  // La photo remplace les initiales quand elle existe, jamais l'inverse : un
+  // chemin cassé ou un bucket injoignable laisserait sinon un trou gris à la
+  // place d'une personne. Le fond coloré reste dessous et réapparaît si
+  // l'image ne charge pas.
+  const source = urlPhoto(photo);
+  if (source && !texte) {
+    return (
+      <span aria-hidden className={`${cadre} ${apparence}`}>
+        {/* `img` et non `next/image` : la source est une URL de stockage
+            externe, et l'optimiseur exigerait de déclarer le domaine pour un
+            gain nul sur une vignette de quarante pixels. */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={source}
+          alt=""
+          loading="lazy"
+          className="h-full w-full object-cover"
+        />
+      </span>
+    );
+  }
+
   return (
-    <span
-      aria-hidden
-      className={[
-        "flex shrink-0 items-center justify-center rounded-full font-semibold",
-        texte ? "font-mono" : "font-display",
-        tailles[taille],
-        apparence,
-        empile ? "border-2 border-surface -ml-[9px] first:ml-0" : "",
-        className,
-      ]
-        .filter(Boolean)
-        .join(" ")}
-    >
+    <span aria-hidden className={`${cadre} ${apparence}`}>
       {texte ?? initials(prenom, nom)}
     </span>
   );

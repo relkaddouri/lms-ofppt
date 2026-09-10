@@ -516,6 +516,97 @@ export type Database = {
           },
         ]
       }
+      distinctions_jour: {
+        Row: {
+          annonce_id: string | null
+          created_at: string
+          date: string
+          groupe_id: string
+          id: string
+          note: number
+          seance_id: string
+          serie: number
+          stagiaire_id: string
+        }
+        Insert: {
+          annonce_id?: string | null
+          created_at?: string
+          date: string
+          groupe_id: string
+          id?: string
+          note: number
+          seance_id: string
+          serie?: number
+          stagiaire_id: string
+        }
+        Update: {
+          annonce_id?: string | null
+          created_at?: string
+          date?: string
+          groupe_id?: string
+          id?: string
+          note?: number
+          seance_id?: string
+          serie?: number
+          stagiaire_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "distinctions_jour_annonce_id_fkey"
+            columns: ["annonce_id"]
+            isOneToOne: false
+            referencedRelation: "annonces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "distinctions_jour_groupe_id_fkey"
+            columns: ["groupe_id"]
+            isOneToOne: false
+            referencedRelation: "groupes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "distinctions_jour_seance_id_fkey"
+            columns: ["seance_id"]
+            isOneToOne: true
+            referencedRelation: "seances"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "distinctions_jour_stagiaire_id_fkey"
+            columns: ["stagiaire_id"]
+            isOneToOne: false
+            referencedRelation: "stagiaires"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      distinctions_vues: {
+        Row: {
+          distinction_id: string
+          user_id: string
+          vue_le: string
+        }
+        Insert: {
+          distinction_id: string
+          user_id?: string
+          vue_le?: string
+        }
+        Update: {
+          distinction_id?: string
+          user_id?: string
+          vue_le?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "distinctions_vues_distinction_id_fkey"
+            columns: ["distinction_id"]
+            isOneToOne: false
+            referencedRelation: "distinctions_jour"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       documents_stage: {
         Row: {
           chemin: string
@@ -937,6 +1028,42 @@ export type Database = {
             columns: ["formateur_id"]
             isOneToOne: false
             referencedRelation: "profils"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notations_seance: {
+        Row: {
+          created_at: string
+          note: number
+          seance_id: string
+          stagiaire_id: string
+        }
+        Insert: {
+          created_at?: string
+          note: number
+          seance_id: string
+          stagiaire_id: string
+        }
+        Update: {
+          created_at?: string
+          note?: number
+          seance_id?: string
+          stagiaire_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notations_seance_seance_id_fkey"
+            columns: ["seance_id"]
+            isOneToOne: false
+            referencedRelation: "seances"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notations_seance_stagiaire_id_fkey"
+            columns: ["stagiaire_id"]
+            isOneToOne: false
+            referencedRelation: "stagiaires"
             referencedColumns: ["id"]
           },
         ]
@@ -1740,6 +1867,7 @@ export type Database = {
           groupe_id: string | null
           id: string
           nom: string
+          photo: string | null
           prenom: string
           user_id: string | null
         }
@@ -1751,6 +1879,7 @@ export type Database = {
           groupe_id?: string | null
           id?: string
           nom: string
+          photo?: string | null
           prenom: string
           user_id?: string | null
         }
@@ -1762,6 +1891,7 @@ export type Database = {
           groupe_id?: string | null
           id?: string
           nom?: string
+          photo?: string | null
           prenom?: string
           user_id?: string | null
         }
@@ -1955,6 +2085,10 @@ export type Database = {
         Returns: undefined
       }
       custom_access_token_hook: { Args: { event: Json }; Returns: Json }
+      designer_stagiaire_du_jour: {
+        Args: { p_seance_id: string }
+        Returns: string
+      }
       dupliquer_annee: {
         Args: {
           p_annee_source: string
@@ -1978,6 +2112,10 @@ export type Database = {
       enregistrer_passation: {
         Args: { p_controle_id: string; p_details: Json }
         Returns: Json
+      }
+      enregistrer_photo_stagiaire: {
+        Args: { p_chemin?: string; p_stagiaire: string }
+        Returns: undefined
       }
       est_mon_stagiaire: { Args: { p_stagiaire_id: string }; Returns: boolean }
       get_sujet_pour_passation: {
@@ -2037,6 +2175,7 @@ export type Database = {
       }
       peut_acceder_seance: { Args: { p_seance_id: string }; Returns: boolean }
       peut_acceder_stage: { Args: { p_stage_id: string }; Returns: boolean }
+      peut_gerer_photo: { Args: { p_stagiaire: string }; Returns: boolean }
       peut_lire_devoir: { Args: { p_devoir_id: string }; Returns: boolean }
       poser_question_support: {
         Args: { p_support_id: string; p_texte: string }

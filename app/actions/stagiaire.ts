@@ -6,6 +6,8 @@ export type IdentiteStagiaire = {
   stagiaireId: string;
   nom: string;
   prenom: string;
+  /** Chemin de sa photo dans le bucket, nul tant qu'il n'en a pas déposé. */
+  photo: string | null;
   groupeId: string;
   groupeNom: string;
   /** Année de formation du groupe, affichée sous le nom en tête d'écran. */
@@ -25,7 +27,7 @@ export async function getIdentiteStagiaire(): Promise<IdentiteStagiaire | null> 
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("stagiaires")
-    .select("id, nom, prenom, groupe_id, groupes(nom, annee)")
+    .select("id, nom, prenom, photo, groupe_id, groupes(nom, annee)")
     .eq("user_id", user.id)
     .maybeSingle();
 
@@ -35,6 +37,7 @@ export async function getIdentiteStagiaire(): Promise<IdentiteStagiaire | null> 
     id: string;
     nom: string;
     prenom: string;
+    photo: string | null;
     groupe_id: string;
     groupes: { nom: string; annee: number | null } | null;
   };
@@ -43,6 +46,7 @@ export async function getIdentiteStagiaire(): Promise<IdentiteStagiaire | null> 
     stagiaireId: s.id,
     nom: s.nom,
     prenom: s.prenom,
+    photo: s.photo,
     groupeId: s.groupe_id,
     groupeNom: s.groupes?.nom ?? "—",
     annee: s.groupes?.annee ?? null,

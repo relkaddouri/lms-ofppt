@@ -11,9 +11,9 @@ import {
 import StagiaireCsvImport from "./StagiaireCsvImport";
 import KebabMenu from "@/components/KebabMenu";
 import { useToast } from "@/components/ui/Toast";
+import PhotoStagiaire from "@/components/PhotoStagiaire";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
-import { initials } from "@/lib/format";
 import { Check, Mail, Pencil, Plus, Save, Trash2, X } from "lucide-react";
 import {
   inviterStagiaire,
@@ -340,9 +340,18 @@ export default function GroupeDetail({
                     >
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
-                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border bg-wash text-xs font-semibold text-ink focus-visible:ring-2 focus-visible:ring-mint">
-                            {initials(s.prenom, s.nom)}
-                          </div>
+                          {/* La photo est cliquable : le formateur la dépose
+                              pour un stagiaire qui n'a pas de compte, ou pas
+                              de téléphone sous la main. C'est le même dépôt
+                              que le sien, borné par la même policy. */}
+                          <PhotoStagiaire
+                            stagiaireId={s.id}
+                            prenom={s.prenom}
+                            nom={s.nom}
+                            photo={s.photo}
+                            taille="md"
+                            compact
+                          />
                           <div className="min-w-0">
                             <p className="truncate text-sm font-semibold text-ink">
                               {s.prenom} {s.nom}
