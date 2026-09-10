@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import RetourListe from "@/components/RetourListe";
 import Button, { buttonStyles } from "@/components/ui/Button";
@@ -63,9 +63,20 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
   const [lienTeams, setLienTeams] = useState(seance.lien_teams ?? "");
   // Trois moments distincts : préparer, projeter, tenir le cahier. Les empiler
   // obligeait à traverser mille pixels de formulaire pour atteindre le support.
+  // L'onglet d'arrivée peut être imposé par l'adresse : une notification qui
+  // pointe une question de cours doit ouvrir l'onglet où elle se trouve, sans
+  // quoi le lien mène à la bonne page et à la mauvaise vue.
+  const recherche = useSearchParams();
+  const ongletDemande = recherche.get("onglet");
   const [onglet, setOnglet] = useState<
     "preparation" | "support" | "support-formateur" | "deroulement"
-  >("preparation");
+  >(
+    ongletDemande === "support" ||
+      ongletDemande === "support-formateur" ||
+      ongletDemande === "deroulement"
+      ? ongletDemande
+      : "preparation",
+  );
 
   const minutesSeance = seance.duree_prevue
     ? Math.round(Number(seance.duree_prevue) * 60)

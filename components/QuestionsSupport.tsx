@@ -73,7 +73,10 @@ export default function QuestionsSupport({
           {questions.map((q) => (
             <li
               key={q.id}
-              className="rounded-[14px] border border-border bg-surface p-4"
+              // L'ancre que vise la notification : elle pointe la question,
+              // pas la liste qui la contient.
+              id={`question-${q.id}`}
+              className="scroll-mt-24 rounded-[14px] border border-border bg-surface p-4 target:border-tint-teal-strong target:bg-tint-teal"
             >
               <Entete message={q} />
               <p className="mt-1 text-sm leading-relaxed text-ink">

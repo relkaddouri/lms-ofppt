@@ -54,7 +54,9 @@ export async function getNotifications(): Promise<Notification[]> {
         .limit(20),
       supabase
         .from("questions_support")
-        .select("id, texte, created_at, support_titre, module_id, groupe_id")
+        .select(
+          "id, texte, created_at, support_titre, module_id, groupe_id, supports_seance(seance_id)",
+        )
         .order("created_at", { ascending: false })
         .limit(40),
       supabase.from("reponses_question").select("question_id"),
@@ -122,6 +124,7 @@ export async function getNotifications(): Promise<Notification[]> {
       support_titre: string | null;
       module_id: string;
       groupe_id: string;
+      supports_seance: { seance_id: string } | null;
     };
     if (repondues.has(r.id)) continue;
     notifications.push({
@@ -132,7 +135,12 @@ export async function getNotifications(): Promise<Notification[]> {
       extrait: r.texte,
       auteur: null,
       date: r.created_at,
-      href: `/groupes/${r.groupe_id}/progression`,
+      // La question vit dans l'onglet Support de sa séance. Pointer la
+      // progression obligeait à la retrouver soi-même, alors que la
+      // notification sait exactement où elle est.
+      href: r.supports_seance?.seance_id
+        ? `/groupes/${r.groupe_id}/seances/${r.supports_seance.seance_id}?onglet=support#question-${r.id}`
+        : `/groupes/${r.groupe_id}/progression`,
     });
   }
 
@@ -178,8 +186,10 @@ export async function getNotifications(): Promise<Notification[]> {
       extrait: c.texte,
       auteur: null,
       date: c.created_at,
+      // Jusqu'au commentaire, non jusqu'à la page : un fil de dix-sept
+      // réponses ne se parcourt pas pour retrouver celle qui a sonné.
       href: c.annonces?.groupe_id
-        ? `/groupes/${c.annonces.groupe_id}/annonces`
+        ? `/groupes/${c.annonces.groupe_id}/annonces#commentaire-${c.id}`
         : "/groupes",
     });
   }

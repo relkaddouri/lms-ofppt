@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/ui/Toast";
 import { formatDateTime } from "@/lib/format";
@@ -58,6 +58,41 @@ export default function FilCommentaires({
   // Identifiant du commentaire dont la suppression attend confirmation.
   const [aSupprimer, setASupprimer] = useState<string | null>(null);
   const [toutAfficher, setToutAfficher] = useState(false);
+  // Le commentaire désigné par l'ancre de l'adresse, mis en évidence à
+  // l'arrivée puis relâché.
+  const [vise, setVise] = useState<string | null>(null);
+  const conteneur = useRef<HTMLDivElement>(null);
+
+  /**
+   * Amène le commentaire désigné par l'adresse, et le déplie s'il le faut.
+   *
+   * Une notification pointe un commentaire précis. Sans ce déplié, un
+   * commentaire ancien — donc replié derrière « voir les précédents » —
+   * n'existerait tout simplement pas dans la page, et le lien tomberait dans
+   * le vide sans rien dire.
+   */
+  useEffect(() => {
+    const ancre = window.location.hash.replace("#", "");
+    if (!ancre.startsWith("commentaire-")) return;
+    const id = ancre.slice("commentaire-".length);
+    if (!commentaires.some((c) => c.id === id)) return;
+
+    setToutAfficher(true);
+    setVise(id);
+    // Après le rendu du déplié, pas avant : l'élément n'existe pas encore.
+    const t = window.setTimeout(() => {
+      conteneur.current
+        ?.querySelector(`#${CSS.escape(ancre)}`)
+        ?.scrollIntoView({ block: "center", behavior: "smooth" });
+    }, 60);
+    // La mise en évidence s'efface d'elle-même : elle sert à retrouver, pas à
+    // marquer durablement.
+    const fin = window.setTimeout(() => setVise(null), 3200);
+    return () => {
+      window.clearTimeout(t);
+      window.clearTimeout(fin);
+    };
+  }, [commentaires]);
 
   function supprimer(id: string) {
     startTransition(async () => {
@@ -99,7 +134,7 @@ export default function FilCommentaires({
     toutAfficher || caches === 0 ? commentaires : commentaires.slice(-DERNIERS);
 
   return (
-    <div className="flex flex-col gap-3 pt-1.5">
+    <div ref={conteneur} className="flex flex-col gap-3 pt-1.5">
       {caches > 0 && !toutAfficher ? (
         <button
           type="button"
@@ -114,7 +149,13 @@ export default function FilCommentaires({
       ) : null}
 
       {visibles.map((c) => (
-        <div key={c.id} className="flex gap-[11px]">
+        <div
+          key={c.id}
+          id={`commentaire-${c.id}`}
+          className={`flex gap-[11px] rounded-xl transition-colors duration-500 ease-out ${
+            vise === c.id ? "bg-tint-teal px-2.5 py-2 -mx-2.5" : ""
+          }`}
+        >
           <Avatar
             prenom={c.auteurNom}
             taille="xs"
