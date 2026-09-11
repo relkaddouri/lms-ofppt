@@ -6,6 +6,7 @@ import { formatDateTime } from "@/lib/format";
 import Avatar from "@/components/ui/Avatar";
 import TexteMentions from "@/components/TexteMentions";
 import FilCommentaires from "@/components/FilCommentaires";
+import CarteDistinction from "@/components/CarteDistinction";
 import {
   basculerJaime,
   type AnnonceFil,
@@ -68,18 +69,29 @@ export default function CarteAnnonce({
         </span>
       </div>
 
-      <div className="flex flex-col gap-2">
-        {annonce.titre ? (
-          <h2 className="font-display text-[19px] font-semibold leading-snug text-ink">
-            {annonce.titre}
-          </h2>
-        ) : null}
-        {annonce.contenu ? (
-          <p className="whitespace-pre-line text-base leading-relaxed text-body">
-            <TexteMentions texte={annonce.contenu} camarades={camarades} />
-          </p>
-        ) : null}
-      </div>
+      {/* Une distinction est une annonce comme une autre — on l'aime, on la
+          commente, elle vieillit dans le fil — mais son texte seul ne fête
+          rien. La carte prend la place du titre et du corps ; le reste de
+          l'article, en-tête et actions, ne bouge pas. */}
+      {annonce.distinction ? (
+        <CarteDistinction
+          distinction={annonce.distinction}
+          contenu={annonce.contenu}
+        />
+      ) : (
+        <div className="flex flex-col gap-2">
+          {annonce.titre ? (
+            <h2 className="font-display text-[19px] font-semibold leading-snug text-ink">
+              {annonce.titre}
+            </h2>
+          ) : null}
+          {annonce.contenu ? (
+            <p className="whitespace-pre-line text-base leading-relaxed text-body">
+              <TexteMentions texte={annonce.contenu} camarades={camarades} />
+            </p>
+          ) : null}
+        </div>
+      )}
 
       <div className="flex items-center gap-2">
         <button

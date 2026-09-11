@@ -12,6 +12,7 @@ import Button from "@/components/ui/Button";
 import Input, { Textarea } from "@/components/ui/Input";
 import Modal, { ConfirmModal } from "@/components/ui/Modal";
 import FilCommentaires from "@/components/FilCommentaires";
+import CarteDistinction from "@/components/CarteDistinction";
 import { type AnnonceFil, type Camarade } from "@/app/actions/fil";
 import { formatDateJour } from "@/lib/format";
 import { Megaphone, MessageCircle, Plus, Send, Trash2 } from "lucide-react";
@@ -38,6 +39,12 @@ export default function AnnoncesManager({
   camarades: Camarade[];
 }) {
   const commentairesDe = new Map(fil.map((a) => [a.id, a.commentaires]));
+  // Le formateur voit la fête telle qu'il l'a envoyée. Il n'a pas écrit cette
+  // annonce à la main — la clôture l'a publiée pour lui — et un paragraphe de
+  // texte brut ne lui dirait pas ce que le groupe a reçu.
+  const distinctionDe = new Map(
+    fil.filter((a) => a.distinction).map((a) => [a.id, a.distinction!]),
+  );
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [ouvert, setOuvert] = useState(false);
@@ -114,7 +121,11 @@ export default function AnnoncesManager({
               Une annonce apparaît dans le fil du groupe et reste consultable
               par les stagiaires.
             </p>
-            <Button variant="secondary" icon={Plus} onClick={() => setOuvert(true)}>
+            <Button
+              variant="secondary"
+              icon={Plus}
+              onClick={() => setOuvert(true)}
+            >
               Publier la première
             </Button>
           </div>
@@ -146,7 +157,14 @@ export default function AnnoncesManager({
                   <Trash2 size={15} aria-hidden />
                 </button>
               </div>
-              {a.contenu ? (
+              {distinctionDe.has(a.id) ? (
+                <div className="mt-3">
+                  <CarteDistinction
+                    distinction={distinctionDe.get(a.id)!}
+                    contenu={a.contenu}
+                  />
+                </div>
+              ) : a.contenu ? (
                 <p className="mt-3 whitespace-pre-line text-[14.5px] leading-relaxed text-body">
                   {a.contenu}
                 </p>
@@ -207,7 +225,12 @@ export default function AnnoncesManager({
             onChange={(e) => setForm({ ...form, date: e.target.value })}
           />
           <div className="flex justify-end gap-3 pt-1">
-            <Button type="button" variant="secondary" onClick={fermer} disabled={busy}>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={fermer}
+              disabled={busy}
+            >
               Annuler
             </Button>
             <Button

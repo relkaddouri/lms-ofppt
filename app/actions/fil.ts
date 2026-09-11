@@ -22,6 +22,24 @@ export type AnnonceFil = {
   jaime: number;
   jaimePersonnel: boolean;
   commentaires: Commentaire[];
+  /**
+   * Renseigné quand l'annonce est celle d'un stagiaire de la journée.
+   *
+   * L'annonce reste une annonce — on la commente et on l'aime comme les
+   * autres, c'est tout l'intérêt de la publier dans le fil. Seule sa carte
+   * change : le texte seul ne fête rien.
+   */
+  distinction: DistinctionFil | null;
+};
+
+/** Ce qu'il faut pour fêter, dans le fil, sans rouvrir la modale. */
+export type DistinctionFil = {
+  nom: string;
+  prenom: string;
+  photo: string | null;
+  serie: number;
+  /** Vrai quand c'est le stagiaire qui lit qui est distingué. */
+  cestMoi: boolean;
 };
 
 /** Camarade mentionnable, pour l'autocomplétion. */
@@ -44,15 +62,31 @@ export async function getFil(groupeId: string): Promise<AnnonceFil[]> {
 
   // Trois requêtes groupées plutôt qu'une paire par annonce
   // (conventions.md L.53).
-  const [reactionsRes, commentairesRes, stagiairesRes] = await Promise.all([
-    supabase.from("reactions_annonce").select("annonce_id, user_id").in("annonce_id", ids),
-    supabase
-      .from("commentaires_annonce")
-      .select("id, annonce_id, auteur_id, texte, created_at")
-      .in("annonce_id", ids)
-      .order("created_at"),
-    supabase.from("stagiaires").select("user_id, nom, prenom").eq("groupe_id", groupeId),
-  ]);
+  const [reactionsRes, commentairesRes, stagiairesRes, distinctionsRes] =
+    await Promise.all([
+      supabase
+        .from("reactions_annonce")
+        .select("annonce_id, user_id")
+        .in("annonce_id", ids),
+      supabase
+        .from("commentaires_annonce")
+        .select("id, annonce_id, auteur_id, texte, created_at")
+        .in("annonce_id", ids)
+        .order("created_at"),
+      supabase
+        .from("stagiaires")
+        .select("user_id, nom, prenom")
+        .eq("groupe_id", groupeId),
+      // Les annonces de distinction, reconnues par le lien que la clôture a
+      // posé. Le titre ne sert pas de marqueur : un formateur qui renomme son
+      // annonce ne doit pas éteindre les feux d'artifice.
+      supabase
+        .from("distinctions_jour")
+        .select(
+          "annonce_id, serie, stagiaire_id, stagiaires(nom, prenom, photo)",
+        )
+        .in("annonce_id", ids),
+    ]);
 
   if (reactionsRes.error) throw new Error(reactionsRes.error.message);
   if (commentairesRes.error) throw new Error(commentairesRes.error.message);
@@ -64,8 +98,36 @@ export async function getFil(groupeId: string): Promise<AnnonceFil[]> {
     if (s.user_id) nomsParCompte.set(s.user_id, `${s.prenom} ${s.nom}`);
   }
 
+  // Qui lit ? Pour tutoyer le distingué plutôt que de parler de lui à la
+  // troisième personne, comme le fait déjà la modale.
+  const { data: moi } = await supabase
+    .from("stagiaires")
+    .select("id")
+    .eq("user_id", user?.id ?? "")
+    .maybeSingle();
+
+  type DistinctionLue = {
+    annonce_id: string | null;
+    serie: number;
+    stagiaire_id: string;
+    stagiaires: { nom: string; prenom: string; photo: string | null } | null;
+  };
+  const distinctions = new Map<string, DistinctionFil>();
+  for (const d of (distinctionsRes.data ?? []) as unknown as DistinctionLue[]) {
+    if (!d.annonce_id || !d.stagiaires) continue;
+    distinctions.set(d.annonce_id, {
+      nom: d.stagiaires.nom,
+      prenom: d.stagiaires.prenom,
+      photo: d.stagiaires.photo,
+      serie: d.serie,
+      cestMoi: !!moi && d.stagiaire_id === moi.id,
+    });
+  }
+
   return annonces.map((a) => {
-    const reactions = (reactionsRes.data ?? []).filter((r) => r.annonce_id === a.id);
+    const reactions = (reactionsRes.data ?? []).filter(
+      (r) => r.annonce_id === a.id,
+    );
     return {
       id: a.id,
       titre: a.titre,
@@ -84,6 +146,7 @@ export async function getFil(groupeId: string): Promise<AnnonceFil[]> {
           auteurFormateur: !nomsParCompte.has(c.auteur_id),
           estMien: c.auteur_id === user?.id,
         })),
+      distinction: distinctions.get(a.id) ?? null,
     };
   });
 }
