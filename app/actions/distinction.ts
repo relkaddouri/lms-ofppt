@@ -259,3 +259,71 @@ export async function getDistinctionDeSeance(
     cestMoi: false,
   };
 }
+
+export type ParticipationSeance = {
+  /** Tous les stagiaires du groupe, notés ou non, présents ou non. */
+  lignes: {
+    id: string;
+    nom: string;
+    prenom: string;
+    photo: string | null;
+    present: boolean;
+    note: number | null;
+  }[];
+  /** L'identifiant du distingué, quand la séance a été close. */
+  gagnantId: string | null;
+  /** Sa série au moment de la désignation, figée. */
+  serie: number;
+  /** La moyenne des notes saisies — sur les notés seulement. */
+  moyenne: number | null;
+};
+
+/**
+ * Ce que le formateur a donné sur une séance, et qui l'a emporté.
+ *
+ * La notation se fait dans une modale, un visage à la fois, et disparaît une
+ * fois close : rien ne permettait de revenir voir ce qu'on avait mis, ni
+ * pourquoi c'est celui-là qui a été couronné. Cet onglet est cette mémoire.
+ *
+ * Il lit et ne corrige pas. Rouvrir la notation depuis ici serait tentant,
+ * mais une note de participation est un jugement porté le jour même : la
+ * retoucher une semaine plus tard ne la rendrait pas plus juste, et
+ * déplacerait la couronne d'un stagiaire à l'autre après que le groupe l'a
+ * fêtée.
+ */
+export async function getParticipationSeance(
+  seanceId: string,
+): Promise<ParticipationSeance> {
+  const [lignes, distinction] = await Promise.all([
+    getStagiairesANoter(seanceId),
+    getDistinctionDeSeanceBrute(seanceId),
+  ]);
+
+  const notees = lignes
+    .map((l) => l.note)
+    .filter((n): n is number => n !== null);
+
+  return {
+    lignes,
+    gagnantId: distinction?.stagiaire_id ?? null,
+    serie: distinction?.serie ?? 0,
+    moyenne:
+      notees.length > 0
+        ? Math.round((notees.reduce((a, b) => a + b, 0) / notees.length) * 10) /
+          10
+        : null,
+  };
+}
+
+/** La distinction d'une séance, sans mise en forme — usage interne. */
+async function getDistinctionDeSeanceBrute(
+  seanceId: string,
+): Promise<{ stagiaire_id: string; serie: number } | null> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("distinctions_jour")
+    .select("stagiaire_id, serie")
+    .eq("seance_id", seanceId)
+    .maybeSingle();
+  return data ?? null;
+}

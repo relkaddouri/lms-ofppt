@@ -12,6 +12,7 @@ import { ConfirmModal } from "@/components/ui/Modal";
 import { inputStyles as inputClass } from "@/components/ui/Input";
 import { useToast } from "@/components/ui/Toast";
 import ModaleNotation from "@/components/ModaleNotation";
+import ParticipationSeance from "@/components/ParticipationSeance";
 import { FeteDistinction } from "@/components/ModaleDistinction";
 import {
   getDistinctionDeSeance,
@@ -69,14 +70,23 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
   const recherche = useSearchParams();
   const ongletDemande = recherche.get("onglet");
   const [onglet, setOnglet] = useState<
-    "preparation" | "support" | "support-formateur" | "deroulement"
+    | "preparation"
+    | "support"
+    | "support-formateur"
+    | "deroulement"
+    | "participation"
   >(
     ongletDemande === "support" ||
       ongletDemande === "support-formateur" ||
-      ongletDemande === "deroulement"
+      ongletDemande === "deroulement" ||
+      ongletDemande === "participation"
       ? ongletDemande
       : "preparation",
   );
+
+  // La liste se recharge après une clôture : sans cela, l'onglet garderait
+  // les notes d'avant et la couronne resterait invisible.
+  const [versionParticipation, setVersionParticipation] = useState(0);
 
   const minutesSeance = seance.duree_prevue
     ? Math.round(Number(seance.duree_prevue) * 60)
@@ -167,7 +177,9 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
     startTransition(async () => {
       try {
         await majSeance(seance.id, { est_fad: valeur });
-        toast(valeur ? "Séance passée en FAD" : "Séance repassée en présentiel");
+        toast(
+          valeur ? "Séance passée en FAD" : "Séance repassée en présentiel",
+        );
         router.refresh();
       } catch (e) {
         setEstFad(!valeur);
@@ -254,39 +266,41 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
             </span>
           ) : null}
           <div className="flex min-w-0 flex-col gap-2">
-          <div className="flex flex-wrap items-center gap-2">
-            <h1 className="font-display text-[26px] font-bold leading-tight tracking-[-0.02em] text-ink">
-              {seance.objectifIntitule ??
-                seance.objectif_operationnel ??
-                "Séance"}
-            </h1>
-            {seance.nature ? (
-              <Badge tone={seance.nature === "pratique" ? "info" : "neutral"}>
-                {seance.nature === "pratique" ? "pratique" : "théorique"}
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="font-display text-[26px] font-bold leading-tight tracking-[-0.02em] text-ink">
+                {seance.objectifIntitule ??
+                  seance.objectif_operationnel ??
+                  "Séance"}
+              </h1>
+              {seance.nature ? (
+                <Badge tone={seance.nature === "pratique" ? "info" : "neutral"}>
+                  {seance.nature === "pratique" ? "pratique" : "théorique"}
+                </Badge>
+              ) : null}
+              <Badge tone={seance.statut === "fait" ? "success" : "neutral"}>
+                {seance.statut === "fait" ? "faite" : "à faire"}
               </Badge>
-            ) : null}
-            <Badge tone={seance.statut === "fait" ? "success" : "neutral"}>
-              {seance.statut === "fait" ? "faite" : "à faire"}
-            </Badge>
-            {seance.groupesPartages.length > 0 ? (
-              <Badge tone="info">
-                partagée avec{" "}
-                {seance.groupesPartages.map((g) => g.nom).join(", ")}
-              </Badge>
-            ) : null}
-          </div>
-          <p className="text-[14.5px] text-slate-2">
-            <span className="font-mono text-body">
-              {[
-                seance.date ? formatDateJour(seance.date) : "date à définir",
-                creneau,
-                seance.duree_prevue ? formatHeures(seance.duree_prevue) : null,
-              ]
-                .filter(Boolean)
-                .join(" · ")}
-            </span>
-            {seance.moduleNom ? ` · ${seance.moduleNom}` : ""}
-          </p>
+              {seance.groupesPartages.length > 0 ? (
+                <Badge tone="info">
+                  partagée avec{" "}
+                  {seance.groupesPartages.map((g) => g.nom).join(", ")}
+                </Badge>
+              ) : null}
+            </div>
+            <p className="text-[14.5px] text-slate-2">
+              <span className="font-mono text-body">
+                {[
+                  seance.date ? formatDateJour(seance.date) : "date à définir",
+                  creneau,
+                  seance.duree_prevue
+                    ? formatHeures(seance.duree_prevue)
+                    : null,
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </span>
+              {seance.moduleNom ? ` · ${seance.moduleNom}` : ""}
+            </p>
           </div>
         </div>
 
@@ -334,8 +348,8 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
           </label>
         ) : (
           <span className="text-[13.5px] text-slate-light">
-            Une séance à distance peut réunir plusieurs groupes ; une séance
-            en présentiel reste propre au sien.
+            Une séance à distance peut réunir plusieurs groupes ; une séance en
+            présentiel reste propre au sien.
           </span>
         )}
       </section>
@@ -360,26 +374,32 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
         // interdit, c'est le second.
         className="mt-6 flex items-stretch gap-1.5 overflow-x-auto border-t border-separator px-1"
       >
-        {(
-          [
-            { cle: "preparation" as const, label: "Préparation", compte: 0 },
-            {
-              cle: "support" as const,
-              label: "Support",
-              compte: seance.questions.length,
-            },
-            // Le support du formateur est un second document, pas une variante
-            // du premier : il a son onglet, à côté, et non une bascule à
-            // l'intérieur du Support — sans quoi on ne saurait jamais lequel on
-            // est en train de modifier.
-            {
-              cle: "support-formateur" as const,
-              label: "Support formateur",
-              compte: 0,
-            },
-            { cle: "deroulement" as const, label: "Déroulement", compte: 0 },
-          ]
-        ).map((o) => {
+        {[
+          { cle: "preparation" as const, label: "Préparation", compte: 0 },
+          {
+            cle: "support" as const,
+            label: "Support",
+            compte: seance.questions.length,
+          },
+          // Le support du formateur est un second document, pas une variante
+          // du premier : il a son onglet, à côté, et non une bascule à
+          // l'intérieur du Support — sans quoi on ne saurait jamais lequel on
+          // est en train de modifier.
+          {
+            cle: "support-formateur" as const,
+            label: "Support formateur",
+            compte: 0,
+          },
+          { cle: "deroulement" as const, label: "Déroulement", compte: 0 },
+          // La notation se fait dans une modale qui disparaît ; sans cet
+          // onglet, rien ne permet de revenir voir ce qu'on a donné, ni
+          // pourquoi c'est celui-là qui a été couronné.
+          {
+            cle: "participation" as const,
+            label: "Participation",
+            compte: 0,
+          },
+        ].map((o) => {
           const actif = onglet === o.cle;
           return (
             <button
@@ -428,7 +448,9 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
                 contexte={{
                   seanceId: seance.id,
                   date: seance.date,
-                  dateFormatee: seance.date ? formatDateJour(seance.date) : null,
+                  dateFormatee: seance.date
+                    ? formatDateJour(seance.date)
+                    : null,
                   groupeNom: seance.groupeNom,
                   filiere: seance.filiere,
                   annee: seance.annee,
@@ -465,7 +487,9 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
                   moduleNom: seance.moduleNom,
                   groupeNom: seance.groupeNom,
                   date: seance.date,
-                  dateFormatee: seance.date ? formatDateJour(seance.date) : null,
+                  dateFormatee: seance.date
+                    ? formatDateJour(seance.date)
+                    : null,
                   dureeHeures: seance.duree_prevue
                     ? Number(seance.duree_prevue)
                     : null,
@@ -548,7 +572,9 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
                   moduleNom: seance.moduleNom,
                   groupeNom: seance.groupeNom,
                   date: seance.date,
-                  dateFormatee: seance.date ? formatDateJour(seance.date) : null,
+                  dateFormatee: seance.date
+                    ? formatDateJour(seance.date)
+                    : null,
                   dureeHeures: seance.duree_prevue
                     ? Number(seance.duree_prevue)
                     : null,
@@ -560,6 +586,12 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
               />
             </div>
           </section>
+        ) : onglet === "participation" ? (
+          <ParticipationSeance
+            key={versionParticipation}
+            seanceId={seance.id}
+            onNoter={() => setNotationOuverte(true)}
+          />
         ) : (
           <div className="grid items-start gap-5 lg:[grid-template-columns:minmax(0,1.15fr)_minmax(0,1fr)]">
             <section className="min-w-0 overflow-hidden rounded-[14px] border border-border bg-surface shadow-repos">
@@ -615,13 +647,19 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
                         type="button"
                         aria-pressed={p.present === true}
                         aria-label={`${nomComplet} — ${
-                          absent ? "absent" : p.present ? "présent" : "non pointé"
+                          absent
+                            ? "absent"
+                            : p.present
+                              ? "présent"
+                              : "non pointé"
                         }`}
                         disabled={enCours}
                         // Un stagiaire non pointé bascule d'abord vers présent :
                         // c'est le cas majoritaire, et un premier clic qui
                         // marque absent serait un piège.
-                        onClick={() => pointer(p.stagiaire_id, p.present !== true)}
+                        onClick={() =>
+                          pointer(p.stagiaire_id, p.present !== true)
+                        }
                         className={`flex w-full items-center gap-3 border-b border-separator px-[22px] py-3 text-left transition-colors duration-150 ease-out ${
                           absent ? "bg-alert-wash" : "bg-surface hover:bg-paper"
                         }`}
@@ -847,6 +885,7 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
         onFermer={() => setNotationOuverte(false)}
         onCloture={(gagnant) => {
           setNotationOuverte(false);
+          setVersionParticipation((v) => v + 1);
           toast(
             gagnant
               ? `${gagnant} est le stagiaire de la journée.`

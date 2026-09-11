@@ -351,6 +351,7 @@ export default function GroupeDetail({
                             photo={s.photo}
                             taille="md"
                             compact
+                            retrait
                           />
                           <div className="min-w-0">
                             <p className="truncate text-sm font-semibold text-ink">
