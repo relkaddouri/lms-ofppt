@@ -465,6 +465,13 @@ Les demandes du porteur de projet depuis le 7 septembre 2026, consignées après
   - **Le dépôt s'annonce** dans une modale à trois temps — préparation, envoi, enregistrement. Sur un téléphone, quelques secondes passaient sans que rien ne bouge, et l'avatar qui pâlit ne dit pas qu'il se passe quelque chose : on réappuie.
   **Test** : cause reproduite en base avant correction — le même `insert` passe seul et échoue avec `on conflict`, puis repasse une fois la policy créée. Puis de bout en bout dans la session réelle : PNG de 11 Mo déposé, les trois étapes de la modale relevées dans l'ordre, « Photo enregistrée. », objet de 142 Ko en `image/jpeg` et fiche mise à jour. Retrait testé par le bouton : « Photo retirée. », seau revenu à zéro objet, zéro fiche — la photo d'essai n'a rien laissé derrière elle.
 
+- [x] **9.14 — Le stagiaire peut retirer sa photo, et l'écran ne ment plus** : suite de 9.13, à la demande du porteur de projet.
+  - **La confirmation manque rarement à quelqu'un, sauf quand elle manque.** Le système visuel interdit la suppression en un clic ; la corbeille que 9.13 venait d'ajouter l'autorisait. Elle passe par `ConfirmModal`, des deux côtés — et sur un téléphone, la corbeille voisine l'appareil photo à quelques millimètres.
+  - **Les mots changent avec l'écran** : « votre photo » chez le stagiaire, « la photo de Untel » chez le formateur. Un drapeau `moi` qui ne touche qu'au texte : les droits restent tenus par `peut_gerer_photo` en base.
+  - **44 px sous 768 px** (design §3bis), 32 au-dessus : l'en-tête du stagiaire est un écran de téléphone, la cellule du formateur ne l'est pas.
+  - **Deux défauts trouvés en vérifiant** : `revalidatePath("/groupes")` ne touche pas `/groupes/[id]`, donc la liste gardait la photo retirée jusqu'à un rechargement à la main — passé en `"layout"`. Et le retrait vidait l'aperçu local sans toucher à la photo venue du serveur : la vignette et la corbeille survivaient à leur propre suppression. L'état de retrait est désormais tenu côté écran aussi, pour que la page dise tout de suite ce qui vient d'être fait.
+  **Test** : dans la session réelle — dépôt, corbeille, « Annuler » (la photo reste), corbeille, « Retirer » (« Photo retirée. », initiales revenues, plus d'image dans la ligne). Cible mesurée dans un cadre aux vraies requêtes média : **44×44 à 390 px**, 32×32 à 1200 px, aucun défilement en travers. Photo d'essai effacée ; celle que le porteur de projet a déposée de son côté pendant ce temps — 15 Ko, la preuve que 9.13 tient — laissée intacte. **Non vérifié à l'écran** : l'en-tête du stagiaire lui-même, faute de session.
+
 ---
 
 ## Points de vigilance — pas des atomes

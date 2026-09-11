@@ -39,6 +39,8 @@ export default async function EspaceStagiaireLayout({
             nom={identite.nom}
             photo={identite.photo}
             compact
+            retrait
+            moi
           />
           <span className="flex min-w-0 flex-col gap-0.5">
             <span className="truncate font-display text-[16.5px] font-semibold text-ink md:text-sm">
