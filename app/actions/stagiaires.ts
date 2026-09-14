@@ -224,6 +224,10 @@ export async function enregistrerPhoto(
   });
   if (error) throw new Error(error.message);
 
-  revalidatePath("/groupes");
+  // « layout » et non le chemin seul : la photo s'affiche sur la fiche du
+  // groupe, `/groupes/[id]`, que `revalidatePath("/groupes")` ne touche pas.
+  // Sans cela, la liste gardait la photo retirée jusqu'à un rechargement à la
+  // main.
+  revalidatePath("/groupes", "layout");
   revalidatePath("/espace-stagiaire", "layout");
 }

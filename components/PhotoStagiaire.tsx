@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { createClient } from "@/lib/supabase/client";
 import { enregistrerPhoto } from "@/app/actions/stagiaires";
 import { useToast } from "@/components/ui/Toast";
+import { ConfirmModal } from "@/components/ui/Modal";
 import Avatar, { type AvatarTaille } from "@/components/ui/Avatar";
 import { Camera, Trash2 } from "lucide-react";
 import { BUCKET_PHOTOS } from "@/lib/photos";
@@ -109,6 +110,7 @@ export default function PhotoStagiaire({
   libelle,
   compact = false,
   retrait = false,
+  moi = false,
 }: {
   stagiaireId: string;
   nom: string;
@@ -121,8 +123,9 @@ export default function PhotoStagiaire({
    * L'avatar seul, cliquable, avec une pastille d'appareil photo.
    *
    * Pour l'en-tête du stagiaire, qui porte déjà la navigation, la cloche et
-   * la déconnexion : trois contrôles de plus y auraient été de trop. On y
-   * remplace une photo en en déposant une autre.
+   * la déconnexion, et pour la liste du formateur, où la photo tient dans une
+   * cellule de tableau. La forme large, elle, attend un écran de réglages qui
+   * n'existe pas encore.
    */
   compact?: boolean;
   /**
@@ -134,15 +137,32 @@ export default function PhotoStagiaire({
    * aussi en forme compacte, et le bouton n'existait donc nulle part.
    */
   retrait?: boolean;
+  /**
+   * Vrai quand c'est le stagiaire qui regarde sa propre fiche.
+   *
+   * Ne change que les mots : « votre photo » plutôt que « la photo de
+   * Untel ». Les droits, eux, sont tenus par `peut_gerer_photo` en base, pas
+   * par ce drapeau.
+   */
+  moi?: boolean;
 }) {
   const toast = useToast();
   const champ = useRef<HTMLInputElement>(null);
   const [enCours, setEnCours] = useState(false);
   const [etape, setEtape] = useState<Etape | null>(null);
+  // Une photo ne se retire pas d'un doigt qui glisse : le système visuel
+  // interdit la suppression en un clic, et sur un téléphone la corbeille est
+  // à quelques millimètres de l'appareil photo.
+  const [retraitAConfirmer, setRetraitAConfirmer] = useState(false);
   // L'aperçu local évite d'attendre un aller-retour serveur pour voir sa
   // propre photo : le chemin ne change pas d'un dépôt à l'autre, donc rien
   // dans les données ne signalerait le changement.
   const [apercu, setApercu] = useState<string | null>(null);
+  // Le retrait vidait `apercu`, mais `photo` vient du serveur : la vignette
+  // et la corbeille restaient jusqu'à ce que la page soit réellement
+  // rafraîchie. On retient donc le retrait ici aussi, pour que l'écran dise
+  // tout de suite ce qui vient d'être fait.
+  const [retiree, setRetiree] = useState(false);
 
   async function deposer(fichier: File) {
     setEnCours(true);
@@ -165,6 +185,7 @@ export default function PhotoStagiaire({
 
       setEtape("enregistrement");
       await enregistrerPhoto(stagiaireId, chemin);
+      setRetiree(false);
       setApercu(vignetteLocale);
       toast("Photo enregistrée.");
     } catch (e) {
@@ -180,15 +201,18 @@ export default function PhotoStagiaire({
   }
 
   async function retirer() {
+    setRetraitAConfirmer(false);
     setEnCours(true);
     setEtape("enregistrement");
     try {
       const supabase = createClient();
       // Le fichier part avant la fiche : l'inverse laisserait une image
       // orpheline que plus rien ne désigne.
-      if (photo) await supabase.storage.from(BUCKET_PHOTOS).remove([photo]);
+      if (photoVisible)
+        await supabase.storage.from(BUCKET_PHOTOS).remove([photoVisible]);
       await enregistrerPhoto(stagiaireId, null);
       setApercu(null);
+      setRetiree(true);
       toast("Photo retirée.");
     } catch (e) {
       toast(
@@ -201,6 +225,26 @@ export default function PhotoStagiaire({
     }
   }
 
+  /** Ce que l'écran montre : la photo du serveur, sauf si on vient de la retirer. */
+  const photoVisible = retiree ? null : photo;
+  const aUnePhoto = Boolean(photoVisible || apercu);
+
+  const confirmation = (
+    <ConfirmModal
+      open={retraitAConfirmer}
+      onClose={() => setRetraitAConfirmer(false)}
+      onConfirm={retirer}
+      busy={enCours}
+      title="Retirer cette photo ?"
+      message={
+        moi
+          ? "Votre photo disparaîtra du fil et des listes. Vous pourrez en déposer une autre quand vous voudrez."
+          : `La photo de ${prenom} ${nom} disparaîtra du fil et des listes. Elle pourra être redéposée ensuite.`
+      }
+      confirmLabel="Retirer"
+    />
+  );
+
   const vignette = apercu ? (
     <span
       aria-hidden
@@ -210,7 +254,7 @@ export default function PhotoStagiaire({
       <img src={apercu} alt="" className="h-full w-full object-cover" />
     </span>
   ) : (
-    <Avatar nom={nom} prenom={prenom} photo={photo} taille={taille} />
+    <Avatar nom={nom} prenom={prenom} photo={photoVisible} taille={taille} />
   );
 
   const champFichier = (
@@ -233,15 +277,14 @@ export default function PhotoStagiaire({
     return (
       <>
         {etape ? <VoileDepot etape={etape} /> : null}
+        {confirmation}
         {champFichier}
         <span className="flex shrink-0 items-center gap-1.5">
           <button
             type="button"
             onClick={() => champ.current?.click()}
             disabled={enCours}
-            aria-label={
-              photo || apercu ? "Changer la photo" : "Ajouter une photo"
-            }
+            aria-label={aUnePhoto ? "Changer la photo" : "Ajouter une photo"}
             className="relative shrink-0 rounded-full disabled:opacity-60"
           >
             {vignette}
@@ -253,14 +296,18 @@ export default function PhotoStagiaire({
             </span>
           </button>
 
-          {retrait && (photo || apercu) ? (
+          {retrait && aUnePhoto ? (
             <button
               type="button"
-              onClick={retirer}
+              onClick={() => setRetraitAConfirmer(true)}
               disabled={enCours}
               aria-label="Retirer la photo"
               title="Retirer la photo"
-              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] border border-transparent text-slate-light transition-colors duration-150 ease-out hover:border-tint-alert-strong hover:bg-alert-wash hover:text-coral-dark disabled:opacity-60"
+              // 44 px sous 768 px, comme toute cible de doigt (design §3bis) :
+              // l'en-tête du stagiaire est un écran de téléphone, et la
+              // corbeille y voisine l'appareil photo. Au-dessus, la souris
+              // vise juste et le bouton se fait discret dans la cellule.
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[8px] border border-transparent text-slate-light transition-colors duration-150 ease-out hover:border-tint-alert-strong hover:bg-alert-wash hover:text-coral-dark disabled:opacity-60 md:h-8 md:w-8"
             >
               <Trash2 size={13} aria-hidden />
             </button>
@@ -273,6 +320,7 @@ export default function PhotoStagiaire({
   return (
     <div className="flex items-center gap-3">
       {etape ? <VoileDepot etape={etape} /> : null}
+      {confirmation}
       <span className="relative">{vignette}</span>
       {champFichier}
 
@@ -283,13 +331,13 @@ export default function PhotoStagiaire({
         className="flex min-h-11 items-center gap-2 rounded-[11px] border border-border-strong bg-surface px-3.5 text-sm font-semibold text-body transition-colors duration-150 ease-out hover:border-ink hover:bg-paper disabled:opacity-60"
       >
         <Camera size={16} aria-hidden />
-        {libelle ?? (photo || apercu ? "Changer" : "Ajouter une photo")}
+        {libelle ?? (aUnePhoto ? "Changer" : "Ajouter une photo")}
       </button>
 
-      {photo || apercu ? (
+      {aUnePhoto ? (
         <button
           type="button"
-          onClick={retirer}
+          onClick={() => setRetraitAConfirmer(true)}
           disabled={enCours}
           aria-label="Retirer la photo"
           className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[11px] border border-border bg-surface text-slate-2 transition-colors duration-150 ease-out hover:border-coral hover:text-coral disabled:opacity-60"
