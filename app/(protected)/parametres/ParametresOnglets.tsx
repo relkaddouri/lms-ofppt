@@ -1,40 +1,53 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ChevronRight, Lock } from "lucide-react";
 import Segments from "@/components/ui/Segments";
 import ParametresLlmForm from "./ParametresLlmForm";
 import ParametresHeuresForm from "./ParametresHeuresForm";
 import ParametresEtablissementForm from "./ParametresEtablissementForm";
+import ParametresCommentairesForm from "./ParametresCommentairesForm";
 import type { ParametresLlm } from "@/app/actions/parametres-llm";
 import type { ParametresFormateur } from "@/app/actions/heures";
 import type { Etablissement } from "@/app/actions/etablissement";
+import type { ReglagesCommentaires } from "@/app/actions/questions-support";
 
 const ONGLETS = [
   { cle: "heures", libelle: "Ma charge horaire" },
   { cle: "etablissement", libelle: "Établissement" },
+  { cle: "commentaires", libelle: "Questions des cours" },
   { cle: "llm", libelle: "Modèle de langage" },
 ] as const;
 
 type Onglet = (typeof ONGLETS)[number]["cle"];
 
 /**
- * Trois réglages sans rapport les uns avec les autres : la charge horaire du
- * formateur, l'identité de son établissement et le fournisseur d'intelligence
- * artificielle. Les empiler sur une seule page obligeait à traverser l'un pour
- * atteindre l'autre.
+ * Des réglages sans rapport les uns avec les autres : la charge horaire du
+ * formateur, l'identité de son établissement, la modération des questions de
+ * cours et le fournisseur d'intelligence artificielle. Les empiler sur une
+ * seule page obligeait à traverser l'un pour atteindre l'autre.
+ *
+ * L'onglet d'arrivée peut venir de l'adresse : le lien « Réglages des
+ * questions », posé sous un cours, doit ouvrir le bon onglet et pas le
+ * premier.
  */
 export default function ParametresOnglets({
   llm,
   heures,
   etablissement,
+  commentaires,
 }: {
   llm: ParametresLlm | null;
   heures: ParametresFormateur;
   etablissement: Etablissement;
+  commentaires: ReglagesCommentaires;
 }) {
-  const [onglet, setOnglet] = useState<Onglet>("heures");
+  const demande = useSearchParams().get("onglet");
+  const [onglet, setOnglet] = useState<Onglet>(
+    ONGLETS.some((o) => o.cle === demande) ? (demande as Onglet) : "heures",
+  );
 
   return (
     <div className="flex flex-col gap-6">
@@ -48,6 +61,9 @@ export default function ParametresOnglets({
       {onglet === "heures" ? <ParametresHeuresForm initial={heures} /> : null}
       {onglet === "etablissement" ? (
         <ParametresEtablissementForm initial={etablissement} />
+      ) : null}
+      {onglet === "commentaires" ? (
+        <ParametresCommentairesForm initial={commentaires} />
       ) : null}
       {onglet === "llm" ? <ParametresLlmForm initial={llm} /> : null}
 
@@ -69,7 +85,11 @@ export default function ParametresOnglets({
             seule.
           </span>
         </span>
-        <ChevronRight size={18} className="ml-auto shrink-0 text-muted" aria-hidden />
+        <ChevronRight
+          size={18}
+          className="ml-auto shrink-0 text-muted"
+          aria-hidden
+        />
       </Link>
     </div>
   );

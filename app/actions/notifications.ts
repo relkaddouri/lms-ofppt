@@ -57,11 +57,19 @@ export async function getNotifications(): Promise<Notification[]> {
       supabase
         .from("questions_support")
         .select(
-          "id, texte, created_at, support_titre, module_id, groupe_id, supports_seance(seance_id)",
+          "id, texte, created_at, statut, support_titre, module_id, groupe_id, supports_seance(seance_id)",
         )
         .order("created_at", { ascending: false })
         .limit(40),
-      supabase.from("reponses_question").select("question_id"),
+      // Les réponses servent deux fois : savoir quelles questions ont déjà
+      // été répondues, et trouver celles d'un stagiaire qui attendent la
+      // validation (migration 085).
+      supabase
+        .from("reponses_question")
+        .select(
+          "id, question_id, texte, created_at, statut, questions_support(support_titre, groupe_id, supports_seance(seance_id))",
+        )
+        .order("created_at", { ascending: false }),
       supabase
         .from("passations_controle")
         .select("id, nom_complet, note, responses, submitted_at, controle_id")
@@ -127,24 +135,34 @@ export async function getNotifications(): Promise<Notification[]> {
     });
   }
 
+  // Une réponse en attente ne répond encore à rien : le groupe ne la voit
+  // pas. Seules les publiées retirent une question de la liste.
   const repondues = new Set(
-    (reponsesRes.data ?? []).map((r) => r.question_id as string),
+    (reponsesRes.data ?? [])
+      .filter((r) => r.statut === "publiee")
+      .map((r) => r.question_id as string),
   );
   for (const q of questionsRes.data ?? []) {
     const r = q as unknown as {
       id: string;
       texte: string;
       created_at: string;
+      statut: string;
       support_titre: string | null;
       module_id: string;
       groupe_id: string;
       supports_seance: { seance_id: string } | null;
     };
-    if (repondues.has(r.id)) continue;
+    const aValider = r.statut === "en_attente";
+    if (!aValider && repondues.has(r.id)) continue;
     notifications.push({
       id: `question-${r.id}`,
       genre: "question",
-      texte: "Une question de stagiaire attend une réponse",
+      // Deux travaux distincts, qu'on ne confond pas : trancher si le message
+      // a sa place, ou y répondre.
+      texte: aValider
+        ? "Une question de stagiaire attend votre validation"
+        : "Une question de stagiaire attend une réponse",
       reference: r.support_titre,
       extrait: r.texte,
       auteur: null,
@@ -155,6 +173,36 @@ export async function getNotifications(): Promise<Notification[]> {
       href: r.supports_seance?.seance_id
         ? `/groupes/${r.groupe_id}/seances/${r.supports_seance.seance_id}?onglet=support#question-${r.id}`
         : `/groupes/${r.groupe_id}/progression`,
+    });
+  }
+
+  type ReponseLue = {
+    id: string;
+    question_id: string;
+    texte: string;
+    created_at: string;
+    statut: string;
+    questions_support: {
+      support_titre: string | null;
+      groupe_id: string | null;
+      supports_seance: { seance_id: string } | null;
+    } | null;
+  };
+  for (const r of (reponsesRes.data ?? []) as unknown as ReponseLue[]) {
+    if (r.statut !== "en_attente") continue;
+    const q = r.questions_support;
+    notifications.push({
+      id: `reponse-${r.id}`,
+      genre: "question",
+      texte: "Une réponse de stagiaire attend votre validation",
+      reference: q?.support_titre ?? null,
+      extrait: r.texte,
+      auteur: null,
+      date: r.created_at,
+      href:
+        q?.groupe_id && q.supports_seance?.seance_id
+          ? `/groupes/${q.groupe_id}/seances/${q.supports_seance.seance_id}?onglet=support#question-${r.question_id}`
+          : "/groupes",
     });
   }
 

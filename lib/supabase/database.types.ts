@@ -1073,6 +1073,8 @@ export type Database = {
           annee_scolaire: string | null
           annee_scolaire_courante: string | null
           code_secteur: string | null
+          commentaires_cours_ouverts: boolean
+          commentaires_cours_valides: boolean
           created_at: string
           etablissement: string | null
           formateur_id: string
@@ -1092,6 +1094,8 @@ export type Database = {
           annee_scolaire?: string | null
           annee_scolaire_courante?: string | null
           code_secteur?: string | null
+          commentaires_cours_ouverts?: boolean
+          commentaires_cours_valides?: boolean
           created_at?: string
           etablissement?: string | null
           formateur_id?: string
@@ -1111,6 +1115,8 @@ export type Database = {
           annee_scolaire?: string | null
           annee_scolaire_courante?: string | null
           code_secteur?: string | null
+          commentaires_cours_ouverts?: boolean
+          commentaires_cours_valides?: boolean
           created_at?: string
           etablissement?: string | null
           formateur_id?: string
@@ -1380,6 +1386,7 @@ export type Database = {
           groupe_id: string | null
           id: string
           module_id: string
+          statut: string
           support_id: string | null
           support_titre: string
           texte: string
@@ -1392,6 +1399,7 @@ export type Database = {
           groupe_id?: string | null
           id?: string
           module_id: string
+          statut?: string
           support_id?: string | null
           support_titre: string
           texte: string
@@ -1404,6 +1412,7 @@ export type Database = {
           groupe_id?: string | null
           id?: string
           module_id?: string
+          statut?: string
           support_id?: string | null
           support_titre?: string
           texte?: string
@@ -1548,6 +1557,7 @@ export type Database = {
           created_at: string
           id: string
           question_id: string
+          statut: string
           texte: string
         }
         Insert: {
@@ -1555,6 +1565,7 @@ export type Database = {
           created_at?: string
           id?: string
           question_id: string
+          statut?: string
           texte: string
         }
         Update: {
@@ -1562,6 +1573,7 @@ export type Database = {
           created_at?: string
           id?: string
           question_id?: string
+          statut?: string
           texte?: string
         }
         Relationships: [
@@ -2118,6 +2130,7 @@ export type Database = {
         Returns: undefined
       }
       est_mon_stagiaire: { Args: { p_stagiaire_id: string }; Returns: boolean }
+      est_stagiaire: { Args: never; Returns: boolean }
       get_sujet_pour_passation: {
         Args: { p_controle_id: string }
         Returns: {
@@ -2180,6 +2193,17 @@ export type Database = {
       poser_question_support: {
         Args: { p_support_id: string; p_texte: string }
         Returns: string
+      }
+      publier_message_cours: {
+        Args: { p_genre: string; p_id: string }
+        Returns: undefined
+      }
+      reglages_commentaires_groupe: {
+        Args: { p_groupe: string }
+        Returns: {
+          ouverts: boolean
+          valides: boolean
+        }[]
       }
       repondre_question: {
         Args: { p_question_id: string; p_texte: string }
