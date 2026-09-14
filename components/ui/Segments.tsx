@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 
 /**
  * Bascule segmentée, pour choisir entre deux ou trois vues d'un même écran.
@@ -21,8 +21,22 @@ export default function Segments<T extends string>({
   onChange: (valeur: T) => void;
   ariaLabel: string;
 }) {
+  const gouttiere = useRef<HTMLDivElement>(null);
+
+  // Quand la gouttière défile, le segment actif peut être hors de vue — par
+  // exemple en arrivant par un lien qui ouvre directement le quatrième
+  // onglet sur un téléphone. On le ramène à l'écran, sans animer : c'est un
+  // placement, pas un mouvement.
+  useEffect(() => {
+    const actif = gouttiere.current?.querySelector<HTMLElement>(
+      '[aria-selected="true"]',
+    );
+    actif?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }, [valeur]);
+
   return (
     <div
+      ref={gouttiere}
       role="tablist"
       aria-label={ariaLabel}
       // Les libellés ne se coupent pas en deux ; quand ils ne tiennent pas,

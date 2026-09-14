@@ -39,7 +39,10 @@ export default async function CoursDetailPage({
           {support.contenu.titre}
         </h1>
         <p className="mt-1 text-xs text-slate">
-          {[support.date ? formatDateJour(support.date) : null, support.moduleNom]
+          {[
+            support.date ? formatDateJour(support.date) : null,
+            support.moduleNom,
+          ]
             .filter(Boolean)
             .join(" · ")}
         </p>
@@ -59,7 +62,10 @@ export default async function CoursDetailPage({
         <div className="mt-5">
           <SupportLecture
             support={support.contenu}
-            sousTitre={[support.moduleNom, support.date ? formatDateJour(support.date) : null]
+            sousTitre={[
+              support.moduleNom,
+              support.date ? formatDateJour(support.date) : null,
+            ]
               .filter(Boolean)
               .join(" · ")}
           />
@@ -146,6 +152,7 @@ export default async function CoursDetailPage({
         supportId={support.id}
         questions={support.questions}
         camarades={camarades}
+        reglages={support.reglages}
       />
     </div>
   );
