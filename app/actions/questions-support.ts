@@ -320,8 +320,12 @@ export async function repondreQuestion(
 ) {
   const propre = texte.trim();
   if (!propre) throw new Error("La réponse est vide.");
-  if (propre.length > 2000) {
-    throw new Error("La réponse dépasse 2000 caractères.");
+  // Vingt mille : le plafond du formateur, qui répond en Markdown. Celui d'un
+  // stagiaire, deux mille, est tenu par `repondre_question` en base
+  // (migration 086) — l'action ne sait pas qui écrit sans une lecture de plus,
+  // et la fonction, elle, le sait déjà.
+  if (propre.length > 20000) {
+    throw new Error("La réponse dépasse 20 000 caractères.");
   }
 
   const supabase = await createClient();
