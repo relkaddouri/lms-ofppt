@@ -9,6 +9,8 @@ import Badge from "@/components/ui/Badge";
 import { formatDateTime } from "@/lib/format";
 import TexteMentions from "@/components/TexteMentions";
 import ChampMention from "@/components/ChampMention";
+import EditeurReponse from "@/components/EditeurReponse";
+import ReponseMarkdown from "@/components/ReponseMarkdown";
 import {
   poserQuestion,
   publierMessage,
@@ -163,9 +165,7 @@ export default function QuestionsSupport({
               }`}
             >
               <Entete message={q} formateur={formateur} />
-              <p className="mt-1 text-sm leading-relaxed text-ink">
-                <TexteMentions texte={q.texte} camarades={camarades} />
-              </p>
+              <Corps message={q} camarades={camarades} />
 
               <Actions
                 message={q}
@@ -198,9 +198,7 @@ export default function QuestionsSupport({
                       }
                     >
                       <Entete message={r} formateur={formateur} />
-                      <p className="mt-1 text-sm leading-relaxed text-ink">
-                        <TexteMentions texte={r.texte} camarades={camarades} />
-                      </p>
+                      <Corps message={r} camarades={camarades} />
                       <Actions
                         message={r}
                         formateur={formateur}
@@ -229,17 +227,35 @@ export default function QuestionsSupport({
               {peutEcrire && !q.enAttente ? (
                 repondA === q.id ? (
                   <div className="mt-3">
-                    <ChampMention
-                      camarades={camarades}
-                      busy={enCours}
-                      placeholder="Votre réponse… @ pour mentionner"
-                      onEnvoyer={(texte) =>
-                        agir(
-                          () => repondreQuestion(q.id, texte, supportId),
-                          apresEnvoi("réponse"),
-                        )
-                      }
-                    />
+                    {/* Le formateur explique : une zone qui grandit, du
+                        Markdown, un aperçu. Le stagiaire commente : le champ
+                        d'une ligne lui suffit, et un astérisque dans sa
+                        question doit rester un astérisque. */}
+                    {formateur ? (
+                      <EditeurReponse
+                        camarades={camarades}
+                        busy={enCours}
+                        onAnnuler={() => setRepondA(null)}
+                        onEnvoyer={(texte) =>
+                          agir(
+                            () => repondreQuestion(q.id, texte, supportId),
+                            apresEnvoi("réponse"),
+                          )
+                        }
+                      />
+                    ) : (
+                      <ChampMention
+                        camarades={camarades}
+                        busy={enCours}
+                        placeholder="Votre réponse… @ pour mentionner"
+                        onEnvoyer={(texte) =>
+                          agir(
+                            () => repondreQuestion(q.id, texte, supportId),
+                            apresEnvoi("réponse"),
+                          )
+                        }
+                      />
+                    )}
                   </div>
                 ) : (
                   <button
@@ -323,6 +339,34 @@ export default function QuestionsSupport({
         }}
       />
     </section>
+  );
+}
+
+/**
+ * Le texte d'un message.
+ *
+ * Markdown pour le formateur, texte simple pour un stagiaire. La distinction
+ * suit l'auteur et non l'écran : le stagiaire lit la réponse mise en forme,
+ * comme le formateur l'a écrite et prévisualisée.
+ */
+function Corps({
+  message,
+  camarades,
+}: {
+  message: Message;
+  camarades: Camarade[];
+}) {
+  if (message.auteurFormateur) {
+    return (
+      <div className="mt-1.5">
+        <ReponseMarkdown texte={message.texte} camarades={camarades} />
+      </div>
+    );
+  }
+  return (
+    <p className="mt-1 whitespace-pre-line text-sm leading-relaxed text-ink">
+      <TexteMentions texte={message.texte} camarades={camarades} />
+    </p>
   );
 }
 

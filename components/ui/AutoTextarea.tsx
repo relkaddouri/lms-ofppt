@@ -1,6 +1,11 @@
 "use client";
 
-import { useEffect, useRef, type TextareaHTMLAttributes } from "react";
+import {
+  useEffect,
+  useRef,
+  type Ref,
+  type TextareaHTMLAttributes,
+} from "react";
 import { inputStyles } from "@/components/ui/Input";
 
 /**
@@ -14,10 +19,18 @@ export default function AutoTextarea({
   value,
   className = "",
   minRows = 2,
+  ref: refExterne,
   ...rest
 }: TextareaHTMLAttributes<HTMLTextAreaElement> & {
   value: string;
   minRows?: number;
+  /**
+   * Pour qui doit agir sur la sélection — une barre de mise en forme. La
+   * zone garde sa propre référence pour se mesurer : sans cette fusion, la
+   * référence passée de l'extérieur remplaçait la sienne, et la zone cessait
+   * de grandir.
+   */
+  ref?: Ref<HTMLTextAreaElement>;
 }) {
   const ref = useRef<HTMLTextAreaElement>(null);
 
@@ -31,7 +44,11 @@ export default function AutoTextarea({
 
   return (
     <textarea
-      ref={ref}
+      ref={(el) => {
+        ref.current = el;
+        if (typeof refExterne === "function") refExterne(el);
+        else if (refExterne) refExterne.current = el;
+      }}
       value={value}
       rows={minRows}
       className={`${inputStyles} resize-none overflow-hidden ${className}`}
