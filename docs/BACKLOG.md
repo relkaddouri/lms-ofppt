@@ -506,6 +506,38 @@ Les demandes du porteur de projet depuis le 7 septembre 2026, consignées après
 
 ---
 
+## Phase 10 — Évaluer, et comprendre ce que la classe a compris (PRD §4.7bis)
+
+Demande du porteur de projet du 16 septembre 2026, à partir d'un sujet de CC de M202 dont le fond, la forme et la mise en page n'allaient pas. **Une branche par atome**, dans l'ordre : les trois premiers réparent ce qui existe, les trois suivants ajoutent.
+
+- [ ] **10.1 — Le sujet imprimé reprend la présentation adoptée** · branche `controle-sujet-pdf`
+  Le cartouche partagé des pièces du dossier d'épreuve, l'année scolaire, les champs nom / CEF / CNE ; un espace de réponse proportionné à ce que la question demande ; aucune question coupée entre deux pages, aucune page à moitié vide sans raison ; le corrigé imprimable dans la même présentation.
+  **Test** : le sujet de M202 régénéré en PDF, audité page à page (débordements, chevauchements, espaces), rendu en images et comparé aux autres pièces du dossier.
+
+- [ ] **10.2 — Une génération qui tient debout** · branche `controle-generation`
+  Énoncés autoportants — les données d'un exercice écrites dans le sujet, jamais « en annexe » ; questions sur les notions et non sur les objectifs de séance ; contrôle de cohérence avant affichage (barème selon le type, courbe 60 / 40, pièce absente, hors contenu couvert).
+  **Test** : plusieurs générations sur M202 et M104, relues question par question ; aucune référence à une pièce absente, aucune question méta.
+
+- [ ] **10.3 — Brouillons et versions** · branche `controle-brouillons`
+  Enregistrer à tout moment sans valider, reprendre, conserver les versions successives, revenir à une version, dupliquer un contrôle en variante.
+  **Test** : générer, enregistrer, régénérer, enregistrer, revenir à la première version ; dupliquer.
+
+- [ ] **10.4 — Les contrôles de test, sur une ou plusieurs séances** · branche `controle-test`
+  Un troisième type, formatif ; périmètre choisi séance par séance ; hors minimum réglementaire, hors échéances, hors moyenne ; barème libre, 20 par défaut.
+  **Test** : un test sur deux séances non contiguës de M202 ; il n'apparaît ni dans le décompte 2 CC + 1 EFM ni dans la moyenne.
+
+- [ ] **10.5 — La passation d'un contrôle de test** · branche `controle-test-passation`
+  Ouvrir et fermer le test au groupe ; chronométré ou non ; note et corrigé dès la remise ou à la publication, au choix du formateur.
+  **Test** : un test ouvert, passé depuis un compte stagiaire, fermé ; les deux modes de retour.
+
+- [ ] **10.6 — L'analyse de compréhension** · branche `controle-analyse`
+  À partir des réponses réelles : réussite et erreurs fréquentes par question et par notion, niveau de la classe, stagiaires à accompagner, ajustements proposés et séances où les placer. Enregistrée, jamais partagée aux stagiaires, envoyée au modèle sans les noms.
+  **Test** : une analyse sur un jeu de copies de test dont les erreurs sont connues d'avance ; l'analyse doit les retrouver.
+
+**À valider par le porteur de projet avant 10.4 et 10.5** : la note d'un test hors moyenne ; le retour dès la remise par défaut.
+
+---
+
 ## Points de vigilance — pas des atomes
 
 À garder en tête à chaque changement de schéma, sans traitement immédiat.
