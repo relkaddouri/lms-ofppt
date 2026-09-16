@@ -330,6 +330,8 @@ export type Database = {
           id: string
           jour_semaine: number
           motif_id: string
+          premiere_date: string | null
+          recurrence: string
         }
         Insert: {
           created_at?: string
@@ -339,6 +341,8 @@ export type Database = {
           id?: string
           jour_semaine: number
           motif_id: string
+          premiere_date?: string | null
+          recurrence?: string
         }
         Update: {
           created_at?: string
@@ -348,6 +352,8 @@ export type Database = {
           id?: string
           jour_semaine?: number
           motif_id?: string
+          premiere_date?: string | null
+          recurrence?: string
         }
         Relationships: [
           {
