@@ -30,7 +30,7 @@ import Badge from "@/components/ui/Badge";
 import Button, { buttonStyles } from "@/components/ui/Button";
 import { inputStyles } from "@/components/ui/Input";
 import { ConfirmModal } from "@/components/ui/Modal";
-import { formatDateJour, slugify } from "@/lib/format";
+import { formatDateJour } from "@/lib/format";
 import { libelleModule } from "@/lib/modules";
 import {
   BadgeCheck,
@@ -42,8 +42,6 @@ import {
   Trash2,
   Wand2,
 } from "lucide-react";
-import { getEtablissement } from "@/app/actions/etablissement";
-import { marqueDe } from "@/lib/pdf-marque";
 import { baremeAttendu, socleAccessible } from "@/lib/controles";
 
 type DraftQuestion = {
@@ -458,34 +456,40 @@ export default function ControleManager({
   }
 
 
-  async function handleDownloadPdf() {
+  /**
+   * Le sujet ou le corrigé, tels qu'ils sont à l'écran (PRD §4.7bis).
+   *
+   * Plus besoin d'enregistrer d'abord : on imprime la version qu'on a sous
+   * les yeux. Même cartouche que le résultat signé et la feuille
+   * d'émargement — l'ancien gabarit encadré ne le reprenait pas.
+   */
+  async function telecharger(variante: "stagiaire" | "corrige") {
     setBusy(true);
     try {
-      const [{ telechargerControlePdf }, marque] = await Promise.all([
-        import("@/lib/pdf-controle"),
-        getEtablissement(),
-      ]);
-      await telechargerControlePdf(
+      const { telechargerSujetBrouillon } = await import(
+        "@/lib/telecharger-resultat"
+      );
+      await telechargerSujetBrouillon(
         {
+          controleId: activeId,
+          groupeId,
+          moduleId,
           titre: titre || "Contrôle",
-          moduleNom,
-          moduleCode,
-          groupeNom,
           type,
           typeEfm: type === "EFM" ? typeEfm : null,
           format,
           dureeHeures: duree,
           datePrevue: datePrevue || null,
-          consignes,
+          consignes: consignes || null,
           questions: questions.map((q) => ({
             type: q.type,
             enonce: q.enonce,
             bareme: Number(q.bareme) || 0,
             options: q.options,
+            corrige: q.corrige ?? null,
           })),
         },
-        `controle-${slugify(`${moduleCode ?? ""} ${groupeNom} ${moduleNom}`, "controle")}.pdf`,
-        marqueDe(marque),
+        variante,
       );
     } catch (err) {
       toast(
@@ -1365,10 +1369,19 @@ export default function ControleManager({
                       variant="ghost"
                       size="sm"
                       icon={Download}
-                      onClick={handleDownloadPdf}
+                      onClick={() => telecharger("stagiaire")}
                       disabled={busy || questions.length === 0}
                     >
-                      Exporter en PDF
+                      Sujet (PDF)
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      icon={Download}
+                      onClick={() => telecharger("corrige")}
+                      disabled={busy || questions.length === 0}
+                    >
+                      Corrigé (PDF)
                     </Button>
                     <Button
                       variant="danger"

@@ -1,5 +1,6 @@
 import {
   getDossierControle,
+  getEnteteBrouillon,
   getResultatASigner,
   getSujetControle,
 } from "@/app/actions/controles";
@@ -196,6 +197,70 @@ export async function telechargerSujet(controleId: string): Promise<boolean> {
       sujet.dateFichier ?? maintenant(),
     ])}.pdf`,
     marqueDe(etablissement),
+    "visa",
   );
   return true;
+}
+
+/**
+ * Le sujet ou le corrigé d'un contrôle en cours de préparation (PRD §4.7bis).
+ *
+ * Il part de ce que l'écran montre — les questions telles qu'elles sont en ce
+ * moment, enregistrées ou non — et non de la base : un formateur qui ajuste
+ * une question puis imprime veut la version qu'il a sous les yeux. Le
+ * cartouche, lui, se lit en base, comme pour les autres pièces du dossier.
+ */
+export async function telechargerSujetBrouillon(
+  brouillon: {
+    controleId: string | null;
+    groupeId: string;
+    moduleId: string;
+    titre: string;
+    type: "CC" | "EFM";
+    typeEfm: "local" | "regional" | null;
+    format: "theorique" | "pratique" | "mixte";
+    dureeHeures: number;
+    datePrevue: string | null;
+    consignes: string | null;
+    questions: {
+      type: string;
+      enonce: string;
+      bareme: number;
+      options: { texte: string; correcte?: boolean }[];
+      corrige: string | null;
+    }[];
+  },
+  variante: "stagiaire" | "corrige",
+): Promise<void> {
+  const [entete, etablissement, { telechargerSujetPdf }] = await Promise.all([
+    getEnteteBrouillon(brouillon),
+    getEtablissement(),
+    import("@/lib/pdf-sujet"),
+  ]);
+
+  const questions = brouillon.questions.map((q) => ({
+    ...q,
+    bareme: Number(q.bareme) || 0,
+    options: q.type === "qcm" ? q.options.filter((o) => o.texte.trim()) : [],
+  }));
+
+  await telechargerSujetPdf(
+    {
+      titre: entete.titre,
+      nature: entete.nature,
+      identification: entete.identification,
+      consignes: brouillon.consignes,
+      questions,
+      total: questions.reduce((t, q) => t + q.bareme, 0),
+    },
+    `${nommer([
+      variante === "corrige" ? "Corrige" : "Sujet",
+      entete.codeEpreuve,
+      entete.groupe ? slugify(entete.groupe) : null,
+      entete.codeModule ? slugify(entete.codeModule) : null,
+      entete.dateFichier ?? maintenant(),
+    ])}.pdf`,
+    marqueDe(etablissement),
+    variante,
+  );
 }

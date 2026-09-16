@@ -368,6 +368,37 @@ Le document porte en tête un **cartouche d'identification** — établissement,
 
 **Point de modélisation** : le champ `type_efm` (local/régional) vit désormais au niveau du module lui-même (§4.1), pas seulement du contrôle — voir §4.1 pour le rôle de priorisation que joue cette information, et §4.9-§4.10 pour son effet sur le calendrier.
 
+### 4.7bis Le sujet imprimé, les brouillons, les contrôles de test et l'analyse de compréhension (ajout du 16 septembre 2026, demande du porteur de projet)
+
+**Constat de départ.** Le sujet d'un contrôle continu de M202 (DDOUX201), généré puis téléchargé en PDF, présentait trois défauts distincts :
+
+- **Le fond** : une question sans rapport avec le module (« les trois questions auxquelles vous savez répondre à la fin de l'heure dédiée à votre année de spécialisation UX » — une phrase d'objectifs de séance reprise telle quelle comme question) ; deux exercices à 4 points qui renvoient à un « corpus fourni en annexe » qui n'existe nulle part, donc impossibles à traiter.
+- **La forme** : le sujet n'utilise pas la présentation adoptée pour les pièces du contrôle — le cartouche d'identification partagé par le résultat signé, la feuille d'émargement et le sujet à viser — mais un ancien gabarit encadré ; « Session 2026 » au lieu de l'année scolaire ; ni CEF ni CNE à renseigner.
+- **La mise en page** : un espace de réponse identique (quelques lignes) pour une question à 2 points et pour un exercice à 4 points qui demande de produire une cartographie ou une fiche persona ; des pages à moitié vides.
+
+**Le sujet imprimé.** Il porte le même cartouche que les autres pièces du dossier d'épreuve (§4.7) : établissement, filière, année scolaire, groupe, formateur, module, épreuve, date et horaire lus dans l'emploi du temps, et des champs à remplir pour le nom, le CEF et le CNE du stagiaire. L'espace de réponse est **proportionné à ce que la question demande** — une restitution courte n'appelle pas la même place qu'un exercice de production — et une question ne se coupe jamais entre deux pages. Le corrigé imprimable suit la même présentation.
+
+**La génération.** Un énoncé est **autoportant** : il ne renvoie jamais à une annexe, un corpus ou un document qui n'est pas fourni avec le sujet. Si un exercice a besoin de données, le générateur les écrit dans le sujet lui-même, sous l'énoncé. Les questions portent sur les **notions** du contenu couvert, jamais sur les objectifs ou la conduite de séance tels qu'ils sont rédigés dans les fiches et les supports. Chaque proposition passe un contrôle de cohérence avant d'être montrée : total du barème selon le type (§4.7), courbe 60 / 40, référence à une pièce absente, question hors du contenu couvert.
+
+**Les brouillons et leurs versions.** Un contrôle en préparation s'enregistre **à tout moment**, sans avoir à être complet ni validé, et se reprend plus tard là où il en était. Chaque enregistrement conserve une version : le formateur peut revenir à une version précédente d'une génération qu'il préférait, ou dupliquer un contrôle pour en faire une variante.
+
+**Les contrôles de test.** À côté des CC et des EFM réglementaires, le formateur crée des **contrôles de test** — des évaluations formatives — portant sur **une ou plusieurs séances qu'il choisit**, pas nécessairement contiguës. Ils se préparent avec la même assistance (format, génération, barème, corrigé) et s'impriment de la même façon, mais :
+
+- ils **ne comptent pas** dans le minimum réglementaire de 2 CC et 1 EFM par module (§4.7), ni dans les échéances réglementaires du calendrier ;
+- leur note **n'entre pas** dans la moyenne du stagiaire — *proposition à valider par le porteur de projet* ;
+- leur barème est libre, **20 points par défaut**.
+
+**La passation par les stagiaires.** Un contrôle de test se partage avec le groupe par un geste explicite du formateur — ouvert, puis fermé — et se passe depuis le compte du stagiaire, comme un CC (§4.5, §4.7), chronométré ou non au choix du formateur. Le formateur choisit aussi si le stagiaire voit sa note et le corrigé **dès la remise** — l'intérêt d'un test formatif est un retour rapide — ou seulement à la publication, comme pour un CC — *choix par défaut à valider par le porteur de projet ; proposition : dès la remise*.
+
+**L'analyse de compréhension.** Une fois des copies remises — contrôle de test, CC ou EFM — le formateur demande à l'IA une **analyse de la classe** fondée sur les réponses réelles, jamais sur les seules notes :
+
+- **par question et par notion** : taux de réussite, erreurs fréquentes et ce qu'elles révèlent (une confusion entre deux notions, une étape de méthode oubliée, un vocabulaire mal compris), citées à partir des réponses ;
+- **le niveau de la classe** : répartition des résultats, notions acquises, notions fragiles, notions non acquises ;
+- **les stagiaires à accompagner**, nommément, avec la notion qui leur manque — visible du formateur seul ;
+- **ce qu'il faut ajuster** : quelles notions reprendre, sous quelle forme (exemple, exercice guidé, reformulation), et dans quelle séance à venir du module elles peuvent trouver place.
+
+L'analyse s'enregistre avec le contrôle pour être relue plus tard ; elle ne se partage jamais avec les stagiaires. Elle part des réponses anonymisées quand elles sont envoyées au modèle — les noms ne quittent pas l'application — et le formateur la relit : **l'app propose, le formateur dispose**, comme pour la préparation.
+
 ### 4.8 Présences
 
 - Prise de présence par séance, par stagiaire, liée au couple groupe+module+séance
