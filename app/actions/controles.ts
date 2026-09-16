@@ -72,11 +72,15 @@ export type QuestionInput = {
 
 /** Ligne prête pour la base, propositions normalisées. */
 function versLigneQuestion(q: QuestionInput, controleId: string, i: number) {
-  const options = q.type === "qcm"
-    ? q.options
-        .filter((o) => o.texte.trim())
-        .map((o) => ({ texte: o.texte.trim(), correcte: Boolean(o.correcte) }))
-    : null;
+  const options =
+    q.type === "qcm"
+      ? q.options
+          .filter((o) => o.texte.trim())
+          .map((o) => ({
+            texte: o.texte.trim(),
+            correcte: Boolean(o.correcte),
+          }))
+      : null;
 
   if (q.type === "qcm" && (!options || options.length < 2)) {
     throw new Error(
@@ -387,7 +391,6 @@ export async function getModuleAudit(
   return (data ?? []) as AuditEntry[];
 }
 
-
 export type SeanceCouverte = {
   id: string;
   date: string | null;
@@ -445,7 +448,8 @@ export async function getContenuCouvert(
     contenu_realise: string | null;
   }[];
 
-  const retenues = type === "EFM" ? toutes : toutes.filter((s) => s.statut === "fait");
+  const retenues =
+    type === "EFM" ? toutes : toutes.filter((s) => s.statut === "fait");
 
   const duree = (s: (typeof toutes)[number]) =>
     Number(s.duree_realisee ?? s.duree_prevue ?? 0);
@@ -498,51 +502,50 @@ export async function getContenuCouvert(
  * « publié le » : éditer un résultat que le stagiaire n'a pas encore reçu
  * ferait signer une pièce qui n'existe pas.
  */
-export type DossierControle = {
+/** Ce qu'il faut d'un contrôle pour l'annoncer — enregistré ou non. */
+type ControlePourEntete = {
+  /** Absent pour un brouillon pas encore enregistré. */
+  id?: string | null;
+  groupe_id: string;
+  module_id: string;
+  titre: string | null;
+  duree_heures: number | string | null;
+  type: string;
+  type_efm: string | null;
+  format: string;
+  date_prevue: string | null;
+  date_administration: string | null;
+  created_at?: string | null;
+};
+
+export type EnteteControle = {
   titre: string;
   nature: string;
   /** Le code qui nomme les fichiers : CC1, CC2, EFML, EFMR. */
   codeEpreuve: string;
   codeModule: string | null;
   dateFichier: string | null;
-  /** Le cartouche, commun à toutes les pièces du dossier. */
   identification: Identification;
-  resultats: ResultatControle[];
-  /** Les stagiaires du groupe, dans l'ordre où ils émargent. */
-  stagiaires: { cef: string | null; nom: string }[];
+  groupe: string | null;
 };
 
-export async function getDossierControle(
-  controleId: string,
-): Promise<DossierControle | null> {
+/**
+ * L'en-tête d'une pièce de contrôle : titre, nature, code d'épreuve et
+ * cartouche d'identification (PRD §4.7).
+ *
+ * Partagé par le dossier d'épreuve et par le sujet qu'on imprime pendant la
+ * préparation — y compris avant tout enregistrement. Deux constructions
+ * distinctes auraient fini par annoncer la même épreuve de deux façons.
+ */
+async function enteteControle(
+  controle: ControlePourEntete,
+): Promise<EnteteControle> {
   const supabase = await createClient();
-
-  // Les colonnes sont écrites en toutes lettres plutôt que reprises de
-  // `COLONNES_CONTROLE` : une chaîne partagée est opaque au typage de
-  // PostgREST, qui rend alors un type d'erreur et impose un cast — soit
-  // exactement la dette que le backlog recense en point de vigilance.
-  const { data: controle, error } = await supabase
-    .from("controles")
-    .select(
-      "id, groupe_id, module_id, titre, duree_heures, type, type_efm, format, date_prevue, date_administration, created_at",
-    )
-    .eq("id", controleId)
-    .maybeSingle();
-  if (error) throw new Error(error.message);
-  if (!controle) return null;
-
   const dateEpreuve =
     controle.date_administration ?? controle.date_prevue ?? null;
 
-  const [copiesRes, moduleRes, groupeRes, freres, stagiairesRes, etablissement, debut] =
+  const [moduleRes, groupeRes, freres, etablissement, debut] =
     await Promise.all([
-      supabase
-        .from("passations_controle")
-        .select(
-          "id, nom_complet, note, responses, publie_le, submitted_at, stagiaires(cef, cne)",
-        )
-        .eq("controle_id", controleId)
-        .order("nom_complet"),
       supabase
         .from("modules")
         .select("nom, competences(code_operationnel)")
@@ -559,28 +562,24 @@ export async function getDossierControle(
         .eq("groupe_id", controle.groupe_id)
         .eq("module_id", controle.module_id)
         .eq("type", controle.type),
-      supabase
-        .from("stagiaires")
-        .select("nom, prenom, cef")
-        .eq("groupe_id", controle.groupe_id)
-        .order("nom"),
       getEtablissement(),
       getDebutEpreuve(controle.groupe_id, dateEpreuve),
     ]);
 
   // Le rang du contrôle parmi ceux du même type : CC1, CC2… Il n'est stocké
   // nulle part, sans quoi il faudrait renuméroter à chaque contrôle inséré
-  // entre deux autres.
+  // entre deux autres. Un brouillon non enregistré prend le rang suivant.
   const quand = (c: {
     date_prevue: string | null;
     date_administration: string | null;
     created_at: string;
   }) => c.date_administration ?? c.date_prevue ?? c.created_at;
-  const rang =
-    (freres.data ?? [])
-      .slice()
-      .sort((a, b) => quand(a).localeCompare(quand(b)))
-      .findIndex((c) => c.id === controle.id) + 1;
+  const tries = (freres.data ?? [])
+    .slice()
+    .sort((a, b) => quand(a).localeCompare(quand(b)));
+  const rang = controle.id
+    ? tries.findIndex((c) => c.id === controle.id) + 1
+    : tries.length + 1;
 
   const duree = Number(controle.duree_heures ?? 0);
   const codeModule = moduleRes.data?.competences?.code_operationnel ?? null;
@@ -621,8 +620,104 @@ export async function getDossierControle(
         ]
           .filter(Boolean)
           .join(" · ")
-      : null,
+      : duree > 0
+        ? `durée ${dureeEnTexte(duree)}`
+        : null,
   };
+
+  return {
+    titre,
+    nature,
+    codeEpreuve,
+    codeModule,
+    dateFichier: dateEpreuve,
+    identification,
+    groupe: groupeRes.data?.nom ?? null,
+  };
+}
+
+/**
+ * L'en-tête d'un contrôle en cours de préparation, enregistré ou non.
+ *
+ * Le sujet s'imprime pendant qu'on le prépare : exiger un enregistrement
+ * préalable aurait fait du bouton « Télécharger » un piège sur un brouillon.
+ */
+export async function getEnteteBrouillon(input: {
+  controleId: string | null;
+  groupeId: string;
+  moduleId: string;
+  titre: string;
+  type: TypeControle;
+  typeEfm: TypeEfm | null;
+  format: FormatControle;
+  dureeHeures: number;
+  datePrevue: string | null;
+}): Promise<EnteteControle> {
+  return enteteControle({
+    id: input.controleId,
+    groupe_id: input.groupeId,
+    module_id: input.moduleId,
+    titre: input.titre,
+    duree_heures: input.dureeHeures,
+    type: input.type,
+    type_efm: input.typeEfm,
+    format: input.format,
+    date_prevue: input.datePrevue,
+    date_administration: null,
+  });
+}
+
+export type DossierControle = {
+  titre: string;
+  nature: string;
+  /** Le code qui nomme les fichiers : CC1, CC2, EFML, EFMR. */
+  codeEpreuve: string;
+  codeModule: string | null;
+  dateFichier: string | null;
+  /** Le cartouche, commun à toutes les pièces du dossier. */
+  identification: Identification;
+  resultats: ResultatControle[];
+  /** Les stagiaires du groupe, dans l'ordre où ils émargent. */
+  stagiaires: { cef: string | null; nom: string }[];
+};
+
+export async function getDossierControle(
+  controleId: string,
+): Promise<DossierControle | null> {
+  const supabase = await createClient();
+
+  // Les colonnes sont écrites en toutes lettres plutôt que reprises de
+  // `COLONNES_CONTROLE` : une chaîne partagée est opaque au typage de
+  // PostgREST, qui rend alors un type d'erreur et impose un cast — soit
+  // exactement la dette que le backlog recense en point de vigilance.
+  const { data: controle, error } = await supabase
+    .from("controles")
+    .select(
+      "id, groupe_id, module_id, titre, duree_heures, type, type_efm, format, date_prevue, date_administration, created_at",
+    )
+    .eq("id", controleId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!controle) return null;
+
+  const [copiesRes, stagiairesRes, tete] = await Promise.all([
+    supabase
+      .from("passations_controle")
+      .select(
+        "id, nom_complet, note, responses, publie_le, submitted_at, stagiaires(cef, cne)",
+      )
+      .eq("controle_id", controleId)
+      .order("nom_complet"),
+    supabase
+      .from("stagiaires")
+      .select("nom, prenom, cef")
+      .eq("groupe_id", controle.groupe_id)
+      .order("nom"),
+    enteteControle(controle),
+  ]);
+  const { titre, nature, codeEpreuve, codeModule, identification } = tete;
+  const dateEpreuve = tete.dateFichier;
+  const efm = controle.type === "EFM";
 
   const resultats: ResultatControle[] = (copiesRes.data ?? [])
     .filter((c) => c.publie_le)
@@ -648,14 +743,16 @@ export async function getDossierControle(
           identification.dateEpreuve ??
           (c.submitted_at ? formatDate(c.submitted_at) : null),
       },
-      lignes: ((c.responses ?? []) as unknown as PassationDetail[]).map((d) => ({
-        enonce: d.enonce,
-        bareme: Number(d.bareme ?? 0),
-        points: Number(d.points ?? 0),
-        reponse: d.reponse,
-        corrige: d.corrige,
-        commentaire: d.commentaire,
-      })),
+      lignes: ((c.responses ?? []) as unknown as PassationDetail[]).map(
+        (d) => ({
+          enonce: d.enonce,
+          bareme: Number(d.bareme ?? 0),
+          points: Number(d.points ?? 0),
+          reponse: d.reponse,
+          corrige: d.corrige,
+          commentaire: d.commentaire,
+        }),
+      ),
     }));
 
   return {
@@ -749,7 +846,6 @@ export async function getResultatASigner(
   const dossier = await getDossierControle(data.controle_id);
   return dossier?.resultats.find((r) => r.reference === passationId) ?? null;
 }
-
 
 /**
  * L'heure à laquelle l'épreuve commence, lue dans l'emploi du temps.
