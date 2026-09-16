@@ -123,35 +123,52 @@ export function dessinerSujet(
   // sur le résultat signé qui en sortira — les deux documents se rapprochent
   // sur les mêmes codes.
   if (variante === "stagiaire") {
-    const h = 24;
-    doc.setDrawColor(...COULEURS.bordureForte).setLineWidth(0.3);
-    doc.roundedRect(X, y, LARGEUR, h, 2, 2, "S");
+    // Le bandeau à l'encre du résultat d'évaluation — « STAGIAIRE … NOTE » —
+    // repris en tête, pour que sujet et résultat se reconnaissent l'un
+    // l'autre ; mais ouvert en dessous, sur du blanc : ici on écrit à la main.
+    const hBandeau = 8;
+    const hChamps = 22;
+    const largeurNote = 40;
+    doc.setFillColor(...COULEURS.encre);
+    doc.roundedRect(X, y, LARGEUR, hBandeau + 2, 1.5, 1.5, "F");
+    doc.rect(X, y + hBandeau - 1, LARGEUR, 3, "F");
+    police(doc, "mono", 7);
+    doc.setTextColor(...COULEURS.blanc);
+    doc.text("STAGIAIRE", X + 6, y + 5.4);
+    doc.text("NOTE", X + LARGEUR - 6, y + 5.4, { align: "right" });
+
+    doc.setDrawColor(...COULEURS.encre).setLineWidth(0.3);
+    doc.rect(X, y + hBandeau + 1, LARGEUR, hChamps);
+    doc.line(
+      X + LARGEUR - largeurNote,
+      y + hBandeau + 1,
+      X + LARGEUR - largeurNote,
+      y + hBandeau + 1 + hChamps,
+    );
 
     const champ = (libelle: string, x: number, yy: number, largeur: number) => {
-      police(doc, "mono", 6.8);
+      police(doc, "mono", 6.5);
       doc.setTextColor(...COULEURS.ardoiseClaire);
       doc.text(libelle.toLocaleUpperCase("fr"), x, yy);
       doc.setDrawColor(...COULEURS.bordureForte).setLineWidth(0.25);
-      doc.line(x, yy + 6.5, x + largeur, yy + 6.5);
+      doc.line(
+        x + doc.getTextWidth(libelle.toLocaleUpperCase("fr")) + 2,
+        yy + 0.6,
+        x + largeur,
+        yy + 0.6,
+      );
     };
-    const largeurNote = 36;
-    champ("Nom et prénom", X + 5, y + 6, LARGEUR - largeurNote - 17);
-    champ("CEF", X + 5, y + 16, 58);
-    champ("CNE", X + 70, y + 16, LARGEUR - largeurNote - 82);
+    const y0 = y + hBandeau + 1;
+    const largeurChamps = LARGEUR - largeurNote - 12;
+    champ("Nom et prénom", X + 6, y0 + 8, largeurChamps);
+    champ("CEF", X + 6, y0 + 17, largeurChamps * 0.45);
+    champ("CNE", X + 6 + largeurChamps * 0.52, y0 + 17, largeurChamps * 0.48);
 
-    // La note : un cadre à part, à droite, que le correcteur remplit.
-    const xn = X + LARGEUR - largeurNote;
-    doc.setFillColor(...COULEURS.lavis);
-    doc.roundedRect(xn, y, largeurNote, h, 2, 2, "F");
-    police(doc, "mono", 6.8);
-    doc.setTextColor(...COULEURS.ardoiseClaire);
-    doc.text("NOTE", xn + largeurNote / 2, y + 6, { align: "center" });
-    police(doc, "titre", 13);
+    // La note, à l'endroit exact où le résultat l'affichera.
+    police(doc, "titre", 14);
     doc.setTextColor(...COULEURS.encre);
-    doc.text(`/ ${s.total}`, xn + largeurNote / 2 + 6, y + 17.5, {
-      align: "center",
-    });
-    y += h + 7;
+    doc.text(`/ ${s.total}`, X + LARGEUR - 6, y0 + 14.5, { align: "right" });
+    y += hBandeau + 1 + hChamps + 8;
   }
 
   // ── Les consignes ────────────────────────────────────────────────────────
