@@ -1,3 +1,4 @@
+import { libelleRecurrence, type Recurrence } from "@/lib/recurrence";
 import type jsPDF from "jspdf";
 import { dessinerEntete, type Marque } from "@/lib/pdf-marque";
 import { JOURS } from "@/lib/motifs";
@@ -25,6 +26,12 @@ export type CreneauPdf = {
   groupeNom: string;
   /** Sert à retrouver la couleur du groupe, la même qu'à l'écran. */
   groupeId: string;
+  /**
+   * Le rythme du créneau (migration 087). Absent ou hebdomadaire : rien n'est
+   * écrit. Sinon la case le dit — un document affiché au mur ne doit pas
+   * laisser croire qu'un créneau alterné revient chaque semaine.
+   */
+  recurrence?: Recurrence;
 };
 
 export type MotifPdf = {
@@ -173,11 +180,29 @@ function dessinerMotif(doc: jsPDF, m: MotifPdf, y: number): number {
       const haut = yc + (hc - lignesTexte.length * 3.4) / 2 + 2.6;
       doc.text(lignesTexte, xCase + L_JOUR / 2, haut, { align: "center" });
 
-      if (span > 1) {
+      // Sous le nom : la durée d'un bloc long, et le rythme d'un créneau
+      // alterné — sur une seule ligne, la case n'en tient pas deux de plus.
+      const rythmes = [
+        ...new Set(
+          ici
+            .map((x) =>
+              libelleRecurrence({
+                recurrence: x.creneau.recurrence ?? "hebdomadaire",
+                premiere_date: null,
+              }),
+            )
+            .filter(Boolean),
+        ),
+      ];
+      const sousTitre = [span > 1 ? `${span * 2.5} h` : "", ...rythmes]
+        .filter(Boolean)
+        .join(" · ");
+      if (sousTitre) {
         police(doc, "corps", 6.5);
         doc.setTextColor(...couleur.trait);
-        doc.text(`${span * 2.5} h`, xCase + L_JOUR / 2, haut + 4.4, {
+        doc.text(sousTitre, xCase + L_JOUR / 2, haut + 4.4, {
           align: "center",
+          maxWidth: L_JOUR - 3,
         });
       }
     });

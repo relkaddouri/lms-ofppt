@@ -4,6 +4,7 @@ import { Pencil, Trash2 } from "lucide-react";
 import type { MotifHebdomadaire } from "@/app/actions/motifs";
 import { JOURS } from "@/lib/motifs";
 import { CRENEAUX_JOUR, formatHeure, positionSeance } from "@/lib/creneaux";
+import { libelleRecurrence } from "@/lib/recurrence";
 import { couleurGroupe } from "@/lib/couleurs-groupe";
 
 
@@ -170,6 +171,17 @@ export default function GrilleMotif({
                                 {formatHeure(c.heure_fin)}
                                 {n > 1 ? ` · ${n * 2.5} h` : ""}
                               </span>
+                              {/* Sans cette mention, un créneau une semaine
+                                  sur deux se lirait chaque semaine — et la
+                                  grille mentirait sur la charge. */}
+                              {c.recurrence !== "hebdomadaire" ? (
+                                <span
+                                  className="mt-1 self-start rounded-full border px-1.5 py-px text-[10.5px] font-semibold"
+                                  style={{ color: couleur.trait, borderColor: couleur.trait }}
+                                >
+                                  {libelleRecurrence(c)}
+                                </span>
+                              ) : null}
                             </span>
                             {modifiable && (onModifier || onSupprimer) ? (
                               <span className="ml-auto flex shrink-0 items-center gap-0.5">
@@ -234,8 +246,15 @@ export default function GrilleMotif({
                       <span className="w-12 shrink-0 text-[13.5px] font-medium text-body">
                         {jour?.court ?? "—"}
                       </span>
-                      <span className="font-mono text-[13px] text-slate-2">
-                        {formatHeure(c.heure_debut)}–{formatHeure(c.heure_fin)}
+                      <span className="flex min-w-0 flex-col">
+                        <span className="font-mono text-[13px] text-slate-2">
+                          {formatHeure(c.heure_debut)}–{formatHeure(c.heure_fin)}
+                        </span>
+                        {c.recurrence !== "hebdomadaire" ? (
+                          <span className="text-[12px] font-semibold text-slate-light">
+                            {libelleRecurrence(c)}
+                          </span>
+                        ) : null}
                       </span>
                       {modifiable && (onModifier || onSupprimer) ? (
                         <span className="ml-auto flex shrink-0 items-center gap-1">

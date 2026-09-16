@@ -24,12 +24,16 @@ import { marqueDe } from "@/lib/pdf-marque";
 import { formatHeures, slugify } from "@/lib/format";
 import type { Etablissement } from "@/app/actions/etablissement";
 import GrilleMotif from "./GrilleMotif";
+import ChampsRythme from "./ChampsRythme";
+import { heuresParSemaine, type Recurrence } from "@/lib/recurrence";
 
 const VIDE_CRENEAU = {
   jour: 1,
   heureDebut: "08:30",
   heureFin: "13:30",
   groupeId: "",
+  recurrence: "hebdomadaire" as Recurrence,
+  premiereDate: null as string | null,
 };
 
 /**
@@ -57,14 +61,14 @@ export default function EmploiDuTempsManager({
   const [enCours, startTransition] = useTransition();
 
   const courant = motifs.find((m) => m.courant) ?? null;
+  const heuresHebdo = heuresParSemaine(courant?.creneaux ?? [], maintenant());
   const precedents = motifs.filter((m) => !m.courant);
 
   function exporter() {
     startTransition(async () => {
       try {
-        const { telechargerEmploiDuTempsPdf } = await import(
-          "@/lib/pdf-emploi-du-temps"
-        );
+        const { telechargerEmploiDuTempsPdf } =
+          await import("@/lib/pdf-emploi-du-temps");
         await telechargerEmploiDuTempsPdf(
           {
             marque: marqueDe(etablissement),
@@ -83,6 +87,7 @@ export default function EmploiDuTempsManager({
               heure_fin: c.heure_fin,
               groupeNom: c.groupeNom,
               groupeId: c.groupe_id,
+              recurrence: c.recurrence,
             })),
           })),
           `emploi-du-temps-${slugify(anneeScolaire ?? maintenant(), "emploi-du-temps")}.pdf`,
@@ -128,7 +133,10 @@ export default function EmploiDuTempsManager({
         toast("Motif ouvert — le précédent est clos la veille.");
         router.refresh();
       } catch (err) {
-        toast(err instanceof Error ? err.message : "Erreur inattendue", "error");
+        toast(
+          err instanceof Error ? err.message : "Erreur inattendue",
+          "error",
+        );
       }
     });
   }
@@ -146,7 +154,10 @@ export default function EmploiDuTempsManager({
         toast(suite ? `Créneau ajouté — ${suite}` : "Créneau ajouté");
         router.refresh();
       } catch (err) {
-        toast(err instanceof Error ? err.message : "Erreur inattendue", "error");
+        toast(
+          err instanceof Error ? err.message : "Erreur inattendue",
+          "error",
+        );
       }
     });
   }
@@ -159,7 +170,10 @@ export default function EmploiDuTempsManager({
         toast(suite ? `Créneau retiré — ${suite}` : "Créneau retiré");
         router.refresh();
       } catch (err) {
-        toast(err instanceof Error ? err.message : "Erreur inattendue", "error");
+        toast(
+          err instanceof Error ? err.message : "Erreur inattendue",
+          "error",
+        );
       }
     });
   }
@@ -170,6 +184,8 @@ export default function EmploiDuTempsManager({
       heureDebut: c.heure_debut.slice(0, 5),
       heureFin: c.heure_fin.slice(0, 5),
       groupeId: c.groupe_id,
+      recurrence: c.recurrence,
+      premiereDate: c.premiere_date,
     });
     setCreneauAModifier(c);
   }
@@ -182,11 +198,14 @@ export default function EmploiDuTempsManager({
       try {
         const recalcul = await modifierCreneau({ id: cible.id, ...formModif });
         const suite = messageReplanification(recalcul);
-        toast(suite ? `Créneau déplacé — ${suite}` : "Créneau déplacé");
+        toast(suite ? `Créneau modifié — ${suite}` : "Créneau modifié");
         setCreneauAModifier(null);
         router.refresh();
       } catch (err) {
-        toast(err instanceof Error ? err.message : "Erreur inattendue", "error");
+        toast(
+          err instanceof Error ? err.message : "Erreur inattendue",
+          "error",
+        );
       }
     });
   }
@@ -215,7 +234,10 @@ export default function EmploiDuTempsManager({
         );
         router.refresh();
       } catch (err) {
-        toast(err instanceof Error ? err.message : "Erreur inattendue", "error");
+        toast(
+          err instanceof Error ? err.message : "Erreur inattendue",
+          "error",
+        );
       }
     });
   }
@@ -264,12 +286,18 @@ export default function EmploiDuTempsManager({
                 {courant.libelle ?? "Motif en vigueur"}
               </h2>
               <span className="font-mono text-[12.5px] text-slate-light">
-                depuis le {formatDateJour(courant.date_debut, { court: true })} · en cours
+                depuis le {formatDateJour(courant.date_debut, { court: true })}{" "}
+                · en cours
               </span>
             </div>
+            {/* Des heures plutôt qu'un nombre de créneaux : c'est ce que le
+                formateur déclare, et un créneau une semaine sur deux ne
+                compte pas chaque semaine. Quand le rythme alterne, les deux
+                semaines se lisent côte à côte — « 25 h ou 27,5 h ». */}
             <span className="rounded-full border border-tint-green bg-success-wash px-3 py-1 text-[12.5px] font-semibold text-green-dark">
-              {courant.creneaux.length} créneau
-              {courant.creneaux.length > 1 ? "x" : ""} par semaine
+              {heuresHebdo.min === heuresHebdo.max
+                ? `${formatHeures(heuresHebdo.max)} par semaine`
+                : `${formatHeures(heuresHebdo.min)} ou ${formatHeures(heuresHebdo.max)} selon la semaine`}
             </span>
           </div>
 
@@ -289,7 +317,10 @@ export default function EmploiDuTempsManager({
               <select
                 value={formCreneau.jour}
                 onChange={(e) =>
-                  setFormCreneau({ ...formCreneau, jour: Number(e.target.value) })
+                  setFormCreneau({
+                    ...formCreneau,
+                    jour: Number(e.target.value),
+                  })
                 }
                 className={inputStyles}
               >
@@ -336,6 +367,16 @@ export default function EmploiDuTempsManager({
                 ))}
               </select>
             </label>
+            <ChampsRythme
+              compact
+              jour={formCreneau.jour}
+              aujourdhui={maintenant()}
+              valeur={{
+                recurrence: formCreneau.recurrence,
+                premiereDate: formCreneau.premiereDate,
+              }}
+              onChange={(r) => setFormCreneau((f) => ({ ...f, ...r }))}
+            />
             <Button type="submit" icon={Plus} disabled={enCours}>
               Ajouter le créneau
             </Button>
@@ -348,8 +389,8 @@ export default function EmploiDuTempsManager({
           </p>
           <p className="max-w-[440px] text-[14px] text-slate-light">
             Déclarez votre semaine type — un créneau par rendez-vous avec un
-            groupe. Les séances issues de la répartition horaire viendront s&apos;y
-            poser d&apos;elles-mêmes.
+            groupe. Les séances issues de la répartition horaire viendront
+            s&apos;y poser d&apos;elles-mêmes.
           </p>
           <Button icon={CalendarPlus} onClick={() => setNouveauMotif(true)}>
             Déclarer un motif
@@ -424,7 +465,9 @@ export default function EmploiDuTempsManager({
                 </span>
                 <span className="font-mono text-[12.5px] text-muted">
                   {formatDateJour(m.date_debut, { court: true })} —{" "}
-                  {m.date_fin ? formatDateJour(m.date_fin, { court: true }) : "…"}
+                  {m.date_fin
+                    ? formatDateJour(m.date_fin, { court: true })
+                    : "…"}
                 </span>
               </div>
               <GrilleMotif motif={m} />
@@ -477,8 +520,8 @@ export default function EmploiDuTempsManager({
       <Modal
         open={creneauAModifier !== null}
         onClose={() => setCreneauAModifier(null)}
-        title="Déplacer le créneau"
-        description="Les séances non encore faites de ce groupe seront replacées aussitôt."
+        title="Modifier le créneau"
+        description="Jour, horaire, groupe ou répétition : les séances à venir de ce groupe seront replacées aussitôt."
       >
         <form onSubmit={deplacerCreneau} className="space-y-4">
           <label className="flex flex-col gap-[7px]">
@@ -533,6 +576,15 @@ export default function EmploiDuTempsManager({
               ))}
             </select>
           </label>
+          <ChampsRythme
+            jour={formModif.jour}
+            aujourdhui={maintenant()}
+            valeur={{
+              recurrence: formModif.recurrence,
+              premiereDate: formModif.premiereDate,
+            }}
+            onChange={(r) => setFormModif((f) => ({ ...f, ...r }))}
+          />
           <div className="flex justify-end gap-3 pt-1">
             <Button
               type="button"

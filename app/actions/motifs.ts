@@ -16,6 +16,7 @@ import {
   type Instant,
 } from "@/lib/remplissage";
 import { instantEtablissement } from "@/lib/format";
+import { creneauALieu, type Recurrence } from "@/lib/recurrence";
 import type { Replanification } from "@/lib/motifs";
 
 export type CreneauMotif = {
@@ -25,6 +26,10 @@ export type CreneauMotif = {
   heure_fin: string;
   groupe_id: string;
   groupeNom: string;
+  /** Chaque semaine, une semaine sur deux, ou une fois par mois (migration 087). */
+  recurrence: Recurrence;
+  /** Première occurrence d'un créneau alterné ; nulle s'il est hebdomadaire. */
+  premiere_date: string | null;
 };
 
 export type MotifHebdomadaire = {
@@ -55,7 +60,7 @@ export async function getMotifs(): Promise<MotifHebdomadaire[]> {
   const { data, error } = await supabase
     .from("motifs_hebdomadaires")
     .select(
-      "id, libelle, date_debut, date_fin, creneaux_motif(id, jour_semaine, heure_debut, heure_fin, groupe_id, groupes(nom))",
+      "id, libelle, date_debut, date_fin, creneaux_motif(id, jour_semaine, heure_debut, heure_fin, groupe_id, recurrence, premiere_date, groupes(nom))",
     )
     .eq("annee_scolaire_id", anneeId ?? "")
     .order("date_debut", { ascending: false });
@@ -74,6 +79,8 @@ export async function getMotifs(): Promise<MotifHebdomadaire[]> {
         heure_debut: string;
         heure_fin: string;
         groupe_id: string;
+        recurrence: Recurrence;
+        premiere_date: string | null;
         groupes: { nom: string } | null;
       }[];
     };
@@ -91,6 +98,8 @@ export async function getMotifs(): Promise<MotifHebdomadaire[]> {
           heure_fin: c.heure_fin.slice(0, 5),
           groupe_id: c.groupe_id,
           groupeNom: c.groupes?.nom ?? "Groupe",
+          recurrence: c.recurrence,
+          premiere_date: c.premiere_date,
         }))
         .sort(
           (a, b) =>
@@ -118,6 +127,8 @@ export async function ajouterCreneau(input: {
   heureDebut: string;
   heureFin: string;
   groupeId: string;
+  recurrence?: Recurrence;
+  premiereDate?: string | null;
 }): Promise<Replanification> {
   if (input.heureFin <= input.heureDebut) {
     throw new Error("L'heure de fin doit suivre l'heure de début.");
@@ -130,10 +141,40 @@ export async function ajouterCreneau(input: {
     heure_debut: input.heureDebut,
     heure_fin: input.heureFin,
     groupe_id: input.groupeId,
+    ...rythme(input),
   });
   if (error) throw new Error(error.message);
   revalidatePath("/emploi-du-temps");
   return replanifier([input.groupeId]);
+}
+
+/**
+ * Le rythme d'un créneau, vérifié avant d'écrire.
+ *
+ * La base refuse déjà un créneau alterné sans première date, ou dont la
+ * première date ne tombe pas le bon jour ; on le dit ici en français plutôt
+ * que de laisser remonter le nom d'une contrainte.
+ */
+function rythme(input: {
+  jour: number;
+  recurrence?: Recurrence;
+  premiereDate?: string | null;
+}): { recurrence: Recurrence; premiere_date: string | null } {
+  const recurrence = input.recurrence ?? "hebdomadaire";
+  if (recurrence === "hebdomadaire") {
+    return { recurrence, premiere_date: null };
+  }
+  if (!input.premiereDate) {
+    throw new Error(
+      "Indiquez la première fois : c'est elle qui fixe les semaines du créneau.",
+    );
+  }
+  const d = new Date(`${input.premiereDate}T12:00:00Z`);
+  const isodow = d.getUTCDay() === 0 ? 7 : d.getUTCDay();
+  if (isodow !== input.jour) {
+    throw new Error("La première fois doit tomber le jour du créneau.");
+  }
+  return { recurrence, premiere_date: input.premiereDate };
 }
 
 /**
@@ -150,6 +191,8 @@ export async function modifierCreneau(input: {
   heureDebut: string;
   heureFin: string;
   groupeId: string;
+  recurrence?: Recurrence;
+  premiereDate?: string | null;
 }): Promise<Replanification> {
   if (input.heureFin <= input.heureDebut) {
     throw new Error("L'heure de fin doit suivre l'heure de début.");
@@ -172,6 +215,7 @@ export async function modifierCreneau(input: {
       heure_debut: input.heureDebut,
       heure_fin: input.heureFin,
       groupe_id: input.groupeId,
+      ...rythme(input),
     })
     .eq("id", input.id);
   if (error) throw new Error(error.message);
@@ -411,7 +455,7 @@ export async function genererSeances(
     supabase
       .from("motifs_hebdomadaires")
       .select(
-        "id, date_fin, creneaux_motif(jour_semaine, heure_debut, heure_fin, groupe_id)",
+        "id, date_fin, creneaux_motif(jour_semaine, heure_debut, heure_fin, groupe_id, recurrence, premiere_date)",
       )
       .eq("annee_scolaire_id", porteeId ?? "")
       .lte("date_debut", dateDebut)
@@ -517,10 +561,28 @@ export async function genererSeances(
     const iso = curseur.toISOString().slice(0, 10);
     const isodow = curseur.getUTCDay() === 0 ? 7 : curseur.getUTCDay();
 
+    // Les créneaux de ce jour-là — et seulement ceux dont c'est la semaine :
+    // un créneau une semaine sur deux, ou mensuel, n'a pas lieu chaque fois
+    // que son jour revient (migration 087).
+    const duJour = creneaux.filter(
+      (c) =>
+        c.jour_semaine === isodow &&
+        creneauALieu(
+          {
+            jour_semaine: c.jour_semaine,
+            heure_debut: c.heure_debut,
+            heure_fin: c.heure_fin,
+            recurrence: c.recurrence as Recurrence,
+            premiere_date: c.premiere_date,
+          },
+          iso,
+        ),
+    );
+
     if (bloques.has(iso)) {
-      if (creneaux.some((c) => c.jour_semaine === isodow)) joursSautes += 1;
+      if (duJour.length > 0) joursSautes += 1;
     } else {
-      for (const c of creneaux.filter((x) => x.jour_semaine === isodow)) {
+      for (const c of duJour) {
         const duree = dureeCreneau(c.heure_debut, c.heure_fin);
         if (duree <= 0) continue;
         if (
