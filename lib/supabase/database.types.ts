@@ -1074,6 +1074,32 @@ export type Database = {
           },
         ]
       }
+      notes_seance: {
+        Row: {
+          seance_id: string
+          texte: string
+          updated_at: string
+        }
+        Insert: {
+          seance_id: string
+          texte?: string
+          updated_at?: string
+        }
+        Update: {
+          seance_id?: string
+          texte?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notes_seance_seance_id_fkey"
+            columns: ["seance_id"]
+            isOneToOne: true
+            referencedRelation: "seances"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       parametres_formateur: {
         Row: {
           annee_scolaire: string | null
@@ -1342,6 +1368,7 @@ export type Database = {
           controle_id: string
           corrige: string | null
           difficulte: string | null
+          donnees: string | null
           enonce: string | null
           id: string
           justification_bareme: string | null
@@ -1354,6 +1381,7 @@ export type Database = {
           controle_id: string
           corrige?: string | null
           difficulte?: string | null
+          donnees?: string | null
           enonce?: string | null
           id?: string
           justification_bareme?: string | null
@@ -1366,6 +1394,7 @@ export type Database = {
           controle_id?: string
           corrige?: string | null
           difficulte?: string | null
+          donnees?: string | null
           enonce?: string | null
           id?: string
           justification_bareme?: string | null
@@ -2141,6 +2170,7 @@ export type Database = {
         Args: { p_controle_id: string }
         Returns: {
           bareme: number
+          donnees: string
           enonce: string
           id: string
           options: Json

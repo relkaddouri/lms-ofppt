@@ -21,6 +21,8 @@ export type QuestionSujet = {
   id: string;
   type: "qcm" | "ouverte" | "exercice" | null;
   enonce: string;
+  /** Le matériau de la question — observations, tableau —, à lire avant de répondre. */
+  donnees: string | null;
   bareme: number;
   options: { texte: string }[] | null;
 };
