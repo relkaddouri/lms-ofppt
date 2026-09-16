@@ -227,6 +227,7 @@ export type Database = {
           date_administration: string | null
           date_envoi_propositions: string | null
           date_prevue: string | null
+          duplique_de: string | null
           duree_heures: number
           format: string
           groupe_id: string
@@ -243,6 +244,7 @@ export type Database = {
           date_administration?: string | null
           date_envoi_propositions?: string | null
           date_prevue?: string | null
+          duplique_de?: string | null
           duree_heures?: number
           format?: string
           groupe_id: string
@@ -259,6 +261,7 @@ export type Database = {
           date_administration?: string | null
           date_envoi_propositions?: string | null
           date_prevue?: string | null
+          duplique_de?: string | null
           duree_heures?: number
           format?: string
           groupe_id?: string
@@ -270,6 +273,13 @@ export type Database = {
           type_efm?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "controles_duplique_de_fkey"
+            columns: ["duplique_de"]
+            isOneToOne: false
+            referencedRelation: "controles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "controles_groupe_id_fkey"
             columns: ["groupe_id"]
@@ -2039,6 +2049,50 @@ export type Database = {
             columns: ["seance_id"]
             isOneToOne: false
             referencedRelation: "seances"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      versions_controle: {
+        Row: {
+          contenu: Json
+          controle_id: string
+          created_at: string
+          id: string
+          nb_questions: number
+          numero: number
+          origine: string
+          source_numero: number | null
+          total_bareme: number
+        }
+        Insert: {
+          contenu: Json
+          controle_id: string
+          created_at?: string
+          id?: string
+          nb_questions?: number
+          numero: number
+          origine?: string
+          source_numero?: number | null
+          total_bareme?: number
+        }
+        Update: {
+          contenu?: Json
+          controle_id?: string
+          created_at?: string
+          id?: string
+          nb_questions?: number
+          numero?: number
+          origine?: string
+          source_numero?: number | null
+          total_bareme?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "versions_controle_controle_id_fkey"
+            columns: ["controle_id"]
+            isOneToOne: false
+            referencedRelation: "controles"
             referencedColumns: ["id"]
           },
         ]
