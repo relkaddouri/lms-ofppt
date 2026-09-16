@@ -517,9 +517,11 @@ Demande du porteur de projet du 16 septembre 2026, à partir d'un sujet de CC de
   **Vérifié** : les trois variantes générées sur les neuf questions du sujet de M202, rendues en images et auditées — rien hors marge, aucune question coupée, cartouche identique aux autres pièces. Dans l'application, sur un brouillon non enregistré de M202 : les deux fichiers produits, nommés comme attendu, sans erreur — capturés avant téléchargement, aucun contrôle créé en base.
   **Trouvé pour 10.2** : la question absurde du sujet vient du « contenu réalisé » de la séance du 08/09, qui contient une note du formateur (« une heure dédiée à votre année de spécialisation UX… trois questions ») ; celui du 07/09 contient aussi une note d'organisation. Le générateur reçoit ces notes comme du contenu enseigné.
 
-- [ ] **10.2 — Une génération qui tient debout** · branche `controle-generation`
+- [x] **10.2 — Une génération qui tient debout** · branche `controle-generation`
   Énoncés autoportants — les données d'un exercice écrites dans le sujet, jamais « en annexe » ; questions sur les notions et non sur les objectifs de séance ; contrôle de cohérence avant affichage (barème selon le type, courbe 60 / 40, pièce absente, hors contenu couvert).
   **Test** : plusieurs générations sur M202 et M104, relues question par question ; aucune référence à une pièce absente, aucune question méta.
+  **Fait** : champ `donnees` par question (migration 088), affiché dans la passation en ligne sous l'énoncé, envoyé au correcteur IA, imprimé dans le sujet (listes et tableaux en grille) et saisi dans l'éditeur avec aperçu ; alertes recalculées à la frappe sous chaque question (pièce absente, données annoncées non fournies, question sur l'organisation) ; le générateur part des notions du référentiel, le contenu réalisé n'est plus qu'un complément filtré des notes d'organisation ; « Notes pour moi » (table `notes_seance`) dans l'onglet Déroulement, lues par le seul formateur (vérifié : 0 ligne côté stagiaire), jamais par un générateur.
+  **Vérifié** : deux générations réelles sur M202 (théorique, 10 questions ; mixte, 3 exercices) : aucune annexe, aucune question méta, chaque exercice porte ses observations ou verbatims ; alerte vue dans l'éditeur, levée dès que les données sont saisies ; note enregistrée puis relue en base, note de test supprimée.
 
 - [ ] **10.3 — Brouillons et versions** · branche `controle-brouillons`
   Enregistrer à tout moment sans valider, reprendre, conserver les versions successives, revenir à une version, dupliquer un contrôle en variante.

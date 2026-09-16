@@ -86,7 +86,7 @@ export async function POST(request: Request) {
 
   const { data: questionsBrutes, error: errQ } = await service
     .from("questions_controle")
-    .select("id, type, enonce, bareme, options, corrige, position")
+    .select("id, type, enonce, donnees, bareme, options, corrige, position")
     .eq("controle_id", controleId)
     .order("position");
 

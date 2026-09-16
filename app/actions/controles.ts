@@ -48,6 +48,12 @@ export type Question = {
   controle_id: string;
   type: TypeQuestion;
   enonce: string | null;
+  /**
+   * Le matériau de la question — observations, tableau —, en Markdown
+   * (migration 088). Il fait partie du sujet : montré au stagiaire pendant la
+   * passation, imprimé, transmis au correcteur.
+   */
+  donnees: string | null;
   bareme: number;
   /** QCM uniquement : propositions à cocher. */
   options: OptionQcm[];
@@ -63,6 +69,7 @@ export type ControleDetail = Controle & { questions: Question[] };
 export type QuestionInput = {
   type: TypeQuestion;
   enonce: string;
+  donnees?: string | null;
   bareme: number;
   options: OptionQcm[];
   corrige: string | null;
@@ -92,6 +99,7 @@ function versLigneQuestion(q: QuestionInput, controleId: string, i: number) {
     controle_id: controleId,
     type: q.type,
     enonce: q.enonce,
+    donnees: q.donnees?.trim() || null,
     bareme: q.bareme,
     options,
     corrige: q.corrige,
@@ -165,7 +173,7 @@ export async function getControle(id: string): Promise<ControleDetail | null> {
   const { data: questions, error: errQ } = await supabase
     .from("questions_controle")
     .select(
-      "id, controle_id, type, enonce, bareme, options, corrige, difficulte, justification_bareme, position",
+      "id, controle_id, type, enonce, donnees, bareme, options, corrige, difficulte, justification_bareme, position",
     )
     .eq("controle_id", id)
     .order("position");
@@ -786,6 +794,7 @@ export type SujetControle = {
   questions: {
     type: string;
     enonce: string;
+    donnees: string | null;
     bareme: number;
     options: { texte: string }[];
   }[];
@@ -808,6 +817,7 @@ export async function getSujetControle(
   const questions = detail.questions.map((q) => ({
     type: q.type,
     enonce: q.enonce ?? "",
+    donnees: q.donnees ?? null,
     bareme: Number(q.bareme) || 0,
     options: (q.options ?? []).map((o) => ({ texte: o.texte })),
   }));

@@ -14,6 +14,12 @@ export type QuestionPourNotation = {
   id: string;
   type: "qcm" | "ouverte" | "exercice" | null;
   enonce: string;
+  /**
+   * Les données sur lesquelles le stagiaire a travaillé. Le correcteur les
+   * reçoit : juger une cartographie sans les observations qu'elle organise
+   * revient à noter à l'aveugle.
+   */
+  donnees?: string | null;
   bareme: number;
   options: OptionNotation[] | null;
   corrige: string;
@@ -99,6 +105,9 @@ function construirePrompt(
       const reponse = reponses[q.id] ?? "";
       return [
         `${label}. Énoncé : ${q.enonce}`,
+        ...(q.donnees?.trim()
+          ? [`   Données fournies au stagiaire :\n${q.donnees.trim().replace(/^/gm, "     ")}`]
+          : []),
         `   Barème : ${q.bareme} pts`,
         `   Corrigé : ${q.corrige}`,
         `   Réponse du stagiaire : ${reponse || "(vide)"}`,

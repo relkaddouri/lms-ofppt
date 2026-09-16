@@ -27,6 +27,8 @@ export type QuestionSujet = {
   /** « qcm », « ouverte » ou « exercice ». */
   type: string;
   enonce: string;
+  /** Ce sur quoi la question travaille — tableau, extrait, cas —, en Markdown. */
+  donnees?: string | null;
   bareme: number;
   /** Les propositions d'un QCM. `correcte` ne sert qu'au corrigé. */
   options: { texte: string; correcte?: boolean }[];
@@ -88,6 +90,141 @@ export function placeDeReponse(q: Pick<QuestionSujet, "type" | "bareme">): {
     lignes: Math.min(16, Math.max(4, Math.round(b * 2.5 + 2))),
     cadre: 0,
   };
+}
+
+// ── Les données d'une question ─────────────────────────────────────────────
+//
+// Un exercice apporte avec lui ce sur quoi il travaille : observations,
+// verbatims, tableau de relevés. Elles s'impriment sous l'énoncé, dans un
+// cadre à part, pour qu'on sache ce qui est donné et ce qui est demandé.
+//
+// Le Markdown écrit par le formateur ou le modèle est réduit à ce qu'une page
+// imprimée sait rendre : paragraphes, listes, et tableaux dessinés en grille —
+// un tableau aplati en lignes de `|` serait illisible.
+
+type BlocDonnees =
+  | {
+      genre: "texte";
+      lignes: string[];
+      puce: string;
+      gras: boolean;
+      hauteur: number;
+    }
+  | {
+      genre: "tableau";
+      lignes: string[][][];
+      largeurs: number[];
+      hauteurs: number[];
+      hauteur: number;
+    };
+
+const INTERLIGNE_DONNEES = 4.3;
+const RETRAIT_PUCE = 5;
+/** Le libellé « DONNÉES » et l'air autour du contenu. */
+const ENTETE_DONNEES = 6;
+const PIED_DONNEES = 5;
+
+export function hauteurDonnees(blocs: BlocDonnees[]): number {
+  if (blocs.length === 0) return 0;
+  return ENTETE_DONNEES + blocs.reduce((t, b) => t + b.hauteur, 0) + PIED_DONNEES;
+}
+
+/** Le Markdown en ligne ôté : l'emphase ne passe pas dans une ligne découpée. */
+function texteBrut(t: string): string {
+  return t
+    .replace(/\*\*(.+?)\*\*/g, "$1")
+    .replace(/__(.+?)__/g, "$1")
+    .replace(/(?<![\p{L}\p{N}*])\*(?!\s)(.+?)\*(?![\p{L}\p{N}])/gu, "$1")
+    .replace(/`([^`]+)`/g, "$1")
+    .trim();
+}
+
+const estLigneTableau = (l: string) => /^\s*\|.*\|\s*$/.test(l);
+const estSeparateurTableau = (l: string) =>
+  /^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$/.test(l);
+
+export function mesurerDonnees(
+  doc: jsPDF,
+  markdown: string,
+  largeur: number,
+): BlocDonnees[] {
+  const blocs: BlocDonnees[] = [];
+  const lignes = markdown.replace(/\r/g, "").split("\n");
+  let i = 0;
+  while (i < lignes.length) {
+    const ligne = lignes[i];
+    if (!ligne.trim()) {
+      i++;
+      continue;
+    }
+
+    if (estLigneTableau(ligne)) {
+      const rangees: string[][] = [];
+      while (i < lignes.length && estLigneTableau(lignes[i])) {
+        if (!estSeparateurTableau(lignes[i])) {
+          rangees.push(
+            lignes[i]
+              .trim()
+              .replace(/^\|/, "")
+              .replace(/\|$/, "")
+              .split("|")
+              .map((c) => texteBrut(c)),
+          );
+        }
+        i++;
+      }
+      const colonnes = Math.max(...rangees.map((r) => r.length));
+      // Chaque colonne reçoit une part proportionnée à son texte le plus long,
+      // sans descendre sous un plancher : une colonne « N° » reste lisible.
+      police(doc, "corps", 8.5);
+      const poids = Array.from({ length: colonnes }, (_, c) =>
+        Math.max(
+          8,
+          ...rangees.map((r) => Math.min(70, doc.getTextWidth(r[c] ?? ""))),
+        ),
+      );
+      const somme = poids.reduce((a, b) => a + b, 0);
+      const largeurs = poids.map((p) => (p / somme) * largeur);
+      const cellules = rangees.map((r, k) =>
+        largeurs.map((l, c) => {
+          police(doc, k === 0 ? "corpsGras" : "corps", 8.5);
+          return doc.splitTextToSize(insecable(r[c] ?? ""), l - 3) as string[];
+        }),
+      );
+      const hauteurs = cellules.map(
+        (r) => Math.max(...r.map((c) => c.length)) * 3.9 + 2.8,
+      );
+      blocs.push({
+        genre: "tableau",
+        lignes: cellules,
+        largeurs,
+        hauteurs,
+        hauteur: hauteurs.reduce((a, b) => a + b, 0) + 2.5,
+      });
+      continue;
+    }
+
+    // Paragraphe ou élément de liste : les puces et numéros sont gardés tels
+    // quels, en retrait, parce qu'on s'y réfère (« l'observation 3 »).
+    const liste = ligne.match(/^\s*([-*+]|\d+[.)])\s+(.*)$/);
+    const titre = ligne.match(/^\s*#{1,6}\s+(.*)$/);
+    const puce = liste ? (/\d/.test(liste[1]) ? liste[1] : "–") : "";
+    const contenu = texteBrut(liste ? liste[2] : titre ? titre[1] : ligne);
+    police(doc, titre ? "corpsGras" : "corps", 9);
+    const coupees: string[] = doc.splitTextToSize(
+      insecable(contenu),
+      largeur - (puce ? RETRAIT_PUCE : 0),
+    );
+    blocs.push({
+      genre: "texte",
+      lignes: coupees,
+      puce,
+      gras: Boolean(titre),
+      hauteur: coupees.length * INTERLIGNE_DONNEES + 1.2,
+    });
+    i++;
+  }
+  return blocs;
 }
 
 export function dessinerSujet(
@@ -202,6 +339,11 @@ export function dessinerSujet(
       LARGEUR - 42,
     );
 
+    const donnees = q.donnees?.trim()
+      ? mesurerDonnees(doc, q.donnees, LARGEUR - 14)
+      : [];
+    const hauteurDonneesQ = hauteurDonnees(donnees);
+
     police(doc, "corps", 9.5);
     const options = q.options.map((o) => ({
       lignes: doc.splitTextToSize(insecable(o.texte), LARGEUR - 24) as string[],
@@ -226,7 +368,12 @@ export function dessinerSujet(
       place.lignes * INTERLIGNE_REPONSE +
       (place.cadre > 0 ? place.cadre + 3 : 0);
     const hauteurTotale =
-      hauteurEnonce + hauteurOptions + hauteurAttendu + hauteurReponse + 10;
+      hauteurEnonce +
+      hauteurDonneesQ +
+      hauteurOptions +
+      hauteurAttendu +
+      hauteurReponse +
+      10;
 
     // Une question ne se coupe jamais entre deux pages. Si elle ne tient pas
     // dans ce qui reste, elle part entière sur la suivante ; si elle ne tient
@@ -277,6 +424,74 @@ export function dessinerSujet(
       align: "center",
     });
     y += hauteurEnonce;
+
+    // ── Les données ────────────────────────────────────────────────────────
+    //
+    // Un filet à gauche plutôt qu'un cadre fermé : des données assez longues
+    // pour passer sur la page suivante y continuent sans cadre ouvert à moitié.
+    if (donnees.length > 0) {
+      const xFilet = X + 10;
+      const xTexte = X + 14;
+      let debutFilet = y - 3;
+      const filet = (fin: number) => {
+        doc.setFillColor(...COULEURS.bordureForte);
+        doc.rect(xFilet, debutFilet, 0.8, fin - debutFilet, "F");
+      };
+      const place = (h: number) => {
+        if (y + h > BAS && y > HAUT + 1) {
+          filet(y - 2);
+          y = suivante();
+          debutFilet = y - 3;
+        }
+      };
+
+      police(doc, "mono", 6.8);
+      doc.setTextColor(...COULEURS.ardoise);
+      doc.text("DONNÉES", xTexte, y);
+      y += ENTETE_DONNEES;
+
+      for (const b of donnees) {
+        if (b.genre === "texte") {
+          place(b.hauteur);
+          police(doc, b.gras ? "corpsGras" : "corps", 9);
+          doc.setTextColor(...(b.gras ? COULEURS.encre : COULEURS.corps));
+          const decalage = b.puce ? RETRAIT_PUCE : 0;
+          if (b.puce) doc.text(b.puce, xTexte, y);
+          b.lignes.forEach((l, k) =>
+            doc.text(l, xTexte + decalage, y + k * INTERLIGNE_DONNEES),
+          );
+          y += b.hauteur;
+          continue;
+        }
+
+        // Un tableau : l'en-tête sur fond lavé, une grille fine, et chaque
+        // rangée entière sur une page.
+        y -= 2.6;
+        b.lignes.forEach((rangee, k) => {
+          const h = b.hauteurs[k];
+          place(h);
+          let x = xTexte;
+          rangee.forEach((cellule, c) => {
+            const l = b.largeurs[c];
+            if (k === 0) {
+              doc.setFillColor(...COULEURS.lavis);
+              doc.rect(x, y, l, h, "F");
+            }
+            doc.setDrawColor(...COULEURS.bordureForte).setLineWidth(0.2);
+            doc.rect(x, y, l, h, "S");
+            police(doc, k === 0 ? "corpsGras" : "corps", 8.5);
+            doc.setTextColor(...(k === 0 ? COULEURS.encre : COULEURS.corps));
+            cellule.forEach((t, n) => doc.text(t, x + 1.5, y + 3.9 + n * 3.9));
+            x += l;
+          });
+          y += h;
+        });
+        y += 2.5 + 2.6;
+      }
+      y += 1;
+      filet(y - 3);
+      y += PIED_DONNEES - 1;
+    }
 
     // ── Les propositions d'un QCM ──────────────────────────────────────────
     //

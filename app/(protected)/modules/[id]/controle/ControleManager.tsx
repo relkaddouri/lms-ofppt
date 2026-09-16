@@ -20,6 +20,7 @@ import {
 } from "@/app/actions/controles";
 import CopiesManager from "./CopiesManager";
 import ContenuCouvert from "./ContenuCouvert";
+import { AlertesQuestion, ChampDonnees } from "./ChampDonnees";
 import { Stepper, NavigationEtapes, ETAPES } from "./Stepper";
 import CarteChoix, { type Choix } from "./CarteChoix";
 import Segments from "@/components/ui/Segments";
@@ -48,6 +49,8 @@ type DraftQuestion = {
   id: string;
   type: TypeQuestion;
   enonce: string;
+  /** Tableau, extrait, cas : ce dont la question a besoin, en Markdown. */
+  donnees: string;
   bareme: number;
   options: OptionQcm[];
   corrige: string;
@@ -78,6 +81,7 @@ function newQuestion(): DraftQuestion {
     id: crypto.randomUUID(),
     type: "ouverte",
     enonce: "",
+    donnees: "",
     bareme: 0,
     options: [],
     corrige: "",
@@ -244,6 +248,7 @@ export default function ControleManager({
           id: q.id,
           type: q.type ?? "ouverte",
           enonce: q.enonce ?? "",
+          donnees: q.donnees ?? "",
           bareme: Number(q.bareme) || 0,
           options: Array.isArray(q.options) ? q.options : [],
           corrige: q.corrige ?? "",
@@ -308,6 +313,7 @@ export default function ControleManager({
                   questions: questions.map((q) => ({
                     type: q.type,
                     enonce: q.enonce,
+                    donnees: q.donnees || null,
                     bareme: q.bareme,
                     options: q.options,
                     corrige: q.corrige,
@@ -337,6 +343,7 @@ export default function ControleManager({
             id: crypto.randomUUID(),
             type: q.type ?? "ouverte",
             enonce: q.enonce ?? "",
+            donnees: q.donnees ?? "",
             bareme: Number(q.bareme) || 0,
             options: Array.isArray(q.options) ? q.options : [],
             corrige: q.corrige ?? "",
@@ -388,6 +395,7 @@ export default function ControleManager({
         questions: questions.map((q) => ({
           type: q.type,
           enonce: q.enonce,
+          donnees: q.donnees || null,
           bareme: Number(q.bareme) || 0,
           options: q.options,
           corrige: q.corrige || null,
@@ -484,6 +492,7 @@ export default function ControleManager({
           questions: questions.map((q) => ({
             type: q.type,
             enonce: q.enonce,
+            donnees: q.donnees || null,
             bareme: Number(q.bareme) || 0,
             options: q.options,
             corrige: q.corrige ?? null,
@@ -851,6 +860,20 @@ export default function ControleManager({
                               className="w-full resize-y border-none bg-transparent px-[13px] py-[11px] text-[15px] leading-snug text-body outline-none placeholder:text-slate-light"
                             />
                           </div>
+
+                          <ChampDonnees
+                            id={q.id}
+                            numero={i + 1}
+                            valeur={q.donnees}
+                            onChange={(donnees) =>
+                              updateQuestion(q.id, { donnees })
+                            }
+                          />
+                          <AlertesQuestion
+                            type={q.type}
+                            enonce={q.enonce}
+                            donnees={q.donnees}
+                          />
 
                           <div className="flex flex-wrap items-center gap-2.5">
                             <span

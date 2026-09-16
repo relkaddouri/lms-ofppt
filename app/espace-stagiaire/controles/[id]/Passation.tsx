@@ -6,6 +6,7 @@ import Link from "next/link";
 import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
 import AutoTextarea from "@/components/ui/AutoTextarea";
+import DonneesQuestion from "@/components/DonneesQuestion";
 import { ConfirmModal } from "@/components/ui/Modal";
 import { useToast } from "@/components/ui/Toast";
 import type {
@@ -95,6 +96,13 @@ export default function Passation({
             <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-ink">
               {q.enonce}
             </p>
+
+            {/* Les données de la question, sur l'écran même où l'on répond :
+                le contrôle se passe en ligne, et le stagiaire n'a rien
+                d'autre sous la main que ce qui s'affiche ici. */}
+            {q.donnees?.trim() ? (
+              <DonneesQuestion texte={q.donnees} />
+            ) : null}
 
             {q.type === "qcm" && q.options?.length ? (
               <fieldset className="mt-3">

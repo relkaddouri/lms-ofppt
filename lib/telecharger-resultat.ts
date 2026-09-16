@@ -225,6 +225,7 @@ export async function telechargerSujetBrouillon(
     questions: {
       type: string;
       enonce: string;
+      donnees?: string | null;
       bareme: number;
       options: { texte: string; correcte?: boolean }[];
       corrige: string | null;

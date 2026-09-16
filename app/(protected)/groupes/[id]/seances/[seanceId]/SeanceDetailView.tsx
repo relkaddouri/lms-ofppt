@@ -23,6 +23,7 @@ import SupportSeance from "@/components/SupportSeance";
 import QuestionsSupport from "@/components/QuestionsSupport";
 import PartageContenu from "@/components/PartageContenu";
 import CorrectionTpPanneau from "@/components/CorrectionTpPanneau";
+import NotesSeance from "@/components/NotesSeance";
 import { formatDateJour, formatDateTime, formatHeures } from "@/lib/format";
 import { formatHeure } from "@/lib/creneaux";
 import {
@@ -739,10 +740,13 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
                   />
                 </div>
                 <span className="text-[13px] text-slate-light">
-                  Repris automatiquement dans le classeur pédagogique et le
-                  bilan du module.
+                  Repris dans le classeur pédagogique, le bilan du module et la
+                  génération des contrôles. Ce qui ne regarde que vous va dans
+                  vos notes, juste en dessous.
                 </span>
               </section>
+
+              <NotesSeance seanceId={seance.id} />
 
               <section className="flex flex-col gap-3.5 rounded-[14px] border border-border bg-surface p-[22px] shadow-repos">
                 <div className="flex items-baseline justify-between gap-3">
