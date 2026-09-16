@@ -102,3 +102,146 @@ export function remplirCreneaux(
     heuresRestantes: net(file.slice(i).reduce((s, b) => s + b.duree, 0)),
   };
 }
+
+// ── Ce que le recalcul a le droit de toucher (PRD §4.9) ─────────────────────
+
+/** Un instant repéré à l'établissement : `YYYY-MM-DD` et `HH:MM`. */
+export type Instant = { date: string; heure: string };
+
+/** « 08:30:00 » et « 08:30 » désignent la même heure. */
+const hm = (h: string) => h.slice(0, 5);
+
+/**
+ * Vrai si le recalcul peut détacher cette séance « à faire » de sa date.
+ *
+ * Une séance dont l'heure est passée reste où elle est, cochée ou non. Le
+ * formateur coche souvent le lendemain : la séance de mardi matin, pas encore
+ * marquée faite le mercredi, n'en a pas moins eu lieu. La traiter comme une
+ * prévision la renvoyait après aujourd'hui, et son créneau — passé — ne
+ * pouvait plus rien recevoir : elle disparaissait du mardi.
+ *
+ * Elle reste aussi où elle est si elle précède le point de départ du
+ * recalcul, pour la même raison : ce qu'on détache doit pouvoir être replacé.
+ */
+export function seanceDeplacable(
+  seance: { date: string; heure_debut: string | null },
+  depart: string,
+  instant: Instant,
+): boolean {
+  if (seance.date < depart || seance.date < instant.date) return false;
+  if (seance.date > instant.date) return true;
+  // Aujourd'hui : seulement si elle n'a pas commencé. Sans heure connue, on
+  // ne prend pas le risque de déplacer une séance en cours.
+  return seance.heure_debut !== null && hm(seance.heure_debut) > instant.heure;
+}
+
+/**
+ * Vrai si un créneau du motif peut recevoir une séance.
+ *
+ * Deux refus. Le créneau est déjà pris — par une séance faite, ou par une
+ * séance passée restée en place : y écrire en créerait une seconde à la même
+ * heure. Ou, lors d'un recalcul, il a déjà commencé : un recalcul ne planifie
+ * pas dans le passé.
+ */
+export function creneauOuvert(
+  creneau: { date: string; debut: string },
+  occupes: ReadonlySet<string>,
+  /**
+   * Le présent, quand c'est un recalcul. Absent pour une génération lancée à
+   * la main à partir d'une date choisie : le formateur qui la fait partir
+   * d'une date passée veut précisément remplir ces semaines-là.
+   */
+  instant?: Instant,
+): boolean {
+  if (occupes.has(cleCreneau(creneau.date, creneau.debut))) return false;
+  if (!instant) return true;
+  if (creneau.date < instant.date) return false;
+  if (creneau.date === instant.date && hm(creneau.debut) <= instant.heure) {
+    return false;
+  }
+  return true;
+}
+
+/** La clé d'un créneau occupé : un jour et une heure de début. */
+export function cleCreneau(date: string, debut: string): string {
+  return `${date}|${hm(debut)}`;
+}
+
+/**
+ * La ligne de séance qui porte une séance remplie.
+ *
+ * Le remplissage peut fondre plusieurs anciennes séances en une seule ; les
+ * lignes absorbées sont ensuite supprimées, et avec elles tout ce qui s'y
+ * rattache — fiche, support, appel, remarques. Une séance déjà préparée doit
+ * donc porter la séance où elle tombe, plutôt que d'y être absorbée.
+ *
+ * Rend `null` quand aucune ligne n'est libre : la séance ouvrira une ligne
+ * neuve.
+ */
+export function choisirPorteur(
+  idsDesMorceaux: string[],
+  revendiquees: ReadonlySet<string>,
+  preparees: ReadonlySet<string>,
+): string | null {
+  const libres = idsDesMorceaux.filter((id) => !revendiquees.has(id));
+  return libres.find((id) => preparees.has(id)) ?? libres[0] ?? null;
+}
+
+// ── L'intitulé d'une séance ─────────────────────────────────────────────────
+
+/** Une nature écrite en fin de segment : « — theorique », « — pratique ». */
+const NATURE = / — (th[ée]orique|pratique)/;
+
+/**
+ * Remet d'aplomb un intitulé de séance.
+ *
+ * Chaque recalcul recomposait l'intitulé à partir de l'intitulé précédent, en
+ * y ajoutant la nature : « A.1 — Réaliser un travail de recherche — theorique
+ * — theorique — theorique… », une nature de plus à chaque passage, et les
+ * séances fusionnées recopiant les segments de leurs voisines jusqu'à 853
+ * caractères.
+ *
+ * Un segment garde sa **première** nature : c'est celle qu'il portait quand la
+ * séance a été composée ; les suivantes ont été ajoutées par les recalculs,
+ * avec la nature de la ligne qui le portait, pas la sienne. Les segments
+ * identiques ne sont écrits qu'une fois.
+ */
+export function normaliserIntitule(intitule: string): string {
+  const segments = intitule
+    .split(" · ")
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .map((segment) => {
+      const trouve = NATURE.exec(segment);
+      if (!trouve) return segment;
+      // Tout ce qui suit la première nature n'est que répétition de natures.
+      const fin = trouve.index + trouve[0].length;
+      const reste = segment.slice(fin);
+      return /^( — (th[ée]orique|pratique))*$/.test(reste)
+        ? segment.slice(0, fin)
+        : segment;
+    });
+  return [...new Set(segments)].join(" · ");
+}
+
+/**
+ * L'intitulé d'une séance remplie, à partir des morceaux qu'elle porte.
+ *
+ * Idempotent : recalculer dix fois un planning inchangé écrit dix fois le même
+ * intitulé. Un segment qui porte déjà sa nature la garde ; un segment qui
+ * n'en a pas reçoit celle du bloc.
+ */
+export function composerIntitule(
+  morceaux: { code: string; nature: "theorique" | "pratique" | null }[],
+): string | null {
+  const segments = morceaux.flatMap(({ code, nature }) =>
+    normaliserIntitule(code)
+      .split(" · ")
+      .filter(Boolean)
+      .map((segment) =>
+        NATURE.test(segment) || !nature ? segment : `${segment} — ${nature}`,
+      ),
+  );
+  const uniques = [...new Set(segments)];
+  return uniques.length > 0 ? uniques.join(" · ") : null;
+}

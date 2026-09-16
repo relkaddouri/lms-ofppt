@@ -4,12 +4,18 @@ import { createClient, getUser } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { getPortee } from "@/app/actions/annees";
 import {
+  choisirPorteur,
+  cleCreneau,
+  composerIntitule,
+  creneauOuvert,
   dureeCreneau,
   remplirCreneaux,
+  seanceDeplacable,
   type BlocContenu,
   type CreneauCible,
+  type Instant,
 } from "@/lib/remplissage";
-import { maintenant } from "@/lib/format";
+import { instantEtablissement } from "@/lib/format";
 import type { Replanification } from "@/lib/motifs";
 
 export type CreneauMotif = {
@@ -30,7 +36,6 @@ export type MotifHebdomadaire = {
   courant: boolean;
   creneaux: CreneauMotif[];
 };
-
 
 /**
  * Motifs du formateur, du plus récent au plus ancien.
@@ -203,10 +208,12 @@ export async function supprimerCreneau(id: string): Promise<Replanification> {
  *
  * Trois garanties, dans cet ordre :
  *
- * 1. Une séance **faite** n'est jamais touchée — c'est un fait passé, pas une
- *    prévision. Le recalcul repart donc du lendemain de la dernière séance
- *    faite, ce qui interdit aussi de replacer une séance sur un créneau déjà
- *    consommé.
+ * 1. Le passé n'est jamais touché. Une séance **faite** est un fait ; une
+ *    séance « à faire » dont l'heure est passée aussi — le formateur coche
+ *    souvent le lendemain, et la traiter comme une prévision la renvoyait
+ *    après aujourd'hui, son créneau passé ne pouvant plus rien recevoir. Le
+ *    recalcul repart du lendemain de la dernière séance faite, et jamais
+ *    avant l'instant présent ; aucun créneau déjà occupé n'est rempli.
  * 2. Un groupe que le motif ne sert plus n'est **pas** libéré : détacher ses
  *    séances de leurs dates les ferait disparaître du calendrier sans que
  *    rien ne les y remette. Il est signalé, pas vidé.
@@ -220,6 +227,9 @@ export async function replanifier(
   const supabase = await createClient();
   const { anneeId } = await getPortee();
   const groupes: Replanification["groupes"] = [];
+  // Un seul instant pour tout le recalcul : lu groupe par groupe, il pourrait
+  // basculer d'une minute entre deux, et une séance changer de camp.
+  const instant = instantEtablissement();
 
   const uniques = [...new Set(groupeIds)].filter(Boolean);
   if (uniques.length === 0) return { groupes };
@@ -277,18 +287,33 @@ export async function replanifier(
       : null;
     if (apresLeFait) apresLeFait.setUTCDate(apresLeFait.getUTCDate() + 1);
 
-    const candidats = [maintenant(), motif.date_debut];
+    const candidats = [instant.date, motif.date_debut];
     if (apresLeFait) candidats.push(apresLeFait.toISOString().slice(0, 10));
     const depart = candidats.sort().at(-1)!;
 
-    const { data: aLiberer } = await supabase
+    const { data: dateesAFaire, error: errLecture } = await supabase
       .from("seances")
-      .select("id, seance_groupes!inner(groupe_id)")
+      .select(
+        "id, date, heure_debut, heure_fin, seance_groupes!inner(groupe_id)",
+      )
       .eq("seance_groupes.groupe_id", groupeId)
       .eq("statut", "a_faire")
-      .not("date", "is", null);
+      .gte("date", depart);
+    if (errLecture) throw new Error(errLecture.message);
 
-    const ids = (aLiberer ?? []).map((s) => s.id);
+    // Seules les séances à venir se détachent. Celles dont l'heure est
+    // passée restent en place, et occupent leur créneau pour la suite.
+    const aLiberer = (dateesAFaire ?? []).filter(
+      (s) =>
+        s.date !== null &&
+        seanceDeplacable(
+          { date: s.date, heure_debut: s.heure_debut },
+          depart,
+          instant,
+        ),
+    );
+
+    const ids = aLiberer.map((s) => s.id);
     if (ids.length > 0) {
       const { error } = await supabase
         .from("seances")
@@ -302,7 +327,26 @@ export async function replanifier(
       if (error) throw new Error(error.message);
     }
 
-    const r = await genererSeances(groupeId, depart);
+    let r: ResultatGeneration;
+    try {
+      r = await genererSeances(groupeId, depart, 40, instant);
+    } catch (e) {
+      // Le remplissage a refusé ou échoué : les séances détachées retrouvent
+      // leur place. Sans cela, elles restaient sans date — hors du
+      // calendrier, sans que rien ne dise où elles étaient.
+      for (const s of aLiberer) {
+        await supabase
+          .from("seances")
+          .update({
+            date: s.date,
+            heure_debut: s.heure_debut,
+            heure_fin: s.heure_fin,
+          })
+          .eq("id", s.id)
+          .is("date", null);
+      }
+      throw e;
+    }
     groupes.push({
       nom,
       liberees: ids.length,
@@ -350,6 +394,12 @@ export async function genererSeances(
   groupeId: string,
   dateDebut: string,
   semainesMax = 40,
+  /**
+   * Le présent, transmis par un recalcul : aucun créneau déjà commencé ne
+   * reçoit alors de séance. Une génération lancée à la main n'en passe pas —
+   * partir d'une date passée y est un choix.
+   */
+  instant?: Instant,
 ): Promise<ResultatGeneration> {
   const supabase = await createClient();
   const user = await getUser();
@@ -357,10 +407,12 @@ export async function genererSeances(
 
   const { anneeId: porteeId } = await getPortee();
 
-  const [motifRes, seancesRes, indispoRes] = await Promise.all([
+  const [motifRes, seancesRes, indispoRes, occupesRes] = await Promise.all([
     supabase
       .from("motifs_hebdomadaires")
-      .select("id, date_fin, creneaux_motif(jour_semaine, heure_debut, heure_fin, groupe_id)")
+      .select(
+        "id, date_fin, creneaux_motif(jour_semaine, heure_debut, heure_fin, groupe_id)",
+      )
       .eq("annee_scolaire_id", porteeId ?? "")
       .lte("date_debut", dateDebut)
       .order("date_debut", { ascending: false })
@@ -377,11 +429,26 @@ export async function genererSeances(
       .from("indisponibilites")
       .select("date_debut, date_fin, demi_journee")
       .eq("annee_scolaire_id", porteeId ?? ""),
+    // Ce qui occupe déjà un créneau : séances faites, et séances passées que
+    // le recalcul a laissées en place. Y écrire créerait deux séances à la
+    // même heure.
+    supabase
+      .from("seances")
+      .select("date, heure_debut, seance_groupes!inner(groupe_id)")
+      .eq("seance_groupes.groupe_id", groupeId)
+      .gte("date", dateDebut),
   ]);
 
   if (motifRes.error) throw new Error(motifRes.error.message);
   if (seancesRes.error) throw new Error(seancesRes.error.message);
   if (indispoRes.error) throw new Error(indispoRes.error.message);
+  if (occupesRes.error) throw new Error(occupesRes.error.message);
+
+  const occupes = new Set(
+    (occupesRes.data ?? [])
+      .filter((o) => o.date && o.heure_debut)
+      .map((o) => cleCreneau(o.date!, o.heure_debut!)),
+  );
 
   const motif = motifRes.data?.[0];
   if (!motif) {
@@ -404,7 +471,12 @@ export async function genererSeances(
 
   const aPlacer = seancesRes.data ?? [];
   if (aPlacer.length === 0) {
-    return { placees: 0, heuresRestantes: 0, joursSautes: 0, derniereDate: null };
+    return {
+      placees: 0,
+      heuresRestantes: 0,
+      joursSautes: 0,
+      derniereDate: null,
+    };
   }
 
   // Un jour est écarté s'il tombe dans une indisponibilité — férié, vacances,
@@ -429,7 +501,9 @@ export async function genererSeances(
   const curseur = new Date(`${dateDebut}T12:00:00Z`);
   const limite = new Date(curseur);
   limite.setUTCDate(limite.getUTCDate() + semainesMax * 7);
-  const finMotif = motif.date_fin ? new Date(`${motif.date_fin}T12:00:00Z`) : null;
+  const finMotif = motif.date_fin
+    ? new Date(`${motif.date_fin}T12:00:00Z`)
+    : null;
 
   const heuresAPlacer = aPlacer.reduce(
     (t, s) => t + (Number(s.duree_prevue) || 0),
@@ -449,7 +523,17 @@ export async function genererSeances(
       for (const c of creneaux.filter((x) => x.jour_semaine === isodow)) {
         const duree = dureeCreneau(c.heure_debut, c.heure_fin);
         if (duree <= 0) continue;
-        cibles.push({ date: iso, debut: c.heure_debut, fin: c.heure_fin, duree });
+        if (
+          !creneauOuvert({ date: iso, debut: c.heure_debut }, occupes, instant)
+        ) {
+          continue;
+        }
+        cibles.push({
+          date: iso,
+          debut: c.heure_debut,
+          fin: c.heure_fin,
+          duree,
+        });
         heuresOuvertes += duree;
       }
     }
@@ -478,7 +562,10 @@ export async function genererSeances(
   const rang = (s: (typeof aPlacer)[number]) => {
     const sp = s.suggestions_pedagogiques as unknown as {
       ordre: number | null;
-      elements_competence: { lettre: string | null; ordre: number | null } | null;
+      elements_competence: {
+        lettre: string | null;
+        ordre: number | null;
+      } | null;
     } | null;
     return {
       lot: lotDuModule.get(s.module_id) ?? String(s.created_at ?? ""),
@@ -512,14 +599,63 @@ export async function genererSeances(
 
   const { seances: remplies, heuresRestantes } = remplirCreneaux(blocs, cibles);
 
+  // ── Les séances déjà préparées ────────────────────────────────────────
+  //
+  // Une ligne absorbée par la fusion de deux séances est supprimée, et la
+  // cascade emporte ce qui s'y rattache. On repère donc d'abord celles qui
+  // portent quelque chose, pour qu'elles portent la séance où elles tombent.
+  const idsAPlacer = aPlacer.map((s) => s.id);
+  const rattaches = await Promise.all(
+    (
+      [
+        "fiches_preparation",
+        "supports_seance",
+        "presences",
+        "remarques_seance",
+        "notations_seance",
+      ] as const
+    ).map((table) =>
+      supabase.from(table).select("seance_id").in("seance_id", idsAPlacer),
+    ),
+  );
+  const preparees = new Set<string>();
+  for (const res of rattaches) {
+    if (res.error) throw new Error(res.error.message);
+    for (const l of res.data ?? []) preparees.add(l.seance_id);
+  }
+
   const parId = new Map(aPlacer.map((s) => [s.id, s]));
   const liensDe = (id: string): string[] =>
-    ((parId.get(id)?.seance_elements_contenu ?? []) as {
-      element_contenu_id: string;
-    }[]).map((l) => l.element_contenu_id);
+    (
+      (parId.get(id)?.seance_elements_contenu ?? []) as {
+        element_contenu_id: string;
+      }[]
+    ).map((l) => l.element_contenu_id);
 
-  // Une ligne de séance n'est revendiquée qu'une fois : le premier créneau qui
-  // entame un bloc garde sa ligne, les créneaux suivants en créent une neuve.
+  // Le plan des porteurs, calculé entier avant toute écriture : si une séance
+  // préparée devait disparaître dans une fusion, on refuse ici, quand rien
+  // n'a encore bougé — plutôt qu'au milieu, un calendrier à moitié réécrit.
+  {
+    const essai = new Set<string>();
+    const absorbees = new Set<string>();
+    for (const r of remplies) {
+      const ids = r.morceaux.map((m) => m.bloc.seanceId);
+      const porteur = choisirPorteur(ids, essai, preparees);
+      if (porteur) essai.add(porteur);
+      for (const id of ids) absorbees.add(id);
+    }
+    const perdues = [...absorbees].filter(
+      (id) => !essai.has(id) && preparees.has(id),
+    );
+    if (perdues.length > 0) {
+      throw new Error(
+        "Ce changement fusionnerait deux séances déjà préparées (fiche, support ou appel) en une seule. Rien n'a été modifié : déplacez ou videz l'une des deux, puis recommencez.",
+      );
+    }
+  }
+
+  // Une ligne de séance n'est revendiquée qu'une fois ; une séance préparée
+  // passe devant les autres pour porter le créneau où elle tombe.
   const revendiquees = new Set<string>();
   const consommees = new Set<string>();
   let placees = 0;
@@ -528,22 +664,24 @@ export async function genererSeances(
   for (const r of remplies) {
     const duree = r.morceaux.reduce((t, m) => t + m.duree, 0);
     // L'objectif affiché nomme tout ce que la séance couvre : une séance qui
-    // porte deux objectifs doit les montrer tous les deux (PRD §4.9).
-    const objectif =
-      [
-        ...new Set(
-          r.morceaux
-            .map((m) => [m.bloc.code, m.bloc.nature].filter(Boolean).join(" — "))
-            .filter(Boolean),
-        ),
-      ].join(" · ") || null;
+    // porte deux objectifs doit les montrer tous les deux (PRD §4.9). Composé
+    // sans répéter ce que l'intitulé précédent disait déjà — chaque recalcul
+    // y ajoutait une nature de plus.
+    const objectif = composerIntitule(
+      r.morceaux.map((m) => ({ code: m.bloc.code, nature: m.bloc.nature })),
+    );
 
     const premier = r.morceaux[0]!.bloc;
     const modele = parId.get(premier.seanceId)!;
 
     let cible: string;
-    if (!revendiquees.has(premier.seanceId)) {
-      cible = premier.seanceId;
+    const porteur = choisirPorteur(
+      r.morceaux.map((m) => m.bloc.seanceId),
+      revendiquees,
+      preparees,
+    );
+    if (porteur) {
+      cible = porteur;
       revendiquees.add(cible);
       const { error } = await supabase
         .from("seances")
@@ -594,12 +732,10 @@ export async function genererSeances(
       ...new Set(r.morceaux.flatMap((m) => liensDe(m.bloc.seanceId))),
     ];
     if (elements.length > 0) {
-      const { error } = await supabase
-        .from("seance_elements_contenu")
-        .upsert(
-          elements.map((e) => ({ seance_id: cible, element_contenu_id: e })),
-          { onConflict: "seance_id,element_contenu_id", ignoreDuplicates: true },
-        );
+      const { error } = await supabase.from("seance_elements_contenu").upsert(
+        elements.map((e) => ({ seance_id: cible, element_contenu_id: e })),
+        { onConflict: "seance_id,element_contenu_id", ignoreDuplicates: true },
+      );
       if (error) throw new Error(error.message);
     }
 
@@ -612,7 +748,10 @@ export async function genererSeances(
   // de raison d'être : les garder laisserait des séances fantômes sans date.
   const aSupprimer = [...consommees].filter((id) => !revendiquees.has(id));
   if (aSupprimer.length > 0) {
-    const { error } = await supabase.from("seances").delete().in("id", aSupprimer);
+    const { error } = await supabase
+      .from("seances")
+      .delete()
+      .in("id", aSupprimer);
     if (error) throw new Error(error.message);
   }
 

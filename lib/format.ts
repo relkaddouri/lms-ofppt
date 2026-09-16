@@ -91,7 +91,9 @@ export function initials(...parts: (string | null | undefined)[]): string {
  * « 5,25 h » ne veut rien dire pour un formateur : une séance dure 2 h 30, 3 h
  * ou 5 h. On écrit donc « 5 h 15 », comme sur un emploi du temps.
  */
-export function formatHeures(valeur: number | string | null | undefined): string {
+export function formatHeures(
+  valeur: number | string | null | undefined,
+): string {
   const n = Number(valeur);
   if (!Number.isFinite(n)) return "—";
   const signe = n < 0 ? "-" : "";
@@ -130,4 +132,35 @@ export function dateLocale(d: Date): string {
 /** La date du jour, telle que l'utilisateur la lit sur son calendrier. */
 export function maintenant(): string {
   return dateLocale(new Date());
+}
+
+/**
+ * Le jour et l'heure à l'établissement, où que tourne le serveur.
+ *
+ * `maintenant` lit le fuseau de la machine : juste dans le navigateur, faux
+ * sur un serveur réglé en UTC, où la nuit marocaine commence une heure plus
+ * tard. Le recalcul du planning a besoin de l'heure exacte — une séance du
+ * matin déjà passée ne se déplace pas — et la lit donc à Casablanca.
+ */
+export function instantEtablissement(d: Date = new Date()): {
+  date: string;
+  heure: string;
+} {
+  const parties = Object.fromEntries(
+    new Intl.DateTimeFormat("fr-FR", {
+      timeZone: "Africa/Casablanca",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23",
+    })
+      .formatToParts(d)
+      .map((p) => [p.type, p.value]),
+  );
+  return {
+    date: `${parties.year}-${parties.month}-${parties.day}`,
+    heure: `${parties.hour}:${parties.minute}`,
+  };
 }
