@@ -87,10 +87,37 @@ export default function Passation({
   // La fin vient de la base (`ferme_le`), pas d'une minuterie lancée à
   // l'ouverture de la page : recharger, ou arriver en retard, ne rend pas de
   // temps. À zéro, la copie part d'elle-même avec ce qui est écrit.
-  const fin = !apercu && controle.ferme_le ? new Date(controle.ferme_le).getTime() : null;
+  //
+  // Le compte de test du formateur passe souvent un brouillon, qui n'a pas de
+  // fermeture. Il a quand même son chronomètre : la durée du contrôle, à
+  // partir de sa première ouverture — gardée sur l'appareil, pour qu'un
+  // rechargement ne rende pas de temps non plus. C'est ainsi qu'il éprouve
+  // le rythme du sujet avant de le donner.
+  const cleDebut = `pedago:debut-test:${controle.id}`;
+  const dureeMs = Number(controle.duree_heures) > 0 ? Number(controle.duree_heures) * 3_600_000 : 0;
+  const [fin, setFin] = useState<number | null>(() =>
+    !apercu && controle.ferme_le ? new Date(controle.ferme_le).getTime() : null,
+  );
+  const [chronoDeTest, setChronoDeTest] = useState(false);
   const [reste, setReste] = useState<number | null>(() =>
     fin === null ? null : fin - Date.now(),
   );
+
+  useEffect(() => {
+    if (apercu || !controle.compteTest || controle.ferme_le || dureeMs === 0) return;
+    let debut = Date.now();
+    try {
+      const garde = Number(localStorage.getItem(cleDebut));
+      // Un chronomètre déjà écoulé repart : le formateur revient essayer.
+      if (garde > 0 && garde + dureeMs > Date.now()) debut = garde;
+      localStorage.setItem(cleDebut, String(debut));
+    } catch {
+      // Stockage indisponible : le chronomètre part de cette ouverture.
+    }
+    setChronoDeTest(true);
+    setFin(debut + dureeMs);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [controle.id, controle.compteTest, controle.ferme_le, dureeMs, apercu]);
   const reponsesRef = useRef(reponses);
   reponsesRef.current = reponses;
   const partie = useRef(false);
@@ -109,7 +136,12 @@ export default function Passation({
           toast("Temps écoulé : votre copie est rendue.");
           void rendre();
         } else {
-          toast("Temps écoulé : le test est fermé.", "error");
+          toast(
+            chronoDeTest
+              ? "Temps écoulé : aucune réponse écrite, rien n'a été rendu."
+              : "Temps écoulé : le test est fermé.",
+            "error",
+          );
           router.refresh();
         }
       }
@@ -174,6 +206,7 @@ export default function Passation({
       if (!res.ok) throw new Error(data.error ?? "Remise impossible.");
       try {
         localStorage.removeItem(cle);
+        localStorage.removeItem(cleDebut);
       } catch {
         // Rien à nettoyer.
       }
@@ -387,6 +420,11 @@ export default function Passation({
           >
             <Timer className="h-4 w-4" aria-hidden />
             {chrono(reste)}
+            {chronoDeTest ? (
+              <span className="ml-1 font-sans text-[11.5px] font-normal text-slate">
+                durée du contrôle
+              </span>
+            ) : null}
           </span>
         ) : null}
         <nav
