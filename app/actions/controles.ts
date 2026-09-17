@@ -830,7 +830,9 @@ export async function corrigerPassation(
   const { error } = await supabase.rpc("corriger_passation", {
     p_passation_id: passationId,
     p_responses: responses,
-    p_note: Math.min(20, Math.max(0, note)),
+    // Pas de plafond ici : un EFM se note sur 40 et un test sur son barème
+    // libre. La fonction borne la note au total réel du contrôle.
+    p_note: Math.max(0, note),
   });
 
   if (error) throw new Error(error.message);
@@ -1387,14 +1389,22 @@ export async function publierResultat(
   publier: boolean,
 ): Promise<{ publieLe: string | null }> {
   const supabase = await createClient();
-  const publieLe = publier ? new Date().toISOString() : null;
 
-  const { error } = await supabase
-    .from("passations_controle")
-    .update({ publie_le: publieLe })
-    .eq("id", passationId);
+  // Par la fonction `publier_resultat` (migration 095) et non par une mise à
+  // jour directe : la table n'ouvre pas l'écriture au formateur, et la mise à
+  // jour directe échouait sans erreur — l'écran disait « publié », le
+  // stagiaire ne voyait rien.
+  const { data, error } = await supabase.rpc("publier_resultat", {
+    p_passation_id: passationId,
+    p_publier: publier,
+  });
 
   if (error) throw new Error(error.message);
+  const publieLe = (data as string | null) ?? null;
+  if (publier && !publieLe) {
+    throw new Error("La publication n'a pas été enregistrée. Réessayez.");
+  }
+  revalidatePath("/espace-stagiaire/controles");
   return { publieLe };
 }
 
