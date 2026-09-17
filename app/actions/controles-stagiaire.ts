@@ -10,6 +10,8 @@ export type ControleStagiaire = {
   format: string | null;
   duree_heures: number | null;
   date_prevue: string | null;
+  /** Les consignes générales, lues avant la première question. */
+  consignes: string | null;
   moduleNom: string | null;
   codeOperationnel: string | null;
   /** Note obtenue, si la copie a été rendue. */
@@ -44,7 +46,7 @@ export async function getMesControles(): Promise<ControleStagiaire[]> {
     supabase
       .from("controles")
       .select(
-        "id, titre, type, type_efm, format, duree_heures, date_prevue, modules(nom, competences(code_operationnel))",
+        "id, titre, type, type_efm, format, duree_heures, date_prevue, consignes, modules(nom, competences(code_operationnel))",
       )
       .order("date_prevue", { nullsFirst: false }),
     supabase
@@ -94,6 +96,7 @@ export async function getMesControles(): Promise<ControleStagiaire[]> {
       format: c.format,
       duree_heures: c.duree_heures,
       date_prevue: c.date_prevue,
+      consignes: c.consignes,
       moduleNom: c.modules?.nom ?? null,
       codeOperationnel: c.modules?.competences?.code_operationnel ?? null,
       // La note n'existe que si le formateur a publié ; la remise, elle, se

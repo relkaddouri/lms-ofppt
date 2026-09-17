@@ -498,6 +498,15 @@ function Couverture({
   );
 }
 
+/**
+ * Le corps d'un texte rédigé, sans couverture : titres, encadrés, tableaux à
+ * en-tête encre, listes. Le sujet d'un contrôle en ligne s'écrit avec, pour
+ * que le stagiaire y retrouve la présentation de ses supports de cours.
+ */
+export function CorpsRedige({ texte }: { texte: string }) {
+  return <Blocs texte={texte} />;
+}
+
 export default function DocumentRedige({
   texte,
   surtitre,

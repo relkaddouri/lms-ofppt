@@ -385,10 +385,12 @@ Le document porte en tête un **cartouche d'identification** — établissement,
 **Les contrôles de test.** À côté des CC et des EFM réglementaires, le formateur crée des **contrôles de test** — des évaluations formatives — portant sur **une ou plusieurs séances qu'il choisit**, pas nécessairement contiguës. Ils se préparent avec la même assistance (format, génération, barème, corrigé) et s'impriment de la même façon, mais :
 
 - ils **ne comptent pas** dans le minimum réglementaire de 2 CC et 1 EFM par module (§4.7), ni dans les échéances réglementaires du calendrier ;
-- leur note **n'entre pas** dans la moyenne du stagiaire — *proposition à valider par le porteur de projet* ;
+- leur note **n'entre pas** dans la moyenne du stagiaire — *validé par le porteur de projet le 17 septembre 2026* ;
 - leur barème est libre, **20 points par défaut**.
 
-**La passation par les stagiaires.** Un contrôle de test se partage avec le groupe par un geste explicite du formateur — ouvert, puis fermé — et se passe depuis le compte du stagiaire, comme un CC (§4.5, §4.7), chronométré ou non au choix du formateur. Le formateur choisit aussi si le stagiaire voit sa note et le corrigé **dès la remise** — l'intérêt d'un test formatif est un retour rapide — ou seulement à la publication, comme pour un CC — *choix par défaut à valider par le porteur de projet ; proposition : dès la remise*.
+**La passation par les stagiaires.** Un contrôle de test se partage avec le groupe par un geste explicite du formateur — ouvert, puis fermé — et se passe depuis le compte du stagiaire, comme un CC (§4.5, §4.7), chronométré ou non au choix du formateur. Le stagiaire **ne voit ni sa note ni le corrigé à la remise** : comme pour un CC, le formateur relit d'abord la correction proposée par l'IA — pour vérifier qu'elle ne se trompe pas — puis publie (*décision du porteur de projet, 17 septembre 2026*).
+
+**La présentation du sujet en ligne.** Le stagiaire passe le contrôle sur l'écran, pas sur papier : le sujet s'y présente comme ses supports de cours — couverture, questions numérotées, énoncés et données rendus en Markdown avec les mêmes tableaux et listes —, et chaque question offre un espace de réponse proportionné à ce qu'elle demande, où il compose sans crainte de perdre sa copie. Les données d'une question (observations, verbatims, tableau) s'écrivent à la main ou **se demandent à l'IA question par question**.
 
 **L'analyse de compréhension.** Une fois des copies remises — contrôle de test, CC ou EFM — le formateur demande à l'IA une **analyse de la classe** fondée sur les réponses réelles, jamais sur les seules notes :
 

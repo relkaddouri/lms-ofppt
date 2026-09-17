@@ -1,27 +1,55 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Button from "@/components/ui/Button";
-import Badge from "@/components/ui/Badge";
 import AutoTextarea from "@/components/ui/AutoTextarea";
 import DonneesQuestion from "@/components/DonneesQuestion";
+import { CorpsRedige } from "@/components/DocumentRedige";
 import { ConfirmModal } from "@/components/ui/Modal";
 import { useToast } from "@/components/ui/Toast";
 import type {
   ControleStagiaire,
   QuestionSujet,
 } from "@/app/actions/controles-stagiaire";
-import { ArrowLeft, Send } from "lucide-react";
+import { ArrowLeft, Check, PenLine, Send } from "lucide-react";
 
 /**
- * Composition d'un contrôle.
+ * Composition d'un contrôle en ligne (PRD §4.7bis).
+ *
+ * Présenté comme les supports de cours que le stagiaire connaît — couverture
+ * encre, questions numérotées en gros chiffres de couleur, tableaux à en-tête
+ * encre — plutôt qu'en formulaire : il lit un sujet, puis il compose.
+ *
+ * La place pour répondre suit ce que la question demande, comme sur le sujet
+ * imprimé : quelques lignes pour une définition, une vraie page pour un
+ * exercice. Et rien ne se perd : la copie en cours est gardée sur l'appareil à
+ * chaque frappe, qu'un onglet se ferme ou que le réseau tombe avant la remise.
  *
  * Les propositions de QCM arrivent sans leur drapeau « correcte » — la base ne
  * le laisse pas sortir. Les réponses cochées sont stockées une par ligne,
  * forme que la correction compare côté serveur.
  */
+
+const COULEURS_NUMERO = ["text-coral", "text-teal", "text-green", "text-ink"];
+
+const LIBELLE_TYPE: Record<string, string> = {
+  qcm: "Choix multiple",
+  ouverte: "Question",
+  exercice: "Exercice d'application",
+};
+
+const points = (b: number) =>
+  `${String(b).replace(".", ",")} pt${b > 1 ? "s" : ""}`;
+
+/** Lignes de départ du champ de réponse, proportionnées au barème. */
+function lignesDeReponse(q: QuestionSujet): number {
+  const b = Math.max(0.5, Number(q.bareme) || 0);
+  if (q.type === "exercice") return Math.min(24, Math.max(10, Math.round(b * 3)));
+  return Math.min(12, Math.max(4, Math.round(b * 2 + 2)));
+}
+
 export default function Passation({
   controle,
   sujet,
@@ -31,11 +59,50 @@ export default function Passation({
 }) {
   const router = useRouter();
   const toast = useToast();
+  const cle = `pedago:copie:${controle.id}`;
   const [reponses, setReponses] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
   const [confirme, setConfirme] = useState(false);
+  const [gardee, setGardee] = useState(false);
+  const restauree = useRef(false);
+
+  // La copie en cours revient telle qu'on l'a laissée.
+  useEffect(() => {
+    try {
+      const brut = localStorage.getItem(cle);
+      if (brut) {
+        const lu = JSON.parse(brut) as Record<string, string>;
+        const ids = new Set(sujet.map((q) => q.id));
+        const utiles = Object.fromEntries(
+          Object.entries(lu).filter(([k, v]) => ids.has(k) && typeof v === "string"),
+        );
+        if (Object.values(utiles).some((v) => v.trim())) {
+          setReponses(utiles);
+          toast("Votre copie en cours a été retrouvée.");
+        }
+      }
+    } catch {
+      // Stockage indisponible (navigation privée) : on compose sans filet.
+    }
+    restauree.current = true;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cle]);
+
+  useEffect(() => {
+    if (!restauree.current) return;
+    try {
+      localStorage.setItem(cle, JSON.stringify(reponses));
+      setGardee(true);
+    } catch {
+      setGardee(false);
+    }
+  }, [cle, reponses]);
 
   const repondues = sujet.filter((q) => (reponses[q.id] ?? "").trim()).length;
+  const total = sujet.reduce((t, q) => t + (Number(q.bareme) || 0), 0);
+
+  const ecrire = (id: string, valeur: string) =>
+    setReponses((r) => ({ ...r, [id]: valeur }));
 
   async function rendre() {
     setBusy(true);
@@ -47,6 +114,11 @@ export default function Passation({
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Remise impossible.");
+      try {
+        localStorage.removeItem(cle);
+      } catch {
+        // Rien à nettoyer.
+      }
       toast("Copie rendue");
       router.refresh();
     } catch (e) {
@@ -57,119 +129,225 @@ export default function Passation({
     }
   }
 
+  const nature =
+    controle.type === "EFM"
+      ? `EFM ${controle.type_efm === "regional" ? "régional" : "local"}`
+      : "Contrôle continu";
+
   return (
-    <div>
+    <div className="flex flex-col gap-6">
       <Link
         href="/espace-stagiaire/controles"
-        className="inline-flex min-h-[44px] items-center gap-1.5 text-sm text-slate"
+        className="inline-flex min-h-[44px] items-center gap-1.5 self-start text-sm text-slate hover:text-ink"
       >
         <ArrowLeft className="h-4 w-4" aria-hidden />
         Contrôles
       </Link>
 
-      <h1 className="mt-2 text-lg font-semibold text-ink">
-        {controle.titre ?? controle.moduleNom ?? "Contrôle"}
-      </h1>
-      <p className="mt-0.5 text-sm text-slate">
-        {[
-          controle.moduleNom,
-          controle.duree_heures ? `${controle.duree_heures} h` : null,
-          `${sujet.length} questions`,
-        ]
-          .filter(Boolean)
-          .join(" · ")}
-      </p>
-
-      <ol className="mt-5 space-y-4">
-        {sujet.map((q, i) => (
-          <li
-            key={q.id}
-            className="rounded-[14px] border border-border bg-surface p-4"
-          >
-            <div className="flex items-baseline justify-between gap-3">
-              <span className="text-xs font-medium uppercase tracking-wide text-slate">
-                Question {i + 1}
-              </span>
-              <Badge tone="neutral">{q.bareme} pts</Badge>
+      {/* ── Couverture ───────────────────────────────────────────────────── */}
+      <section className="flex flex-col rounded-[14px] bg-ink px-5 py-6 text-white md:px-10 md:py-9">
+        <span aria-hidden className="mb-4 flex items-center gap-1.5">
+          {["bg-green", "bg-teal", "bg-coral"].map((c) => (
+            <span key={c} className={`h-2.5 w-2.5 rounded-full ${c}`} />
+          ))}
+        </span>
+        <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-white/50">
+          {[nature, controle.codeOperationnel].filter(Boolean).join(" · ")}
+        </p>
+        <h1 className="mt-2 text-balance font-display text-[24px] font-bold leading-[1.15] tracking-[-0.02em] md:text-[32px]">
+          {controle.titre ?? controle.moduleNom ?? "Contrôle"}
+        </h1>
+        {controle.moduleNom && controle.titre ? (
+          <p className="mt-2 text-[15px] leading-relaxed text-white/70">
+            {controle.moduleNom}
+          </p>
+        ) : null}
+        <dl className="mt-5 grid grid-cols-3 gap-2 rounded-[10px] bg-white/[0.06] px-4 py-3 text-[13px]">
+          {[
+            ["Durée", controle.duree_heures ? `${controle.duree_heures} h` : "—"],
+            ["Barème", `${String(total).replace(".", ",")} pts`],
+            ["Questions", String(sujet.length)],
+          ].map(([k, v]) => (
+            <div key={k} className="flex flex-col gap-0.5">
+              <dt className="font-mono text-[10.5px] uppercase tracking-[0.12em] text-white/45">
+                {k}
+              </dt>
+              <dd className="font-semibold tabular-nums text-white/90">{v}</dd>
             </div>
+          ))}
+        </dl>
+      </section>
 
-            <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-ink">
-              {q.enonce}
-            </p>
+      {controle.consignes?.trim() ? (
+        <section className="rounded-[14px] border border-border bg-surface px-5 py-4 md:px-6">
+          <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-slate-light">
+            Consignes
+          </p>
+          <div className="mt-2">
+            <CorpsRedige texte={controle.consignes} />
+          </div>
+        </section>
+      ) : null}
 
-            {/* Les données de la question, sur l'écran même où l'on répond :
-                le contrôle se passe en ligne, et le stagiaire n'a rien
-                d'autre sous la main que ce qui s'affiche ici. */}
-            {q.donnees?.trim() ? (
-              <DonneesQuestion texte={q.donnees} />
-            ) : null}
+      {/* ── Les questions ────────────────────────────────────────────────── */}
+      <ol className="flex flex-col gap-6">
+        {sujet.map((q, i) => {
+          const repondu = Boolean((reponses[q.id] ?? "").trim());
+          return (
+            <li
+              key={q.id}
+              id={`question-${i + 1}`}
+              className="scroll-mt-24 rounded-[14px] border border-border bg-surface px-4 py-5 md:px-7 md:py-6"
+            >
+              <header className="flex items-baseline gap-3 border-b border-border-strong pb-2.5">
+                <span
+                  className={`font-display text-[28px] font-bold leading-none ${
+                    COULEURS_NUMERO[i % COULEURS_NUMERO.length]
+                  }`}
+                >
+                  {i + 1}
+                </span>
+                <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-slate-light">
+                  {LIBELLE_TYPE[q.type ?? "ouverte"] ?? "Question"}
+                </span>
+                <span className="ml-auto whitespace-nowrap rounded-full bg-wash-strong px-2.5 py-[3px] font-mono text-[12.5px] font-semibold text-ink">
+                  {points(Number(q.bareme) || 0)}
+                </span>
+              </header>
 
-            {q.type === "qcm" && q.options?.length ? (
-              <fieldset className="mt-3">
-                <legend className="text-xs text-slate">
-                  Cochez la ou les bonnes propositions
-                </legend>
-                <div className="mt-2 space-y-2">
-                  {q.options.map((opt, j) => {
-                    const cochees = (reponses[q.id] ?? "")
-                      .split("\n")
-                      .filter(Boolean);
-                    const coche = cochees.includes(opt.texte);
-                    return (
-                      <label
-                        key={j}
-                        className="flex min-h-[44px] cursor-pointer items-center gap-3 rounded-lg border border-border px-3 py-2"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={coche}
-                          onChange={(e) => {
-                            const restant = cochees.filter((c) => c !== opt.texte);
-                            setReponses((r) => ({
-                              ...r,
-                              [q.id]: (e.target.checked
-                                ? [...restant, opt.texte]
-                                : restant
-                              ).join("\n"),
-                            }));
-                          }}
-                          className="h-5 w-5 shrink-0 accent-ink"
-                        />
-                        <span className="text-sm text-ink">{opt.texte}</span>
-                      </label>
-                    );
-                  })}
+              <div className="mt-4 [&_li]:text-ink [&_p]:font-medium [&_p]:text-ink md:[&_p]:text-[15.5px]">
+                <CorpsRedige texte={q.enonce} />
+              </div>
+
+              {/* Les données de la question, sur l'écran même où l'on répond :
+                  le contrôle se passe en ligne, et le stagiaire n'a rien
+                  d'autre sous la main que ce qui s'affiche ici. */}
+              {q.donnees?.trim() ? <DonneesQuestion texte={q.donnees} /> : null}
+
+              {q.type === "qcm" && q.options?.length ? (
+                <fieldset className="mt-5">
+                  <legend className="font-mono text-[11px] uppercase tracking-[0.12em] text-slate-light">
+                    Cochez la ou les bonnes propositions
+                  </legend>
+                  <div className="mt-2.5 flex flex-col gap-2">
+                    {q.options.map((opt, j) => {
+                      const cochees = (reponses[q.id] ?? "")
+                        .split("\n")
+                        .filter(Boolean);
+                      const coche = cochees.includes(opt.texte);
+                      return (
+                        <label
+                          key={j}
+                          className={`flex min-h-[48px] cursor-pointer items-center gap-3 rounded-[10px] border px-3.5 py-2.5 transition-colors duration-150 ${
+                            coche
+                              ? "border-ink bg-wash"
+                              : "border-border hover:border-border-strong"
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={coche}
+                            onChange={(e) => {
+                              const restant = cochees.filter(
+                                (c) => c !== opt.texte,
+                              );
+                              ecrire(
+                                q.id,
+                                (e.target.checked
+                                  ? [...restant, opt.texte]
+                                  : restant
+                                ).join("\n"),
+                              );
+                            }}
+                            className="h-5 w-5 shrink-0 accent-ink"
+                          />
+                          <span className="text-[15px] leading-snug text-ink md:text-[14.5px]">
+                            {opt.texte}
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </fieldset>
+              ) : (
+                <div className="mt-5 overflow-hidden rounded-[12px] border border-border-strong bg-paper-alt focus-within:border-ink">
+                  <label
+                    htmlFor={`reponse-${q.id}`}
+                    className="flex items-center gap-2 border-b border-separator bg-surface px-4 py-2 font-mono text-[11px] uppercase tracking-[0.12em] text-slate-light"
+                  >
+                    <PenLine className="h-3.5 w-3.5" aria-hidden />
+                    Votre réponse
+                    <span className="ml-auto normal-case tracking-normal">
+                      {(reponses[q.id] ?? "").trim()
+                        ? `${(reponses[q.id] ?? "").trim().split(/\s+/).length} mots`
+                        : ""}
+                    </span>
+                  </label>
+                  <AutoTextarea
+                    id={`reponse-${q.id}`}
+                    value={reponses[q.id] ?? ""}
+                    minRows={lignesDeReponse(q)}
+                    onChange={(e) => ecrire(q.id, e.target.value)}
+                    placeholder={
+                      q.type === "exercice"
+                        ? "Rédigez votre réponse ici. Prenez le temps : vous pouvez aller à la ligne, faire des listes (- …) ou des tableaux."
+                        : "Rédigez votre réponse ici…"
+                    }
+                    aria-label={`Réponse à la question ${i + 1}`}
+                    className="!rounded-none !border-0 !bg-transparent px-4 py-3 text-[16px] leading-[1.75] !shadow-none focus:!ring-0 md:text-[15px]"
+                  />
                 </div>
-              </fieldset>
-            ) : (
-              <AutoTextarea
-                value={reponses[q.id] ?? ""}
-                minRows={3}
-                onChange={(e) =>
-                  setReponses((r) => ({ ...r, [q.id]: e.target.value }))
-                }
-                placeholder="Votre réponse…"
-                aria-label={`Réponse à la question ${i + 1}`}
-                className="mt-3"
-              />
-            )}
-          </li>
-        ))}
+              )}
+
+              {repondu ? (
+                <p className="mt-2 flex items-center gap-1.5 text-[12.5px] text-green-dark">
+                  <Check className="h-3.5 w-3.5" aria-hidden />
+                  Répondue
+                </p>
+              ) : null}
+            </li>
+          );
+        })}
       </ol>
 
-      <div className="sticky bottom-24 mt-5 rounded-[14px] border border-border bg-surface p-3 shadow-ancre">
-        <p className="text-xs text-slate">
-          {repondues} question{repondues > 1 ? "s" : ""} sur {sujet.length}{" "}
-          répondue{repondues > 1 ? "s" : ""}
-        </p>
-        <Button
-          icon={Send}
-          className="mt-2 min-h-[44px] w-full"
-          onClick={() => setConfirme(true)}
-          disabled={busy || repondues === 0}
+      {/* ── Remise ───────────────────────────────────────────────────────── */}
+      <div className="sticky bottom-24 z-10 flex flex-col gap-2.5 rounded-[14px] border border-border bg-surface p-3 shadow-ancre md:bottom-4 md:flex-row md:items-center md:gap-4">
+        <nav
+          aria-label="Aller à une question"
+          className="flex flex-wrap gap-1.5"
         >
-          {busy ? "Remise…" : "Rendre ma copie"}
-        </Button>
+          {sujet.map((q, i) => {
+            const fait = Boolean((reponses[q.id] ?? "").trim());
+            return (
+              <a
+                key={q.id}
+                href={`#question-${i + 1}`}
+                aria-label={`Question ${i + 1}${fait ? ", répondue" : ""}`}
+                className={`flex h-8 min-w-8 items-center justify-center rounded-[8px] px-2 font-mono text-[12.5px] font-semibold ${
+                  fait
+                    ? "bg-ink text-white"
+                    : "border border-border text-slate-2 hover:border-border-strong"
+                }`}
+              >
+                {i + 1}
+              </a>
+            );
+          })}
+        </nav>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 md:ml-auto md:flex-nowrap">
+          <p className="text-[13px] text-slate">
+            {repondues} sur {sujet.length} répondue{repondues > 1 ? "s" : ""}
+            {gardee && repondues > 0 ? " · gardée sur cet appareil" : ""}
+          </p>
+          <Button
+            icon={Send}
+            className="min-h-[44px] max-md:w-full"
+            onClick={() => setConfirme(true)}
+            disabled={busy || repondues === 0}
+          >
+            {busy ? "Remise…" : "Rendre ma copie"}
+          </Button>
+        </div>
       </div>
 
       <ConfirmModal
