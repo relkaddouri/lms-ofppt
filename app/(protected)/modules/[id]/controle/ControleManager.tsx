@@ -9,8 +9,9 @@ import {
   updateControle,
   setControleStatut,
   deleteControle,
+  dupliquerControle,
+  type ContenuVersion,
   type Controle,
-  type Question,
   type TypeControle,
   type TypeEfm,
   type FormatControle,
@@ -21,6 +22,7 @@ import {
 import CopiesManager from "./CopiesManager";
 import ContenuCouvert from "./ContenuCouvert";
 import { AlertesQuestion, ChampDonnees } from "./ChampDonnees";
+import VersionsControle from "./VersionsControle";
 import { Stepper, NavigationEtapes, ETAPES } from "./Stepper";
 import CarteChoix, { type Choix } from "./CarteChoix";
 import Segments from "@/components/ui/Segments";
@@ -35,8 +37,10 @@ import { formatDateJour } from "@/lib/format";
 import { libelleModule } from "@/lib/modules";
 import {
   BadgeCheck,
+  Copy,
   Download,
   History,
+  Layers,
   Plus,
   Save,
   Sparkles,
@@ -94,6 +98,56 @@ function newQuestion(): DraftQuestion {
 
 function optionVide(): OptionQcm {
   return { texte: "", correcte: false };
+}
+
+/**
+ * Ce qui compte pour savoir s'il reste quelque chose à enregistrer : tout ce
+ * que l'enregistrement écrit, sans les identifiants locaux des questions.
+ */
+function signature(e: {
+  titre: string;
+  consignes: string;
+  duree: number;
+  type: TypeControle;
+  typeEfm: TypeEfm;
+  format: FormatControle;
+  datePrevue: string;
+  questions: DraftQuestion[];
+}): string {
+  return JSON.stringify([
+    e.titre,
+    e.consignes,
+    Number(e.duree),
+    e.type,
+    e.type === "EFM" ? e.typeEfm : null,
+    e.format,
+    e.datePrevue,
+    e.questions.map(({ id: _id, ...q }) => ({ ...q, bareme: Number(q.bareme) || 0 })),
+  ]);
+}
+
+/** Une question enregistrée, ou figée dans une version, rendue à l'éditeur. */
+function versBrouillon(q: {
+  type?: TypeQuestion | null;
+  enonce?: string | null;
+  donnees?: string | null;
+  bareme?: number | string | null;
+  options?: OptionQcm[] | null;
+  corrige?: string | null;
+  difficulte?: Difficulte;
+  justification_bareme?: string | null;
+}): DraftQuestion {
+  return {
+    id: crypto.randomUUID(),
+    type: q.type ?? "ouverte",
+    enonce: q.enonce ?? "",
+    donnees: q.donnees ?? "",
+    bareme: Number(q.bareme) || 0,
+    options: Array.isArray(q.options) ? q.options : [],
+    corrige: q.corrige ?? "",
+    difficulte: q.difficulte ?? null,
+    justification: q.justification_bareme ?? "",
+  };
 }
 
 /**
@@ -186,7 +240,6 @@ export default function ControleManager({
   const [loading, setLoading] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [tab, setTab] = useState<"editeur" | "copies">("editeur");
-  const [confirmBareme, setConfirmBareme] = useState(false);
   const [avertissements, setAvertissements] = useState<string[]>([]);
   const [instruction, setInstruction] = useState("");
   // Préparer un contrôle se fait en quatre temps : voir ce qui est couvert,
@@ -210,6 +263,102 @@ export default function ControleManager({
   }
   const [confirmSuppression, setConfirmSuppression] = useState(false);
   const toast = useToast();
+
+  // ── Enregistré ou non ────────────────────────────────────────────────────
+  //
+  // La signature de ce qui a été chargé ou enregistré en dernier ; l'éditeur
+  // est « modifié » dès que la sienne en diffère.
+  const [reference, setReference] = useState<string | null>(null);
+  // Le numéro de la version rechargée, tant qu'on ne l'a pas enregistrée.
+  const [restaureDe, setRestaureDe] = useState<number | null>(null);
+  const [versionsOuvertes, setVersionsOuvertes] = useState(false);
+  const signatureCourante = signature({
+    titre,
+    consignes,
+    duree,
+    type,
+    typeEfm,
+    format,
+    datePrevue,
+    questions,
+  });
+  const modifie =
+    !loading &&
+    (reference === null
+      ? questions.length > 0 || restaureDe !== null
+      : signatureCourante !== reference);
+
+  // Quitter la page avec un brouillon non enregistré : le navigateur demande.
+  useEffect(() => {
+    if (!modifie) return;
+    const retenir = (e: BeforeUnloadEvent) => e.preventDefault();
+    window.addEventListener("beforeunload", retenir);
+    return () => window.removeEventListener("beforeunload", retenir);
+  }, [modifie]);
+
+  /** Recharge un contenu complet — enregistré ou figé dans une version. */
+  function appliquer(c: {
+    titre: string | null;
+    consignes: string | null;
+    duree_heures: number;
+    type: TypeControle;
+    type_efm: TypeEfm | null;
+    format: FormatControle;
+    date_prevue: string | null;
+    questions: Parameters<typeof versBrouillon>[0][];
+  }): string {
+    const etat = {
+      titre: c.titre ?? "",
+      consignes: c.consignes ?? "",
+      duree: Number(c.duree_heures) || 1,
+      type: c.type,
+      typeEfm: c.type_efm ?? ("local" as TypeEfm),
+      format: c.format,
+      datePrevue: c.date_prevue ?? "",
+      questions: c.questions.map(versBrouillon),
+    };
+    setTitre(etat.titre);
+    setConsignes(etat.consignes);
+    setDuree(etat.duree);
+    setType(etat.type);
+    setTypeEfm(etat.typeEfm);
+    setFormat(etat.format);
+    setDatePrevue(etat.datePrevue);
+    ecrireQuestions(etat.questions);
+    setIssuDuModele(false);
+    setAvertissements([]);
+    return signature(etat);
+  }
+
+  function restaurerVersion(contenu: ContenuVersion, numero: number) {
+    appliquer(contenu);
+    setRestaureDe(numero);
+    setVersionsOuvertes(false);
+    setEtape(3);
+    setNotice(
+      `Version ${numero} rechargée dans l'éditeur. Relisez-la, puis enregistrez pour en faire la version courante.`,
+    );
+  }
+
+  async function dupliquer() {
+    if (!activeId) return;
+    if (modifie) {
+      toast("Enregistrez d'abord : la variante copie le contrôle enregistré.", "error");
+      return;
+    }
+    setBusy(true);
+    try {
+      const id = await dupliquerControle(activeId, moduleId);
+      router.refresh();
+      setActiveId(id);
+      setEtape(3);
+      toast("Variante créée — vous travaillez maintenant sur la copie.");
+    } catch (err) {
+      toast(err instanceof Error ? err.message : "Erreur inattendue", "error");
+    } finally {
+      setBusy(false);
+    }
+  }
 
   // PRD §4.7 : 20 points pour un contrôle continu, 40 pour une épreuve de fin
   // de module. Le seuil suit donc le type choisi, il n'est plus constant.
@@ -235,27 +384,9 @@ export default function ControleManager({
     try {
       const c = await getControle(id);
       if (!c) return;
-      setTitre(c.titre ?? "");
-      setConsignes(c.consignes ?? "");
-      setDuree(Number(c.duree_heures) || 1);
       setStatut(c.statut);
-      setType(c.type);
-      setTypeEfm(c.type_efm ?? "local");
-      setFormat(c.format);
-      setDatePrevue(c.date_prevue ?? "");
-      ecrireQuestions(
-        c.questions.map((q: Question) => ({
-          id: q.id,
-          type: q.type ?? "ouverte",
-          enonce: q.enonce ?? "",
-          donnees: q.donnees ?? "",
-          bareme: Number(q.bareme) || 0,
-          options: Array.isArray(q.options) ? q.options : [],
-          corrige: q.corrige ?? "",
-          difficulte: q.difficulte ?? null,
-          justification: q.justification_bareme ?? "",
-        })),
-      );
+      setReference(appliquer(c));
+      setRestaureDe(null);
       setNotice(null);
     } finally {
       setLoading(false);
@@ -281,6 +412,8 @@ export default function ControleManager({
     setDatePrevue("");
     setQuestions([]);
     setNotice(null);
+    setReference(null);
+    setRestaureDe(null);
   }
 
   /**
@@ -328,9 +461,14 @@ export default function ControleManager({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Erreur de génération");
 
-      // Un raffinage retravaille le contrôle ouvert : on ne détache pas
-      // l'enregistrement en cours, sinon « Enregistrer » en créerait un second.
-      if (!raffiner) setActiveId(null);
+      // Un brouillon ouvert reste attaché : régénérer, puis enregistrer, en
+      // fait une nouvelle version, et la précédente reste dans l'historique.
+      // Un contrôle validé ne se régénère pas en place : la génération part
+      // sur un nouveau contrôle.
+      if (!raffiner && statut === "valide") {
+        setActiveId(null);
+        setReference(null);
+      }
       setTitre(data.titre ?? `Contrôle — ${moduleNom}`);
       setConsignes(data.consignes ?? "");
       setDuree(genDuree);
@@ -356,8 +494,13 @@ export default function ControleManager({
       setAvertissements(
         Array.isArray(data.avertissements) ? data.avertissements : [],
       );
+      setRestaureDe(null);
       setNotice(
-        `Contrôle généré — barème total : ${data.totalBareme ?? "?"} pts (vérifiez qu'il tombe sur ${totalAttendu}).`,
+        `Contrôle généré — barème total : ${data.totalBareme ?? "?"} pts (vérifiez qu'il tombe sur ${totalAttendu}).${
+          activeId && statut !== "valide"
+            ? " En l'enregistrant, il devient une nouvelle version du brouillon ouvert ; la précédente reste disponible dans « Versions »."
+            : ""
+        }`,
       );
     } catch (err) {
       toast(err instanceof Error ? err.message : "Erreur inattendue", "error");
@@ -366,26 +509,20 @@ export default function ControleManager({
     }
   }
 
+  /**
+   * Un brouillon s'enregistre à tout moment, incomplet s'il le faut (PRD
+   * §4.7bis) : barème qui ne tombe pas juste, QCM sans propositions, titre
+   * vide. C'est la validation qui exige un contrôle complet.
+   */
   function handleSave() {
-    if (!titre.trim()) {
-      toast("Le titre est requis.", "error");
-      return;
-    }
-    // Un barème hors du total attendu n'est pas bloquant, mais il demande une
-    // confirmation explicite.
-    if (totalBareme !== totalAttendu) {
-      setConfirmBareme(true);
-      return;
-    }
     void enregistrer();
   }
 
   async function enregistrer() {
-    setConfirmBareme(false);
     setBusy(true);
     try {
       const payload = {
-        titre,
+        titre: titre.trim() || `Contrôle — ${moduleNom}`,
         consignes,
         duree_heures: duree,
         type,
@@ -403,14 +540,27 @@ export default function ControleManager({
           justification_bareme: q.justification || null,
         })),
       };
+      let message = "Brouillon enregistré.";
       if (activeId) {
-        await updateControle(activeId, moduleId, payload);
+        const numero = await updateControle(activeId, moduleId, payload, restaureDe);
+        message =
+          numero === null
+            ? "Rien n'avait changé depuis le dernier enregistrement."
+            : restaureDe
+              ? `Version ${restaureDe} rétablie — enregistrée comme version ${numero}.`
+              : `Brouillon enregistré — version ${numero}.`;
       } else {
         const id = await saveControle(groupeId, moduleId, payload);
+        // Le rechargement qui suit le changement d'identifiant retrouve
+        // exactement ce qui vient d'être écrit.
         setActiveId(id);
+        message = "Brouillon enregistré — version 1.";
       }
-      setNotice("Contrôle enregistré (brouillon).");
-      toast("Contrôle enregistré");
+      if (!titre.trim()) setTitre(payload.titre);
+      setReference(signature({ titre: payload.titre, consignes, duree, type, typeEfm, format, datePrevue, questions }));
+      setRestaureDe(null);
+      setNotice(message);
+      toast(message);
       router.refresh();
     } catch (err) {
       toast(err instanceof Error ? err.message : "Erreur inattendue", "error");
@@ -420,7 +570,7 @@ export default function ControleManager({
   }
 
   async function handleValidate() {
-    if (!activeId) {
+    if (!activeId || modifie) {
       toast("Enregistrez d'abord le contrôle avant de le valider.", "error");
       return;
     }
@@ -576,14 +726,53 @@ export default function ControleManager({
         >
           Générer un contrôle
         </Button>
-        <div className="ml-auto flex items-center gap-3">
+        <div className="ml-auto flex flex-wrap items-center justify-end gap-x-3 gap-y-2 max-md:ml-0 max-md:w-full max-md:justify-start">
+          <span
+            aria-live="polite"
+            className={`font-mono text-[12.5px] ${modifie ? "text-coral-dark" : "text-slate-light"}`}
+          >
+            {loading
+              ? "Chargement…"
+              : modifie
+                ? restaureDe
+                  ? `Version ${restaureDe} rechargée · non enregistrée`
+                  : "Modifications non enregistrées"
+                : activeId
+                  ? "Tout est enregistré"
+                  : ""}
+          </span>
+          <Button
+            size="sm"
+            variant="ghost"
+            icon={Layers}
+            onClick={() => setVersionsOuvertes(true)}
+            disabled={!activeId || loading}
+          >
+            Versions
+          </Button>
+          <Button
+            size="sm"
+            icon={Save}
+            onClick={handleSave}
+            disabled={busy || loading || (!modifie && Boolean(activeId))}
+          >
+            Enregistrer
+          </Button>
           <select
             value={activeId ?? ""}
             onChange={(e) => {
+              if (
+                modifie &&
+                !window.confirm(
+                  "Les modifications non enregistrées seront perdues. Continuer ?",
+                )
+              ) {
+                return;
+              }
               if (e.target.value === "__new") handleNew();
               else if (e.target.value) setActiveId(e.target.value);
             }}
-            className={`${inputClass} w-56`}
+            className={`${inputClass} !w-64 max-md:!w-full`}
           >
             <option value="__new">— Nouveau contrôle —</option>
             {controles.map((c) => (
@@ -1407,6 +1596,15 @@ export default function ControleManager({
                       Corrigé (PDF)
                     </Button>
                     <Button
+                      variant="ghost"
+                      size="sm"
+                      icon={Copy}
+                      onClick={dupliquer}
+                      disabled={busy || !activeId}
+                    >
+                      Dupliquer en variante
+                    </Button>
+                    <Button
                       variant="danger"
                       size="sm"
                       icon={Trash2}
@@ -1449,14 +1647,12 @@ export default function ControleManager({
         </div>
       )}
 
-      <ConfirmModal
-        open={confirmBareme}
-        onClose={() => setConfirmBareme(false)}
-        onConfirm={() => void enregistrer()}
-        busy={busy}
-        title={`Barème hors ${totalAttendu} points`}
-        message={`Le barème total est de ${totalBareme} points (attendu : ${totalAttendu}). Enregistrer quand même ?`}
-        confirmLabel="Enregistrer quand même"
+      <VersionsControle
+        open={versionsOuvertes}
+        onClose={() => setVersionsOuvertes(false)}
+        controleId={activeId}
+        modifie={modifie}
+        onRestaurer={restaurerVersion}
       />
 
       <ConfirmModal

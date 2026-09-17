@@ -6,6 +6,7 @@ import { formatDate, formatDateJour } from "@/lib/format";
 import { dureeEnTexte, finEpreuve, formatHeure } from "@/lib/creneaux";
 import type { Identification, ResultatControle } from "@/lib/resultat";
 import { revalidatePath } from "next/cache";
+import type { Json } from "@/lib/supabase/database.types";
 
 export type TypeControle = "CC" | "EFM";
 export type TypeEfm = "local" | "regional";
@@ -89,12 +90,8 @@ function versLigneQuestion(q: QuestionInput, controleId: string, i: number) {
           }))
       : null;
 
-  if (q.type === "qcm" && (!options || options.length < 2)) {
-    throw new Error(
-      `La question ${i + 1} est un QCM : elle doit comporter au moins deux propositions.`,
-    );
-  }
-
+  // Un QCM incomplet s'enregistre : un brouillon n'a pas à être fini. C'est
+  // la validation qui l'exige (`setControleStatut`), pas l'enregistrement.
   return {
     controle_id: controleId,
     type: q.type,
@@ -209,12 +206,186 @@ function qualifieEfm(input: ControleInput): TypeEfm | null {
   return input.type_efm;
 }
 
+// ── Versions (PRD §4.7bis, migration 089) ────────────────────────────────
+
+export type OrigineVersion = "enregistrement" | "restauration" | "duplication";
+
+export type VersionControle = {
+  id: string;
+  numero: number;
+  origine: OrigineVersion;
+  source_numero: number | null;
+  nb_questions: number;
+  total_bareme: number;
+  created_at: string;
+};
+
+export type ContenuVersion = {
+  titre: string | null;
+  consignes: string | null;
+  duree_heures: number;
+  type: TypeControle;
+  type_efm: TypeEfm | null;
+  format: FormatControle;
+  date_prevue: string | null;
+  questions: QuestionInput[];
+};
+
+type Client = Awaited<ReturnType<typeof createClient>>;
+
+/** Ce qu'une version fige : l'en-tête et les questions telles qu'écrites en base. */
+function photographie(
+  input: ControleInput,
+  lignes: ReturnType<typeof versLigneQuestion>[],
+): ContenuVersion {
+  return {
+    titre: input.titre,
+    consignes: input.consignes || null,
+    duree_heures: Number(input.duree_heures),
+    type: input.type,
+    type_efm: qualifieEfm(input),
+    format: input.format,
+    date_prevue: input.date_prevue || null,
+    questions: lignes.map((l) => ({
+      type: l.type,
+      enonce: l.enonce,
+      donnees: l.donnees,
+      bareme: Number(l.bareme),
+      options: l.options ?? [],
+      corrige: l.corrige,
+      difficulte: l.difficulte,
+      justification_bareme: l.justification_bareme,
+    })),
+  };
+}
+
+/**
+ * Une écriture comparable : clés triées, nombres normalisés. `jsonb` réordonne
+ * les clés à sa façon ; deux photographies identiques doivent pourtant se
+ * reconnaître.
+ */
+function empreinte(v: unknown): string {
+  if (Array.isArray(v)) return `[${v.map(empreinte).join(",")}]`;
+  if (v && typeof v === "object") {
+    return `{${Object.keys(v)
+      .sort()
+      .map((k) => `${JSON.stringify(k)}:${empreinte((v as Record<string, unknown>)[k])}`)
+      .join(",")}}`;
+  }
+  if (typeof v === "string" && v.trim() !== "" && !Number.isNaN(Number(v)) && /^-?\d+(\.\d+)?$/.test(v)) {
+    return String(Number(v));
+  }
+  return JSON.stringify(v ?? null);
+}
+
+/**
+ * Ajoute une version, sauf si rien n'a changé depuis la dernière : cliquer deux
+ * fois sur « Enregistrer » ne doit pas remplir l'historique de doublons.
+ * Une restauration ou une duplication est toujours consignée — c'est un
+ * événement, même quand le contenu revient à l'identique.
+ */
+async function consignerVersion(
+  supabase: Client,
+  controleId: string,
+  contenu: ContenuVersion,
+  origine: OrigineVersion,
+  sourceNumero: number | null = null,
+): Promise<number | null> {
+  const { data: derniere, error } = await supabase
+    .from("versions_controle")
+    .select("numero, contenu")
+    .eq("controle_id", controleId)
+    .order("numero", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+
+  if (
+    origine === "enregistrement" &&
+    derniere &&
+    empreinte(derniere.contenu) === empreinte(contenu)
+  ) {
+    return null;
+  }
+
+  const numero = (derniere?.numero ?? 0) + 1;
+  const { error: errIns } = await supabase.from("versions_controle").insert({
+    controle_id: controleId,
+    numero,
+    origine,
+    source_numero: sourceNumero,
+    contenu: contenu as unknown as Json,
+    nb_questions: contenu.questions.length,
+    total_bareme: contenu.questions.reduce((t, q) => t + (Number(q.bareme) || 0), 0),
+  });
+  if (errIns) throw new Error(errIns.message);
+  return numero;
+}
+
+export async function getVersionsControle(
+  controleId: string,
+): Promise<VersionControle[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("versions_controle")
+    .select("id, numero, origine, source_numero, nb_questions, total_bareme, created_at")
+    .eq("controle_id", controleId)
+    .order("numero", { ascending: false });
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((v) => ({
+    ...v,
+    origine: v.origine as OrigineVersion,
+    total_bareme: Number(v.total_bareme),
+  }));
+}
+
+export async function getContenuVersion(
+  versionId: string,
+): Promise<(ContenuVersion & { numero: number }) | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("versions_controle")
+    .select("numero, contenu")
+    .eq("id", versionId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data) return null;
+  const c = data.contenu as unknown as ContenuVersion;
+  return {
+    ...c,
+    numero: data.numero,
+    questions: (c.questions ?? []).map((q) => ({
+      ...q,
+      options: Array.isArray(q.options) ? q.options : [],
+    })),
+  };
+}
+
+/**
+ * Un contrôle dont des stagiaires ont déjà rendu une copie ne se réécrit plus :
+ * les réponses sont rangées par question, et réenregistrer recrée les
+ * questions. On en fait une variante.
+ */
+async function refuserSiCopies(supabase: Client, controleId: string) {
+  const { count, error } = await supabase
+    .from("passations_controle")
+    .select("id", { count: "exact", head: true })
+    .eq("controle_id", controleId);
+  if (error) throw new Error(error.message);
+  if ((count ?? 0) > 0) {
+    throw new Error(
+      "Ce contrôle a déjà des copies : il ne peut plus être modifié. Dupliquez-le pour en faire une variante.",
+    );
+  }
+}
+
 export async function saveControle(
   groupeId: string,
   moduleId: string,
   input: ControleInput,
 ): Promise<string> {
   const supabase = await createClient();
+  const lignes = input.questions.map((q, i) => versLigneQuestion(q, "", i));
 
   const { data, error } = await supabase
     .from("controles")
@@ -235,23 +406,35 @@ export async function saveControle(
 
   if (error) throw new Error(error.message);
 
-  if (input.questions.length) {
+  if (lignes.length) {
     const { error: errQ } = await supabase
       .from("questions_controle")
-      .insert(input.questions.map((q, i) => versLigneQuestion(q, data.id, i)));
+      .insert(lignes.map((l) => ({ ...l, controle_id: data.id })));
     if (errQ) throw new Error(errQ.message);
   }
+
+  await consignerVersion(supabase, data.id, photographie(input, lignes), "enregistrement");
 
   revalidatePath(`/modules/${moduleId}/controle`);
   return data.id;
 }
 
+/**
+ * Enregistre l'état affiché et consigne une version.
+ *
+ * `restaureDe` : le numéro de la version rechargée dans l'éditeur, quand
+ * c'est un retour en arrière qu'on enregistre — l'historique le dit.
+ * Rend le numéro de la version créée, ou null si rien n'avait changé.
+ */
 export async function updateControle(
   id: string,
   moduleId: string,
   input: ControleInput,
-) {
+  restaureDe: number | null = null,
+): Promise<number | null> {
   const supabase = await createClient();
+  await refuserSiCopies(supabase, id);
+  const lignes = input.questions.map((q, i) => versLigneQuestion(q, id, i));
 
   const { error: errC } = await supabase
     .from("controles")
@@ -275,14 +458,101 @@ export async function updateControle(
 
   if (errDel) throw new Error(errDel.message);
 
-  if (input.questions.length) {
+  if (lignes.length) {
     const { error: errIns } = await supabase
       .from("questions_controle")
-      .insert(input.questions.map((q, i) => versLigneQuestion(q, id, i)));
+      .insert(lignes);
     if (errIns) throw new Error(errIns.message);
   }
 
+  const numero = await consignerVersion(
+    supabase,
+    id,
+    photographie(input, lignes),
+    restaureDe ? "restauration" : "enregistrement",
+    restaureDe,
+  );
+
   revalidatePath(`/modules/${moduleId}/controle`);
+  return numero;
+}
+
+/**
+ * Une variante : le contrôle tel qu'il est enregistré, copié en un brouillon
+ * neuf qui garde trace de son origine. Les copies des stagiaires restent sur
+ * l'original.
+ */
+export async function dupliquerControle(
+  controleId: string,
+  moduleId: string,
+): Promise<string> {
+  const source = await getControle(controleId);
+  if (!source) throw new Error("Contrôle introuvable.");
+
+  const supabase = await createClient();
+  const input: ControleInput = {
+    titre: `${source.titre ?? "Contrôle"} — variante`,
+    consignes: source.consignes ?? undefined,
+    duree_heures: Number(source.duree_heures),
+    type: source.type,
+    type_efm: source.type_efm,
+    format: source.format,
+    date_prevue: null,
+    questions: source.questions.map((q) => ({
+      type: q.type,
+      enonce: q.enonce ?? "",
+      donnees: q.donnees,
+      bareme: Number(q.bareme) || 0,
+      options: q.options,
+      corrige: q.corrige,
+      difficulte: q.difficulte,
+      justification_bareme: q.justification_bareme,
+    })),
+  };
+  const lignes = input.questions.map((q, i) => versLigneQuestion(q, "", i));
+
+  const { data, error } = await supabase
+    .from("controles")
+    .insert({
+      groupe_id: source.groupe_id,
+      module_id: source.module_id,
+      titre: input.titre,
+      consignes: input.consignes || null,
+      duree_heures: input.duree_heures,
+      type: input.type,
+      type_efm: qualifieEfm(input),
+      format: input.format,
+      statut: "brouillon",
+      duplique_de: source.id,
+    })
+    .select("id")
+    .single();
+  if (error) throw new Error(error.message);
+
+  if (lignes.length) {
+    const { error: errQ } = await supabase
+      .from("questions_controle")
+      .insert(lignes.map((l) => ({ ...l, controle_id: data.id })));
+    if (errQ) throw new Error(errQ.message);
+  }
+
+  const { data: derniere } = await supabase
+    .from("versions_controle")
+    .select("numero")
+    .eq("controle_id", source.id)
+    .order("numero", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  await consignerVersion(
+    supabase,
+    data.id,
+    photographie(input, lignes),
+    "duplication",
+    derniere?.numero ?? null,
+  );
+
+  revalidatePath(`/modules/${moduleId}/controle`);
+  return data.id;
 }
 
 export async function setControleStatut(
@@ -291,6 +561,30 @@ export async function setControleStatut(
   statut: "brouillon" | "valide",
 ) {
   const supabase = await createClient();
+
+  // Un brouillon peut être incomplet ; un contrôle validé, non.
+  if (statut === "valide") {
+    const { data: qs, error: errQ } = await supabase
+      .from("questions_controle")
+      .select("type, options, enonce, position")
+      .eq("controle_id", id)
+      .order("position");
+    if (errQ) throw new Error(errQ.message);
+    if (!qs || qs.length === 0) {
+      throw new Error("Un contrôle sans question ne peut pas être validé.");
+    }
+    qs.forEach((q, i) => {
+      if (!q.enonce?.trim()) {
+        throw new Error(`La question ${i + 1} n'a pas d'énoncé.`);
+      }
+      const options = Array.isArray(q.options) ? q.options : [];
+      if (q.type === "qcm" && options.length < 2) {
+        throw new Error(
+          `La question ${i + 1} est un QCM : elle doit comporter au moins deux propositions.`,
+        );
+      }
+    });
+  }
   const { error } = await supabase
     .from("controles")
     .update({ statut })
