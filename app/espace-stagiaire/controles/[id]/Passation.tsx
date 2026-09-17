@@ -30,6 +30,10 @@ import { ArrowLeft, Check, PenLine, Send } from "lucide-react";
  * Les propositions de QCM arrivent sans leur drapeau « correcte » — la base ne
  * le laisse pas sortir. Les réponses cochées sont stockées une par ligne,
  * forme que la correction compare côté serveur.
+ *
+ * `apercu` : le même écran, montré au formateur dans l'onglet « Aperçu » de
+ * son éditeur. On peut y cocher et y écrire pour éprouver la place de réponse,
+ * mais rien n'est gardé ni rendu.
  */
 
 const COULEURS_NUMERO = ["text-coral", "text-teal", "text-green", "text-ink"];
@@ -53,9 +57,11 @@ function lignesDeReponse(q: QuestionSujet): number {
 export default function Passation({
   controle,
   sujet,
+  apercu = false,
 }: {
   controle: ControleStagiaire;
   sujet: QuestionSujet[];
+  apercu?: boolean;
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -68,6 +74,7 @@ export default function Passation({
 
   // La copie en cours revient telle qu'on l'a laissée.
   useEffect(() => {
+    if (apercu) return;
     try {
       const brut = localStorage.getItem(cle);
       if (brut) {
@@ -89,7 +96,7 @@ export default function Passation({
   }, [cle]);
 
   useEffect(() => {
-    if (!restauree.current) return;
+    if (apercu || !restauree.current) return;
     try {
       localStorage.setItem(cle, JSON.stringify(reponses));
       setGardee(true);
@@ -132,17 +139,21 @@ export default function Passation({
   const nature =
     controle.type === "EFM"
       ? `EFM ${controle.type_efm === "regional" ? "régional" : "local"}`
-      : "Contrôle continu";
+      : controle.type === "TEST"
+        ? "Contrôle de test"
+        : "Contrôle continu";
 
   return (
     <div className="flex flex-col gap-6">
-      <Link
-        href="/espace-stagiaire/controles"
-        className="inline-flex min-h-[44px] items-center gap-1.5 self-start text-sm text-slate hover:text-ink"
-      >
-        <ArrowLeft className="h-4 w-4" aria-hidden />
-        Contrôles
-      </Link>
+      {apercu ? null : (
+        <Link
+          href="/espace-stagiaire/controles"
+          className="inline-flex min-h-[44px] items-center gap-1.5 self-start text-sm text-slate hover:text-ink"
+        >
+          <ArrowLeft className="h-4 w-4" aria-hidden />
+          Contrôles
+        </Link>
+      )}
 
       {/* ── Couverture ───────────────────────────────────────────────────── */}
       <section className="flex flex-col rounded-[14px] bg-ink px-5 py-6 text-white md:px-10 md:py-9">
@@ -337,13 +348,18 @@ export default function Passation({
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2 md:ml-auto md:flex-nowrap">
           <p className="text-[13px] text-slate">
             {repondues} sur {sujet.length} répondue{repondues > 1 ? "s" : ""}
-            {gardee && repondues > 0 ? " · gardée sur cet appareil" : ""}
+            {apercu
+              ? " · aperçu, rien n'est enregistré"
+              : gardee && repondues > 0
+                ? " · gardée sur cet appareil"
+                : ""}
           </p>
           <Button
             icon={Send}
             className="min-h-[44px] max-md:w-full"
             onClick={() => setConfirme(true)}
-            disabled={busy || repondues === 0}
+            disabled={apercu || busy || repondues === 0}
+            title={apercu ? "Aperçu : la remise est désactivée." : undefined}
           >
             {busy ? "Remise…" : "Rendre ma copie"}
           </Button>
