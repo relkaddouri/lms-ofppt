@@ -4,7 +4,7 @@ import { getMesControles } from "@/app/actions/controles-stagiaire";
 import { formatDateJour } from "@/lib/format";
 import { baremeAttendu, noteSur20, testOuvert } from "@/lib/controles";
 import { instantEtablissement } from "@/lib/format";
-import { formatHeure } from "@/lib/creneaux";
+import { dureeEnTexte, formatHeure } from "@/lib/creneaux";
 import EnConstruction from "../EnConstruction";
 
 export const metadata = { title: "Contrôles" };
@@ -116,7 +116,7 @@ export default async function ControlesPage() {
                 {c.duree_heures ? (
                   <span className="inline-flex items-center gap-[5px] font-mono text-[12.5px] text-slate-light">
                     <Clock size={12} aria-hidden />
-                    {c.duree_heures} h
+                    {dureeEnTexte(Number(c.duree_heures))}
                   </span>
                 ) : null}
               </span>

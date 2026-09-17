@@ -8,7 +8,7 @@ import AutoTextarea from "@/components/ui/AutoTextarea";
 import DonneesQuestion from "@/components/DonneesQuestion";
 import { CorpsRedige } from "@/components/DocumentRedige";
 import Modal, { ConfirmModal } from "@/components/ui/Modal";
-import { formatHeure } from "@/lib/creneaux";
+import { dureeEnTexte, formatHeure } from "@/lib/creneaux";
 import { instantEtablissement } from "@/lib/format";
 import { useToast } from "@/components/ui/Toast";
 import type {
@@ -276,7 +276,7 @@ export default function Passation({
         ) : null}
         <dl className="mt-5 grid grid-cols-3 gap-2 rounded-[10px] bg-white/[0.06] px-4 py-3 text-[13px]">
           {[
-            ["Durée", controle.duree_heures ? `${controle.duree_heures} h` : "—"],
+            ["Durée", controle.duree_heures ? dureeEnTexte(Number(controle.duree_heures)) : "—"],
             ["Barème", `${String(total).replace(".", ",")} pts`],
             ["Questions", String(sujet.length)],
           ].map(([k, v]) => (

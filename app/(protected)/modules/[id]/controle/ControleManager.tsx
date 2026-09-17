@@ -38,6 +38,7 @@ import Button, { buttonStyles } from "@/components/ui/Button";
 import { inputStyles } from "@/components/ui/Input";
 import { ConfirmModal } from "@/components/ui/Modal";
 import { formatDateJour } from "@/lib/format";
+import { dureeEnTexte } from "@/lib/creneaux";
 import { libelleModule } from "@/lib/modules";
 import {
   BadgeCheck,
@@ -256,7 +257,9 @@ export default function ControleManager({
     setIssuDuModele(false);
     ecrireQuestions(v);
   };
-  const [genDuree, setGenDuree] = useState(2);
+  // Ce que le formateur tape dans le champ Durée, tel quel : « 1, » est une
+  // saisie en cours, pas un nombre. La durée elle-même vit dans `duree`.
+  const [dureeSaisie, setDureeSaisie] = useState("1");
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
@@ -371,6 +374,7 @@ export default function ControleManager({
     setTitre(etat.titre);
     setConsignes(etat.consignes);
     setDuree(etat.duree);
+    setDureeSaisie(String(etat.duree).replace(".", ","));
     setType(etat.type);
     setTypeEfm(etat.typeEfm);
     setFormat(etat.format);
@@ -473,6 +477,7 @@ export default function ControleManager({
     setTitre(`Contrôle — ${moduleNom}`);
     setConsignes("");
     setDuree(2);
+    setDureeSaisie("2");
     setStatut("brouillon");
     setType("CC");
     setTypeEfm("local");
@@ -507,7 +512,7 @@ export default function ControleManager({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           moduleId,
-          dureeHeures: genDuree,
+          dureeHeures: duree,
           groupeId: groupeId ?? undefined,
           // La nature du contrôle gouverne la génération : sans elle, le
           // sélecteur « Théorique / Pratique » ne serait qu'une étiquette.
@@ -549,7 +554,6 @@ export default function ControleManager({
       }
       setTitre(data.titre ?? `Contrôle — ${moduleNom}`);
       setConsignes(data.consignes ?? "");
-      setDuree(genDuree);
       setStatut("brouillon");
       ecrireQuestions(
         (
@@ -831,20 +835,36 @@ export default function ControleManager({
       <div className="mt-6 flex flex-wrap items-end gap-4 rounded-[14px] border border-border bg-surface p-[18px] shadow-repos">
         <div>
           <label
-            htmlFor="genDuree"
+            htmlFor="dureeControle"
             className="block text-sm font-medium text-ink"
           >
             Durée du contrôle (heures)
           </label>
-          <input
-            id="genDuree"
-            type="number"
-            min={1}
-            max={6}
-            value={genDuree}
-            onChange={(e) => setGenDuree(Number(e.target.value) || 1)}
-            className={`${inputClass} mt-1 w-28`}
-          />
+          {/* La durée du contrôle lui-même — enregistrée, reprise sur le sujet
+              et comptée par le chronomètre —, et non plus un réglage réservé à
+              la génération : modifiée ici, elle ne changeait rien au contrôle
+              ouvert. Un champ texte plutôt que numérique : « 1,5 » s'écrit
+              avec une virgule, que le champ numérique refusait. */}
+          <span className="mt-1 flex items-center gap-2">
+            <input
+              id="dureeControle"
+              type="text"
+              inputMode="decimal"
+              value={dureeSaisie}
+              onChange={(e) => {
+                const texte = e.target.value.replace(/[^\d.,]/g, "");
+                setDureeSaisie(texte);
+                const n = Number(texte.replace(",", "."));
+                if (n > 0 && n <= 12) setDuree(Math.round(n * 100) / 100);
+              }}
+              onBlur={() => setDureeSaisie(String(duree).replace(".", ","))}
+              aria-describedby="dureeControleAide"
+              className={`${inputClass} w-24`}
+            />
+            <span id="dureeControleAide" className="whitespace-nowrap text-[13px] text-slate">
+              {dureeEnTexte(duree)}
+            </span>
+          </span>
         </div>
         <Button
           variant="secondary"
