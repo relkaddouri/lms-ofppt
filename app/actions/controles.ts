@@ -7,6 +7,10 @@ import { dureeEnTexte, finEpreuve, formatHeure } from "@/lib/creneaux";
 import type { Identification, ResultatControle } from "@/lib/resultat";
 import { revalidatePath } from "next/cache";
 import type { Json } from "@/lib/supabase/database.types";
+import type {
+  LectureAnalyse,
+  Statistiques,
+} from "@/lib/analyse-comprehension";
 
 /**
  * CC et EFM : les évaluations réglementaires. TEST : un contrôle de test,
@@ -1363,4 +1367,42 @@ export async function publierResultat(
 
   if (error) throw new Error(error.message);
   return { publieLe };
+}
+
+// ── Analyses de compréhension (PRD §4.7bis, atome 10.6) ─────────────────
+
+export type AnalyseControle = {
+  id: string;
+  created_at: string;
+  nb_copies: number;
+  modele: string | null;
+  statistiques: Statistiques;
+  lecture: LectureAnalyse;
+  /** « Stagiaire A » → nom : pour le seul écran du formateur. */
+  pseudonymes: Record<string, string>;
+};
+
+/** Les analyses d'un contrôle, la plus récente d'abord. */
+export async function getAnalyses(controleId: string): Promise<AnalyseControle[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("analyses_controle")
+    .select("id, created_at, nb_copies, modele, statistiques, lecture, pseudonymes")
+    .eq("controle_id", controleId)
+    .order("created_at", { ascending: false })
+    .limit(20);
+  if (error) throw new Error(error.message);
+  return (data ?? []) as unknown as AnalyseControle[];
+}
+
+/** Le nombre de copies corrigées, pour savoir si une analyse a de quoi lire. */
+export async function compterCopiesCorrigees(controleId: string): Promise<number> {
+  const supabase = await createClient();
+  const { count, error } = await supabase
+    .from("passations_controle")
+    .select("id", { count: "exact", head: true })
+    .eq("controle_id", controleId)
+    .not("note", "is", null);
+  if (error) throw new Error(error.message);
+  return count ?? 0;
 }

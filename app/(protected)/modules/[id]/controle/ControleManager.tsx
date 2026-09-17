@@ -25,6 +25,7 @@ import { AlertesQuestion, ChampDonnees } from "./ChampDonnees";
 import VersionsControle from "./VersionsControle";
 import ListeControles from "./ListeControles";
 import PassationTest from "./PassationTest";
+import AnalyseComprehension from "./AnalyseComprehension";
 import Passation from "@/app/espace-stagiaire/controles/[id]/Passation";
 import { Stepper, NavigationEtapes, ETAPES } from "./Stepper";
 import CarteChoix, { type Choix } from "./CarteChoix";
@@ -259,7 +260,9 @@ export default function ControleManager({
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
-  const [tab, setTab] = useState<"editeur" | "apercu" | "copies">("editeur");
+  const [tab, setTab] = useState<"editeur" | "apercu" | "copies" | "analyse">(
+    "editeur",
+  );
   const [avertissements, setAvertissements] = useState<string[]>([]);
   const [instruction, setInstruction] = useState("");
   // Préparer un contrôle se fait en quatre temps : voir ce qui est couvert,
@@ -920,7 +923,7 @@ export default function ControleManager({
         </p>
       ) : null}
 
-      <div className="mt-6 max-w-[420px]">
+      <div className="mt-6 max-w-[540px]">
         <Segments
           valeur={tab}
           ariaLabel="Vue du contrôle"
@@ -929,11 +932,20 @@ export default function ControleManager({
             { valeur: "editeur" as const, libelle: "Éditeur" },
             { valeur: "apercu" as const, libelle: "Aperçu" },
             { valeur: "copies" as const, libelle: "Copies" },
+            { valeur: "analyse" as const, libelle: "Analyse" },
           ]}
         />
       </div>
 
-      {tab === "apercu" ? (
+      {tab === "analyse" ? (
+        activeId ? (
+          <AnalyseComprehension controleId={activeId} />
+        ) : (
+          <p className="mt-6 rounded-[14px] border border-border bg-surface p-4 text-sm text-slate shadow-repos">
+            Enregistrez d&apos;abord le contrôle : l&apos;analyse lit ses copies.
+          </p>
+        )
+      ) : tab === "apercu" ? (
         <div className="mt-6 flex flex-col gap-4">
           <p className="rounded-[12px] border border-tint-teal-strong bg-tint-teal px-4 py-3 text-[14px] leading-relaxed text-ink">
             <span className="font-semibold">Aperçu stagiaire.</span> Le
