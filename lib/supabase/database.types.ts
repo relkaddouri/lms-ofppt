@@ -14,6 +14,47 @@ export type Database = {
   }
   public: {
     Tables: {
+      analyses_controle: {
+        Row: {
+          controle_id: string
+          created_at: string
+          id: string
+          lecture: Json
+          modele: string | null
+          nb_copies: number
+          pseudonymes: Json
+          statistiques: Json
+        }
+        Insert: {
+          controle_id: string
+          created_at?: string
+          id?: string
+          lecture: Json
+          modele?: string | null
+          nb_copies: number
+          pseudonymes?: Json
+          statistiques: Json
+        }
+        Update: {
+          controle_id?: string
+          created_at?: string
+          id?: string
+          lecture?: Json
+          modele?: string | null
+          nb_copies?: number
+          pseudonymes?: Json
+          statistiques?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "analyses_controle_controle_id_fkey"
+            columns: ["controle_id"]
+            isOneToOne: false
+            referencedRelation: "controles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       annees_scolaires: {
         Row: {
           created_at: string
