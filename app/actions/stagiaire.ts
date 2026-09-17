@@ -12,6 +12,8 @@ export type IdentiteStagiaire = {
   groupeNom: string;
   /** Année de formation du groupe, affichée sous le nom en tête d'écran. */
   annee: number | null;
+  /** Compte de test du formateur (migration 093). */
+  estTest: boolean;
 };
 
 /**
@@ -27,7 +29,7 @@ export async function getIdentiteStagiaire(): Promise<IdentiteStagiaire | null> 
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("stagiaires")
-    .select("id, nom, prenom, photo, groupe_id, groupes(nom, annee)")
+    .select("id, nom, prenom, photo, groupe_id, est_test, groupes(nom, annee)")
     .eq("user_id", user.id)
     .maybeSingle();
 
@@ -39,6 +41,7 @@ export async function getIdentiteStagiaire(): Promise<IdentiteStagiaire | null> 
     prenom: string;
     photo: string | null;
     groupe_id: string;
+    est_test: boolean;
     groupes: { nom: string; annee: number | null } | null;
   };
 
@@ -50,6 +53,7 @@ export async function getIdentiteStagiaire(): Promise<IdentiteStagiaire | null> 
     groupeId: s.groupe_id,
     groupeNom: s.groupes?.nom ?? "—",
     annee: s.groupes?.annee ?? null,
+    estTest: s.est_test,
   };
 }
 

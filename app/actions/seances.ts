@@ -410,6 +410,8 @@ export async function getSeanceDetail(
       .from("stagiaires")
       .select("id, nom, prenom")
       .eq("groupe_id", groupeId)
+      // Le compte de test du formateur n'est pas un stagiaire (migration 093).
+      .eq("est_test", false)
       .order("nom"),
     supabase
       .from("presences")

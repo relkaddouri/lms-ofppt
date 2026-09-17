@@ -9,6 +9,7 @@ import {
   type Stagiaire,
 } from "@/app/actions/stagiaires";
 import StagiaireCsvImport from "./StagiaireCsvImport";
+import CompteDeTest from "./CompteDeTest";
 import KebabMenu from "@/components/KebabMenu";
 import { useToast } from "@/components/ui/Toast";
 import PhotoStagiaire from "@/components/PhotoStagiaire";
@@ -596,6 +597,7 @@ export default function GroupeDetail({
         ) : null}
       </Modal>
         </div>
+      <CompteDeTest groupeId={groupeId} />
     </section>
   );
 }

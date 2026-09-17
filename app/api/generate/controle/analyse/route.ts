@@ -85,7 +85,7 @@ export async function POST(request: Request) {
       .order("position"),
     supabase
       .from("passations_controle")
-      .select("nom_complet, note, responses")
+      .select("nom_complet, note, responses, stagiaires(est_test)")
       .eq("controle_id", controleId)
       .not("note", "is", null),
   ]);
@@ -103,7 +103,11 @@ export async function POST(request: Request) {
     bareme: Number(q.bareme) || 0,
     corrige: q.corrige,
   }));
-  const copies: CopiePourAnalyse[] = (copiesRes.data ?? []).map((p) => ({
+  // La copie du compte de test du formateur n'est pas celle d'un stagiaire :
+  // elle fausserait les chiffres de la classe (migration 093).
+  const copies: CopiePourAnalyse[] = (copiesRes.data ?? [])
+    .filter((p) => !(p.stagiaires as { est_test: boolean } | null)?.est_test)
+    .map((p) => ({
     nom: p.nom_complet,
     details: (Array.isArray(p.responses) ? p.responses : []) as CopiePourAnalyse["details"],
   }));

@@ -28,6 +28,8 @@ export async function getStagiairesByGroupe(
     .from("stagiaires")
     .select("id, nom, prenom, email, cef, cne, photo, groupe_id, user_id")
     .eq("groupe_id", groupeId)
+    // Le compte de test du formateur n'est pas un stagiaire (migration 093).
+    .eq("est_test", false)
     .order("nom");
 
   if (error) throw new Error(error.message);
@@ -39,7 +41,9 @@ export async function getStagiairesCount(groupeId: string): Promise<number> {
   const { count, error } = await supabase
     .from("stagiaires")
     .select("id", { count: "exact", head: true })
-    .eq("groupe_id", groupeId);
+    .eq("groupe_id", groupeId)
+    // Le compte de test du formateur n'est pas un stagiaire (migration 093).
+    .eq("est_test", false);
 
   if (error) throw new Error(error.message);
   return count ?? 0;

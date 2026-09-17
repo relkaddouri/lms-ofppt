@@ -1974,6 +1974,7 @@ export type Database = {
           cne: string | null
           created_at: string
           email: string | null
+          est_test: boolean
           groupe_id: string | null
           id: string
           nom: string
@@ -1986,6 +1987,7 @@ export type Database = {
           cne?: string | null
           created_at?: string
           email?: string | null
+          est_test?: boolean
           groupe_id?: string | null
           id?: string
           nom: string
@@ -1998,6 +2000,7 @@ export type Database = {
           cne?: string | null
           created_at?: string
           email?: string | null
+          est_test?: boolean
           groupe_id?: string | null
           id?: string
           nom?: string
@@ -2290,6 +2293,7 @@ export type Database = {
         }[]
       }
       groupe_du_stagiaire: { Args: never; Returns: string }
+      je_suis_stagiaire_de_test: { Args: never; Returns: boolean }
       lire_cle_llm: {
         Args: { p_formateur: string }
         Returns: {

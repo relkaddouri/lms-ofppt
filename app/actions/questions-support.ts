@@ -146,7 +146,9 @@ async function nomsDesAuteurs(groupeId: string) {
   const { data, error } = await supabase
     .from("stagiaires")
     .select("user_id, nom, prenom")
-    .eq("groupe_id", groupeId);
+    .eq("groupe_id", groupeId)
+    // Le compte de test du formateur n'est pas un stagiaire (migration 093).
+    .eq("est_test", false);
 
   // Sans ce contrôle, une lecture en échec affichait tout le monde comme
   // « Formateur » — un fil de discussion faux, sans rien qui le signale.

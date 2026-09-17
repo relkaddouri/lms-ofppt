@@ -248,6 +248,11 @@ export default function CopiesManager({
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-sm font-medium text-ink">
                         {p.nom_complet}
+                        {p.est_test ? (
+                          <span className="ml-2 rounded-full bg-wash-strong px-2 py-px text-[11px] font-semibold text-slate-2">
+                            Compte de test
+                          </span>
+                        ) : null}
                       </span>
                       <Badge tone={noteTone(Number(p.note) || 0)}>
                         {Number(p.note) || 0} / {totalAttendu}

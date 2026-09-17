@@ -6,6 +6,7 @@ import type {
 } from "@/app/actions/controles-stagiaire";
 import { ArrowLeft } from "lucide-react";
 import { libelleModule } from "@/lib/modules";
+import RecommencerTest from "./RecommencerTest";
 
 /**
  * Copie rendue, vue par son auteur.
@@ -48,6 +49,17 @@ export default function MaCopieVue({
           </span>
         ) : null}
       </div>
+
+      {controle.compteTest ? (
+        <div className="mt-4 flex flex-col items-start gap-2 rounded-[10px] border border-border bg-wash px-4 py-3">
+          <p className="text-sm text-body">
+            Compte de test : cette copie n&apos;apparaît ni dans les listes ni
+            dans l&apos;analyse. Relisez sa correction dans l&apos;onglet Copies
+            du contrôle, puis effacez-la pour repasser.
+          </p>
+          <RecommencerTest controleId={controle.id} />
+        </div>
+      ) : null}
 
       {!copie ? (
         // §4.7 : tant que le formateur n'a pas publié, le stagiaire ne voit

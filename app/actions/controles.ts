@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { getEtablissement } from "@/app/actions/etablissement";
 import { formatDate, formatDateJour } from "@/lib/format";
 import { dureeEnTexte, finEpreuve, formatHeure } from "@/lib/creneaux";
@@ -148,6 +149,8 @@ export type Passation = {
   cef?: string | null;
   /** Date de publication du résultat au stagiaire, `null` tant qu'il attend. */
   publie_le?: string | null;
+  /** Copie du compte de test du formateur (migration 093). */
+  est_test?: boolean;
   nom_complet: string;
   email: string | null;
   note: number;
@@ -422,15 +425,33 @@ async function refuserSiCopies(supabase: Client, controleId: string) {
     );
   }
 
-  const { count, error } = await supabase
+  const { data: copies, error } = await supabase
     .from("passations_controle")
-    .select("id", { count: "exact", head: true })
+    .select("id, stagiaires(est_test)")
     .eq("controle_id", controleId);
   if (error) throw new Error(error.message);
-  if ((count ?? 0) > 0) {
+  const deTest = (copies ?? []).filter(
+    (c) => (c.stagiaires as { est_test: boolean } | null)?.est_test,
+  );
+  if ((copies ?? []).length > deTest.length) {
     throw new Error(
       "Ce contrôle a déjà des copies : il ne peut plus être modifié. Dupliquez-le pour en faire une variante.",
     );
+  }
+
+  // Les copies du compte de test ne retiennent pas le contrôle : elles
+  // répondaient à l'ancienne version, et le formateur repassera la nouvelle.
+  // La clé de service, parce qu'aucune politique n'ouvre la suppression d'une
+  // copie — l'accès au contrôle vient d'être vérifié par la lecture ci-dessus.
+  if (deTest.length > 0) {
+    const { error: errSuppr } = await createServiceClient()
+      .from("passations_controle")
+      .delete()
+      .in(
+        "id",
+        deTest.map((c) => c.id),
+      );
+    if (errSuppr) throw new Error(errSuppr.message);
   }
 }
 
@@ -769,7 +790,7 @@ export async function getPassations(controleId: string): Promise<Passation[]> {
   const { data, error } = await supabase
     .from("passations_controle")
     .select(
-      "id, controle_id, nom_complet, email, note, responses, submitted_at, publie_le, stagiaires(cef)",
+      "id, controle_id, nom_complet, email, note, responses, submitted_at, publie_le, stagiaires(cef, est_test)",
     )
     .eq("controle_id", controleId)
     .order("submitted_at", { ascending: true });
@@ -777,9 +798,13 @@ export async function getPassations(controleId: string): Promise<Passation[]> {
   if (error) throw new Error(error.message);
   return (data ?? []).map((p) => {
     const { stagiaires, ...reste } = p as typeof p & {
-      stagiaires: { cef: string | null } | null;
+      stagiaires: { cef: string | null; est_test: boolean } | null;
     };
-    return { ...reste, cef: stagiaires?.cef ?? null } as Passation;
+    return {
+      ...reste,
+      cef: stagiaires?.cef ?? null,
+      est_test: stagiaires?.est_test ?? false,
+    } as Passation;
   });
 }
 
@@ -1175,7 +1200,7 @@ export async function getDossierControle(
     supabase
       .from("passations_controle")
       .select(
-        "id, nom_complet, note, responses, publie_le, submitted_at, stagiaires(cef, cne)",
+        "id, nom_complet, note, responses, publie_le, submitted_at, stagiaires(cef, cne, est_test)",
       )
       .eq("controle_id", controleId)
       .order("nom_complet"),
@@ -1183,6 +1208,8 @@ export async function getDossierControle(
       .from("stagiaires")
       .select("nom, prenom, cef")
       .eq("groupe_id", controle.groupe_id)
+      // Le compte de test du formateur n'est pas un stagiaire (migration 093).
+      .eq("est_test", false)
       .order("nom"),
     enteteControle(controle),
   ]);
@@ -1191,7 +1218,9 @@ export async function getDossierControle(
   const efm = controle.type === "EFM";
 
   const resultats: ResultatControle[] = (copiesRes.data ?? [])
-    .filter((c) => c.publie_le)
+    // Le dossier d'épreuve est un document officiel : la copie du compte de
+    // test du formateur n'y entre pas (migration 093).
+    .filter((c) => c.publie_le && !c.stagiaires?.est_test)
     .map((c) => ({
       titre,
       stagiaire: c.nom_complet,
@@ -1398,11 +1427,14 @@ export async function getAnalyses(controleId: string): Promise<AnalyseControle[]
 /** Le nombre de copies corrigées, pour savoir si une analyse a de quoi lire. */
 export async function compterCopiesCorrigees(controleId: string): Promise<number> {
   const supabase = await createClient();
-  const { count, error } = await supabase
+  const { data, error } = await supabase
     .from("passations_controle")
-    .select("id", { count: "exact", head: true })
+    .select("id, stagiaires(est_test)")
     .eq("controle_id", controleId)
     .not("note", "is", null);
   if (error) throw new Error(error.message);
-  return count ?? 0;
+  // Le compte de test ne compte pas : l'analyse ne le lit pas.
+  return (data ?? []).filter(
+    (c) => !(c.stagiaires as { est_test: boolean } | null)?.est_test,
+  ).length;
 }

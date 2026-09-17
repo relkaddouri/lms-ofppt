@@ -44,7 +44,7 @@ export async function POST(request: Request) {
   // les relit avec la clé de service, après avoir vérifié l'appartenance.
   const { data: moi } = await supabase
     .from("stagiaires")
-    .select("id, prenom, nom, groupe_id")
+    .select("id, prenom, nom, groupe_id, est_test")
     .eq("user_id", user.id)
     .maybeSingle();
 
@@ -66,10 +66,12 @@ export async function POST(request: Request) {
     .eq("id", controleId)
     .maybeSingle();
 
+  // Le compte de test du formateur compose aussi un brouillon ou un test non
+  // ouvert : il existe pour essayer le contrôle avant les stagiaires (093).
   if (
     !controle ||
     controle.groupe_id !== moi.groupe_id ||
-    controle.statut !== "valide"
+    (controle.statut !== "valide" && !moi.est_test)
   ) {
     return NextResponse.json(
       { error: "Contrôle introuvable ou hors de votre groupe." },
@@ -82,6 +84,7 @@ export async function POST(request: Request) {
   // chronométré part à la dernière seconde, et le réseau n'est pas instantané.
   const maintenant = Date.now();
   if (
+    !moi.est_test &&
     controle.type === "TEST" &&
     (!controle.ouvert_le ||
       new Date(controle.ouvert_le).getTime() > maintenant ||

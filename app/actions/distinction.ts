@@ -46,6 +46,8 @@ export async function getStagiairesANoter(
       .from("stagiaires")
       .select("id, nom, prenom, photo")
       .eq("groupe_id", lien.groupe_id)
+      // Le compte de test du formateur n'est pas un stagiaire (migration 093).
+      .eq("est_test", false)
       .order("nom"),
     supabase
       .from("presences")

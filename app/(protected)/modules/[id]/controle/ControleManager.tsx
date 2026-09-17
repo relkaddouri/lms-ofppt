@@ -978,6 +978,8 @@ export default function ControleManager({
                   // pas de passation en cours.
                   ouvert_le: null,
                   ferme_le: null,
+                  statut,
+                  compteTest: false,
                   moduleNom,
                   codeOperationnel: moduleCode,
                   note: null,
