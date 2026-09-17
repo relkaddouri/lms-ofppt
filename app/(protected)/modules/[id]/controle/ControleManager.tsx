@@ -112,8 +112,11 @@ function signature(e: {
   typeEfm: TypeEfm;
   format: FormatControle;
   datePrevue: string;
+  baremeTotal: number;
+  seances: string[];
   questions: DraftQuestion[];
 }): string {
+  const test = e.type === "TEST";
   return JSON.stringify([
     e.titre,
     e.consignes,
@@ -122,6 +125,11 @@ function signature(e: {
     e.type === "EFM" ? e.typeEfm : null,
     e.format,
     e.datePrevue,
+    // Le périmètre et le barème libre ne font partie du contenu que pour un
+    // test : un CC ancien, sans séances enregistrées, ne doit pas paraître
+    // modifié du seul fait d'être ouvert.
+    test ? Number(e.baremeTotal) || 20 : null,
+    test ? [...e.seances].sort() : null,
     e.questions.map(({ id: _id, ...q }) => ({ ...q, bareme: Number(q.bareme) || 0 })),
   ]);
 }
@@ -150,11 +158,14 @@ function versBrouillon(q: {
   };
 }
 
+type CleNature = "cc" | "efml" | "efmr" | "test";
+
 /**
- * Les trois natures que la maquette présente côte à côte. Le modèle en garde
- * deux champs — `type` et `type_efm` — que ces clés recomposent.
+ * Les natures présentées côte à côte. Le modèle en garde deux champs — `type`
+ * et `type_efm` — que ces clés recomposent. Le contrôle de test (PRD §4.7bis)
+ * vient en dernier : il n'est pas réglementaire.
  */
-const NATURES: readonly Choix<"cc" | "efml" | "efmr">[] = [
+const NATURES: readonly Choix<CleNature>[] = [
   {
     cle: "cc",
     label: "CC",
@@ -172,6 +183,12 @@ const NATURES: readonly Choix<"cc" | "efml" | "efmr">[] = [
     label: "EFM régional",
     detail: "Sujet régional harmonisé entre établissements.",
     meta: "Date imposée par la DR",
+  },
+  {
+    cle: "test",
+    label: "Contrôle de test",
+    detail: "Évaluation formative sur les séances de votre choix.",
+    meta: "Hors moyenne · barème libre",
   },
 ];
 
@@ -245,17 +262,36 @@ export default function ControleManager({
   // Préparer un contrôle se fait en quatre temps : voir ce qui est couvert,
   // choisir la nature, produire les questions, relire.
   const [etape, setEtape] = useState(1);
-  // Séances retenues à l'étape 1, transmises au générateur.
+  // Séances retenues à l'étape 1, transmises au générateur et enregistrées.
   const [seancesRetenues, setSeancesRetenues] = useState<string[]>([]);
+  // Celles du contrôle chargé, que l'étape 1 recoche ; et un compteur qui la
+  // recharge quand un autre contenu — contrôle ou version — arrive.
+  const [seancesEnregistrees, setSeancesEnregistrees] = useState<string[] | null>(null);
+  const [chargements, setChargements] = useState(0);
+  // Le total d'un contrôle de test, libre ; 20 par défaut.
+  const [baremeTotal, setBaremeTotal] = useState(20);
 
-  // Une seule clé pour les trois cartes de nature, recomposée depuis les deux
-  // champs que le modèle enregistre.
-  const natureCle: "cc" | "efml" | "efmr" =
-    type === "CC" ? "cc" : typeEfm === "regional" ? "efmr" : "efml";
+  // Une seule clé pour les cartes de nature, recomposée depuis les deux champs
+  // que le modèle enregistre.
+  const natureCle: CleNature =
+    type === "TEST"
+      ? "test"
+      : type === "CC"
+        ? "cc"
+        : typeEfm === "regional"
+          ? "efmr"
+          : "efml";
 
-  function changerNature(cle: "cc" | "efml" | "efmr") {
-    if (cle === "cc") {
-      setType("CC");
+  function changerNature(cle: CleNature) {
+    // Passer d'un contrôle réglementaire à un test, ou l'inverse, change la
+    // logique du périmètre : un test se coche séance par séance. La sélection
+    // précédente — toutes les séances d'un CC — n'a plus de sens.
+    if ((cle === "test") !== (type === "TEST")) {
+      setSeancesRetenues([]);
+      setSeancesEnregistrees(null);
+    }
+    if (cle === "cc" || cle === "test") {
+      setType(cle === "test" ? "TEST" : "CC");
       return;
     }
     setType("EFM");
@@ -280,6 +316,8 @@ export default function ControleManager({
     typeEfm,
     format,
     datePrevue,
+    baremeTotal,
+    seances: seancesRetenues,
     questions,
   });
   const modifie =
@@ -305,6 +343,8 @@ export default function ControleManager({
     type_efm: TypeEfm | null;
     format: FormatControle;
     date_prevue: string | null;
+    bareme_total?: number | null;
+    seance_ids?: string[] | null;
     questions: Parameters<typeof versBrouillon>[0][];
   }): string {
     const etat = {
@@ -315,6 +355,8 @@ export default function ControleManager({
       typeEfm: c.type_efm ?? ("local" as TypeEfm),
       format: c.format,
       datePrevue: c.date_prevue ?? "",
+      baremeTotal: Number(c.bareme_total) || 20,
+      seances: c.seance_ids ?? [],
       questions: c.questions.map(versBrouillon),
     };
     setTitre(etat.titre);
@@ -324,6 +366,10 @@ export default function ControleManager({
     setTypeEfm(etat.typeEfm);
     setFormat(etat.format);
     setDatePrevue(etat.datePrevue);
+    setBaremeTotal(etat.baremeTotal);
+    setSeancesRetenues(etat.seances);
+    setSeancesEnregistrees(c.seance_ids ?? null);
+    setChargements((n) => n + 1);
     ecrireQuestions(etat.questions);
     setIssuDuModele(false);
     setAvertissements([]);
@@ -362,11 +408,11 @@ export default function ControleManager({
 
   // PRD §4.7 : 20 points pour un contrôle continu, 40 pour une épreuve de fin
   // de module. Le seuil suit donc le type choisi, il n'est plus constant.
-  const totalAttendu = baremeAttendu(type);
+  const totalAttendu = baremeAttendu(type, baremeTotal);
   // §4.7 : 60 % du total doivent porter sur des questions accessibles — le
   // socle que toute la classe doit pouvoir atteindre. Les 40 % restants
   // distinguent les meilleurs, ils ne servent pas à faire échouer la majorité.
-  const socleAttendu = socleAccessible(type);
+  const socleAttendu = socleAccessible(type, baremeTotal);
   const pointsAccessibles = questions
     .filter((q) => q.difficulte === "accessible")
     .reduce((t, q) => t + (Number(q.bareme) || 0), 0);
@@ -410,6 +456,10 @@ export default function ControleManager({
     setTypeEfm("local");
     setFormat("theorique");
     setDatePrevue("");
+    setBaremeTotal(20);
+    setSeancesRetenues([]);
+    setSeancesEnregistrees(null);
+    setChargements((n) => n + 1);
     setQuestions([]);
     setNotice(null);
     setReference(null);
@@ -436,6 +486,7 @@ export default function ControleManager({
           // sélecteur « Théorique / Pratique » ne serait qu'une étiquette.
           format,
           type,
+          baremeTotal: type === "TEST" ? baremeTotal : undefined,
           seanceIds: seancesRetenues,
           ...(raffiner
             ? {
@@ -529,6 +580,8 @@ export default function ControleManager({
         type_efm: type === "EFM" ? typeEfm : null,
         format,
         date_prevue: datePrevue || null,
+        bareme_total: type === "TEST" ? baremeTotal : null,
+        seance_ids: seancesRetenues,
         questions: questions.map((q) => ({
           type: q.type,
           enonce: q.enonce,
@@ -557,7 +610,20 @@ export default function ControleManager({
         message = "Brouillon enregistré — version 1.";
       }
       if (!titre.trim()) setTitre(payload.titre);
-      setReference(signature({ titre: payload.titre, consignes, duree, type, typeEfm, format, datePrevue, questions }));
+      setReference(
+        signature({
+          titre: payload.titre,
+          consignes,
+          duree,
+          type,
+          typeEfm,
+          format,
+          datePrevue,
+          baremeTotal,
+          seances: seancesRetenues,
+          questions,
+        }),
+      );
       setRestaureDe(null);
       setNotice(message);
       toast(message);
@@ -852,9 +918,11 @@ export default function ControleManager({
           {etape === 1 ? (
             <div className="max-w-[760px]">
               <ContenuCouvert
+                key={chargements}
                 groupeId={groupeId ?? null}
                 moduleId={moduleId}
                 type={type}
+                initiales={seancesEnregistrees}
                 onSelection={setSeancesRetenues}
               />
             </div>
@@ -867,6 +935,56 @@ export default function ControleManager({
                 onChange={changerNature}
                 choix={NATURES}
               />
+
+              {type === "TEST" ? (
+                <section className="flex flex-col gap-4 rounded-[14px] border border-border bg-surface p-6 shadow-repos">
+                  <div className="flex flex-col gap-1">
+                    <h2 className="font-display text-[18px] font-semibold text-ink">
+                      Contrôle de test
+                    </h2>
+                    <p className="text-sm text-slate-light">
+                      Formatif : il ne compte ni dans la moyenne, ni dans les
+                      2 CC et 1 EFM réglementaires, ni dans les échéances. Il
+                      porte sur les séances cochées à l&apos;étape 1 —{" "}
+                      <button
+                        type="button"
+                        onClick={() => setEtape(1)}
+                        className="font-semibold text-teal hover:underline"
+                      >
+                        {seancesRetenues.length === 0
+                          ? "aucune pour l'instant, en choisir"
+                          : `${seancesRetenues.length} séance${seancesRetenues.length > 1 ? "s" : ""}, modifier`}
+                      </button>
+                      .
+                    </p>
+                  </div>
+                  <label
+                    htmlFor="baremeTotal"
+                    className="flex max-w-[240px] flex-col gap-[7px]"
+                  >
+                    <span className="text-sm font-semibold text-body">
+                      Barème du test
+                    </span>
+                    <span className="flex items-center gap-2">
+                      <input
+                        id="baremeTotal"
+                        type="number"
+                        min={1}
+                        max={200}
+                        step={1}
+                        value={baremeTotal}
+                        onChange={(e) =>
+                          setBaremeTotal(
+                            Math.min(200, Math.max(1, Number(e.target.value) || 20)),
+                          )
+                        }
+                        className={`${inputClass} w-24`}
+                      />
+                      <span className="text-sm text-slate">points</span>
+                    </span>
+                  </label>
+                </section>
+              ) : null}
 
               <CarteChoix
                 titre="Format d'évaluation"

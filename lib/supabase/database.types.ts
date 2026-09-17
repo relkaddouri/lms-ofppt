@@ -222,6 +222,7 @@ export type Database = {
       }
       controles: {
         Row: {
+          bareme_total: number | null
           consignes: string | null
           created_at: string
           date_administration: string | null
@@ -233,12 +234,14 @@ export type Database = {
           groupe_id: string
           id: string
           module_id: string
+          seance_ids: string[] | null
           statut: string
           titre: string | null
           type: string
           type_efm: string | null
         }
         Insert: {
+          bareme_total?: number | null
           consignes?: string | null
           created_at?: string
           date_administration?: string | null
@@ -250,12 +253,14 @@ export type Database = {
           groupe_id: string
           id?: string
           module_id: string
+          seance_ids?: string[] | null
           statut?: string
           titre?: string | null
           type?: string
           type_efm?: string | null
         }
         Update: {
+          bareme_total?: number | null
           consignes?: string | null
           created_at?: string
           date_administration?: string | null
@@ -267,6 +272,7 @@ export type Database = {
           groupe_id?: string
           id?: string
           module_id?: string
+          seance_ids?: string[] | null
           statut?: string
           titre?: string | null
           type?: string

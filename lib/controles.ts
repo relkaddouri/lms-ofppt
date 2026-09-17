@@ -8,12 +8,23 @@
  * totaliser la mauvaise valeur.
  */
 
-export type TypeControleBareme = "CC" | "EFM";
+export type TypeControleBareme = "CC" | "EFM" | "TEST";
 
 export const BAREME_CC = 20;
 export const BAREME_EFM = 40;
 
-export function baremeAttendu(type: TypeControleBareme | null | undefined): number {
+/**
+ * Un contrôle de test a un barème libre (PRD §4.7bis) : son total est celui
+ * que le formateur a fixé, 20 par défaut.
+ */
+export function baremeAttendu(
+  type: TypeControleBareme | null | undefined,
+  baremeTotal?: number | null,
+): number {
+  if (type === "TEST") {
+    const t = Number(baremeTotal);
+    return t > 0 ? t : BAREME_CC;
+  }
   return type === "EFM" ? BAREME_EFM : BAREME_CC;
 }
 
@@ -22,8 +33,11 @@ export function baremeAttendu(type: TypeControleBareme | null | undefined): numb
  * 12/20 pour un CC et 24/40 pour un EFM (§4.7). Il sert à calibrer la courbe
  * de difficulté, pas à valider une note.
  */
-export function socleAccessible(type: TypeControleBareme | null | undefined): number {
-  return baremeAttendu(type) * 0.6;
+export function socleAccessible(
+  type: TypeControleBareme | null | undefined,
+  baremeTotal?: number | null,
+): number {
+  return baremeAttendu(type, baremeTotal) * 0.6;
 }
 
 /**

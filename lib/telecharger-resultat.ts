@@ -216,7 +216,7 @@ export async function telechargerSujetBrouillon(
     groupeId: string;
     moduleId: string;
     titre: string;
-    type: "CC" | "EFM";
+    type: "CC" | "EFM" | "TEST";
     typeEfm: "local" | "regional" | null;
     format: "theorique" | "pratique" | "mixte";
     dureeHeures: number;

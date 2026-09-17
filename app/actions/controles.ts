@@ -8,7 +8,12 @@ import type { Identification, ResultatControle } from "@/lib/resultat";
 import { revalidatePath } from "next/cache";
 import type { Json } from "@/lib/supabase/database.types";
 
-export type TypeControle = "CC" | "EFM";
+/**
+ * CC et EFM : les évaluations réglementaires. TEST : un contrôle de test,
+ * formatif — hors minimum réglementaire, hors échéances, hors moyenne, barème
+ * libre (PRD §4.7bis).
+ */
+export type TypeControle = "CC" | "EFM" | "TEST";
 export type TypeEfm = "local" | "regional";
 export type FormatControle = "theorique" | "pratique" | "mixte";
 
@@ -27,11 +32,15 @@ export type Controle = {
   format: FormatControle;
   statut: "brouillon" | "valide";
   created_at: string;
+  /** Total visé d'un contrôle de test ; null pour un CC ou un EFM. */
+  bareme_total: number | null;
+  /** Séances retenues à l'étape « Contenu couvert ». */
+  seance_ids: string[] | null;
 };
 
 const COLONNES_CONTROLE =
   "id, groupe_id, module_id, titre, consignes, duree_heures, type, type_efm, " +
-  "date_prevue, date_administration, format, statut, created_at";
+  "date_prevue, date_administration, format, statut, created_at, bareme_total, seance_ids";
 
 export type TypeQuestion = "qcm" | "ouverte" | "exercice";
 export type OptionQcm = { texte: string; correcte: boolean };
@@ -194,8 +203,18 @@ export type ControleInput = {
   type_efm?: TypeEfm | null;
   format: FormatControle;
   date_prevue?: string | null;
+  /** Total visé d'un test ; ignoré pour un CC ou un EFM. */
+  bareme_total?: number | null;
+  seance_ids?: string[] | null;
   questions: QuestionInput[];
 };
+
+/** Le total libre d'un test, 20 par défaut ; rien pour un CC ou un EFM. */
+function baremeLibre(input: ControleInput): number | null {
+  if (input.type !== "TEST") return null;
+  const t = Number(input.bareme_total);
+  return t > 0 && t <= 200 ? t : 20;
+}
 
 /** Un EFM est forcément local ou régional ; un CC n'a pas de sous-type. */
 function qualifieEfm(input: ControleInput): TypeEfm | null {
@@ -228,6 +247,8 @@ export type ContenuVersion = {
   type_efm: TypeEfm | null;
   format: FormatControle;
   date_prevue: string | null;
+  bareme_total?: number | null;
+  seance_ids?: string[] | null;
   questions: QuestionInput[];
 };
 
@@ -246,6 +267,8 @@ function photographie(
     type_efm: qualifieEfm(input),
     format: input.format,
     date_prevue: input.date_prevue || null,
+    bareme_total: baremeLibre(input),
+    seance_ids: input.seance_ids?.length ? input.seance_ids : null,
     questions: lignes.map((l) => ({
       type: l.type,
       enonce: l.enonce,
@@ -399,6 +422,8 @@ export async function saveControle(
       type_efm: qualifieEfm(input),
       format: input.format,
       date_prevue: input.date_prevue || null,
+      bareme_total: baremeLibre(input),
+      seance_ids: input.seance_ids?.length ? input.seance_ids : null,
       statut: "brouillon",
     })
     .select("id")
@@ -446,6 +471,8 @@ export async function updateControle(
       type_efm: qualifieEfm(input),
       format: input.format,
       date_prevue: input.date_prevue || null,
+      bareme_total: baremeLibre(input),
+      seance_ids: input.seance_ids?.length ? input.seance_ids : null,
     })
     .eq("id", id);
 
@@ -498,6 +525,8 @@ export async function dupliquerControle(
     type_efm: source.type_efm,
     format: source.format,
     date_prevue: null,
+    bareme_total: source.bareme_total,
+    seance_ids: source.seance_ids,
     questions: source.questions.map((q) => ({
       type: q.type,
       enonce: q.enonce ?? "",
@@ -522,6 +551,8 @@ export async function dupliquerControle(
       type: input.type,
       type_efm: qualifieEfm(input),
       format: input.format,
+      bareme_total: baremeLibre(input),
+      seance_ids: input.seance_ids?.length ? input.seance_ids : null,
       statut: "brouillon",
       duplique_de: source.id,
     })
@@ -750,8 +781,10 @@ export async function getContenuCouvert(
     contenu_realise: string | null;
   }[];
 
+  // Un test porte sur des séances choisies une à une : on les propose toutes,
+  // faites ou à venir, et c'est le formateur qui coche.
   const retenues =
-    type === "EFM" ? toutes : toutes.filter((s) => s.statut === "fait");
+    type === "CC" ? toutes.filter((s) => s.statut === "fait") : toutes;
 
   const duree = (s: (typeof toutes)[number]) =>
     Number(s.duree_realisee ?? s.duree_prevue ?? 0);
@@ -886,13 +919,20 @@ async function enteteControle(
   const duree = Number(controle.duree_heures ?? 0);
   const codeModule = moduleRes.data?.competences?.code_operationnel ?? null;
   const efm = controle.type === "EFM";
+  const test = controle.type === "TEST";
   const titre = controle.titre?.trim() || "Contrôle sans intitulé";
-  const nature = efm ? "Épreuve de fin de module" : "Contrôle continu";
+  const nature = efm
+    ? "Épreuve de fin de module"
+    : test
+      ? "Contrôle de test"
+      : "Contrôle continu";
+  // Le rang se compte parmi les contrôles du même type : un test ne décale pas
+  // la numérotation des CC, qui est réglementaire.
   const codeEpreuve = efm
     ? controle.type_efm === "regional"
       ? "EFMR"
       : "EFML"
-    : `CC${rang > 0 ? rang : ""}`;
+    : `${test ? "TEST" : "CC"}${rang > 0 ? rang : ""}`;
 
   const FORMES: Record<string, string> = {
     theorique: "Théorique",

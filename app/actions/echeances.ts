@@ -28,7 +28,9 @@ export async function getEcheances(): Promise<Echeance[]> {
       .select(
         "id, titre, type, date_prevue, date_administration, groupe_id, module_id, groupes(nom), modules(nom)",
       )
-      .in("groupe_id", groupeIds),
+      .in("groupe_id", groupeIds)
+      // Un contrôle de test n'a pas d'échéance réglementaire (PRD §4.7bis).
+      .neq("type", "TEST"),
     // Toutes les séances datées de l'année : c'est en elles que se lit « la
     // deuxième séance suivante ».
     supabase
