@@ -13,7 +13,7 @@ import type {
   ControleStagiaire,
   QuestionSujet,
 } from "@/app/actions/controles-stagiaire";
-import { ArrowLeft, Check, PenLine, Send } from "lucide-react";
+import { ArrowLeft, Check, PenLine, Send, Timer } from "lucide-react";
 
 /**
  * Composition d'un contrôle en ligne (PRD §4.7bis).
@@ -44,6 +44,16 @@ const LIBELLE_TYPE: Record<string, string> = {
   exercice: "Exercice d'application",
 };
 
+/** « 12:04 » ou « 1:05:09 » : le temps restant, lisible d'un coup d'œil. */
+function chrono(ms: number): string {
+  const total = Math.max(0, Math.ceil(ms / 1000));
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const sec = total % 60;
+  const deux = (n: number) => String(n).padStart(2, "0");
+  return h > 0 ? `${h}:${deux(m)}:${deux(sec)}` : `${m}:${deux(sec)}`;
+}
+
 const points = (b: number) =>
   `${String(b).replace(".", ",")} pt${b > 1 ? "s" : ""}`;
 
@@ -71,6 +81,44 @@ export default function Passation({
   const [confirme, setConfirme] = useState(false);
   const [gardee, setGardee] = useState(false);
   const restauree = useRef(false);
+
+  // ── Test chronométré ────────────────────────────────────────────────────
+  //
+  // La fin vient de la base (`ferme_le`), pas d'une minuterie lancée à
+  // l'ouverture de la page : recharger, ou arriver en retard, ne rend pas de
+  // temps. À zéro, la copie part d'elle-même avec ce qui est écrit.
+  const fin = !apercu && controle.ferme_le ? new Date(controle.ferme_le).getTime() : null;
+  const [reste, setReste] = useState<number | null>(() =>
+    fin === null ? null : fin - Date.now(),
+  );
+  const reponsesRef = useRef(reponses);
+  reponsesRef.current = reponses;
+  const partie = useRef(false);
+
+  useEffect(() => {
+    if (fin === null) return;
+    // Une nouvelle fin — le formateur a rouvert le test — rarme la remise.
+    partie.current = false;
+    const tic = () => {
+      const r = fin - Date.now();
+      setReste(r);
+      if (r <= 0 && !partie.current) {
+        partie.current = true;
+        const ecrites = Object.values(reponsesRef.current).some((v) => v.trim());
+        if (ecrites) {
+          toast("Temps écoulé : votre copie est rendue.");
+          void rendre();
+        } else {
+          toast("Temps écoulé : le test est fermé.", "error");
+          router.refresh();
+        }
+      }
+    };
+    tic();
+    const minuterie = window.setInterval(tic, 1000);
+    return () => window.clearInterval(minuterie);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fin]);
 
   // La copie en cours revient telle qu'on l'a laissée.
   useEffect(() => {
@@ -117,7 +165,10 @@ export default function Passation({
       const res = await fetch("/api/controle/passer", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ controleId: controle.id, reponses }),
+        body: JSON.stringify({
+          controleId: controle.id,
+          reponses: reponsesRef.current,
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Remise impossible.");
@@ -323,6 +374,21 @@ export default function Passation({
 
       {/* ── Remise ───────────────────────────────────────────────────────── */}
       <div className="sticky bottom-24 z-10 flex flex-col gap-2.5 rounded-[14px] border border-border bg-surface p-3 shadow-ancre md:bottom-4 md:flex-row md:items-center md:gap-4">
+        {reste !== null ? (
+          <span
+            role="timer"
+            aria-live="off"
+            aria-label={`Temps restant : ${chrono(reste)}`}
+            className={`inline-flex items-center gap-1.5 self-start rounded-[8px] px-2.5 py-1.5 font-mono text-[15px] font-semibold tabular-nums ${
+              reste <= 5 * 60_000
+                ? "bg-alert-wash text-coral-dark"
+                : "bg-wash-strong text-ink"
+            }`}
+          >
+            <Timer className="h-4 w-4" aria-hidden />
+            {chrono(reste)}
+          </span>
+        ) : null}
         <nav
           aria-label="Aller à une question"
           className="flex flex-wrap gap-1.5"

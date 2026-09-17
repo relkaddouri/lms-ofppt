@@ -9,6 +9,9 @@ import {
 } from "@/lib/rate-limit";
 import { NextResponse } from "next/server";
 
+/** Délai accepté après la fermeture d'un test, pour une remise déjà partie. */
+const GRACE_REMISE_MS = 60_000;
+
 /**
  * Remise d'une copie par un stagiaire connecté.
  *
@@ -59,21 +62,35 @@ export async function POST(request: Request) {
 
   const { data: controle } = await service
     .from("controles")
-    .select("id, groupe_id, module_id, statut, type")
+    .select("id, groupe_id, module_id, statut, type, ouvert_le, ferme_le")
     .eq("id", controleId)
     .maybeSingle();
 
-  // Un contrôle de test ne se compose pas encore en ligne : son ouverture au
-  // groupe arrive avec l'atome 10.5.
   if (
     !controle ||
     controle.groupe_id !== moi.groupe_id ||
-    controle.statut !== "valide" ||
-    controle.type === "TEST"
+    controle.statut !== "valide"
   ) {
     return NextResponse.json(
       { error: "Contrôle introuvable ou hors de votre groupe." },
       { status: 404 },
+    );
+  }
+
+  // Un contrôle de test ne se rend que pendant son ouverture (PRD §4.7bis).
+  // Une minute de grâce après la fermeture : la remise automatique d'un test
+  // chronométré part à la dernière seconde, et le réseau n'est pas instantané.
+  const maintenant = Date.now();
+  if (
+    controle.type === "TEST" &&
+    (!controle.ouvert_le ||
+      new Date(controle.ouvert_le).getTime() > maintenant ||
+      (controle.ferme_le !== null &&
+        new Date(controle.ferme_le).getTime() + GRACE_REMISE_MS < maintenant))
+  ) {
+    return NextResponse.json(
+      { error: "Ce test est fermé : les copies ne sont plus acceptées." },
+      { status: 403 },
     );
   }
 

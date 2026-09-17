@@ -12,6 +12,10 @@ export type ControleStagiaire = {
   date_prevue: string | null;
   /** Les consignes générales, lues avant la première question. */
   consignes: string | null;
+  /** Contrôle de test : total libre, et fenêtre d'ouverture. */
+  bareme_total: number | null;
+  ouvert_le: string | null;
+  ferme_le: string | null;
   moduleNom: string | null;
   codeOperationnel: string | null;
   /** Note obtenue, si la copie a été rendue. */
@@ -46,11 +50,14 @@ export async function getMesControles(): Promise<ControleStagiaire[]> {
     supabase
       .from("controles")
       .select(
-        "id, titre, type, type_efm, format, duree_heures, date_prevue, consignes, modules(nom, competences(code_operationnel))",
+        "id, titre, type, type_efm, format, duree_heures, date_prevue, consignes, bareme_total, ouvert_le, ferme_le, modules(nom, competences(code_operationnel))",
       )
-      // Un test se passera quand le formateur l'ouvrira (10.5) ; d'ici là, il
-      // n'est pas au programme du stagiaire. La politique l'écarte aussi.
-      .neq("type", "TEST")
+      // Un test n'est au programme du stagiaire qu'une fois ouvert par le
+      // formateur (PRD §4.7bis) ; la politique fait la même sélection.
+      .or("type.neq.TEST,ouvert_le.not.is.null")
+      // Le test le plus récemment ouvert en tête : c'est celui qu'on vient
+      // d'annoncer au groupe.
+      .order("ouvert_le", { ascending: false, nullsFirst: false })
       .order("date_prevue", { nullsFirst: false }),
     supabase
       .from("passations_controle")
@@ -100,6 +107,9 @@ export async function getMesControles(): Promise<ControleStagiaire[]> {
       duree_heures: c.duree_heures,
       date_prevue: c.date_prevue,
       consignes: c.consignes,
+      bareme_total: c.bareme_total === null ? null : Number(c.bareme_total),
+      ouvert_le: c.ouvert_le,
+      ferme_le: c.ferme_le,
       moduleNom: c.modules?.nom ?? null,
       codeOperationnel: c.modules?.competences?.code_operationnel ?? null,
       // La note n'existe que si le formateur a publié ; la remise, elle, se

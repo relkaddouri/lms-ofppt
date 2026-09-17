@@ -230,10 +230,12 @@ export type Database = {
           date_prevue: string | null
           duplique_de: string | null
           duree_heures: number
+          ferme_le: string | null
           format: string
           groupe_id: string
           id: string
           module_id: string
+          ouvert_le: string | null
           seance_ids: string[] | null
           statut: string
           titre: string | null
@@ -249,10 +251,12 @@ export type Database = {
           date_prevue?: string | null
           duplique_de?: string | null
           duree_heures?: number
+          ferme_le?: string | null
           format?: string
           groupe_id: string
           id?: string
           module_id: string
+          ouvert_le?: string | null
           seance_ids?: string[] | null
           statut?: string
           titre?: string | null
@@ -268,10 +272,12 @@ export type Database = {
           date_prevue?: string | null
           duplique_de?: string | null
           duree_heures?: number
+          ferme_le?: string | null
           format?: string
           groupe_id?: string
           id?: string
           module_id?: string
+          ouvert_le?: string | null
           seance_ids?: string[] | null
           statut?: string
           titre?: string | null
@@ -2186,6 +2192,10 @@ export type Database = {
       code_operationnel_derive: {
         Args: { p_cycle: string; p_rang: number }
         Returns: string
+      }
+      controle_ouvert: {
+        Args: { c: Database["public"]["Tables"]["controles"]["Row"] }
+        Returns: boolean
       }
       corriger_passation: {
         Args: { p_note: number; p_passation_id: string; p_responses: Json }
