@@ -22,6 +22,13 @@ export default function RecommencerTest({ controleId }: { controleId: string }) 
         setEnCours(true);
         try {
           await recommencerCopieDeTest(controleId);
+          // Le chronomètre repart à zéro avec la nouvelle tentative.
+          try {
+            localStorage.removeItem(`pedago:debut-test:${controleId}`);
+            localStorage.removeItem(`pedago:copie:${controleId}`);
+          } catch {
+            // Rien à nettoyer.
+          }
           toast("Copie de test effacée : vous pouvez repasser le contrôle.");
           router.refresh();
         } catch (e) {
