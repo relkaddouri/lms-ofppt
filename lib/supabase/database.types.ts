@@ -2280,6 +2280,19 @@ export type Database = {
       }
       est_mon_stagiaire: { Args: { p_stagiaire_id: string }; Returns: boolean }
       est_stagiaire: { Args: never; Returns: boolean }
+      get_ma_correction: {
+        Args: { p_controle_id: string }
+        Returns: {
+          bareme: number
+          corrige: string
+          donnees: string
+          enonce: string
+          options: Json
+          position: number
+          question_id: string
+          type: string
+        }[]
+      }
       get_sujet_pour_passation: {
         Args: { p_controle_id: string }
         Returns: {

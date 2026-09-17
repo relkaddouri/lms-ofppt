@@ -7,13 +7,15 @@ import Button from "@/components/ui/Button";
 import AutoTextarea from "@/components/ui/AutoTextarea";
 import DonneesQuestion from "@/components/DonneesQuestion";
 import { CorpsRedige } from "@/components/DocumentRedige";
-import { ConfirmModal } from "@/components/ui/Modal";
+import Modal, { ConfirmModal } from "@/components/ui/Modal";
+import { formatHeure } from "@/lib/creneaux";
+import { instantEtablissement } from "@/lib/format";
 import { useToast } from "@/components/ui/Toast";
 import type {
   ControleStagiaire,
   QuestionSujet,
 } from "@/app/actions/controles-stagiaire";
-import { ArrowLeft, Check, PenLine, Send, Timer } from "lucide-react";
+import { ArrowLeft, Check, CircleCheck, PenLine, Send, Timer } from "lucide-react";
 
 /**
  * Composition d'un contrôle en ligne (PRD §4.7bis).
@@ -121,19 +123,31 @@ export default function Passation({
   const reponsesRef = useRef(reponses);
   reponsesRef.current = reponses;
   const partie = useRef(false);
+  const partieRendue = useRef(false);
+  const arretChrono = useRef<() => void>(() => {});
+
+  // ── Copie rendue ─────────────────────────────────────────────────────────
+  //
+  // Dès que le serveur l'a acceptée, tout se fige sur place : les réponses se
+  // grisent et ne se modifient plus, le chronomètre s'arrête, et une fenêtre
+  // dit clairement que la copie est arrivée — un simple message fugace
+  // laissait le stagiaire se demander s'il devait recliquer.
+  const [rendueA, setRendueA] = useState<string | null>(null);
+  const rendue = rendueA !== null;
+  const [modaleRendue, setModaleRendue] = useState(false);
 
   useEffect(() => {
     if (fin === null) return;
     // Une nouvelle fin — le formateur a rouvert le test — rarme la remise.
     partie.current = false;
     const tic = () => {
+      if (partieRendue.current) return;
       const r = fin - Date.now();
       setReste(r);
       if (r <= 0 && !partie.current) {
         partie.current = true;
         const ecrites = Object.values(reponsesRef.current).some((v) => v.trim());
         if (ecrites) {
-          toast("Temps écoulé : votre copie est rendue.");
           void rendre();
         } else {
           toast(
@@ -148,6 +162,7 @@ export default function Passation({
     };
     tic();
     const minuterie = window.setInterval(tic, 1000);
+    arretChrono.current = () => window.clearInterval(minuterie);
     return () => window.clearInterval(minuterie);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fin]);
@@ -204,14 +219,16 @@ export default function Passation({
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Remise impossible.");
+      partieRendue.current = true;
+      arretChrono.current();
       try {
         localStorage.removeItem(cle);
         localStorage.removeItem(cleDebut);
       } catch {
         // Rien à nettoyer.
       }
-      toast("Copie rendue");
-      router.refresh();
+      setRendueA(formatHeure(instantEtablissement().heure));
+      setModaleRendue(true);
     } catch (e) {
       toast(e instanceof Error ? e.message : "Remise impossible.", "error");
     } finally {
@@ -285,6 +302,21 @@ export default function Passation({
       ) : null}
 
       {/* ── Les questions ────────────────────────────────────────────────── */}
+      {rendue ? (
+        <p className="flex items-center gap-2 rounded-[12px] border border-tint-green bg-success-wash px-4 py-3 text-[15px] text-green-dark">
+          <CircleCheck className="h-5 w-5 shrink-0" aria-hidden />
+          <span>
+            <span className="font-semibold">Copie rendue à {rendueA}.</span>{" "}
+            Vos réponses ne peuvent plus être modifiées.
+          </span>
+        </p>
+      ) : null}
+
+      <fieldset
+        disabled={rendue}
+        aria-label={rendue ? "Copie rendue, réponses verrouillées" : undefined}
+        className={`m-0 min-w-0 border-0 p-0 transition-opacity duration-200 ${rendue ? "pointer-events-none select-none opacity-55 grayscale" : ""}`}
+      >
       <ol className="flex flex-col gap-6">
         {sujet.map((q, i) => {
           const repondu = Boolean((reponses[q.id] ?? "").trim());
@@ -404,6 +436,7 @@ export default function Passation({
           );
         })}
       </ol>
+      </fieldset>
 
       {/* ── Remise ───────────────────────────────────────────────────────── */}
       <div className="sticky bottom-24 z-10 flex flex-col gap-2.5 rounded-[14px] border border-border bg-surface p-3 shadow-ancre md:bottom-4 md:flex-row md:items-center md:gap-4">
@@ -413,14 +446,19 @@ export default function Passation({
             aria-live="off"
             aria-label={`Temps restant : ${chrono(reste)}`}
             className={`inline-flex items-center gap-1.5 self-start rounded-[8px] px-2.5 py-1.5 font-mono text-[15px] font-semibold tabular-nums ${
-              reste <= 5 * 60_000
-                ? "bg-alert-wash text-coral-dark"
-                : "bg-wash-strong text-ink"
+              rendue
+                ? "bg-success-wash text-green-dark"
+                : reste <= 5 * 60_000
+                  ? "bg-alert-wash text-coral-dark"
+                  : "bg-wash-strong text-ink"
             }`}
           >
             <Timer className="h-4 w-4" aria-hidden />
             {chrono(reste)}
-            {chronoDeTest ? (
+            {rendue ? (
+              <span className="ml-1 font-sans text-[11.5px] font-normal">arrêté</span>
+            ) : null}
+            {chronoDeTest && !rendue ? (
               <span className="ml-1 font-sans text-[11.5px] font-normal text-slate">
                 durée du contrôle
               </span>
@@ -454,7 +492,9 @@ export default function Passation({
             {repondues} sur {sujet.length} répondue{repondues > 1 ? "s" : ""}
             {apercu
               ? " · aperçu, rien n'est enregistré"
-              : gardee && repondues > 0
+              : rendue
+                ? " · copie rendue"
+                : gardee && repondues > 0
                 ? " · gardée sur cet appareil"
                 : ""}
           </p>
@@ -462,13 +502,42 @@ export default function Passation({
             icon={Send}
             className="min-h-[44px] max-md:w-full"
             onClick={() => setConfirme(true)}
-            disabled={apercu || busy || repondues === 0}
+            disabled={apercu || busy || rendue || repondues === 0}
             title={apercu ? "Aperçu : la remise est désactivée." : undefined}
           >
-            {busy ? "Remise…" : "Rendre ma copie"}
+            {rendue ? "Copie rendue" : busy ? "Remise…" : "Rendre ma copie"}
           </Button>
         </div>
       </div>
+
+      <Modal
+        open={modaleRendue}
+        onClose={() => setModaleRendue(false)}
+        title="Votre copie est bien rendue"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setModaleRendue(false)}>
+              Rester sur la page
+            </Button>
+            <Button onClick={() => router.push("/espace-stagiaire/controles")}>
+              Retour à mes contrôles
+            </Button>
+          </>
+        }
+      >
+        <div className="flex gap-3">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-success-wash text-green-dark">
+            <CircleCheck className="h-6 w-6" aria-hidden />
+          </span>
+          <p className="text-[15px] leading-relaxed text-body">
+            Reçue à {rendueA}
+            {reste !== null && reste <= 0 ? ", à la fin du temps" : ""}. Votre
+            formateur va la corriger : quand il publiera le résultat, revenez sur
+            ce contrôle pour voir votre note, la bonne réponse de chaque
+            question et ses commentaires.
+          </p>
+        </div>
+      </Modal>
 
       <ConfirmModal
         open={confirme}
