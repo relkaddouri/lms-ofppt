@@ -2362,6 +2362,10 @@ export type Database = {
         Args: { p_genre: string; p_id: string }
         Returns: undefined
       }
+      publier_resultat: {
+        Args: { p_passation_id: string; p_publier: boolean }
+        Returns: string
+      }
       reglages_commentaires_groupe: {
         Args: { p_groupe: string }
         Returns: {
