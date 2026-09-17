@@ -1057,6 +1057,13 @@ export default function ControleManager({
                             onChange={(donnees) =>
                               updateQuestion(q.id, { donnees })
                             }
+                            moduleId={moduleId}
+                            type={q.type}
+                            enonce={q.enonce}
+                            corrige={q.corrige}
+                            onEnonce={(enonce) =>
+                              updateQuestion(q.id, { enonce })
+                            }
                           />
                           <AlertesQuestion
                             type={q.type}

@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { AlertTriangle, Table2 } from "lucide-react";
+import { AlertTriangle, Sparkles, Table2 } from "lucide-react";
+import { useToast } from "@/components/ui/Toast";
 import DonneesQuestion from "@/components/DonneesQuestion";
 import { alertesQuestion } from "@/lib/verification-questions";
 
@@ -12,44 +13,111 @@ import { alertesQuestion } from "@/lib/verification-questions";
  * de cours n'en ont pas besoin, et un champ vide sous chacune alourdirait la
  * relecture. L'aperçu montre exactement ce que le stagiaire verra en ligne —
  * un tableau Markdown mal aligné se voit ici, pas le jour du contrôle.
+ *
+ * Les données s'écrivent à la main ou se demandent au modèle, question par
+ * question : il reçoit l'énoncé et le corrigé, et rend un matériau qui permet
+ * d'y répondre — plus l'énoncé retouché s'il renvoyait à une annexe.
  */
 export function ChampDonnees({
   id,
   numero,
   valeur,
   onChange,
+  moduleId,
+  type,
+  enonce,
+  corrige,
+  onEnonce,
 }: {
   id: string;
   numero: number;
   valeur: string;
   onChange: (v: string) => void;
+  moduleId: string;
+  type: string;
+  enonce: string;
+  corrige: string;
+  onEnonce: (v: string) => void;
 }) {
+  const toast = useToast();
   const [ouvert, setOuvert] = useState(false);
   const [apercu, setApercu] = useState(false);
+  const [genere, setGenere] = useState(false);
+
+  async function generer() {
+    if (!enonce.trim()) {
+      toast("Écrivez d'abord l'énoncé : les données en dépendent.", "error");
+      return;
+    }
+    setGenere(true);
+    try {
+      const res = await fetch("/api/generate/controle/donnees", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ moduleId, type, enonce, donnees: valeur, corrige }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Échec de génération");
+      onChange(data.donnees);
+      if (data.enonce) onEnonce(data.enonce);
+      setOuvert(true);
+      setApercu(true);
+      toast(
+        data.enonce
+          ? `Données générées pour la question ${numero} — l'énoncé renvoyait à une pièce absente, il a été reformulé.`
+          : `Données générées pour la question ${numero} — relisez-les.`,
+      );
+    } catch (err) {
+      toast(err instanceof Error ? err.message : "Erreur inattendue", "error");
+    } finally {
+      setGenere(false);
+    }
+  }
+
+  const boutonIa = (
+    <button
+      type="button"
+      onClick={generer}
+      disabled={genere}
+      className="flex items-center gap-1.5 text-[13px] font-semibold text-teal hover:underline disabled:cursor-wait disabled:opacity-60"
+    >
+      <Sparkles className="h-3.5 w-3.5" aria-hidden />
+      {genere
+        ? "Génération des données…"
+        : valeur.trim()
+          ? "Régénérer avec l'IA"
+          : "Générer les données avec l'IA"}
+    </button>
+  );
 
   if (!valeur.trim() && !ouvert) {
     return (
-      <button
-        type="button"
-        onClick={() => setOuvert(true)}
-        className="flex items-center gap-1.5 self-start text-[13px] font-semibold text-teal hover:underline"
-      >
-        <Table2 className="h-3.5 w-3.5" aria-hidden />
-        Ajouter des données (observations, tableau, extrait…)
-      </button>
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5">
+        <button
+          type="button"
+          onClick={() => setOuvert(true)}
+          className="flex items-center gap-1.5 text-[13px] font-semibold text-teal hover:underline"
+        >
+          <Table2 className="h-3.5 w-3.5" aria-hidden />
+          Ajouter des données (observations, tableau, extrait…)
+        </button>
+        {boutonIa}
+      </div>
     );
   }
 
   return (
     <div className="flex flex-col gap-1.5">
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
         <label
           htmlFor={`donnees-${id}`}
           className="font-mono text-[11px] uppercase tracking-[0.1em] text-slate-light"
         >
           Données — affichées au stagiaire sous l&apos;énoncé
         </label>
-        <span className="ml-auto flex gap-1 text-[12px]">
+        <span className="ml-auto flex items-center gap-3 text-[12px]">
+          {boutonIa}
+          <span className="flex gap-1">
           {(["Écrire", "Aperçu"] as const).map((libelle) => {
             const actif = (libelle === "Aperçu") === apercu;
             return (
@@ -66,6 +134,7 @@ export function ChampDonnees({
               </button>
             );
           })}
+          </span>
         </span>
       </div>
       {apercu ? (

@@ -1,6 +1,6 @@
 "use client";
 
-import ReponseMarkdown from "@/components/ReponseMarkdown";
+import { CorpsRedige } from "@/components/DocumentRedige";
 import { Table2 } from "lucide-react";
 
 /**
@@ -11,21 +11,20 @@ import { Table2 } from "lucide-react";
  * d'autre sous la main — ces données sont donc sur l'écran même où il
  * répond, entre l'énoncé et son champ de réponse.
  *
- * Rendues en Markdown pour les tableaux et les listes, par le même moteur que
- * les réponses du formateur : sûr par construction, aucun HTML interprété.
- * Un tableau large défile dans son cadre, jamais la page — le contrôle se
- * passe aussi depuis un téléphone.
+ * Rendues par le même moteur que les supports de cours : tableaux à en-tête
+ * encre, qui deviennent des blocs empilés sur téléphone, listes numérotées. Le
+ * stagiaire lit ses données comme il lit ses cours. Aucun HTML interprété.
  */
 export default function DonneesQuestion({ texte }: { texte: string }) {
   return (
-    <div className="mt-3 overflow-hidden rounded-[10px] border border-border bg-paper-alt">
-      <p className="flex items-center gap-1.5 border-b border-separator px-3 py-2 font-mono text-[11px] uppercase tracking-[0.1em] text-slate-light">
+    <section className="mt-4 overflow-hidden rounded-[12px] border border-border bg-paper-alt">
+      <p className="flex items-center gap-1.5 border-b border-separator bg-surface px-4 py-2 font-mono text-[11px] uppercase tracking-[0.12em] text-slate-light">
         <Table2 className="h-3.5 w-3.5" aria-hidden />
         Données
       </p>
-      <div className="px-3 py-3">
-        <ReponseMarkdown texte={texte} camarades={[]} />
+      <div className="px-4 py-4 md:px-5">
+        <CorpsRedige texte={texte} />
       </div>
-    </div>
+    </section>
   );
 }

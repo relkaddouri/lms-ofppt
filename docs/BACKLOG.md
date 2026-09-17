@@ -529,19 +529,25 @@ Demande du porteur de projet du 16 septembre 2026, à partir d'un sujet de CC de
   **Fait** : table `versions_controle` (migration 089) — chaque enregistrement fige l'en-tête et les questions, sans doublon quand rien n'a changé ; version 1 créée pour les contrôles existants. « Enregistrer » à chaque étape, sans exiger un contrôle complet (barème, QCM, titre : c'est la validation qui les exige désormais) ; « Modifications non enregistrées » affiché, et le navigateur retient la page. Régénérer un brouillon ouvert le garde attaché. « Versions » recharge une version dans l'éditeur ; l'enregistrer crée une nouvelle version marquée « Retour à la version N », rien n'est effacé. « Dupliquer en variante » crée un brouillon qui garde son origine. Un contrôle qui a des copies refuse d'être réécrit et renvoie vers la variante.
   **Vérifié** : sur M202, génération → v1, régénération → v2 (même contrôle), retour à v1 → v3 identique octet pour octet à v1 en base, variante → v1 « duplication » depuis la v3. Contrôles de test sauvegardés puis supprimés (6/20/8 → 4/0/4). Non testé en réel : le refus sur un contrôle qui a des copies (aucune copie en base à ce jour).
 
+- [x] **10.3b — Le sujet en ligne, présenté comme un support de cours** · branche `controle-presentation`
+  Demande du 17/09 : les données d'une question générées par l'IA à la demande ; la passation présentée comme le support Markdown du stagiaire, avec un emplacement où répondre tranquillement.
+  **Test** : générer les données d'un exercice qui renvoie à une annexe ; relire la passation d'un sujet mêlant QCM, question ouverte et exercice avec tableau.
+  **Fait** : « Générer les données avec l'IA » sous chaque question (route `/api/generate/controle/donnees`) — l'IA reçoit énoncé et corrigé, rend les données et reformule l'énoncé s'il renvoyait à une pièce absente. Passation : couverture encre (nature, durée, barème, questions), consignes, questions à gros numéro de couleur, énoncés et données rendus par le moteur des supports (`CorpsRedige`), zone « Votre réponse » dimensionnée selon le type et le barème, compteur de mots, copie gardée sur l'appareil à chaque frappe et retrouvée au retour, pastilles pour aller à une question. L'aperçu des données dans l'éditeur utilise le même rendu.
+  **Vérifié** : sur M202, un exercice « corpus fourni en annexe » → énoncé reformulé « à partir des données ci-dessous », dix verbatims et un tableau de relevés, alerte levée ; rien enregistré. Passation relue sur une page d'aperçu temporaire (supprimée) : rendu, réponse retrouvée après rechargement. Non vérifié à l'écran : la largeur téléphone (la fenêtre de test ne descend pas sous 1 500 px).
+
 - [ ] **10.4 — Les contrôles de test, sur une ou plusieurs séances** · branche `controle-test`
   Un troisième type, formatif ; périmètre choisi séance par séance ; hors minimum réglementaire, hors échéances, hors moyenne ; barème libre, 20 par défaut.
   **Test** : un test sur deux séances non contiguës de M202 ; il n'apparaît ni dans le décompte 2 CC + 1 EFM ni dans la moyenne.
 
 - [ ] **10.5 — La passation d'un contrôle de test** · branche `controle-test-passation`
-  Ouvrir et fermer le test au groupe ; chronométré ou non ; note et corrigé dès la remise ou à la publication, au choix du formateur.
-  **Test** : un test ouvert, passé depuis un compte stagiaire, fermé ; les deux modes de retour.
+  Ouvrir et fermer le test au groupe ; chronométré ou non ; note et corrigé visibles seulement après relecture et publication par le formateur.
+  **Test** : un test ouvert, passé depuis un compte stagiaire, fermé ; la note n'apparaît au stagiaire qu'après publication.
 
 - [ ] **10.6 — L'analyse de compréhension** · branche `controle-analyse`
   À partir des réponses réelles : réussite et erreurs fréquentes par question et par notion, niveau de la classe, stagiaires à accompagner, ajustements proposés et séances où les placer. Enregistrée, jamais partagée aux stagiaires, envoyée au modèle sans les noms.
   **Test** : une analyse sur un jeu de copies de test dont les erreurs sont connues d'avance ; l'analyse doit les retrouver.
 
-**À valider par le porteur de projet avant 10.4 et 10.5** : la note d'un test hors moyenne ; le retour dès la remise par défaut.
+**Validé par le porteur de projet le 17/09** : la note d'un test n'entre pas dans la moyenne ; pas de retour à la remise — le formateur vérifie la correction de l'IA, puis publie.
 
 ---
 
