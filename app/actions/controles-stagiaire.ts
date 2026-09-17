@@ -48,6 +48,9 @@ export async function getMesControles(): Promise<ControleStagiaire[]> {
       .select(
         "id, titre, type, type_efm, format, duree_heures, date_prevue, consignes, modules(nom, competences(code_operationnel))",
       )
+      // Un test se passera quand le formateur l'ouvrira (10.5) ; d'ici là, il
+      // n'est pas au programme du stagiaire. La politique l'écarte aussi.
+      .neq("type", "TEST")
       .order("date_prevue", { nullsFirst: false }),
     supabase
       .from("passations_controle")

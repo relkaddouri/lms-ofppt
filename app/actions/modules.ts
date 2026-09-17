@@ -109,6 +109,8 @@ export type ModuleControleInfo = {
    */
   groupeId: string;
   groupeNom: string;
+  /** CC, EFM, ou TEST — un contrôle de test ne compte pas dans le minimum réglementaire. */
+  type: "CC" | "EFM" | "TEST";
 };
 
 /** Compétence du référentiel dont le module est la déclinaison opérationnelle. */
@@ -170,7 +172,7 @@ export async function getModuleDetail(
       .order("created_at"),
     supabase
       .from("controles")
-      .select("id, titre, statut, groupe_id, groupes(nom)")
+      .select("id, titre, statut, type, groupe_id, groupes(nom)")
       .eq("module_id", moduleId)
       .in("groupe_id", groupeIds)
       // Groupe d'abord, puis du plus récent au plus ancien : les contrôles
@@ -202,6 +204,7 @@ export async function getModuleDetail(
         id: string;
         titre: string | null;
         statut: "brouillon" | "valide";
+        type: "CC" | "EFM" | "TEST";
         groupe_id: string;
         groupes: { nom: string } | null;
       }[]
@@ -210,6 +213,7 @@ export async function getModuleDetail(
         id: c.id,
         titre: c.titre,
         statut: c.statut,
+        type: c.type,
         groupeId: c.groupe_id,
         groupeNom: c.groupes?.nom ?? "Groupe",
       }))

@@ -98,7 +98,8 @@ export async function getMonEmploiDuTemps(): Promise<EvenementStagiaire[]> {
       .select(
         "id, titre, type, type_efm, date_prevue, date_administration, duree_heures, modules(nom, competences(code_operationnel))",
       )
-      .eq("groupe_id", identite.groupeId),
+      .eq("groupe_id", identite.groupeId)
+      .neq("type", "TEST"),
   ]);
 
   if (seancesRes.error) throw new Error(seancesRes.error.message);

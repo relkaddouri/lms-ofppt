@@ -88,8 +88,10 @@ export default function CorrectionManager({
 
   // PRD §4.7 : la note se lit sur le total du contrôle corrigé — 20 pour un
   // contrôle continu, 40 pour une épreuve de fin de module.
+  const controleCorrige = controles.find((c) => c.id === controleId);
   const totalAttendu = baremeAttendu(
-    controles.find((c) => c.id === controleId)?.type,
+    controleCorrige?.type,
+    controleCorrige?.bareme_total,
   );
 
   const oublierIa = (id: string) =>

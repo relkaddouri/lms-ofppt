@@ -124,7 +124,18 @@ export default async function ModuleDetailPage({
                 Contrôles
               </h2>
               <p className="text-xs text-slate">
-                {controles.length} contrôle{controles.length > 1 ? "s" : ""}
+                {(() => {
+                  // Un test se compte à part : il n'entre pas dans le minimum
+                  // réglementaire de 2 CC et 1 EFM (PRD §4.7bis).
+                  const tests = controles.filter((c) => c.type === "TEST").length;
+                  const reglementaires = controles.length - tests;
+                  return [
+                    `${reglementaires} contrôle${reglementaires > 1 ? "s" : ""}`,
+                    tests > 0 ? `${tests} test${tests > 1 ? "s" : ""}` : null,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ");
+                })()}
               </p>
             </div>
           </div>
@@ -336,6 +347,15 @@ export default async function ModuleDetailPage({
                   entete: "Titre",
                   role: "titre",
                   cellule: (c) => c.titre ?? "Sans titre",
+                },
+                {
+                  cle: "nature",
+                  entete: "Nature",
+                  cellule: (c) => (
+                    <Badge tone={c.type === "TEST" ? "neutral" : "info"}>
+                      {c.type === "TEST" ? "Test" : c.type}
+                    </Badge>
+                  ),
                 },
                 {
                   cle: "statut",

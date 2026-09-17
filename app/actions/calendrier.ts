@@ -84,6 +84,9 @@ export async function getCalendrier(
         "id, module_id, titre, type, type_efm, date_prevue, date_administration, date_envoi_propositions, groupes(nom), modules(nom, competences(code_operationnel))",
       )
       .in("groupe_id", groupeIds)
+      // Le calendrier des épreuves est réglementaire : un contrôle de test
+      // n'y figure pas, ni parmi ce qui reste à dater (PRD §4.7bis).
+      .neq("type", "TEST")
       .order("date_prevue", { nullsFirst: false }),
     // Ce qui reste à poser dans le calendrier : sans ce compte, une grille
     // vide laisse croire qu'il n'y a rien à faire.

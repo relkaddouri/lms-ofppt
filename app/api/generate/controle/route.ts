@@ -102,19 +102,24 @@ export async function POST(request: Request) {
     format: formatRecu,
     type: typeRecu,
     seanceIds,
+    baremeTotal,
   } = await request.json().catch(() => ({}));
 
   const format = formatValide(formatRecu);
   const regles = CONSIGNES_FORMAT[format];
   const estEfm = typeRecu === "EFM";
+  // Un contrôle de test (PRD §4.7bis) : formatif, sur des séances choisies,
+  // barème libre.
+  const estTest = typeRecu === "TEST";
+  const typeBareme = estEfm ? "EFM" : estTest ? "TEST" : "CC";
   // PRD §4.7 : un CC se barème sur 20, un EFM sur 40. Le total n'est pas une
   // constante — demander 20 au modèle pour un EFM produisait un barème faux,
   // que le rattrapage ci-dessous ramenait ensuite vers la mauvaise valeur.
-  const totalAttendu = baremeAttendu(estEfm ? "EFM" : "CC");
+  const totalAttendu = baremeAttendu(typeBareme, Number(baremeTotal) || null);
   // §4.7 : le socle que toute la classe doit pouvoir atteindre — 60 % du
   // total, soit 12/20 ou 24/40 — porté par des questions accessibles ; le
   // reste distingue les meilleurs.
-  const socle = socleAccessible(estEfm ? "EFM" : "CC");
+  const socle = socleAccessible(typeBareme, Number(baremeTotal) || null);
 
   if (!moduleId) {
     return NextResponse.json({ error: "moduleId requis" }, { status: 400 });
@@ -169,7 +174,15 @@ export async function POST(request: Request) {
     )
     .eq("module_id", moduleId)
     .order("date");
-  if (!estEfm) seancesQuery = seancesQuery.eq("statut", "fait");
+  // Un test porte sur les séances choisies, faites ou non ; un CC, sur ce qui
+  // a été fait.
+  if (!estEfm && !estTest) seancesQuery = seancesQuery.eq("statut", "fait");
+  if (estTest && !(Array.isArray(seanceIds) && seanceIds.length > 0)) {
+    return NextResponse.json(
+      { error: "Un contrôle de test porte sur des séances choisies : cochez-en au moins une." },
+      { status: 400 },
+    );
+  }
   if (groupeId) {
     seancesQuery = seancesQuery.eq("seance_groupes.groupe_id", groupeId);
   }
@@ -252,7 +265,13 @@ export async function POST(request: Request) {
     `Module : ${module.nom}`,
     groupeNom ? `Groupe concerné : ${groupeNom}` : null,
     `Durée de l'évaluation : ${duree} heures.`,
-    `Nature de l'épreuve : ${estEfm ? "épreuve de fin de module (EFM)" : "contrôle continu (CC)"}, ${regles.libelle}.`,
+    `Nature de l'épreuve : ${
+      estEfm
+        ? "épreuve de fin de module (EFM)"
+        : estTest
+          ? "contrôle de test formatif, qui ne compte pas dans la note : il sert à vérifier ce que la classe a compris des séances choisies"
+          : "contrôle continu (CC)"
+    }, ${regles.libelle}.`,
     "Contenu réellement couvert :",
     contenuCouvert,
     "",

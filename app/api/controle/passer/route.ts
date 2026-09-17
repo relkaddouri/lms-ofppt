@@ -59,11 +59,18 @@ export async function POST(request: Request) {
 
   const { data: controle } = await service
     .from("controles")
-    .select("id, groupe_id, module_id, statut")
+    .select("id, groupe_id, module_id, statut, type")
     .eq("id", controleId)
     .maybeSingle();
 
-  if (!controle || controle.groupe_id !== moi.groupe_id || controle.statut !== "valide") {
+  // Un contrôle de test ne se compose pas encore en ligne : son ouverture au
+  // groupe arrive avec l'atome 10.5.
+  if (
+    !controle ||
+    controle.groupe_id !== moi.groupe_id ||
+    controle.statut !== "valide" ||
+    controle.type === "TEST"
+  ) {
     return NextResponse.json(
       { error: "Contrôle introuvable ou hors de votre groupe." },
       { status: 404 },

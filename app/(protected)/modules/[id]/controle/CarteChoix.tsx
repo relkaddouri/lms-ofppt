@@ -40,7 +40,7 @@ export default function CarteChoix<T extends string>({
       <div
         role="radiogroup"
         aria-label={titre}
-        className="grid gap-3.5 [grid-template-columns:repeat(auto-fit,minmax(228px,1fr))]"
+        className="grid gap-3.5 [grid-template-columns:repeat(auto-fit,minmax(190px,1fr))]"
       >
         {choix.map((c) => {
           const actif = c.cle === valeur;
