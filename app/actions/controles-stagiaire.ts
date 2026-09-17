@@ -152,9 +152,24 @@ export type MaCopie = {
     points: number;
     commentaire: string;
     reponse: string;
+    /** Rendus avec la correction publiée (migration 094). */
+    type: "qcm" | "ouverte" | "exercice" | null;
+    donnees: string | null;
+    /** Pour un QCM, toutes les propositions avec celles qui sont justes. */
+    options: { texte: string; correcte: boolean }[];
+    /** La réponse attendue. */
+    corrige: string | null;
   }[];
 };
 
+/**
+ * La copie du stagiaire connecté, avec sa correction.
+ *
+ * Null tant que le résultat n'est pas publié : la politique ferme la copie, et
+ * la correction ne sort pas davantage. Une fois publiée, chaque question
+ * porte ce qu'il faut pour comparer — sa réponse, la bonne, les points et le
+ * commentaire du formateur (qui peut avoir revu celui du correcteur).
+ */
 export async function getMaCopie(controleId: string): Promise<MaCopie | null> {
   const supabase = await createClient();
   const user = await getUser();
@@ -167,19 +182,73 @@ export async function getMaCopie(controleId: string): Promise<MaCopie | null> {
     .maybeSingle();
   if (!moi) return null;
 
-  const { data, error } = await supabase
-    .from("passations_controle")
-    .select("note, responses")
-    .eq("controle_id", controleId)
-    .eq("stagiaire_id", moi.id)
-    .maybeSingle();
+  const [copieRes, correctionRes] = await Promise.all([
+    supabase
+      .from("passations_controle")
+      .select("note, responses")
+      .eq("controle_id", controleId)
+      .eq("stagiaire_id", moi.id)
+      .maybeSingle(),
+    supabase.rpc("get_ma_correction", { p_controle_id: controleId }),
+  ]);
 
-  if (error || !data) return null;
+  const data = copieRes.data;
+  if (copieRes.error || !data) return null;
 
-  const details = (data.responses ?? []) as MaCopie["details"];
+  type Enregistre = {
+    question_id: string;
+    enonce?: string | null;
+    bareme?: number | string | null;
+    points?: number | string | null;
+    commentaire?: string | null;
+    reponse?: string | null;
+    corrige?: string | null;
+  };
+  const enregistres = (Array.isArray(data.responses) ? data.responses : []) as Enregistre[];
+  const parQuestion = new Map(enregistres.map((d) => [d.question_id, d]));
+
+  const questions = (correctionRes.data ?? []) as {
+    question_id: string;
+    type: string | null;
+    enonce: string | null;
+    donnees: string | null;
+    bareme: number | string | null;
+    options: unknown;
+    corrige: string | null;
+  }[];
+
+  // L'ordre et le texte viennent des questions actuelles quand elles sont là ;
+  // sinon, de ce que la copie a gardé au moment de la remise.
+  const source: Enregistre[] = questions.length
+    ? questions.map((q) => ({ ...parQuestion.get(q.question_id), question_id: q.question_id }))
+    : enregistres;
+  const questionDe = new Map(questions.map((q) => [q.question_id, q]));
+
+  const details: MaCopie["details"] = source.map((d) => {
+    const q = questionDe.get(d.question_id);
+    const options = Array.isArray(q?.options)
+      ? (q!.options as { texte?: string; correcte?: boolean }[]).map((o) => ({
+          texte: String(o.texte ?? ""),
+          correcte: Boolean(o.correcte),
+        }))
+      : [];
+    return {
+      question_id: d.question_id,
+      enonce: q?.enonce ?? d.enonce ?? "",
+      bareme: Number(q?.bareme ?? d.bareme ?? 0),
+      points: Number(d.points ?? 0),
+      commentaire: d.commentaire ?? "",
+      reponse: d.reponse ?? "",
+      type: (q?.type as MaCopie["details"][number]["type"]) ?? null,
+      donnees: q?.donnees ?? null,
+      options,
+      corrige: q?.corrige ?? d.corrige ?? null,
+    };
+  });
+
   return {
     note: Number(data.note),
-    total: details.reduce((t, d) => t + Number(d.bareme ?? 0), 0),
+    total: details.reduce((t, d) => t + d.bareme, 0),
     details,
   };
 }
