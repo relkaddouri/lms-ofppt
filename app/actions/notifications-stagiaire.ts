@@ -35,7 +35,7 @@ export async function getNotificationsStagiaire(): Promise<Notification[]> {
     Date.now() - JOURS * 24 * 60 * 60 * 1000,
   ).toISOString();
 
-  const [annoncesRes, commentairesRes, reponsesRes] = await Promise.all([
+  const [annoncesRes, commentairesRes, reponsesRes, testsRes] = await Promise.all([
     supabase
       .from("annonces")
       .select("id, titre, created_at")
@@ -59,6 +59,16 @@ export async function getNotificationsStagiaire(): Promise<Notification[]> {
       .gte("created_at", depuis)
       .order("created_at", { ascending: false })
       .limit(20),
+    // Un contrôle de test qu'on vient d'ouvrir au groupe (PRD §4.7bis) : c'est
+    // la seule façon pour le stagiaire de l'apprendre sans qu'on le lui dise.
+    supabase
+      .from("controles")
+      .select("id, titre, ouvert_le, ferme_le")
+      .eq("groupe_id", moi.groupe_id)
+      .eq("type", "TEST")
+      .gte("ouvert_le", depuis)
+      .order("ouvert_le", { ascending: false })
+      .limit(10),
   ]);
 
   const notifications: Notification[] = [];
@@ -106,6 +116,22 @@ export async function getNotificationsStagiaire(): Promise<Notification[]> {
       href: question?.support_id
         ? `/espace-stagiaire/cours/${question.support_id}#question-${question.id}`
         : "/espace-stagiaire/cours",
+    });
+  }
+
+  for (const t of testsRes.data ?? []) {
+    if (!t.ouvert_le) continue;
+    notifications.push({
+      id: `test-${t.id}-${t.ouvert_le}`,
+      genre: "commentaire",
+      texte: "Un contrôle de test est ouvert",
+      reference: t.titre,
+      extrait: t.ferme_le
+        ? "Chronométré : il se ferme à une heure fixée par votre formateur."
+        : null,
+      auteur: null,
+      date: t.ouvert_le,
+      href: `/espace-stagiaire/controles/${t.id}`,
     });
   }
 

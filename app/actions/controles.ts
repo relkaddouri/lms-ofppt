@@ -36,6 +36,9 @@ export type Controle = {
   bareme_total: number | null;
   /** Séances retenues à l'étape « Contenu couvert ». */
   seance_ids: string[] | null;
+  /** Contrôle de test : ouverture au groupe, et sa fin (null : sans limite). */
+  ouvert_le: string | null;
+  ferme_le: string | null;
   /** Renseignés par `getControles`, pour présenter la liste sans ouvrir chaque contrôle. */
   nb_questions?: number;
   total_questions?: number;
@@ -43,7 +46,7 @@ export type Controle = {
 
 const COLONNES_CONTROLE =
   "id, groupe_id, module_id, titre, consignes, duree_heures, type, type_efm, " +
-  "date_prevue, date_administration, format, statut, created_at, bareme_total, seance_ids";
+  "date_prevue, date_administration, format, statut, created_at, bareme_total, seance_ids, ouvert_le, ferme_le";
 
 export type TypeQuestion = "qcm" | "ouverte" | "exercice";
 export type OptionQcm = { texte: string; correcte: boolean };
@@ -404,6 +407,17 @@ export async function getContenuVersion(
  * questions. On en fait une variante.
  */
 async function refuserSiCopies(supabase: Client, controleId: string) {
+  const { data: etat } = await supabase
+    .from("controles")
+    .select("type, ouvert_le, ferme_le")
+    .eq("id", controleId)
+    .maybeSingle();
+  if (etat && estOuvert(etat)) {
+    throw new Error(
+      "Ce test est ouvert au groupe : fermez-le avant de le modifier, les stagiaires composent sur ce sujet.",
+    );
+  }
+
   const { count, error } = await supabase
     .from("passations_controle")
     .select("id", { count: "exact", head: true })
@@ -600,12 +614,109 @@ export async function dupliquerControle(
   return data.id;
 }
 
+/** Vrai si un contrôle de test se compose en ce moment. */
+function estOuvert(c: {
+  type: string;
+  ouvert_le: string | null;
+  ferme_le: string | null;
+}): boolean {
+  if (c.type !== "TEST" || !c.ouvert_le) return false;
+  const maintenant = Date.now();
+  return (
+    new Date(c.ouvert_le).getTime() <= maintenant &&
+    (!c.ferme_le || new Date(c.ferme_le).getTime() > maintenant)
+  );
+}
+
+/**
+ * Ouvre un contrôle de test au groupe (PRD §4.7bis).
+ *
+ * `dureeMinutes` : null pour un test ouvert jusqu'à ce que le formateur le
+ * ferme ; sinon le test se ferme seul au bout de ce temps — c'est ce qui le
+ * rend chronométré. Rouvrir un test fermé est permis : ceux qui ont déjà
+ * rendu leur copie ne peuvent pas la rendre une seconde fois.
+ */
+export async function ouvrirTest(
+  id: string,
+  moduleId: string,
+  dureeMinutes: number | null,
+): Promise<{ ouvert_le: string; ferme_le: string | null }> {
+  const supabase = await createClient();
+  const { data: c, error } = await supabase
+    .from("controles")
+    .select("type, statut, questions_controle(id)")
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!c) throw new Error("Contrôle introuvable.");
+  if (c.type !== "TEST") {
+    throw new Error("Seul un contrôle de test s'ouvre et se ferme au groupe.");
+  }
+  if (c.statut !== "valide") {
+    throw new Error("Validez d'abord le test : on n'ouvre pas un brouillon aux stagiaires.");
+  }
+  if ((c.questions_controle ?? []).length === 0) {
+    throw new Error("Ce test n'a aucune question.");
+  }
+
+  const duree = dureeMinutes === null ? null : Math.round(Number(dureeMinutes));
+  if (duree !== null && !(duree >= 5 && duree <= 600)) {
+    throw new Error("La durée d'un test chronométré va de 5 minutes à 10 heures.");
+  }
+
+  const ouvert = new Date();
+  const ferme = duree === null ? null : new Date(ouvert.getTime() + duree * 60_000);
+  const valeurs = {
+    ouvert_le: ouvert.toISOString(),
+    ferme_le: ferme ? ferme.toISOString() : null,
+  };
+  const { error: errMaj } = await supabase
+    .from("controles")
+    .update(valeurs)
+    .eq("id", id);
+  if (errMaj) throw new Error(errMaj.message);
+
+  revalidatePath(`/modules/${moduleId}/controle`);
+  return valeurs;
+}
+
+/** Ferme un test ouvert : plus aucune copie n'est acceptée. */
+export async function fermerTest(
+  id: string,
+  moduleId: string,
+): Promise<{ ferme_le: string }> {
+  const supabase = await createClient();
+  const ferme_le = new Date().toISOString();
+  const { data, error } = await supabase
+    .from("controles")
+    .update({ ferme_le })
+    .eq("id", id)
+    .eq("type", "TEST")
+    .not("ouvert_le", "is", null)
+    .select("id");
+  if (error) throw new Error(error.message);
+  if (!data?.length) throw new Error("Ce test n'a jamais été ouvert.");
+  revalidatePath(`/modules/${moduleId}/controle`);
+  return { ferme_le };
+}
+
 export async function setControleStatut(
   id: string,
   moduleId: string,
   statut: "brouillon" | "valide",
 ) {
   const supabase = await createClient();
+
+  if (statut === "brouillon") {
+    const { data: etat } = await supabase
+      .from("controles")
+      .select("type, ouvert_le, ferme_le")
+      .eq("id", id)
+      .maybeSingle();
+    if (etat && estOuvert(etat)) {
+      throw new Error("Fermez d'abord le test : il est ouvert au groupe.");
+    }
+  }
 
   // Un brouillon peut être incomplet ; un contrôle validé, non.
   if (statut === "valide") {

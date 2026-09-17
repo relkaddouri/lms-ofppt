@@ -2,7 +2,9 @@ import Link from "next/link";
 import { Clock, FileCheck2 } from "lucide-react";
 import { getMesControles } from "@/app/actions/controles-stagiaire";
 import { formatDateJour } from "@/lib/format";
-import { baremeAttendu, noteSur20 } from "@/lib/controles";
+import { baremeAttendu, noteSur20, testOuvert } from "@/lib/controles";
+import { instantEtablissement } from "@/lib/format";
+import { formatHeure } from "@/lib/creneaux";
 import EnConstruction from "../EnConstruction";
 
 export const metadata = { title: "Contrôles" };
@@ -28,8 +30,10 @@ export default async function ControlesPage() {
   // telles quelles donnerait un chiffre faux : un 31/40 pèserait plus lourd
   // qu'un 19/20 alors qu'il vaut moins. La moyenne passe donc par l'échelle
   // sur 20, celle sous laquelle un stagiaire lit sa scolarité.
+  //
+  // Un contrôle de test n'y entre pas : il est formatif (PRD §4.7bis).
   const notes = controles
-    .filter((c) => c.note !== null)
+    .filter((c) => c.note !== null && c.type !== "TEST")
     .map((c) => noteSur20(c.note as number, baremeAttendu(c.type)));
   const moyenne =
     notes.length > 0
@@ -67,6 +71,9 @@ export default async function ControlesPage() {
         const rendu = c.passationId !== null;
         const note = c.note;
         const efm = c.type === "EFM";
+        const test = c.type === "TEST";
+        const total = baremeAttendu(c.type, c.bareme_total);
+        const ouvert = test && testOuvert(c);
         return (
           <Link
             key={c.id}
@@ -77,10 +84,12 @@ export default async function ControlesPage() {
               className={`flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-[11px] font-mono text-xs font-semibold ${
                 efm
                   ? "bg-tint-teal text-teal-dark"
-                  : "bg-wash-strong text-slate-2"
+                  : test
+                    ? "bg-success-wash text-green-dark"
+                    : "bg-wash-strong text-slate-2"
               }`}
             >
-              {efm ? "EFM" : "CC"}
+              {efm ? "EFM" : test ? "TEST" : "CC"}
             </span>
 
             <span className="flex min-w-0 flex-1 flex-col gap-[5px]">
@@ -91,7 +100,15 @@ export default async function ControlesPage() {
                 <span className="font-mono text-[12.5px] text-slate-light">
                   {[
                     c.codeOperationnel,
-                    c.date_prevue ? formatDateJour(c.date_prevue) : "date à venir",
+                    test
+                      ? ouvert
+                        ? c.ferme_le
+                          ? `ouvert jusqu'à ${formatHeure(instantEtablissement(new Date(c.ferme_le)).heure)}`
+                          : "ouvert maintenant"
+                        : "fermé"
+                      : c.date_prevue
+                        ? formatDateJour(c.date_prevue)
+                        : "date à venir",
                   ]
                     .filter(Boolean)
                     .join(" · ")}
@@ -110,7 +127,7 @@ export default async function ControlesPage() {
                 className={`font-mono text-base font-medium ${
                   note === null
                     ? "text-muted"
-                    : note >= baremeAttendu(c.type) / 2
+                    : note >= total / 2
                       ? "text-green-dark"
                       : "text-coral-dark"
                 }`}
@@ -119,7 +136,7 @@ export default async function ControlesPage() {
                     ramener sur 20 masquerait le barème de l'épreuve. */}
                 {note === null
                   ? "—"
-                  : `${note.toLocaleString("fr-FR")}/${baremeAttendu(c.type)}`}
+                  : `${note.toLocaleString("fr-FR")}/${total}`}
               </span>
               <span
                 className={`whitespace-nowrap rounded-full border px-2 py-px text-[11px] font-semibold ${
@@ -130,7 +147,13 @@ export default async function ControlesPage() {
                       : "border-border bg-wash-strong text-slate-2"
                 }`}
               >
-                {note !== null ? "Corrigé" : rendu ? "Rendu" : "À composer"}
+                {note !== null
+                  ? "Corrigé"
+                  : rendu
+                    ? "Rendu"
+                    : test && !ouvert
+                      ? "Fermé"
+                      : "À composer"}
               </span>
             </span>
           </Link>

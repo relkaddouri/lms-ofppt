@@ -24,6 +24,7 @@ import ContenuCouvert from "./ContenuCouvert";
 import { AlertesQuestion, ChampDonnees } from "./ChampDonnees";
 import VersionsControle from "./VersionsControle";
 import ListeControles from "./ListeControles";
+import PassationTest from "./PassationTest";
 import Passation from "@/app/espace-stagiaire/controles/[id]/Passation";
 import { Stepper, NavigationEtapes, ETAPES } from "./Stepper";
 import CarteChoix, { type Choix } from "./CarteChoix";
@@ -272,6 +273,9 @@ export default function ControleManager({
   const [chargements, setChargements] = useState(0);
   // Le total d'un contrôle de test, libre ; 20 par défaut.
   const [baremeTotal, setBaremeTotal] = useState(20);
+  // L'ouverture d'un test au groupe (10.5).
+  const [ouvertLe, setOuvertLe] = useState<string | null>(null);
+  const [fermeLe, setFermeLe] = useState<string | null>(null);
 
   // Une seule clé pour les cartes de nature, recomposée depuis les deux champs
   // que le modèle enregistre.
@@ -433,6 +437,8 @@ export default function ControleManager({
       const c = await getControle(id);
       if (!c) return;
       setStatut(c.statut);
+      setOuvertLe(c.ouvert_le);
+      setFermeLe(c.ferme_le);
       setReference(appliquer(c));
       setRestaureDe(null);
       setNotice(null);
@@ -470,6 +476,8 @@ export default function ControleManager({
     setFormat("theorique");
     setDatePrevue("");
     setBaremeTotal(20);
+    setOuvertLe(null);
+    setFermeLe(null);
     setSeancesRetenues([]);
     setSeancesEnregistrees(null);
     setChargements((n) => n + 1);
@@ -800,6 +808,23 @@ export default function ControleManager({
         </p>
       </header>
 
+      {type === "TEST" && activeId ? (
+        <PassationTest
+          controleId={activeId}
+          moduleId={moduleId}
+          statut={statut}
+          modifie={modifie}
+          ouvertLe={ouvertLe}
+          fermeLe={fermeLe}
+          onChange={(o, f) => {
+            setOuvertLe(o);
+            setFermeLe(f);
+            router.refresh();
+          }}
+          onVoirCopies={() => setTab("copies")}
+        />
+      ) : null}
+
       <div className="mt-6 flex flex-wrap items-end gap-4 rounded-[14px] border border-border bg-surface p-[18px] shadow-repos">
         <div>
           <label
@@ -936,6 +961,11 @@ export default function ControleManager({
                   duree_heures: duree,
                   date_prevue: datePrevue || null,
                   consignes: consignes || null,
+                  bareme_total: type === "TEST" ? baremeTotal : null,
+                  // L'aperçu ne montre pas de compte à rebours : il n'y a
+                  // pas de passation en cours.
+                  ouvert_le: null,
+                  ferme_le: null,
                   moduleNom,
                   codeOperationnel: moduleCode,
                   note: null,
