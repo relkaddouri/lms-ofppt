@@ -23,6 +23,8 @@ import CopiesManager from "./CopiesManager";
 import ContenuCouvert from "./ContenuCouvert";
 import { AlertesQuestion, ChampDonnees } from "./ChampDonnees";
 import VersionsControle from "./VersionsControle";
+import ListeControles from "./ListeControles";
+import Passation from "@/app/espace-stagiaire/controles/[id]/Passation";
 import { Stepper, NavigationEtapes, ETAPES } from "./Stepper";
 import CarteChoix, { type Choix } from "./CarteChoix";
 import Segments from "@/components/ui/Segments";
@@ -256,7 +258,7 @@ export default function ControleManager({
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
-  const [tab, setTab] = useState<"editeur" | "copies">("editeur");
+  const [tab, setTab] = useState<"editeur" | "apercu" | "copies">("editeur");
   const [avertissements, setAvertissements] = useState<string[]>([]);
   const [instruction, setInstruction] = useState("");
   // Préparer un contrôle se fait en quatre temps : voir ce qui est couvert,
@@ -434,6 +436,9 @@ export default function ControleManager({
       setReference(appliquer(c));
       setRestaureDe(null);
       setNotice(null);
+      // Un contrôle qui a déjà des questions s'ouvre sur elles : repartir de
+      // l'étape 1 le faisait passer pour un contrôle neuf.
+      setEtape(c.questions.length > 0 ? 3 : 1);
     } finally {
       setLoading(false);
     }
@@ -444,6 +449,14 @@ export default function ControleManager({
     loadControle(activeId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeId]);
+
+  /** Quitter le contrôle affiché sans perdre en silence ce qui n'est pas enregistré. */
+  function peutQuitter(): boolean {
+    return (
+      !modifie ||
+      window.confirm("Les modifications non enregistrées seront perdues. Continuer ?")
+    );
+  }
 
   function handleNew() {
     setActiveId(null);
@@ -462,6 +475,9 @@ export default function ControleManager({
     setChargements((n) => n + 1);
     setQuestions([]);
     setNotice(null);
+    setAvertissements([]);
+    setIssuDuModele(false);
+    setEtape(1);
     setReference(null);
     setRestaureDe(null);
   }
@@ -746,14 +762,34 @@ export default function ControleManager({
         ]}
       />
 
-      <header className="mt-6 flex flex-col gap-2">
+      <ListeControles
+        controles={controles}
+        activeId={activeId}
+        nouveau={activeId === null}
+        onOuvrir={(id) => {
+          if (peutQuitter()) setActiveId(id);
+        }}
+        onNouveau={() => {
+          if (activeId === null && !modifie) return;
+          if (peutQuitter()) handleNew();
+        }}
+      />
+
+      <header className="mt-8 flex flex-col gap-2">
         <span className="font-mono text-[11.5px] uppercase tracking-[0.12em] text-slate-light">
           Étape {etape} sur {ETAPES.length} · {ETAPES[etape - 1]?.libelle}
         </span>
         <h1 className="font-display text-[29px] font-bold leading-tight tracking-[-0.02em] text-ink">
           {titre.trim() || `Contrôle — ${moduleNom}`}
         </h1>
-        <p className="text-base text-slate-2">
+        <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-base text-slate-2">
+          <Badge tone={statut === "valide" ? "success" : "neutral"}>
+            {activeId === null
+              ? "Nouveau, pas encore enregistré"
+              : statut === "valide"
+                ? "Validé"
+                : "Brouillon"}
+          </Badge>
           {[
             groupeNom,
             NATURES.find((n) => n.cle === natureCle)?.label,
@@ -824,29 +860,6 @@ export default function ControleManager({
           >
             Enregistrer
           </Button>
-          <select
-            value={activeId ?? ""}
-            onChange={(e) => {
-              if (
-                modifie &&
-                !window.confirm(
-                  "Les modifications non enregistrées seront perdues. Continuer ?",
-                )
-              ) {
-                return;
-              }
-              if (e.target.value === "__new") handleNew();
-              else if (e.target.value) setActiveId(e.target.value);
-            }}
-            className={`${inputClass} !w-64 max-md:!w-full`}
-          >
-            <option value="__new">— Nouveau contrôle —</option>
-            {controles.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.titre ?? "Sans titre"} ({c.statut})
-              </option>
-            ))}
-          </select>
         </div>
       </div>
 
@@ -882,19 +895,72 @@ export default function ControleManager({
         </p>
       ) : null}
 
-      <div className="mt-6 max-w-[320px]">
+      <div className="mt-6 max-w-[420px]">
         <Segments
           valeur={tab}
           ariaLabel="Vue du contrôle"
           onChange={setTab}
           options={[
             { valeur: "editeur" as const, libelle: "Éditeur" },
+            { valeur: "apercu" as const, libelle: "Aperçu" },
             { valeur: "copies" as const, libelle: "Copies" },
           ]}
         />
       </div>
 
-      {tab === "copies" ? (
+      {tab === "apercu" ? (
+        <div className="mt-6 flex flex-col gap-4">
+          <p className="rounded-[12px] border border-tint-teal-strong bg-tint-teal px-4 py-3 text-[14px] leading-relaxed text-ink">
+            <span className="font-semibold">Aperçu stagiaire.</span> Le
+            contrôle tel qu&apos;il s&apos;affichera en ligne, construit sur ce
+            qui est à l&apos;écran{modifie ? ", modifications non enregistrées comprises" : ""}.
+            Vous pouvez cocher et écrire pour essayer ; rien n&apos;est gardé
+            ni rendu. Le corrigé et les bonnes réponses n&apos;y figurent pas.
+          </p>
+          {questions.length === 0 ? (
+            <p className="rounded-[14px] border border-border bg-surface p-4 text-sm text-slate shadow-repos">
+              Aucune question pour l&apos;instant : générez ou écrivez le
+              contrôle dans l&apos;éditeur.
+            </p>
+          ) : (
+            <div className="mx-auto w-full max-w-4xl rounded-[18px] border border-border bg-paper p-4 md:p-6">
+              <Passation
+                key={activeId ?? "nouveau"}
+                apercu
+                controle={{
+                  id: activeId ?? "apercu",
+                  titre: titre.trim() || `Contrôle — ${moduleNom}`,
+                  type,
+                  type_efm: type === "EFM" ? typeEfm : null,
+                  format,
+                  duree_heures: duree,
+                  date_prevue: datePrevue || null,
+                  consignes: consignes || null,
+                  moduleNom,
+                  codeOperationnel: moduleCode,
+                  note: null,
+                  passationId: null,
+                }}
+                sujet={questions.map((q) => ({
+                  id: q.id,
+                  type: q.type,
+                  enonce: q.enonce,
+                  donnees: q.donnees.trim() || null,
+                  bareme: Number(q.bareme) || 0,
+                  // Le stagiaire ne reçoit que le texte des propositions,
+                  // jamais laquelle est juste.
+                  options:
+                    q.type === "qcm"
+                      ? q.options
+                          .filter((o) => o.texte.trim())
+                          .map((o) => ({ texte: o.texte }))
+                      : null,
+                }))}
+              />
+            </div>
+          )}
+        </div>
+      ) : tab === "copies" ? (
         activeId ? (
           <div className="mt-6">
             <CopiesManager

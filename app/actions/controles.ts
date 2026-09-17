@@ -36,6 +36,9 @@ export type Controle = {
   bareme_total: number | null;
   /** Séances retenues à l'étape « Contenu couvert ». */
   seance_ids: string[] | null;
+  /** Renseignés par `getControles`, pour présenter la liste sans ouvrir chaque contrôle. */
+  nb_questions?: number;
+  total_questions?: number;
 };
 
 const COLONNES_CONTROLE =
@@ -156,13 +159,24 @@ export async function getControles(
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("controles")
-    .select(COLONNES_CONTROLE)
+    .select(`${COLONNES_CONTROLE}, questions_controle(bareme)`)
     .eq("groupe_id", groupeId)
     .eq("module_id", moduleId)
     .order("created_at", { ascending: false });
 
   if (error) throw new Error(error.message);
-  return data as unknown as Controle[];
+  return (
+    data as unknown as (Controle & {
+      questions_controle: { bareme: number | string | null }[] | null;
+    })[]
+  ).map(({ questions_controle, ...c }) => ({
+    ...c,
+    nb_questions: questions_controle?.length ?? 0,
+    total_questions: (questions_controle ?? []).reduce(
+      (t, q) => t + (Number(q.bareme) || 0),
+      0,
+    ),
+  }));
 }
 
 export async function getControle(id: string): Promise<ControleDetail | null> {

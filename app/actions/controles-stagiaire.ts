@@ -5,7 +5,7 @@ import { createClient, getUser } from "@/lib/supabase/server";
 export type ControleStagiaire = {
   id: string;
   titre: string | null;
-  type: "CC" | "EFM";
+  type: "CC" | "EFM" | "TEST";
   type_efm: "local" | "regional" | null;
   format: string | null;
   duree_heures: number | null;
