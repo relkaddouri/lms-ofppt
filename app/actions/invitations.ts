@@ -292,6 +292,8 @@ export async function inviterGroupe(
     .from("stagiaires")
     .select("id, nom, prenom, email, user_id, groupe_id")
     .eq("groupe_id", groupeId)
+    // Le compte de test du formateur n'est pas un stagiaire (migration 093).
+    .eq("est_test", false)
     .order("nom");
 
   if (error) throw new Error(error.message);
@@ -343,3 +345,194 @@ export async function inviterGroupe(
   revalidatePath(`/groupes/${groupeId}`);
   return resultat;
 }
+
+// ── Compte de test du formateur (migration 093) ──────────────────────────
+
+export type CompteDeTest = {
+  id: string;
+  email: string | null;
+  /** Le compte existe côté authentification. */
+  ouvert: boolean;
+  /** Le formateur s'y est déjà connecté : son mot de passe est choisi. */
+  dejaConnecte: boolean;
+};
+
+/**
+ * Le compte de test du groupe, et l'adresse à proposer s'il n'existe pas.
+ *
+ * La proposition reprend l'adresse du formateur avec un suffixe « +groupe » :
+ * Gmail, Outlook et la plupart des messageries livrent `nom+ddoux201@…` dans
+ * la même boîte que `nom@…`, et l'authentification y voit une adresse
+ * distincte — il faut bien un identifiant différent du compte formateur.
+ */
+export async function getCompteDeTest(groupeId: string): Promise<{
+  compte: CompteDeTest | null;
+  suggestion: string | null;
+}> {
+  const formateur = await getUser();
+  if (!formateur) throw new Error("Authentification requise.");
+
+  const supabase = await createClient();
+  const [{ data: ligne }, { data: groupe }] = await Promise.all([
+    supabase
+      .from("stagiaires")
+      .select("id, email, user_id")
+      .eq("groupe_id", groupeId)
+      .eq("est_test", true)
+      .maybeSingle(),
+    supabase.from("groupes").select("nom").eq("id", groupeId).maybeSingle(),
+  ]);
+
+  let suggestion: string | null = null;
+  const adresse = formateur.email ?? "";
+  const arobase = adresse.indexOf("@");
+  if (arobase > 0 && groupe?.nom) {
+    const suffixe = groupe.nom.toLowerCase().replace(/[^a-z0-9]/g, "");
+    suggestion = `${adresse.slice(0, arobase).split("+")[0]}+${suffixe}@${adresse.slice(arobase + 1)}`;
+  }
+
+  if (!ligne) return { compte: null, suggestion };
+
+  let dejaConnecte = false;
+  if (ligne.user_id) {
+    const { data } = await createServiceClient().auth.admin.getUserById(ligne.user_id);
+    dejaConnecte = Boolean(data?.user?.last_sign_in_at);
+  }
+
+  return {
+    compte: {
+      id: ligne.id,
+      email: ligne.email,
+      ouvert: Boolean(ligne.user_id),
+      dejaConnecte,
+    },
+    suggestion,
+  };
+}
+
+/**
+ * Crée le compte de test d'un groupe et envoie le lien pour choisir son mot de
+ * passe — à l'adresse que le formateur donne, donc dans sa propre boîte.
+ *
+ * Garde-fou : l'invitation rattache un compte existant quand l'adresse est
+ * déjà connue. Avec l'adresse du formateur lui-même, elle aurait fait de son
+ * compte un compte stagiaire. Toute adresse déjà portée par un compte qui
+ * n'est pas stagiaire est donc refusée avant d'aller plus loin.
+ */
+export async function creerCompteDeTest(
+  groupeId: string,
+  email: string,
+): Promise<ResultatInvitation> {
+  const formateur = await getUser();
+  if (!formateur) throw new Error("Authentification requise.");
+
+  const adresse = email.trim().toLowerCase();
+  const echec = (raison: string): InvitationEchouee => ({
+    ok: false,
+    qui: "Compte de test",
+    email: adresse,
+    raison,
+  });
+
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(adresse)) {
+    return echec("Cette adresse n'est pas valide.");
+  }
+  if (adresse === formateur.email?.toLowerCase()) {
+    return echec(
+      "C'est l'adresse de votre compte formateur : le compte de test en demande une autre. Ajoutez par exemple « +test » avant l'arobase.",
+    );
+  }
+
+  const service = createServiceClient();
+  const { data: liste } = await service.auth.admin.listUsers({ perPage: 1000 });
+  const existant = liste?.users.find((u) => u.email?.toLowerCase() === adresse);
+  if (existant) {
+    const { data: profil } = await service
+      .from("profils")
+      .select("role")
+      .eq("id", existant.id)
+      .maybeSingle();
+    if (profil?.role && profil.role !== "stagiaire") {
+      return echec(
+        "Cette adresse appartient déjà à un compte formateur ou administrateur : choisissez-en une autre.",
+      );
+    }
+  }
+
+  // Sous l'identité du formateur : la politique n'autorise l'ajout que dans
+  // ses propres groupes.
+  const supabase = await createClient();
+  const { data: cree, error } = await supabase
+    .from("stagiaires")
+    .insert({
+      groupe_id: groupeId,
+      nom: "TEST",
+      prenom: "Compte",
+      email: adresse,
+      est_test: true,
+    })
+    .select("id, nom, prenom, email, user_id, groupe_id")
+    .single();
+  if (error) {
+    return echec(
+      error.message.includes("stagiaires_un_test_par_groupe")
+        ? "Ce groupe a déjà un compte de test."
+        : error.message,
+    );
+  }
+
+  try {
+    const resultat = await inviterUn(cree, await origineDesLiens());
+    revalidatePath(`/groupes/${groupeId}`);
+    return resultat;
+  } catch (e) {
+    // Le compte n'a pas pu s'ouvrir : on ne laisse pas une fiche à moitié
+    // créée, qui bloquerait la tentative suivante.
+    await supabase.from("stagiaires").delete().eq("id", cree.id);
+    return echec(lisible(e));
+  }
+}
+
+/**
+ * Supprime le compte de test : sa fiche, ses copies, et son accès.
+ *
+ * Seulement s'il est bien marqué comme compte de test — cette action ne doit
+ * jamais pouvoir effacer un vrai stagiaire.
+ */
+export async function supprimerCompteDeTest(groupeId: string): Promise<void> {
+  const formateur = await getUser();
+  if (!formateur) throw new Error("Authentification requise.");
+
+  const supabase = await createClient();
+  const { data: ligne, error } = await supabase
+    .from("stagiaires")
+    .select("id, user_id")
+    .eq("groupe_id", groupeId)
+    .eq("est_test", true)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!ligne) return;
+
+  const service = createServiceClient();
+  const { error: errCopies } = await service
+    .from("passations_controle")
+    .delete()
+    .eq("stagiaire_id", ligne.id);
+  if (errCopies) throw new Error(errCopies.message);
+
+  const { error: errFiche } = await service
+    .from("stagiaires")
+    .delete()
+    .eq("id", ligne.id)
+    .eq("est_test", true);
+  if (errFiche) throw new Error(errFiche.message);
+
+  if (ligne.user_id) {
+    await service.from("profils").delete().eq("id", ligne.user_id);
+    const { error: errCompte } = await service.auth.admin.deleteUser(ligne.user_id);
+    if (errCompte) throw new Error(errCompte.message);
+  }
+
+  revalidatePath(`/groupes/${groupeId}`);
+}
+

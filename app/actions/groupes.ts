@@ -511,7 +511,9 @@ export async function getCompteursGroupe(
       supabase
         .from("stagiaires")
         .select("id", { count: "exact", head: true })
-        .eq("groupe_id", groupeId),
+        .eq("groupe_id", groupeId)
+        // Le compte de test du formateur n'est pas un stagiaire (migration 093).
+        .eq("est_test", false),
       supabase
         .from("groupe_modules")
         .select("module_id", { count: "exact", head: true })

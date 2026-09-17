@@ -76,7 +76,9 @@ export async function getFil(groupeId: string): Promise<AnnonceFil[]> {
       supabase
         .from("stagiaires")
         .select("user_id, nom, prenom")
-        .eq("groupe_id", groupeId),
+        .eq("groupe_id", groupeId)
+        // Le compte de test du formateur n'est pas un stagiaire (migration 093).
+        .eq("est_test", false),
       // Les annonces de distinction, reconnues par le lien que la clôture a
       // posé. Le titre ne sert pas de marqueur : un formateur qui renomme son
       // annonce ne doit pas éteindre les feux d'artifice.

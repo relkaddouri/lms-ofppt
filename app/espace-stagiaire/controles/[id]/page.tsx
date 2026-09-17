@@ -28,7 +28,8 @@ export default async function ControlePage({
   }
 
   // Un test fermé sans copie : le dire, plutôt qu'un sujet vide (PRD §4.7bis).
-  if (!testOuvert(controle)) {
+  // Le compte de test du formateur passe outre : il essaie avant d'ouvrir.
+  if (!controle.compteTest && !testOuvert(controle)) {
     return (
       <div className="flex flex-col gap-5">
         <Link

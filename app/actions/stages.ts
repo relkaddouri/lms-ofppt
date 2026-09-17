@@ -45,6 +45,8 @@ export async function getStagesGroupe(
     .from("stagiaires")
     .select("id, nom, prenom")
     .eq("groupe_id", groupeId)
+    // Le compte de test du formateur n'est pas un stagiaire (migration 093).
+    .eq("est_test", false)
     .order("nom");
   if (error) throw new Error(error.message);
   if (!stagiaires || stagiaires.length === 0) return [];

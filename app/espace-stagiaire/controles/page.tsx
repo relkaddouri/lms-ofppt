@@ -151,9 +151,13 @@ export default async function ControlesPage() {
                   ? "Corrigé"
                   : rendu
                     ? "Rendu"
-                    : test && !ouvert
-                      ? "Fermé"
-                      : "À composer"}
+                    : c.compteTest && c.statut === "brouillon"
+                      ? "Brouillon"
+                      : test && !ouvert
+                        ? c.compteTest
+                          ? "Non ouvert"
+                          : "Fermé"
+                        : "À composer"}
               </span>
             </span>
           </Link>

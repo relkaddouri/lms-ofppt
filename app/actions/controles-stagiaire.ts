@@ -1,6 +1,8 @@
 "use server";
 
 import { createClient, getUser } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
+import { revalidatePath } from "next/cache";
 
 export type ControleStagiaire = {
   id: string;
@@ -16,6 +18,10 @@ export type ControleStagiaire = {
   bareme_total: number | null;
   ouvert_le: string | null;
   ferme_le: string | null;
+  /** Brouillon : visible du seul compte de test du formateur. */
+  statut: "brouillon" | "valide";
+  /** Le stagiaire connecté est le compte de test du formateur (migration 093). */
+  compteTest: boolean;
   moduleNom: string | null;
   codeOperationnel: string | null;
   /** Note obtenue, si la copie a été rendue. */
@@ -41,20 +47,23 @@ export async function getMesControles(): Promise<ControleStagiaire[]> {
 
   const { data: moi } = await supabase
     .from("stagiaires")
-    .select("id")
+    .select("id, est_test")
     .eq("user_id", user.id)
     .maybeSingle();
   if (!moi) return [];
 
+  let lecture = supabase
+    .from("controles")
+    .select(
+      "id, titre, type, type_efm, format, duree_heures, date_prevue, consignes, bareme_total, ouvert_le, ferme_le, statut, modules(nom, competences(code_operationnel))",
+    );
+  // Un test n'est au programme du stagiaire qu'une fois ouvert par le
+  // formateur (PRD §4.7bis) ; la politique fait la même sélection. Le compte
+  // de test voit tout le groupe, brouillons compris : il sert à essayer avant.
+  if (!moi.est_test) lecture = lecture.or("type.neq.TEST,ouvert_le.not.is.null");
+
   const [controlesRes, passationsRes] = await Promise.all([
-    supabase
-      .from("controles")
-      .select(
-        "id, titre, type, type_efm, format, duree_heures, date_prevue, consignes, bareme_total, ouvert_le, ferme_le, modules(nom, competences(code_operationnel))",
-      )
-      // Un test n'est au programme du stagiaire qu'une fois ouvert par le
-      // formateur (PRD §4.7bis) ; la politique fait la même sélection.
-      .or("type.neq.TEST,ouvert_le.not.is.null")
+    lecture
       // Le test le plus récemment ouvert en tête : c'est celui qu'on vient
       // d'annoncer au groupe.
       .order("ouvert_le", { ascending: false, nullsFirst: false })
@@ -110,6 +119,8 @@ export async function getMesControles(): Promise<ControleStagiaire[]> {
       bareme_total: c.bareme_total === null ? null : Number(c.bareme_total),
       ouvert_le: c.ouvert_le,
       ferme_le: c.ferme_le,
+      statut: c.statut,
+      compteTest: moi.est_test,
       moduleNom: c.modules?.nom ?? null,
       codeOperationnel: c.modules?.competences?.code_operationnel ?? null,
       // La note n'existe que si le formateur a publié ; la remise, elle, se
@@ -171,4 +182,37 @@ export async function getMaCopie(controleId: string): Promise<MaCopie | null> {
     total: details.reduce((t, d) => t + Number(d.bareme ?? 0), 0),
     details,
   };
+}
+
+/**
+ * Efface la copie du compte de test, pour repasser le contrôle (migration 093).
+ *
+ * Réservé au compte de test : un vrai stagiaire ne recompose jamais. La
+ * suppression passe par la clé de service — aucune politique n'ouvre la
+ * suppression d'une copie à un stagiaire —, après avoir vérifié qui demande.
+ */
+export async function recommencerCopieDeTest(controleId: string): Promise<void> {
+  const user = await getUser();
+  if (!user) throw new Error("Authentification requise.");
+
+  const supabase = await createClient();
+  const { data: moi } = await supabase
+    .from("stagiaires")
+    .select("id, est_test")
+    .eq("user_id", user.id)
+    .maybeSingle();
+  if (!moi?.est_test) {
+    throw new Error("Seul le compte de test peut repasser un contrôle.");
+  }
+
+  const service = createServiceClient();
+  const { error } = await service
+    .from("passations_controle")
+    .delete()
+    .eq("controle_id", controleId)
+    .eq("stagiaire_id", moi.id);
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/espace-stagiaire/controles");
+  revalidatePath(`/espace-stagiaire/controles/${controleId}`);
 }

@@ -66,7 +66,9 @@ export async function getDashboardData(): Promise<{
       supabase
         .from("stagiaires")
         .select("id", { count: "exact", head: true })
-        .in("groupe_id", groupeIds),
+        .in("groupe_id", groupeIds)
+        // Le compte de test du formateur n'est pas un stagiaire (migration 093).
+        .eq("est_test", false),
       // Les modules sont du référentiel : permanents et partagés entre les
       // années (PRD §4.15), leur compte ne se borne pas.
       supabase.from("modules").select("id", { count: "exact", head: true }),

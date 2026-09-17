@@ -83,6 +83,18 @@ export default async function EspaceStagiaireLayout({
 
       {/* La marge basse dégage la barre fixe du mobile ; sur grand écran, la
           barre n'existe pas et la page respire. */}
+      {identite.estTest ? (
+        // Le formateur doit savoir, à chaque écran, qu'il n'est pas dans le
+        // compte d'un vrai stagiaire.
+        <div className="border-b border-tint-teal-strong bg-tint-teal">
+          <p className="mx-auto max-w-lg px-5 py-2 text-[13px] text-ink md:max-w-4xl md:px-6">
+            <span className="font-semibold">Compte de test du formateur.</span>{" "}
+            Invisible pour le groupe ; voit les contrôles en brouillon et les
+            tests non ouverts.
+          </p>
+        </div>
+      ) : null}
+
       <main className="mx-auto max-w-lg pb-[86px] md:max-w-4xl md:px-6 md:pb-12 md:pt-6">
         {children}
       </main>

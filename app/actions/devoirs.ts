@@ -60,7 +60,9 @@ export async function getDevoirsGroupe(groupeId: string): Promise<Devoir[]> {
     supabase
       .from("stagiaires")
       .select("id", { count: "exact", head: true })
-      .eq("groupe_id", groupeId),
+      .eq("groupe_id", groupeId)
+      // Le compte de test du formateur n'est pas un stagiaire (migration 093).
+      .eq("est_test", false),
   ]);
 
   if (devoirsRes.error) throw new Error(devoirsRes.error.message);

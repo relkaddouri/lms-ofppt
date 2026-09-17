@@ -41,6 +41,8 @@ async function notifyStagiaires(
     .from("stagiaires")
     .select("email, prenom, nom")
     .eq("groupe_id", groupeId)
+    // Le compte de test du formateur n'est pas un stagiaire (migration 093).
+    .eq("est_test", false)
     .not("email", "is", null);
 
   const emails = (stagiaires ?? [])
