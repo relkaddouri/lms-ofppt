@@ -17,6 +17,11 @@
 export type BlocContenu = {
   /** La séance non datée qui portait ce bloc avant remplissage. */
   seanceId: string;
+  /**
+   * Le module du bloc. Deux modules ne partagent jamais une séance : quand
+   * l'un finit au milieu d'un créneau, le suivant y ouvre la sienne.
+   */
+  moduleId: string;
   suggestionId: string | null;
   code: string;
   nature: "theorique" | "pratique" | null;
@@ -57,6 +62,94 @@ export function dureeCreneau(debut: string, fin: string): number {
 /** Les flottants de durée s'accumulent : on recale au centième. */
 const net = (v: number) => Number(v.toFixed(2));
 
+const enMinutes = (h: string) => {
+  const [a, b] = h.split(":");
+  return Number(a) * 60 + Number(b);
+};
+
+/** « 13:30:00 » plus 2,5 h donne « 16:00:00 ». */
+export function ajouterHeures(heure: string, heures: number): string {
+  const total = enMinutes(heure) + Math.round(heures * 60);
+  const hh = String(Math.floor(total / 60) % 24).padStart(2, "0");
+  const mm = String(total % 60).padStart(2, "0");
+  return `${hh}:${mm}:00`;
+}
+
+/**
+ * Les parties libres d'un créneau, une fois retirées les séances qui
+ * l'occupent déjà.
+ *
+ * Un créneau n'était « libre » ou « pris » qu'en entier, à son heure de début.
+ * Depuis qu'un module peut finir au milieu d'un créneau et le suivant y
+ * commencer, une séance faite de 13 h 30 à 16 h 00 ne prend que la première
+ * moitié : la seconde, 16 h 00 – 18 h 30, reste à remplir. La traiter comme
+ * prise la faisait disparaître au recalcul suivant.
+ */
+export function plagesLibres(
+  creneau: { debut: string; fin: string },
+  occupees: { debut: string; fin: string }[],
+): { debut: string; fin: string; duree: number }[] {
+  const debut = enMinutes(creneau.debut);
+  const fin = enMinutes(creneau.fin);
+  const prises = occupees
+    .map((o) => [Math.max(debut, enMinutes(o.debut)), Math.min(fin, enMinutes(o.fin))] as const)
+    .filter(([a, b]) => b > a)
+    .sort((x, y) => x[0] - y[0]);
+
+  const libres: { debut: string; fin: string; duree: number }[] = [];
+  let curseur = debut;
+  for (const [a, b] of prises) {
+    if (a > curseur) libres.push(plage(curseur, a));
+    curseur = Math.max(curseur, b);
+  }
+  if (fin > curseur) libres.push(plage(curseur, fin));
+  return libres;
+}
+
+function plage(a: number, b: number) {
+  const hhmm = (m: number) =>
+    `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}:00`;
+  return { debut: hhmm(a), fin: hhmm(b), duree: net((b - a) / 60) };
+}
+
+/**
+ * Ramène le contenu de chaque module à ce que sa répartition lui accorde.
+ *
+ * Un module a un budget : sa répartition horaire — la masse allouée moins les
+ * dix heures d'évaluation. Ce qui est déjà daté (fait, ou passé et resté en
+ * place) en consomme une part ; le contenu à placer ne peut dépasser le reste.
+ * Sans ce plafond, des recalculs successifs avaient porté M202 à 82 h 30 pour
+ * 80 h de répartition : l'excédent est retiré en fin de séquence, là où le
+ * module s'achève.
+ *
+ * Rend les blocs plafonnés, et pour chaque ligne touchée la durée retirée.
+ */
+export function plafonnerParModule(
+  blocs: BlocContenu[],
+  disponible: ReadonlyMap<string, number>,
+): { blocs: BlocContenu[]; retraits: { seanceId: string; retire: number; entier: boolean }[] } {
+  const restant = new Map(disponible);
+  const retraits: { seanceId: string; retire: number; entier: boolean }[] = [];
+  const garde: BlocContenu[] = [];
+
+  // Dans l'ordre : le début de la séquence garde sa place, c'est la fin du
+  // module qui cède.
+  for (const b of blocs) {
+    const plafond = restant.get(b.moduleId);
+    if (plafond === undefined) {
+      garde.push(b);
+      continue;
+    }
+    const pris = net(Math.min(b.duree, Math.max(0, plafond)));
+    restant.set(b.moduleId, net(plafond - pris));
+    if (pris < b.duree) {
+      retraits.push({ seanceId: b.seanceId, retire: net(b.duree - pris), entier: pris <= 0 });
+    }
+    if (pris > 0) garde.push({ ...b, duree: pris });
+  }
+  return { blocs: garde, retraits };
+}
+
 /**
  * Consomme la séquence de blocs pour remplir les créneaux, dans l'ordre.
  *
@@ -77,24 +170,42 @@ export function remplirCreneaux(
   const seances: SeanceRemplie[] = [];
   let i = 0;
 
-  for (const creneau of creneaux) {
+  for (const entier of creneaux) {
+    // Un créneau peut porter deux séances : la fin d'un module, puis le début
+    // du suivant, chacune avec ses propres heures.
+    let creneau = entier;
+    while (i < file.length) {
+      let reste = creneau.duree;
+      const morceaux: Morceau[] = [];
+      let module: string | null = null;
+
+      while (reste > 0 && i < file.length) {
+        const bloc = file[i];
+        // Un autre module ne se glisse pas dans la séance en cours : il
+        // ouvrira la sienne dans ce qui reste du créneau.
+        if (module !== null && bloc.moduleId !== module) break;
+        module = bloc.moduleId;
+        const pris = Math.min(bloc.duree, reste);
+        morceaux.push({ bloc: { ...bloc }, duree: pris });
+        bloc.duree = net(bloc.duree - pris);
+        reste = net(reste - pris);
+        if (bloc.duree <= 0) i += 1;
+      }
+
+      if (morceaux.length === 0) break;
+      const utilise = net(creneau.duree - reste);
+      // Une séance partielle s'arrête quand son contenu s'arrête : 13 h 30 –
+      // 16 h 00 pour 2 h 30, et non 13 h 30 – 18 h 30 avec 2 h 30 de vide.
+      const finSeance = reste > 0 ? ajouterHeures(creneau.debut, utilise) : creneau.fin;
+      seances.push({
+        creneau: { ...creneau, fin: finSeance, duree: utilise },
+        morceaux,
+        partiel: reste > 0,
+      });
+      if (reste <= 0) break;
+      creneau = { date: creneau.date, debut: finSeance, fin: creneau.fin, duree: reste };
+    }
     if (i >= file.length) break;
-
-    let reste = creneau.duree;
-    const morceaux: Morceau[] = [];
-
-    while (reste > 0 && i < file.length) {
-      const bloc = file[i];
-      const pris = Math.min(bloc.duree, reste);
-      morceaux.push({ bloc: { ...bloc }, duree: pris });
-      bloc.duree = net(bloc.duree - pris);
-      reste = net(reste - pris);
-      if (bloc.duree <= 0) i += 1;
-    }
-
-    if (morceaux.length > 0) {
-      seances.push({ creneau, morceaux, partiel: reste > 0 });
-    }
   }
 
   return {

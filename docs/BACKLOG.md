@@ -582,6 +582,14 @@ Demande du porteur de projet du 16 septembre 2026, à partir d'un sujet de CC de
 
 ---
 
+## Correctifs du planning
+
+- [x] **P.1 — Chaque module tient dans sa répartition, et un créneau se partage entre deux modules** · branche `budget-dernier-seance`
+  Signalé le 22/09 : M202 affichait 82 h 30 de séances pour 90 h allouées, soit 92 h 30 avec les 10 h d'évaluation ; la dernière séance (lundi 05/10, 5 h) devait passer à 2 h 30 et le module suivant commencer le même jour.
+  **Cause** : le recalcul place tous les modules du groupe dans une même file. Quand un module finissait au milieu d'un créneau, le début du suivant était absorbé dans la même séance, attribuée en entier au premier module — et la ligne du module suivant supprimée. Le total du groupe restait juste (480 h), mais les heures avaient glissé : M202 +2 h 30, parcours +2 h 30, ergonomie −7 h 30, design +7 h 30, architecture −7 h 30, tests +2 h 30. Et l'occupation d'un créneau ne se lisait qu'à son heure de début : la moitié libre d'un créneau partagé aurait été perdue au recalcul suivant.
+  **Fait** : `remplirCreneaux` ne met jamais deux modules dans une séance — le créneau se coupe, la séance partielle s'arrête à sa durée (13 h 30 – 16 h 00) et le module suivant ouvre la sienne dans le reste ; occupation lue en plages (`plagesLibres`) ; plafond par module (`plafonnerParModule`) : répartition moins ce qui est déjà daté, l'excédent cédant en fin de module (une séance préparée n'est jamais supprimée : refus explicite) ; un module encore entièrement à venir et jamais préparé dont les heures ne tombent pas juste est reconstruit depuis sa répartition, à son rang (`lib/plan-seances.ts`, sans recréer de contrôles). Bouton « Recalculer le groupe » dans l'emploi du temps, pour remettre un groupe d'aplomb sans toucher aux créneaux.
+  **Vérifié** : cas unitaires (créneau partagé, séance partielle raccourcie, plages libres, plafond). DDOUX201 sauvegardé (102 séances, liens), puis recalculé : 80 / 95 / 65 / 110 / 50 / 80 h, exactement les répartitions ; le 05/10, M202 13 h 30 – 16 h 00 (2 h 30) puis M203 16 h 00 – 18 h 30 (2 h 30), visibles chacun dans leur module ; aucun chevauchement, heures cohérentes avec les durées ; 9 séances faites inchangées, séance préparée du 22/09 conservée, aucun contrôle créé ; progression « 45 h sur 80 h · alloué 90 h ».
+
 ## Points de vigilance — pas des atomes
 
 À garder en tête à chaque changement de schéma, sans traitement immédiat.

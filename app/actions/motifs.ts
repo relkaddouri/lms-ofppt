@@ -5,10 +5,11 @@ import { revalidatePath } from "next/cache";
 import { getPortee } from "@/app/actions/annees";
 import {
   choisirPorteur,
-  cleCreneau,
   composerIntitule,
   creneauOuvert,
   dureeCreneau,
+  plafonnerParModule,
+  plagesLibres,
   remplirCreneaux,
   seanceDeplacable,
   type BlocContenu,
@@ -18,6 +19,8 @@ import {
 import { instantEtablissement } from "@/lib/format";
 import { creneauALieu, type Recurrence } from "@/lib/recurrence";
 import type { Replanification } from "@/lib/motifs";
+import { creerSeancesDuPlan } from "@/lib/plan-seances";
+import { getPlanification } from "@/app/actions/repartition";
 
 export type CreneauMotif = {
   id: string;
@@ -265,6 +268,21 @@ export async function supprimerCreneau(id: string): Promise<Replanification> {
  *    remplissage que la génération initiale — même ordre pédagogique, mêmes
  *    créneaux entièrement occupés.
  */
+/**
+ * Recalcule les séances à venir d'un groupe, sans toucher à ses créneaux.
+ *
+ * Le recalcul ne partait qu'à la suite d'un changement — créneau ajouté,
+ * déplacé, retiré, indisponibilité. Un planning déformé par d'anciens
+ * recalculs (un module qui dépasse sa répartition, un créneau partagé mal
+ * attribué) n'avait donc aucun moyen d'être remis d'aplomb sans modifier un
+ * créneau exprès.
+ */
+export async function recalculerGroupe(
+  groupeId: string,
+): Promise<Replanification> {
+  return replanifier([groupeId]);
+}
+
 export async function replanifier(
   groupeIds: string[],
 ): Promise<Replanification> {
@@ -451,6 +469,18 @@ export async function genererSeances(
 
   const { anneeId: porteeId } = await getPortee();
 
+  // Les séances du groupe encore sans date : le contenu à placer. Relue après
+  // une reconstruction de module, d'où la fonction.
+  const lireAPlacer = () =>
+    supabase
+      .from("seances")
+      .select(
+        "id, module_id, created_at, duree_prevue, nature, suggestion_pedagogique_id, contenu_prevu, objectif_operationnel, est_fad, lien_teams, seance_groupes!inner(groupe_id), seance_elements_contenu(element_contenu_id), suggestions_pedagogiques(ordre, elements_competence(lettre, ordre))",
+      )
+      .eq("seance_groupes.groupe_id", groupeId)
+      .is("date", null)
+      .order("created_at");
+
   const [motifRes, seancesRes, indispoRes, occupesRes] = await Promise.all([
     supabase
       .from("motifs_hebdomadaires")
@@ -461,14 +491,7 @@ export async function genererSeances(
       .lte("date_debut", dateDebut)
       .order("date_debut", { ascending: false })
       .limit(1),
-    supabase
-      .from("seances")
-      .select(
-        "id, module_id, created_at, duree_prevue, nature, suggestion_pedagogique_id, contenu_prevu, objectif_operationnel, est_fad, lien_teams, seance_groupes!inner(groupe_id), seance_elements_contenu(element_contenu_id), suggestions_pedagogiques(ordre, elements_competence(lettre, ordre))",
-      )
-      .eq("seance_groupes.groupe_id", groupeId)
-      .is("date", null)
-      .order("created_at"),
+    lireAPlacer(),
     supabase
       .from("indisponibilites")
       .select("date_debut, date_fin, demi_journee")
@@ -478,7 +501,7 @@ export async function genererSeances(
     // même heure.
     supabase
       .from("seances")
-      .select("date, heure_debut, seance_groupes!inner(groupe_id)")
+      .select("date, heure_debut, heure_fin, seance_groupes!inner(groupe_id)")
       .eq("seance_groupes.groupe_id", groupeId)
       .gte("date", dateDebut),
   ]);
@@ -488,11 +511,19 @@ export async function genererSeances(
   if (indispoRes.error) throw new Error(indispoRes.error.message);
   if (occupesRes.error) throw new Error(occupesRes.error.message);
 
-  const occupes = new Set(
-    (occupesRes.data ?? [])
-      .filter((o) => o.date && o.heure_debut)
-      .map((o) => cleCreneau(o.date!, o.heure_debut!)),
-  );
+  // Ce qui est déjà pris, jour par jour et en plages horaires : une séance
+  // qui ne couvre qu'une moitié de créneau laisse l'autre à remplir.
+  const occupeesParJour = new Map<string, { debut: string; fin: string }[]>();
+  for (const o of occupesRes.data ?? []) {
+    if (!o.date || !o.heure_debut) continue;
+    const liste = occupeesParJour.get(o.date) ?? [];
+    // Sans heure de fin connue, on suppose le créneau pris jusqu'au bout.
+    liste.push({ debut: o.heure_debut, fin: o.heure_fin ?? "23:59:00" });
+    occupeesParJour.set(o.date, liste);
+  }
+  // Le recalcul refuse toujours un créneau déjà commencé : c'est ce contrôle-là
+  // qu'on garde de `creneauOuvert`, l'occupation se lit désormais en plages.
+  const aucuneOccupation = new Set<string>();
 
   const motif = motifRes.data?.[0];
   if (!motif) {
@@ -513,7 +544,7 @@ export async function genererSeances(
     throw new Error("Ce motif ne réserve aucun créneau à ce groupe.");
   }
 
-  const aPlacer = seancesRes.data ?? [];
+  let aPlacer = seancesRes.data ?? [];
   if (aPlacer.length === 0) {
     return {
       placees: 0,
@@ -521,6 +552,21 @@ export async function genererSeances(
       joursSautes: 0,
       derniereDate: null,
     };
+  }
+
+  // ── Chaque module à sa répartition ─────────────────────────────────────
+  //
+  // Le contenu à placer venait tel quel des lignes non datées. Des recalculs
+  // successifs l'avaient déformé : un créneau partagé entre deux modules
+  // était attribué en entier au premier, et M202 comptait 82 h 30 pour 80 h
+  // de répartition, pendant que l'ergonomie en perdait 7 h 30. On rétablit
+  // donc, module par module, le total que la répartition fixe — masse
+  // allouée moins les dix heures d'évaluation.
+  const aligne = await alignerSurRepartition(supabase, groupeId, aPlacer);
+  if (aligne.reconstruits > 0) {
+    const relu = await lireAPlacer();
+    if (relu.error) throw new Error(relu.error.message);
+    aPlacer = relu.data ?? [];
   }
 
   // Un jour est écarté s'il tombe dans une indisponibilité — férié, vacances,
@@ -585,18 +631,19 @@ export async function genererSeances(
       for (const c of duJour) {
         const duree = dureeCreneau(c.heure_debut, c.heure_fin);
         if (duree <= 0) continue;
-        if (
-          !creneauOuvert({ date: iso, debut: c.heure_debut }, occupes, instant)
-        ) {
-          continue;
+        for (const libre of plagesLibres(
+          { debut: c.heure_debut, fin: c.heure_fin },
+          occupeesParJour.get(iso) ?? [],
+        )) {
+          if (
+            libre.duree <= 0 ||
+            !creneauOuvert({ date: iso, debut: libre.debut }, aucuneOccupation, instant)
+          ) {
+            continue;
+          }
+          cibles.push({ date: iso, debut: libre.debut, fin: libre.fin, duree: libre.duree });
+          heuresOuvertes += libre.duree;
         }
-        cibles.push({
-          date: iso,
-          debut: c.heure_debut,
-          fin: c.heure_fin,
-          duree,
-        });
-        heuresOuvertes += duree;
       }
     }
     curseur.setUTCDate(curseur.getUTCDate() + 1);
@@ -651,13 +698,19 @@ export async function genererSeances(
   });
 
   // ── Le remplissage lui-même, pur et testable à part ────────────────────
-  const blocs: BlocContenu[] = ordonnees.map((s) => ({
+  const tousLesBlocs: BlocContenu[] = ordonnees.map((s) => ({
     seanceId: s.id,
+    moduleId: s.module_id,
     suggestionId: s.suggestion_pedagogique_id ?? null,
     code: s.objectif_operationnel ?? "",
     nature: (s.nature as "theorique" | "pratique" | null) ?? null,
     duree: Number(s.duree_prevue) || 0,
   }));
+
+  // Le plafond : jamais plus que la répartition, déjà fait compris. Ce qui
+  // dépasse cède en fin de module — la dernière séance de M202 passe à
+  // 2 h 30, et le module suivant commence dans l'autre moitié du créneau.
+  const { blocs, retraits } = plafonnerParModule(tousLesBlocs, aligne.disponible);
 
   const { seances: remplies, heuresRestantes } = remplirCreneaux(blocs, cibles);
 
@@ -714,6 +767,17 @@ export async function genererSeances(
         "Ce changement fusionnerait deux séances déjà préparées (fiche, support ou appel) en une seule. Rien n'a été modifié : déplacez ou videz l'une des deux, puis recommencez.",
       );
     }
+  }
+
+  // Les lignes entièrement retirées par le plafond disparaissent — sauf une
+  // séance déjà préparée, qu'on ne supprime jamais sans que le formateur l'ait
+  // décidé.
+  const retirees = retraits.filter((r) => r.entier).map((r) => r.seanceId);
+  const retireesPreparees = retirees.filter((id) => preparees.has(id));
+  if (retireesPreparees.length > 0) {
+    throw new Error(
+      "Ce module dépasse sa répartition, et l'excédent tomberait sur une séance déjà préparée (fiche, support ou appel). Rien n'a été modifié : ajustez la répartition du module, ou videz cette séance, puis recommencez.",
+    );
   }
 
   // Une ligne de séance n'est revendiquée qu'une fois ; une séance préparée
@@ -808,7 +872,11 @@ export async function genererSeances(
 
   // Les lignes dont le contenu a été absorbé par une autre séance n'ont plus
   // de raison d'être : les garder laisserait des séances fantômes sans date.
-  const aSupprimer = [...consommees].filter((id) => !revendiquees.has(id));
+  // De même pour celles que le plafond a entièrement retirées.
+  const aSupprimer = [
+    ...[...consommees].filter((id) => !revendiquees.has(id)),
+    ...retirees.filter((id) => !revendiquees.has(id)),
+  ];
   if (aSupprimer.length > 0) {
     const { error } = await supabase
       .from("seances")
@@ -828,3 +896,116 @@ export async function genererSeances(
     derniereDate,
   };
 }
+
+/**
+ * Rétablit, module par module, le total d'heures que fixe la répartition.
+ *
+ * Deux cas. Un module encore entièrement à venir — rien de daté, rien de
+ * préparé — dont les séances ne tombent plus juste est reconstruit depuis sa
+ * répartition : c'est ce qui rend à l'ergonomie les heures que des créneaux
+ * partagés avaient données à ses voisins. Pour un module commencé, on ne sait
+ * plus quel contenu a été vu : on ne reconstruit rien, et c'est le plafond
+ * (`plafonnerParModule`) qui retire l'excédent en fin de séquence.
+ *
+ * Rend, par module, les heures encore disponibles : répartition moins ce qui
+ * est déjà daté.
+ */
+async function alignerSurRepartition(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  groupeId: string,
+  aPlacer: { id: string; module_id: string; created_at: string | null; duree_prevue: number | string | null }[],
+): Promise<{ disponible: Map<string, number>; reconstruits: number }> {
+  const modules = [...new Set(aPlacer.map((s) => s.module_id))];
+  const disponible = new Map<string, number>();
+  if (modules.length === 0) return { disponible, reconstruits: 0 };
+
+  const [repRes, dateesRes] = await Promise.all([
+    supabase
+      .from("repartition_horaire")
+      .select("module_id, heures_theoriques, heures_pratiques")
+      .eq("groupe_id", groupeId)
+      .in("module_id", modules),
+    supabase
+      .from("seances")
+      .select("module_id, duree_prevue, seance_groupes!inner(groupe_id)")
+      .eq("seance_groupes.groupe_id", groupeId)
+      .in("module_id", modules)
+      .not("date", "is", null),
+  ]);
+  if (repRes.error) throw new Error(repRes.error.message);
+  if (dateesRes.error) throw new Error(dateesRes.error.message);
+
+  const net = (v: number) => Number(v.toFixed(2));
+  const budget = new Map<string, number>();
+  for (const r of repRes.data ?? []) {
+    budget.set(
+      r.module_id,
+      net((budget.get(r.module_id) ?? 0) + Number(r.heures_theoriques) + Number(r.heures_pratiques)),
+    );
+  }
+  const datees = new Map<string, number>();
+  for (const s of dateesRes.data ?? []) {
+    datees.set(s.module_id, net((datees.get(s.module_id) ?? 0) + (Number(s.duree_prevue) || 0)));
+  }
+
+  // Ce qui est déjà préparé ne se reconstruit pas.
+  const ids = aPlacer.map((s) => s.id);
+  const rattaches = await Promise.all(
+    (
+      ["fiches_preparation", "supports_seance", "presences", "remarques_seance", "notations_seance"] as const
+    ).map((table) => supabase.from(table).select("seance_id").in("seance_id", ids)),
+  );
+  const preparees = new Set<string>();
+  for (const r of rattaches) {
+    if (r.error) throw new Error(r.error.message);
+    for (const l of r.data ?? []) preparees.add(l.seance_id);
+  }
+
+  let reconstruits = 0;
+  for (const m of modules) {
+    const total = budget.get(m);
+    // Sans répartition enregistrée, le module n'a pas de budget : on n'y touche pas.
+    if (total === undefined || total <= 0) continue;
+    const deja = datees.get(m) ?? 0;
+    disponible.set(m, net(Math.max(0, total - deja)));
+
+    const lignes = aPlacer.filter((s) => s.module_id === m);
+    const aPlacerHeures = net(lignes.reduce((t, s) => t + (Number(s.duree_prevue) || 0), 0));
+    const intact =
+      deja === 0 && lignes.every((s) => !preparees.has(s.id));
+    if (!intact || Math.abs(aPlacerHeures - total) < 0.01) continue;
+
+    const plan = await getPlanification(groupeId, m);
+    if (!plan || plan.proposition) continue;
+
+    // Le lot du module — son rang parmi les modules du groupe — est gardé.
+    const lot = lignes
+      .map((s) => String(s.created_at ?? ""))
+      .filter(Boolean)
+      .sort()[0];
+
+    const { error: errSuppr } = await supabase
+      .from("seances")
+      .delete()
+      .in("id", lignes.map((s) => s.id));
+    if (errSuppr) throw new Error(errSuppr.message);
+
+    await creerSeancesDuPlan(
+      supabase,
+      groupeId,
+      m,
+      plan.lignes.map((l) => ({
+        id: l.id,
+        code: l.code,
+        intitule: l.intitule,
+        heures_theoriques: l.heures_theoriques,
+        heures_pratiques: l.heures_pratiques,
+      })),
+      lot,
+    );
+    reconstruits += 1;
+  }
+
+  return { disponible, reconstruits };
+}
+
