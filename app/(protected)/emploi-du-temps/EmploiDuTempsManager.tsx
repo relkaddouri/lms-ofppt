@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarPlus, Check, Download, Plus, Wand2 } from "lucide-react";
+import { CalendarPlus, Check, Download, Plus, RefreshCw, Wand2 } from "lucide-react";
 import Button from "@/components/ui/Button";
 import Input, { inputStyles } from "@/components/ui/Input";
 import Modal from "@/components/ui/Modal";
@@ -14,6 +14,7 @@ import {
   genererSeances,
   modifierCreneau,
   ouvrirMotif,
+  recalculerGroupe,
   supprimerCreneau,
   type CreneauMotif,
   type MotifHebdomadaire,
@@ -200,6 +201,27 @@ export default function EmploiDuTempsManager({
         const suite = messageReplanification(recalcul);
         toast(suite ? `Créneau modifié — ${suite}` : "Créneau modifié");
         setCreneauAModifier(null);
+        router.refresh();
+      } catch (err) {
+        toast(
+          err instanceof Error ? err.message : "Erreur inattendue",
+          "error",
+        );
+      }
+    });
+  }
+
+  function lancerRecalcul() {
+    const groupe = groupes.find((g) => g.id === generation.groupeId);
+    startTransition(async () => {
+      try {
+        const recalcul = await recalculerGroupe(generation.groupeId);
+        const suite = messageReplanification(recalcul);
+        toast(
+          suite
+            ? `${groupe?.nom ?? "Groupe"} recalculé — ${suite}`
+            : `${groupe?.nom ?? "Groupe"} recalculé.`,
+        );
         router.refresh();
       } catch (err) {
         toast(
@@ -445,7 +467,22 @@ export default function EmploiDuTempsManager({
             >
               Placer les séances
             </Button>
+            <Button
+              variant="secondary"
+              icon={RefreshCw}
+              onClick={lancerRecalcul}
+              disabled={enCours || !generation.groupeId}
+              title="Replace les séances à venir du groupe : chaque module revient à sa répartition, et un créneau partagé entre deux modules se coupe en deux séances."
+            >
+              Recalculer le groupe
+            </Button>
           </div>
+          <p className="text-[13px] text-slate-light">
+            « Recalculer le groupe » replace les séances à venir sans toucher
+            aux créneaux : chaque module revient à sa répartition (masse
+            allouée moins les 10 h d&apos;évaluation), et quand un module finit
+            en milieu de créneau, le suivant commence dans l&apos;autre moitié.
+          </p>
         </section>
       ) : null}
 
