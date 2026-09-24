@@ -41,17 +41,16 @@ export function socleAccessible(
 }
 
 /**
- * Un contrôle de test se compose-t-il en ce moment ? (PRD §4.7bis)
+ * Un contrôle se compose-t-il en ce moment ? (PRD §4.7bis, migration 096)
  *
  * Même règle que `controle_ouvert` en base : ouvert depuis `ouvert_le`, jusqu'à
- * `ferme_le` s'il y en a une. Un CC ou un EFM n'a pas d'ouverture : il se
- * compose dès qu'il est validé.
+ * `ferme_le` s'il y en a une. Depuis la migration 096, cela vaut pour tous les
+ * contrôles — un CC validé mais jamais ouvert n'est pas lisible du groupe.
  */
 export function testOuvert(
-  c: { type: string; ouvert_le?: string | null; ferme_le?: string | null },
+  c: { type?: string; ouvert_le?: string | null; ferme_le?: string | null },
   maintenant: number = Date.now(),
 ): boolean {
-  if (c.type !== "TEST") return true;
   if (!c.ouvert_le) return false;
   return (
     new Date(c.ouvert_le).getTime() <= maintenant &&

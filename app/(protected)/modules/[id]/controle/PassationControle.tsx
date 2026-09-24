@@ -1,17 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { DoorClosed, DoorOpen, Timer } from "lucide-react";
+import { DoorClosed, DoorOpen } from "lucide-react";
 import Button from "@/components/ui/Button";
 import { ConfirmModal } from "@/components/ui/Modal";
-import { inputStyles } from "@/components/ui/Input";
 import { useToast } from "@/components/ui/Toast";
-import { formatHeure } from "@/lib/creneaux";
+import { dureeEnTexte, formatHeure } from "@/lib/creneaux";
 import { instantEtablissement } from "@/lib/format";
 import { testOuvert } from "@/lib/controles";
-import { fermerTest, ouvrirTest } from "@/app/actions/controles";
-
-const DUREES = [15, 30, 45, 60, 90, 120] as const;
+import { fermerControle, ouvrirControle } from "@/app/actions/controles";
 
 const heure = (iso: string) => formatHeure(instantEtablissement(new Date(iso)).heure);
 
@@ -24,19 +21,27 @@ function restant(ms: number): string {
 }
 
 /**
- * Ouvrir et fermer un contrôle de test au groupe (PRD §4.7bis).
+ * Ouvrir et fermer un contrôle au groupe (PRD §4.7bis, migration 096).
  *
- * Le formateur décide du moment : ouvert en fin de séance, pour une durée
- * fixée — il se ferme alors tout seul — ou jusqu'à ce qu'il le ferme. Les
- * stagiaires le voient apparaître dans leurs contrôles et leur cloche.
+ * Valider prépare, ouvrir donne accès. Aucun contrôle — contrôle continu,
+ * épreuve de fin de module ou test — n'est lisible du groupe avant ce geste :
+ * un sujet validé une semaine à l'avance était jusqu'ici sous les yeux des
+ * stagiaires dès sa validation.
  *
- * Aucune note ne leur parvient à la remise : le formateur relit la correction
- * de l'IA dans l'onglet Copies, puis publie — décision du porteur de projet.
+ * Deux gestes, et pas un réglage de plus : ouvrir, et fermer plus tôt s'il le
+ * faut. L'heure de fermeture se calcule sur la durée du contrôle — deux
+ * heures pour un contrôle de 2 h —, celle-là même qui sert au sujet imprimé et
+ * au chronomètre du stagiaire.
+ *
+ * Aucune note ne parvient au stagiaire à la remise : le formateur relit la
+ * correction de l'IA dans l'onglet Copies, puis publie.
  */
-export default function PassationTest({
+export default function PassationControle({
   controleId,
   moduleId,
+  type,
   statut,
+  dureeHeures,
   modifie,
   ouvertLe,
   fermeLe,
@@ -45,7 +50,10 @@ export default function PassationTest({
 }: {
   controleId: string;
   moduleId: string;
+  type: "CC" | "EFM" | "TEST";
   statut: "brouillon" | "valide";
+  /** La durée du contrôle : elle fixe l'heure de fermeture à l'ouverture. */
+  dureeHeures: number;
   modifie: boolean;
   ouvertLe: string | null;
   fermeLe: string | null;
@@ -54,14 +62,13 @@ export default function PassationTest({
 }) {
   const toast = useToast();
   const [maintenant, setMaintenant] = useState(() => Date.now());
-  const [duree, setDuree] = useState<"libre" | `${number}`>("30");
   const [enCours, setEnCours] = useState(false);
   const [confirmeFermeture, setConfirmeFermeture] = useState(false);
 
-  const ouvert = testOuvert({ type: "TEST", ouvert_le: ouvertLe, ferme_le: fermeLe }, maintenant);
+  const ouvert = testOuvert({ ouvert_le: ouvertLe, ferme_le: fermeLe }, maintenant);
 
-  // L'état change de lui-même quand un test chronométré arrive à sa fin : on
-  // relit l'heure, pas la base.
+  // L'état change de lui-même quand le temps s'achève : on relit l'heure, pas
+  // la base.
   useEffect(() => {
     if (!ouvert) return;
     const minuterie = window.setInterval(() => setMaintenant(Date.now()), 15_000);
@@ -71,17 +78,13 @@ export default function PassationTest({
   async function ouvrir() {
     setEnCours(true);
     try {
-      const r = await ouvrirTest(
-        controleId,
-        moduleId,
-        duree === "libre" ? null : Number(duree),
-      );
+      const r = await ouvrirControle(controleId, moduleId);
       setMaintenant(Date.now());
       onChange(r.ouvert_le, r.ferme_le);
       toast(
         r.ferme_le
-          ? `Test ouvert au groupe jusqu'à ${heure(r.ferme_le)}.`
-          : "Test ouvert au groupe, jusqu'à ce que vous le fermiez.",
+          ? `Contrôle ouvert au groupe jusqu'à ${heure(r.ferme_le)}.`
+          : "Contrôle ouvert au groupe, jusqu'à ce que vous le fermiez.",
       );
     } catch (err) {
       toast(err instanceof Error ? err.message : "Erreur inattendue", "error");
@@ -93,11 +96,11 @@ export default function PassationTest({
   async function fermer() {
     setEnCours(true);
     try {
-      const r = await fermerTest(controleId, moduleId);
+      const r = await fermerControle(controleId, moduleId);
       setMaintenant(Date.now());
       onChange(ouvertLe, r.ferme_le);
       setConfirmeFermeture(false);
-      toast("Test fermé : plus aucune copie n'est acceptée.");
+      toast("Contrôle fermé : plus aucune copie n'est acceptée.");
     } catch (err) {
       toast(err instanceof Error ? err.message : "Erreur inattendue", "error");
     } finally {
@@ -111,18 +114,18 @@ export default function PassationTest({
       : `Ouvert au groupe depuis ${heure(ouvertLe!)}, sans limite`
     : ouvertLe
       ? `Fermé${fermeLe ? ` à ${heure(fermeLe)}` : ""} — les stagiaires voient leur copie, pas le sujet`
-      : "Jamais ouvert : les stagiaires ne le voient pas";
+      : `Jamais ouvert : les stagiaires ne le voient pas, même validé — il se fermera seul ${dureeHeures > 0 ? `au bout de ${dureeEnTexte(dureeHeures)}` : "à votre demande"}`;
 
   const bloque =
     statut !== "valide"
-      ? "Validez le test pour pouvoir l'ouvrir."
+      ? "Validez le contrôle pour pouvoir l'ouvrir."
       : modifie
-        ? "Enregistrez vos modifications avant d'ouvrir le test."
+        ? "Enregistrez vos modifications avant d'ouvrir le contrôle."
         : null;
 
   return (
     <section
-      aria-label="Passation en ligne du test"
+      aria-label="Passation en ligne du contrôle"
       className={`mt-5 flex flex-col gap-3 rounded-[14px] border px-5 py-4 shadow-repos ${
         ouvert ? "border-tint-green bg-success-wash" : "border-border bg-surface"
       }`}
@@ -161,39 +164,15 @@ export default function PassationTest({
             Fermer maintenant
           </Button>
         ) : (
-          <span className="flex flex-wrap items-center gap-2">
-            <label className="sr-only" htmlFor={`duree-test-${controleId}`}>
-              Durée d&apos;ouverture
-            </label>
-            <span className="relative flex items-center">
-              <Timer
-                className="pointer-events-none absolute left-3 h-4 w-4 text-slate"
-                aria-hidden
-              />
-              <select
-                id={`duree-test-${controleId}`}
-                value={duree}
-                onChange={(e) => setDuree(e.target.value as typeof duree)}
-                className={`${inputStyles} !w-auto pl-9`}
-              >
-                {DUREES.map((d) => (
-                  <option key={d} value={String(d)}>
-                    Pendant {d < 60 ? `${d} min` : restant(d * 60_000)}
-                  </option>
-                ))}
-                <option value="libre">Sans limite de temps</option>
-              </select>
-            </span>
-            <Button
-              icon={DoorOpen}
-              onClick={ouvrir}
-              loading={enCours}
-              disabled={enCours || bloque !== null}
-              title={bloque ?? undefined}
-            >
-              {ouvertLe ? "Rouvrir au groupe" : "Ouvrir au groupe"}
-            </Button>
-          </span>
+          <Button
+            icon={DoorOpen}
+            onClick={ouvrir}
+            loading={enCours}
+            disabled={enCours || bloque !== null}
+            title={bloque ?? undefined}
+          >
+            {ouvertLe ? "Rouvrir au groupe" : "Ouvrir au groupe"}
+          </Button>
         )}
       </div>
 
@@ -208,7 +187,8 @@ export default function PassationTest({
         >
           Copies
         </button>
-        , puis publiez. Le test ne compte pas dans la moyenne.
+        , puis publiez.
+        {type === "TEST" ? " Le test ne compte pas dans la moyenne." : ""}
       </p>
 
       <ConfirmModal
@@ -216,9 +196,9 @@ export default function PassationTest({
         onClose={() => setConfirmeFermeture(false)}
         onConfirm={() => void fermer()}
         busy={enCours}
-        title="Fermer le test ?"
+        title="Fermer le contrôle ?"
         message="Les stagiaires qui n'ont pas rendu leur copie ne pourront plus le faire. Vous pourrez le rouvrir."
-        confirmLabel="Fermer le test"
+        confirmLabel="Fermer le contrôle"
       />
     </section>
   );

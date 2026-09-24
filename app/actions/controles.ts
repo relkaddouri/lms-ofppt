@@ -421,7 +421,7 @@ async function refuserSiCopies(supabase: Client, controleId: string) {
     .maybeSingle();
   if (etat && estOuvert(etat)) {
     throw new Error(
-      "Ce test est ouvert au groupe : fermez-le avant de le modifier, les stagiaires composent sur ce sujet.",
+      "Ce contrôle est ouvert au groupe : fermez-le avant de le modifier, les stagiaires composent sur ce sujet.",
     );
   }
 
@@ -639,13 +639,12 @@ export async function dupliquerControle(
   return data.id;
 }
 
-/** Vrai si un contrôle de test se compose en ce moment. */
+/** Vrai si un contrôle se compose en ce moment (migration 096). */
 function estOuvert(c: {
-  type: string;
   ouvert_le: string | null;
   ferme_le: string | null;
 }): boolean {
-  if (c.type !== "TEST" || !c.ouvert_le) return false;
+  if (!c.ouvert_le) return false;
   const maintenant = Date.now();
   return (
     new Date(c.ouvert_le).getTime() <= maintenant &&
@@ -654,43 +653,42 @@ function estOuvert(c: {
 }
 
 /**
- * Ouvre un contrôle de test au groupe (PRD §4.7bis).
+ * Ouvre un contrôle au groupe (PRD §4.7bis, migration 096).
  *
- * `dureeMinutes` : null pour un test ouvert jusqu'à ce que le formateur le
- * ferme ; sinon le test se ferme seul au bout de ce temps — c'est ce qui le
- * rend chronométré. Rouvrir un test fermé est permis : ceux qui ont déjà
- * rendu leur copie ne peuvent pas la rendre une seconde fois.
+ * Aucun contrôle n'est lisible avant ce geste, même validé : valider prépare,
+ * ouvrir donne accès. La fermeture se calcule ici, à partir de la durée du
+ * contrôle — un contrôle de 2 h se ferme deux heures après —, pour que le
+ * formateur n'ait qu'à ouvrir et, s'il le veut, fermer plus tôt. Rouvrir un
+ * contrôle fermé est permis : une copie déjà rendue ne se rend pas deux fois.
  */
-export async function ouvrirTest(
+export async function ouvrirControle(
   id: string,
   moduleId: string,
-  dureeMinutes: number | null,
 ): Promise<{ ouvert_le: string; ferme_le: string | null }> {
   const supabase = await createClient();
   const { data: c, error } = await supabase
     .from("controles")
-    .select("type, statut, questions_controle(id)")
+    .select("type, statut, duree_heures, questions_controle(id)")
     .eq("id", id)
     .maybeSingle();
   if (error) throw new Error(error.message);
   if (!c) throw new Error("Contrôle introuvable.");
-  if (c.type !== "TEST") {
-    throw new Error("Seul un contrôle de test s'ouvre et se ferme au groupe.");
-  }
   if (c.statut !== "valide") {
-    throw new Error("Validez d'abord le test : on n'ouvre pas un brouillon aux stagiaires.");
+    throw new Error(
+      "Validez d'abord le contrôle : on n'ouvre pas un brouillon aux stagiaires.",
+    );
   }
   if ((c.questions_controle ?? []).length === 0) {
-    throw new Error("Ce test n'a aucune question.");
+    throw new Error("Ce contrôle n'a aucune question.");
   }
 
-  const duree = dureeMinutes === null ? null : Math.round(Number(dureeMinutes));
-  if (duree !== null && !(duree >= 5 && duree <= 600)) {
-    throw new Error("La durée d'un test chronométré va de 5 minutes à 10 heures.");
-  }
-
+  // La durée du contrôle fixe la fermeture. Sans durée — cas improbable, le
+  // champ vaut au moins une heure —, le contrôle reste ouvert jusqu'à ce que
+  // le formateur le ferme.
+  const heures = Number(c.duree_heures) || 0;
   const ouvert = new Date();
-  const ferme = duree === null ? null : new Date(ouvert.getTime() + duree * 60_000);
+  const ferme =
+    heures > 0 ? new Date(ouvert.getTime() + heures * 3_600_000) : null;
   const valeurs = {
     ouvert_le: ouvert.toISOString(),
     ferme_le: ferme ? ferme.toISOString() : null,
@@ -705,8 +703,8 @@ export async function ouvrirTest(
   return valeurs;
 }
 
-/** Ferme un test ouvert : plus aucune copie n'est acceptée. */
-export async function fermerTest(
+/** Ferme un contrôle ouvert : plus aucune copie n'est acceptée. */
+export async function fermerControle(
   id: string,
   moduleId: string,
 ): Promise<{ ferme_le: string }> {
@@ -716,11 +714,10 @@ export async function fermerTest(
     .from("controles")
     .update({ ferme_le })
     .eq("id", id)
-    .eq("type", "TEST")
     .not("ouvert_le", "is", null)
     .select("id");
   if (error) throw new Error(error.message);
-  if (!data?.length) throw new Error("Ce test n'a jamais été ouvert.");
+  if (!data?.length) throw new Error("Ce contrôle n'a jamais été ouvert.");
   revalidatePath(`/modules/${moduleId}/controle`);
   return { ferme_le };
 }
@@ -739,7 +736,7 @@ export async function setControleStatut(
       .eq("id", id)
       .maybeSingle();
     if (etat && estOuvert(etat)) {
-      throw new Error("Fermez d'abord le test : il est ouvert au groupe.");
+      throw new Error("Fermez d'abord le contrôle : il est ouvert au groupe.");
     }
   }
 
