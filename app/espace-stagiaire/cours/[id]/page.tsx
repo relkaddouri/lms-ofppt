@@ -10,6 +10,7 @@ import QuestionsSupport from "@/components/QuestionsSupport";
 import TelechargerDiapos from "@/components/TelechargerDiapos";
 import SommaireLateral from "../SommaireLateral";
 import MarquerLu from "./MarquerLu";
+import QuizChapitre from "./QuizChapitre";
 import { getChapitre } from "@/app/actions/cours-stagiaire";
 
 export default async function CoursDetailPage({
@@ -165,6 +166,10 @@ export default async function CoursDetailPage({
           ) : null}
         </article>
       ) : null}
+
+      {/* Le quiz vient après le cours et avant la navigation : on se teste
+          quand on vient de lire, pas au retour (PRD §4.5bis). */}
+      <QuizChapitre supportId={support.id} />
 
       {/* Terminer le chapitre, et passer au suivant : le parcours se suit
           sans repasser par le sommaire (PRD §4.5bis). */}
