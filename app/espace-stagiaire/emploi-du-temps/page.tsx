@@ -10,11 +10,13 @@ import {
   FlaskConical,
 } from "lucide-react";
 import { formatHeures, maintenant } from "@/lib/format";
+import { elementsDeSeance } from "@/lib/libelle-seance";
 import {
   getMonEmploiDuTemps,
   type EvenementStagiaire,
 } from "@/app/actions/stagiaire";
 import EnConstruction from "../EnConstruction";
+import EnTete from "../EnTete";
 
 export const metadata = { title: "Emploi du temps" };
 
@@ -36,6 +38,13 @@ const heure = (h: string) => h.slice(0, 5);
 function Evenement({ ev }: { ev: EvenementStagiaire }) {
   const controle = ev.genre === "controle";
   const pratique = ev.nature === "pratique";
+
+  // Une séance porte souvent plusieurs éléments de contenu. Son intitulé les
+  // met bout à bout : affiché tel quel, il donnait un titre de quatre lignes.
+  // Le premier élément fait le titre, les autres se lisent dessous.
+  const elements = controle ? [] : elementsDeSeance(ev.titre);
+  const titre = elements[0]?.intitule ?? ev.titre;
+  const autres = elements.slice(1);
 
   return (
     <div className="flex gap-[13px] border-b border-separator bg-surface px-5 py-4">
@@ -101,11 +110,25 @@ function Evenement({ ev }: { ev: EvenementStagiaire }) {
 
           <div className="flex min-w-0 flex-1 flex-col gap-1">
             <span className="text-[15.5px] font-semibold leading-snug text-ink">
-              {ev.titre}
+              {titre}
             </span>
+            {autres.length > 0 ? (
+              <ul className="flex flex-col gap-0.5">
+                {autres.map((e) => (
+                  <li
+                    key={`${e.code ?? ""}${e.intitule}`}
+                    className="font-mono text-[12.5px] leading-snug text-slate-light"
+                  >
+                    + {e.intitule}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
             <div className="flex flex-wrap items-center gap-[9px]">
               <span className="font-mono text-[12.5px] text-slate-light">
-                {[ev.codeOperationnel, ev.moduleNom].filter(Boolean).join(" · ")}
+                {[elements[0]?.code, ev.codeOperationnel, ev.moduleNom]
+                  .filter(Boolean)
+                  .join(" · ")}
               </span>
               <span
                 className={`whitespace-nowrap rounded-full border px-2 py-px text-[11.5px] font-semibold ${
@@ -239,19 +262,17 @@ export default async function EmploiDuTempsPage() {
 
   return (
     <div className="bg-surface md:overflow-hidden md:rounded-[14px] md:border md:border-border">
-      <div className="flex flex-col gap-1.5 px-5 pb-4 pt-[22px]">
-        <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted">
-          Semaine {semaine}
-        </span>
-        <h1 className="font-display text-[26px] font-bold leading-tight tracking-[-0.02em] text-ink">
-          Emploi du temps
-        </h1>
-        <span className="text-[14.5px] text-slate-light">
-          À venir en premier ·{" "}
-          <span className="font-mono text-body">{aVenirCompte}</span> échéance
-          {aVenirCompte > 1 ? "s" : ""} à suivre
-        </span>
-      </div>
+      <EnTete
+        surtitre={`Semaine ${semaine}`}
+        titre="Emploi du temps"
+        resume={
+          <>
+            À venir en premier ·{" "}
+            <span className="font-mono text-body">{aVenirCompte}</span> échéance
+            {aVenirCompte > 1 ? "s" : ""} à suivre
+          </>
+        }
+      />
 
       {aVenir.length > 0 ? (
         aVenir.map(([date, liste]) => (

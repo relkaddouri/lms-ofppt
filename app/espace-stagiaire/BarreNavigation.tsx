@@ -39,7 +39,12 @@ export function NavigationHaute() {
   return (
     <nav aria-label="Sections de votre espace" className="hidden md:block">
       <ul className="flex gap-1">
-        {ONGLETS.map(({ href, libelle, Icone }) => {
+        {ONGLETS.map((onglet) => {
+          const { href, libelle, Icone } = onglet;
+          // « Emploi du temps » tenait sur trois lignes tant que la barre était
+          // serrée : la version courte reprend la main jusqu'à ce que le nom du
+          // stagiaire et les cinq onglets tiennent ensemble.
+          const court = "libelleCourt" in onglet ? onglet.libelleCourt : libelle;
           const actif = pathname.startsWith(href);
           return (
             <li key={href}>
@@ -53,7 +58,10 @@ export function NavigationHaute() {
                 }`}
               >
                 <Icone className="h-4 w-4 shrink-0" aria-hidden />
-                {libelle}
+                <span className="whitespace-nowrap xl:hidden">{court}</span>
+                <span className="hidden whitespace-nowrap xl:inline">
+                  {libelle}
+                </span>
               </Link>
             </li>
           );
