@@ -1,10 +1,19 @@
 import Link from "next/link";
-import { ArrowLeft, BookOpen, Check, ChevronRight, FlaskConical, Play } from "lucide-react";
+import { ArrowLeft, BookOpen, Check, ChevronRight, FlaskConical, Milestone, Play } from "lucide-react";
 import { formatDateJour } from "@/lib/format";
-import type { SommaireModule } from "@/app/actions/cours-stagiaire";
+import type { Jalon, SommaireModule } from "@/app/actions/cours-stagiaire";
 
 /** Le sommaire d'un module (PRD §4.5bis), séparé pour se relire seul. */
-export default function SommaireVue({ module }: { module: SommaireModule }) {
+export default function SommaireVue({
+  module,
+  jalons = [],
+}: {
+  module: SommaireModule;
+  jalons?: Jalon[];
+}) {
+  // Le bilan s'annonce après le dernier chapitre de son jalon : c'est là qu'il
+  // tombe dans la lecture (PRD §4.5bis).
+  const bilanApres = new Map(jalons.map((j) => [j.chapitres.at(-1)!.id, j]));
   // Reprendre, c'est ouvrir le premier chapitre non terminé — et, quand tout
   // l'est, revenir au premier pour réviser.
   const suite = module.parties.flatMap((p) => p.chapitres);
@@ -137,6 +146,29 @@ export default function SommaireVue({ module }: { module: SommaireModule }) {
                         className="shrink-0 text-border-strong"
                       />
                     </Link>
+                    {bilanApres.has(c.id) ? (
+                      <Link
+                        href={`/espace-stagiaire/cours/module/${module.id}/bilan/${bilanApres.get(c.id)!.rang}`}
+                        className="flex items-center gap-3.5 border-t border-separator bg-wash px-5 py-3.5 no-underline transition-colors duration-150 ease-out hover:bg-paper-alt hover:no-underline"
+                      >
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-ink text-white">
+                          <Milestone size={17} strokeWidth={1.9} aria-hidden />
+                        </span>
+                        <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                          <span className="text-[15px] font-semibold text-ink">
+                            Bilan {bilanApres.get(c.id)!.rang} — chapitres{" "}
+                            {bilanApres.get(c.id)!.chapitres[0]!.numero} à{" "}
+                            {bilanApres.get(c.id)!.chapitres.at(-1)!.numero}
+                          </span>
+                          <span className="font-mono text-[12px] text-slate-light">
+                            {bilanApres.get(c.id)!.pret
+                              ? "les trois chapitres sont terminés"
+                              : "révision des trois chapitres"}
+                          </span>
+                        </span>
+                        <ChevronRight size={16} strokeWidth={2.2} aria-hidden className="shrink-0 text-border-strong" />
+                      </Link>
+                    ) : null}
                   </li>
                 );
               })}

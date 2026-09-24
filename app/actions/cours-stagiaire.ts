@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { libelleModule } from "@/lib/modules";
 import { revalidatePath } from "next/cache";
+import { jalonsDeBilan } from "@/lib/quiz";
 
 /**
  * Les cours du stagiaire, rangés par module (PRD §4.5bis).
@@ -260,6 +261,72 @@ export async function getChapitre(supportId: string): Promise<{
     precedent: suite[i - 1] ?? null,
     suivant: suite[i + 1] ?? null,
   };
+}
+
+export type Jalon = {
+  rang: number;
+  moduleId: string;
+  moduleNom: string;
+  groupeId: string;
+  chapitres: Chapitre[];
+  /** Vrai quand les trois chapitres du jalon sont terminés. */
+  pret: boolean;
+};
+
+/**
+ * Les jalons d'un module : un bilan tous les trois chapitres (PRD §4.5bis).
+ *
+ * Le groupe est celui du stagiaire — deux groupes suivant le même module
+ * n'ont pas les mêmes supports, donc pas le même bilan.
+ */
+export async function getJalons(moduleId: string): Promise<Jalon[]> {
+  const module = await getSommaireModule(moduleId);
+  if (!module) return [];
+
+  const supabase = await createClient();
+  const { data: user } = await supabase.auth.getUser();
+  const { data: moi } = user.user
+    ? await supabase
+        .from("stagiaires")
+        .select("groupe_id")
+        .eq("user_id", user.user.id)
+        .maybeSingle()
+    : { data: null };
+
+  // Sans fiche stagiaire — le formateur qui regarde —, le groupe se lit sur
+  // les séances du module elles-mêmes.
+  let groupeId = moi?.groupe_id ?? null;
+  if (!groupeId) {
+    const { data: lien } = await supabase
+      .from("seances")
+      .select("seance_groupes(groupe_id)")
+      .eq("module_id", moduleId)
+      .limit(1)
+      .maybeSingle();
+    groupeId =
+      (lien?.seance_groupes as { groupe_id: string }[] | undefined)?.[0]
+        ?.groupe_id ?? null;
+  }
+  if (!groupeId) return [];
+
+  const suite = module.parties.flatMap((p) => p.chapitres);
+  return jalonsDeBilan(suite).map((j) => ({
+    rang: j.rang,
+    moduleId,
+    moduleNom: module.nom,
+    groupeId: groupeId!,
+    chapitres: j.chapitres,
+    pret: j.chapitres.every((c) => c.lu),
+  }));
+}
+
+/** Un jalon précis, pour la page de bilan et pour sa génération. */
+export async function getJalon(
+  moduleId: string,
+  rang: number,
+): Promise<Jalon | null> {
+  const jalons = await getJalons(moduleId);
+  return jalons.find((j) => j.rang === rang) ?? null;
 }
 
 /**

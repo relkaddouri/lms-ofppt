@@ -1572,6 +1572,51 @@ export type Database = {
           },
         ]
       }
+      quiz_bilan: {
+        Row: {
+          genere_le: string
+          groupe_id: string
+          modele: string | null
+          module_id: string
+          questions: Json
+          rang: number
+          support_ids: string[]
+        }
+        Insert: {
+          genere_le?: string
+          groupe_id: string
+          modele?: string | null
+          module_id: string
+          questions: Json
+          rang: number
+          support_ids: string[]
+        }
+        Update: {
+          genere_le?: string
+          groupe_id?: string
+          modele?: string | null
+          module_id?: string
+          questions?: Json
+          rang?: number
+          support_ids?: string[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_bilan_groupe_id_fkey"
+            columns: ["groupe_id"]
+            isOneToOne: false
+            referencedRelation: "groupes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quiz_bilan_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "modules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       quiz_chapitre: {
         Row: {
           genere_le: string
