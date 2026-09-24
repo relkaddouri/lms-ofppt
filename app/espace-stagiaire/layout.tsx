@@ -28,7 +28,7 @@ export default async function EspaceStagiaireLayout({
       <ModaleDistinction />
 
       <header className="sticky top-0 z-30 border-b border-separator bg-surface">
-        <div className="mx-auto flex max-w-lg items-center gap-3 px-5 pb-3.5 pt-4 md:max-w-4xl md:gap-6 md:px-6 md:py-3">
+        <div className="mx-auto flex max-w-lg items-center gap-3 px-5 pb-3.5 pt-4 md:max-w-6xl md:gap-6 md:px-6 md:py-3 xl:max-w-[1440px]">
           {/* Sa photo se change là où il se voit : l'en-tête est le seul
               endroit de son espace où il est représenté, et lui inventer un
               écran « Mon compte » pour un seul réglage aurait ajouté un
@@ -87,7 +87,7 @@ export default async function EspaceStagiaireLayout({
         // Le formateur doit savoir, à chaque écran, qu'il n'est pas dans le
         // compte d'un vrai stagiaire.
         <div className="border-b border-tint-teal-strong bg-tint-teal">
-          <p className="mx-auto max-w-lg px-5 py-2 text-[13px] text-ink md:max-w-4xl md:px-6">
+          <p className="mx-auto max-w-lg px-5 py-2 text-[13px] text-ink md:max-w-6xl md:px-6 xl:max-w-[1440px]">
             <span className="font-semibold">Compte de test du formateur.</span>{" "}
             Invisible pour le groupe ; voit les contrôles en brouillon et les
             tests non ouverts.
@@ -95,7 +95,11 @@ export default async function EspaceStagiaireLayout({
         </div>
       ) : null}
 
-      <main className="mx-auto max-w-lg pb-[86px] md:max-w-4xl md:px-6 md:pb-12 md:pt-6">
+      {/* La place de l'écran va au cours : un stagiaire qui lit un chapitre
+          avec son sommaire à côté a besoin de largeur, et les tableaux d'un
+          support n'entraient pas dans une colonne de 896 px. La borne haute
+          évite seulement les lignes à rallonge sur un très grand moniteur. */}
+      <main className="mx-auto max-w-lg pb-[86px] md:max-w-6xl md:px-6 md:pb-12 md:pt-6 xl:max-w-[1440px]">
         {children}
       </main>
 

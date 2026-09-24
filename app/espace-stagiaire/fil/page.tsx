@@ -28,7 +28,7 @@ export default async function FilPage() {
   }
 
   return (
-    <div className="bg-surface md:overflow-hidden md:rounded-[14px] md:border md:border-border">
+    <div className="mx-auto w-full max-w-3xl bg-surface md:overflow-hidden md:rounded-[14px] md:border md:border-border">
       <EnTete
         surtitre="Fil du groupe"
         titre="Annonces"

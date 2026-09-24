@@ -20,7 +20,7 @@ export default function SommaireVue({
   const reprendre = suite.find((c) => !c.lu) ?? suite[0];
   const fini = module.lus >= module.chapitres && module.chapitres > 0;
   return (
-    <div className="flex flex-col gap-5">
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-5">
       <Link
         href="/espace-stagiaire/cours"
         className="mx-5 inline-flex min-h-[44px] items-center gap-1.5 self-start text-sm text-slate hover:text-ink md:mx-0"

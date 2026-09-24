@@ -9,7 +9,7 @@ export default function ListeModules({ modules }: { modules: ModuleCours[] }) {
   const total = modules.reduce((t, m) => t + m.chapitres, 0);
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-5">
       <EnTete
         surtitre="Mes cours"
         titre="Modules"

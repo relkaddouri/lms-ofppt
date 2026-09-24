@@ -143,7 +143,7 @@ function Encadres({ groupes }: { groupes: string[][] }) {
                 fil rouge en sont faits. Rendre chaque ligne comme du texte
                 produisait des listes à l'intérieur de paragraphes, ce qui
                 n'est pas du HTML valide et cassait l'hydratation. */}
-            <Blocs texte={utiles.slice(estIntitule ? 1 : 0).join("\n")} />
+            <Blocs texte={utiles.slice(estIntitule ? 1 : 0).join("\n")} colonne={false} />
           </aside>
         );
       })}
@@ -264,7 +264,19 @@ function Tableau({ entetes, lignes }: { entetes: string[]; lignes: string[][] })
 /** Couleur du numéro de section, tournante comme dans le support de référence. */
 const NUMEROS = ["text-coral", "text-teal", "text-green", "text-ink"] as const;
 
-function Blocs({ texte }: { texte: string }) {
+function Blocs({
+  texte,
+  colonne = true,
+}: {
+  texte: string;
+  /**
+   * Borne la largeur du texte suivi. Vrai au fil du document ; faux dans un
+   * encadré, qui a déjà sa propre largeur — le texte y remplirait mal sa
+   * boîte si on le bornait deux fois.
+   */
+  colonne?: boolean;
+}) {
+  const largeur = colonne ? "max-w-[78ch]" : "";
   const noeuds = analyser(texte);
   const rendu: React.ReactNode[] = [];
 
@@ -369,7 +381,7 @@ function Blocs({ texte }: { texte: string }) {
       rendu.push(
         <ol
           key={`l${i}`}
-          className="flex flex-col gap-2 break-words pl-0 text-[16px] leading-relaxed text-body md:gap-1.5 md:text-[14px]"
+          className={`flex ${largeur} flex-col gap-2 break-words pl-0 text-[16px] leading-relaxed text-body md:gap-1.5 md:text-[14px]`}
         >
           {items.map((it, k) => (
             <li key={k} className="flex gap-2.5">
@@ -404,7 +416,14 @@ function Blocs({ texte }: { texte: string }) {
       // suites de tirets bas, insécables pour le navigateur. Sur téléphone
       // elles poussaient la page à 530px de large et la faisaient défiler en
       // travers. Elles se coupent plutôt que de déborder.
-      <p key={i} className="break-words text-[16px] leading-relaxed text-body md:text-[14px]">
+      // Le document occupe désormais toute la largeur de l'écran, ce dont
+      // les tableaux et les encadrés en grille avaient besoin. Le texte
+      // suivi, lui, se lit mal au-delà d'une ligne d'environ quatre-vingts
+      // caractères — il garde donc sa colonne.
+      <p
+        key={i}
+        className={`${largeur} break-words text-[16px] leading-relaxed text-body md:text-[14px]`}
+      >
         <Ligne>{n.brut}</Ligne>
       </p>,
     );

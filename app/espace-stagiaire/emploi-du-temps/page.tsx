@@ -261,7 +261,7 @@ export default async function EmploiDuTempsPage() {
   const aVenirCompte = evenements.filter((e) => e.date >= aujourdhui).length;
 
   return (
-    <div className="bg-surface md:overflow-hidden md:rounded-[14px] md:border md:border-border">
+    <div className="mx-auto w-full max-w-5xl bg-surface md:overflow-hidden md:rounded-[14px] md:border md:border-border">
       <EnTete
         surtitre={`Semaine ${semaine}`}
         titre="Emploi du temps"
