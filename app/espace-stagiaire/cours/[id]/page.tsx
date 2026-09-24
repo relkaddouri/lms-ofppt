@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import { getIdentiteStagiaire } from "@/app/actions/stagiaire";
 import { getCamarades } from "@/app/actions/fil";
 import { getSupportDetail } from "@/app/actions/questions-support";
@@ -8,6 +8,9 @@ import { formatDateJour } from "@/lib/format";
 import SupportLecture from "./SupportLecture";
 import QuestionsSupport from "@/components/QuestionsSupport";
 import TelechargerDiapos from "@/components/TelechargerDiapos";
+import SommaireLateral from "../SommaireLateral";
+import MarquerLu from "./MarquerLu";
+import { getChapitre } from "@/app/actions/cours-stagiaire";
 
 export default async function CoursDetailPage({
   params,
@@ -18,14 +21,20 @@ export default async function CoursDetailPage({
   const identite = await getIdentiteStagiaire();
   if (!identite) return null;
 
-  const [support, camarades] = await Promise.all([
+  const [support, camarades, chapitre] = await Promise.all([
     getSupportDetail(id),
     getCamarades(identite.groupeId),
+    getChapitre(id),
   ]);
   if (!support) notFound();
 
   return (
-    <div className="space-y-6">
+    <div className="flex gap-6">
+      {chapitre ? (
+        <SommaireLateral module={chapitre.module} courantId={id} />
+      ) : null}
+
+      <div className="min-w-0 flex-1 space-y-6">
       <Link
         href={
           support.moduleId
@@ -39,7 +48,12 @@ export default async function CoursDetailPage({
       </Link>
 
       <article className="rounded-[14px] border border-border bg-surface p-4 md:p-6">
-        <h1 className="text-lg font-semibold leading-snug text-ink">
+        {chapitre ? (
+          <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-slate-light">
+            Chapitre {chapitre.courant.numero} sur {chapitre.module.chapitres}
+          </span>
+        ) : null}
+        <h1 className="mt-1 text-lg font-semibold leading-snug text-ink">
           {support.contenu.titre}
         </h1>
         <p className="mt-1 text-xs text-slate">
@@ -152,12 +166,48 @@ export default async function CoursDetailPage({
         </article>
       ) : null}
 
+      {/* Terminer le chapitre, et passer au suivant : le parcours se suit
+          sans repasser par le sommaire (PRD §4.5bis). */}
+      {chapitre ? (
+        <nav
+          aria-label="Suite du parcours"
+          className="flex flex-col gap-3 rounded-[14px] border border-border bg-surface p-4 md:flex-row md:items-center"
+        >
+          <MarquerLu supportId={support.id} lu={chapitre.courant.lu} />
+          <span className="flex flex-wrap gap-2 md:ml-auto">
+            {chapitre.precedent ? (
+              <Link
+                href={`/espace-stagiaire/cours/${chapitre.precedent.id}`}
+                className="inline-flex min-h-[44px] items-center gap-1.5 rounded-[10px] border border-border px-3.5 text-[14px] text-body no-underline hover:border-border-strong hover:no-underline"
+              >
+                <ArrowLeft className="h-4 w-4" aria-hidden />
+                Précédent
+              </Link>
+            ) : null}
+            {chapitre.suivant ? (
+              <Link
+                href={`/espace-stagiaire/cours/${chapitre.suivant.id}`}
+                className="inline-flex min-h-[44px] max-w-full items-center gap-1.5 rounded-[10px] border border-ink bg-ink px-3.5 text-[14px] font-semibold text-white no-underline hover:no-underline"
+              >
+                <span className="truncate">Chapitre suivant : {chapitre.suivant.titre}</span>
+                <ArrowRight className="h-4 w-4 shrink-0" aria-hidden />
+              </Link>
+            ) : (
+              <span className="inline-flex min-h-[44px] items-center text-[14px] text-slate">
+                Dernier chapitre du module.
+              </span>
+            )}
+          </span>
+        </nav>
+      ) : null}
+
       <QuestionsSupport
         supportId={support.id}
         questions={support.questions}
         camarades={camarades}
         reglages={support.reglages}
       />
+      </div>
     </div>
   );
 }

@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { libelleModule } from "@/lib/modules";
+import { revalidatePath } from "next/cache";
 
 /**
  * Les cours du stagiaire, rangés par module (PRD §4.5bis).
@@ -25,6 +26,8 @@ export type Chapitre = {
   date: string | null;
   /** Rang dans le module, à partir de 1 — le numéro affiché du chapitre. */
   numero: number;
+  /** Le stagiaire l'a marqué comme lu (migration 097). */
+  lu: boolean;
 };
 
 export type PartieCours = {
@@ -42,6 +45,9 @@ export type ModuleCours = {
   chapitres: number;
   /** Date du chapitre le plus récent, pour situer le module. */
   dernier: string | null;
+  /** Chapitres lus par le stagiaire, et le pourcentage qui en découle. */
+  lus: number;
+  progression: number;
 };
 
 export type SommaireModule = ModuleCours & { parties: PartieCours[] };
@@ -78,6 +84,20 @@ function titreDu(ligne: LigneSupport): string {
   const base = ligne.seances?.suggestions_pedagogiques?.apprentissage_base;
   return base?.trim() || "Chapitre";
 }
+
+/** Les chapitres que le stagiaire a marqués comme lus (migration 097). */
+async function lireProgression(): Promise<Set<string>> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("progression_chapitre")
+    .select("support_id");
+  if (error) throw new Error(error.message);
+  return new Set((data ?? []).map((l) => l.support_id));
+}
+
+/** Le pourcentage d'un module, arrondi à l'entier — jamais 99 % pour un module fini. */
+const pourcentage = (lus: number, total: number) =>
+  total > 0 ? Math.round((lus / total) * 100) : 0;
 
 /**
  * Tous les supports remis au groupe du stagiaire, une version par séance.
@@ -119,7 +139,7 @@ function comparer(a: LigneSupport, b: LigneSupport): number {
 
 /** Les modules dont le stagiaire a reçu au moins un chapitre. */
 export async function getMesModulesCours(): Promise<ModuleCours[]> {
-  const supports = await lireSupports();
+  const [supports, lus] = await Promise.all([lireSupports(), lireProgression()]);
   const modules = new Map<string, ModuleCours>();
 
   for (const l of supports) {
@@ -129,6 +149,7 @@ export async function getMesModulesCours(): Promise<ModuleCours[]> {
     const date = s.date ?? null;
     if (vu) {
       vu.chapitres += 1;
+      if (lus.has(l.id)) vu.lus += 1;
       if (date && (!vu.dernier || date > vu.dernier)) vu.dernier = date;
       continue;
     }
@@ -141,22 +162,23 @@ export async function getMesModulesCours(): Promise<ModuleCours[]> {
       libelle: libelleModule(code, nom),
       chapitres: 1,
       dernier: date,
+      lus: lus.has(l.id) ? 1 : 0,
+      progression: 0,
     });
   }
 
   // Le module le plus récent d'abord : c'est celui qu'on suit en ce moment.
-  return [...modules.values()].sort((a, b) =>
-    (b.dernier ?? "").localeCompare(a.dernier ?? ""),
-  );
+  return [...modules.values()]
+    .map((m) => ({ ...m, progression: pourcentage(m.lus, m.chapitres) }))
+    .sort((a, b) => (b.dernier ?? "").localeCompare(a.dernier ?? ""));
 }
 
 /** Le sommaire d'un module : ses parties, et sous chacune ses chapitres. */
 export async function getSommaireModule(
   moduleId: string,
 ): Promise<SommaireModule | null> {
-  const supports = (await lireSupports()).filter(
-    (l) => l.seances?.module_id === moduleId,
-  );
+  const [tous, lus] = await Promise.all([lireSupports(), lireProgression()]);
+  const supports = tous.filter((l) => l.seances?.module_id === moduleId);
   if (supports.length === 0) return null;
 
   supports.sort(comparer);
@@ -180,6 +202,7 @@ export async function getSommaireModule(
       type: l.type,
       date: l.seances?.date ?? null,
       numero,
+      lu: lus.has(l.id),
     });
   }
 
@@ -191,6 +214,8 @@ export async function getSommaireModule(
     .filter((d): d is string => Boolean(d))
     .sort();
 
+  const nbLus = supports.filter((l) => lus.has(l.id)).length;
+
   return {
     id: moduleId,
     code,
@@ -198,6 +223,79 @@ export async function getSommaireModule(
     libelle: libelleModule(code, nom),
     chapitres: supports.length,
     dernier: dates.at(-1) ?? null,
+    lus: nbLus,
+    progression: pourcentage(nbLus, supports.length),
     parties,
   };
+}
+
+/**
+ * Le chapitre ouvert, avec son sommaire et ses voisins (PRD §4.5bis).
+ *
+ * Le sommaire accompagne la lecture plutôt que de l'attendre au retour : on
+ * voit où l'on est dans le module, ce qui est lu, et le chapitre suivant se
+ * prend sans repasser par la liste.
+ */
+export async function getChapitre(supportId: string): Promise<{
+  module: SommaireModule;
+  courant: Chapitre;
+  precedent: Chapitre | null;
+  suivant: Chapitre | null;
+} | null> {
+  const tous = await lireSupports();
+  const ligne = tous.find((l) => l.id === supportId);
+  const moduleId = ligne?.seances?.module_id;
+  if (!moduleId) return null;
+
+  const module = await getSommaireModule(moduleId);
+  if (!module) return null;
+
+  const suite = module.parties.flatMap((p) => p.chapitres);
+  const i = suite.findIndex((c) => c.id === supportId);
+  if (i < 0) return null;
+
+  return {
+    module,
+    courant: suite[i]!,
+    precedent: suite[i - 1] ?? null,
+    suivant: suite[i + 1] ?? null,
+  };
+}
+
+/**
+ * Marque — ou démarque — un chapitre comme lu.
+ *
+ * La politique borne l'écriture aux lignes du stagiaire connecté ; on relit
+ * donc sa fiche plutôt que de faire confiance à ce que le navigateur envoie.
+ */
+export async function marquerChapitreLu(
+  supportId: string,
+  lu: boolean,
+): Promise<void> {
+  const supabase = await createClient();
+  const { data: user } = await supabase.auth.getUser();
+  if (!user.user) throw new Error("Authentification requise.");
+
+  const { data: moi } = await supabase
+    .from("stagiaires")
+    .select("id")
+    .eq("user_id", user.user.id)
+    .maybeSingle();
+  if (!moi) throw new Error("Aucune fiche stagiaire pour ce compte.");
+
+  const { error } = lu
+    ? await supabase
+        .from("progression_chapitre")
+        .upsert(
+          { stagiaire_id: moi.id, support_id: supportId, lu_le: new Date().toISOString() },
+          { onConflict: "stagiaire_id,support_id" },
+        )
+    : await supabase
+        .from("progression_chapitre")
+        .delete()
+        .eq("stagiaire_id", moi.id)
+        .eq("support_id", supportId);
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/espace-stagiaire/cours", "layout");
 }

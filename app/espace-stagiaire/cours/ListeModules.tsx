@@ -35,13 +35,24 @@ export default function ListeModules({ modules }: { modules: ModuleCours[] }) {
                 {m.code ?? <Layers className="h-5 w-5" aria-hidden />}
               </span>
 
-              <span className="flex min-w-0 flex-1 flex-col gap-1">
+              <span className="flex min-w-0 flex-1 flex-col gap-1.5">
                 <span className="text-[16px] font-semibold leading-snug text-ink">
                   {m.nom}
                 </span>
+                <span className="flex items-center gap-2">
+                  <span className="h-1.5 w-full max-w-[200px] overflow-hidden rounded-full bg-wash-strong">
+                    <span
+                      className="block h-full rounded-full bg-green"
+                      style={{ width: `${m.progression}%` }}
+                    />
+                  </span>
+                  <span className="shrink-0 font-mono text-[12px] text-slate">
+                    {m.progression} %
+                  </span>
+                </span>
                 <span className="font-mono text-[12.5px] text-slate-light">
                   {[
-                    `${m.chapitres} chapitre${m.chapitres > 1 ? "s" : ""}`,
+                    `${m.lus} / ${m.chapitres} chapitre${m.chapitres > 1 ? "s" : ""}`,
                     m.dernier
                       ? `dernier le ${formatDateJour(m.dernier, { court: true })}`
                       : null,

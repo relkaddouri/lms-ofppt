@@ -1,10 +1,15 @@
 import Link from "next/link";
-import { ArrowLeft, BookOpen, ChevronRight, FlaskConical } from "lucide-react";
+import { ArrowLeft, BookOpen, Check, ChevronRight, FlaskConical, Play } from "lucide-react";
 import { formatDateJour } from "@/lib/format";
 import type { SommaireModule } from "@/app/actions/cours-stagiaire";
 
 /** Le sommaire d'un module (PRD §4.5bis), séparé pour se relire seul. */
 export default function SommaireVue({ module }: { module: SommaireModule }) {
+  // Reprendre, c'est ouvrir le premier chapitre non terminé — et, quand tout
+  // l'est, revenir au premier pour réviser.
+  const suite = module.parties.flatMap((p) => p.chapitres);
+  const reprendre = suite.find((c) => !c.lu) ?? suite[0];
+  const fini = module.lus >= module.chapitres && module.chapitres > 0;
   return (
     <div className="flex flex-col gap-5">
       <Link
@@ -29,6 +34,37 @@ export default function SommaireVue({ module }: { module: SommaireModule }) {
           reprenez un chapitre où vous voulez, l&apos;ordre est celui du
           référentiel.
         </p>
+
+        <div className="mt-2 flex flex-col gap-2">
+          <span className="flex items-center gap-3">
+            <span className="h-2 flex-1 overflow-hidden rounded-full bg-white/15">
+              <span
+                className="block h-full rounded-full bg-green transition-[width] duration-300"
+                style={{ width: `${module.progression}%` }}
+              />
+            </span>
+            <span className="shrink-0 font-mono text-[13px] font-semibold text-white/90">
+              {module.progression} %
+            </span>
+          </span>
+          <span className="font-mono text-[12px] text-white/55">
+            {module.lus} / {module.chapitres} chapitres terminés
+          </span>
+        </div>
+
+        {reprendre ? (
+          <Link
+            href={`/espace-stagiaire/cours/${reprendre.id}`}
+            className="mt-3 inline-flex min-h-[44px] items-center gap-2 self-start rounded-[10px] bg-white px-4 text-[14.5px] font-semibold text-ink no-underline hover:no-underline"
+          >
+            <Play className="h-4 w-4" aria-hidden />
+            {fini
+              ? `Revoir le chapitre 1 : ${reprendre.titre}`
+              : module.lus === 0
+                ? `Commencer : ${reprendre.titre}`
+                : `Reprendre au chapitre ${reprendre.numero}`}
+          </Link>
+        ) : null}
       </header>
 
       <ol className="flex flex-col gap-4 px-5 md:px-0">
@@ -58,10 +94,18 @@ export default function SommaireVue({ module }: { module: SommaireModule }) {
                     >
                       <span
                         className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] ${
-                          tp ? "bg-success-wash text-green-dark" : "bg-tint-teal text-teal-dark"
+                          c.lu
+                            ? "bg-green text-white"
+                            : tp
+                              ? "bg-success-wash text-green-dark"
+                              : "bg-tint-teal text-teal-dark"
                         }`}
                       >
-                        <Icone size={17} strokeWidth={1.9} aria-hidden />
+                        {c.lu ? (
+                          <Check size={17} strokeWidth={2.6} aria-hidden />
+                        ) : (
+                          <Icone size={17} strokeWidth={1.9} aria-hidden />
+                        )}
                       </span>
 
                       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
@@ -78,6 +122,7 @@ export default function SommaireVue({ module }: { module: SommaireModule }) {
                         <span className="font-mono text-[12px] text-slate-light">
                           {[
                             `Chapitre ${c.numero}`,
+                            c.lu ? "terminé" : null,
                             c.date ? formatDateJour(c.date, { court: true }) : null,
                           ]
                             .filter(Boolean)
