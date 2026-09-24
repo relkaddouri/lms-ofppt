@@ -52,15 +52,15 @@ export async function getMesControles(): Promise<ControleStagiaire[]> {
     .maybeSingle();
   if (!moi) return [];
 
-  let lecture = supabase
+  // Aucun contrôle n'est au programme du stagiaire avant que le formateur ne
+  // l'ouvre (migration 096) ; la politique fait la même sélection, et laisse
+  // passer une copie déjà rendue. Le compte de test, lui, voit tout le groupe,
+  // brouillons compris : il sert à essayer avant.
+  const lecture = supabase
     .from("controles")
     .select(
       "id, titre, type, type_efm, format, duree_heures, date_prevue, consignes, bareme_total, ouvert_le, ferme_le, statut, modules(nom, competences(code_operationnel))",
     );
-  // Un test n'est au programme du stagiaire qu'une fois ouvert par le
-  // formateur (PRD §4.7bis) ; la politique fait la même sélection. Le compte
-  // de test voit tout le groupe, brouillons compris : il sert à essayer avant.
-  if (!moi.est_test) lecture = lecture.or("type.neq.TEST,ouvert_le.not.is.null");
 
   const [controlesRes, passationsRes] = await Promise.all([
     lecture

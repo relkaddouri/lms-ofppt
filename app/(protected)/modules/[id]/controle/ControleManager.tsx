@@ -24,7 +24,7 @@ import ContenuCouvert from "./ContenuCouvert";
 import { AlertesQuestion, ChampDonnees } from "./ChampDonnees";
 import VersionsControle from "./VersionsControle";
 import ListeControles from "./ListeControles";
-import PassationTest from "./PassationTest";
+import PassationControle from "./PassationControle";
 import AnalyseComprehension from "./AnalyseComprehension";
 import Passation from "@/app/espace-stagiaire/controles/[id]/Passation";
 import { Stepper, NavigationEtapes, ETAPES } from "./Stepper";
@@ -815,11 +815,13 @@ export default function ControleManager({
         </p>
       </header>
 
-      {type === "TEST" && activeId ? (
-        <PassationTest
+      {activeId ? (
+        <PassationControle
           controleId={activeId}
           moduleId={moduleId}
+          type={type}
           statut={statut}
+          dureeHeures={duree}
           modifie={modifie}
           ouvertLe={ouvertLe}
           fermeLe={fermeLe}

@@ -83,16 +83,18 @@ export async function POST(request: Request) {
   // Une minute de grâce après la fermeture : la remise automatique d'un test
   // chronométré part à la dernière seconde, et le réseau n'est pas instantané.
   const maintenant = Date.now();
+  // Un contrôle ne se rend que pendant son ouverture (migration 096), quel que
+  // soit son type. Une minute de grâce après la fermeture : la remise
+  // automatique part à la dernière seconde, et le réseau n'est pas instantané.
   if (
     !moi.est_test &&
-    controle.type === "TEST" &&
     (!controle.ouvert_le ||
       new Date(controle.ouvert_le).getTime() > maintenant ||
       (controle.ferme_le !== null &&
         new Date(controle.ferme_le).getTime() + GRACE_REMISE_MS < maintenant))
   ) {
     return NextResponse.json(
-      { error: "Ce test est fermé : les copies ne sont plus acceptées." },
+      { error: "Ce contrôle est fermé : les copies ne sont plus acceptées." },
       { status: 403 },
     );
   }
