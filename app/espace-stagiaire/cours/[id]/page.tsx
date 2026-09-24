@@ -27,11 +27,15 @@ export default async function CoursDetailPage({
   return (
     <div className="space-y-6">
       <Link
-        href="/espace-stagiaire/cours"
+        href={
+          support.moduleId
+            ? `/espace-stagiaire/cours/module/${support.moduleId}`
+            : "/espace-stagiaire/cours"
+        }
         className="inline-flex min-h-[44px] items-center gap-1.5 text-sm text-slate hover:text-ink"
       >
         <ArrowLeft className="h-4 w-4" aria-hidden />
-        Tous les cours
+        {support.moduleNom ?? "Mes cours"}
       </Link>
 
       <article className="rounded-[14px] border border-border bg-surface p-4 md:p-6">

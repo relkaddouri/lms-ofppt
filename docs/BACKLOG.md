@@ -599,9 +599,11 @@ Demande du porteur de projet du 16 septembre 2026, à partir d'un sujet de CC de
 
 Demande du 24/09/2026 : « les cours par module, avec des quiz d'auto-évaluation pour chaque séance et après 3 séances un quiz, comme OpenClassrooms ». La liste chronologique des supports ne se suit pas ; l'espace stagiaire doit se lire comme un parcours.
 
-- [ ] **11.1 — Les cours rangés par module** · branche `cours-par-module`
+- [x] **11.1 — Les cours rangés par module** · branche `cours-par-module`
   Page Cours : la liste des modules du stagiaire, avec sa progression et le nombre de chapitres. Page module : le sommaire, parties du référentiel (éléments de compétence) et sous chacune les chapitres — un par séance, dans l'ordre pédagogique —, l'état lu / à lire, et le chapitre où reprendre.
   **Test** : depuis le compte de test, les 13 supports de M202 se retrouvent rangés sous leurs parties, dans l'ordre du référentiel.
+  **Fait** : `app/actions/cours-stagiaire.ts` — les supports remis (une version par séance) se lisent en modules, puis en parties (éléments de compétence, dans l'ordre du référentiel) et en chapitres numérotés. Écran « Modules » : une carte par module, code, nombre de chapitres, date du dernier. Écran module : couverture encre, parties « PARTIE 1 · A » avec leur intitulé, chapitres avec leur type (Cours / TP), leur numéro et leur date. Le chapitre revient désormais au sommaire de son module, plus à la liste plate.
+  **Vérifié** : en base sous l'identité du compte de test, les supports de M202 se répartissent en 4 parties (A Collecter des données, B Analyser les données utilisateurs, C Identifier les points d'amélioration, D Documenter les utilisations), dans l'ordre du référentiel. Les deux écrans relus sur une page d'aperçu temporaire (supprimée) : liste des modules et sommaire complet.
 
 - [ ] **11.2 — Le chapitre, et la progression du stagiaire** · branche `cours-chapitre`
   Lecture d'un chapitre avec le sommaire à gauche, « chapitre suivant », marquer comme lu (table de progression, propre au stagiaire), pourcentage du module. Les questions sur le support et la correction de TP restent à leur place.

@@ -48,6 +48,8 @@ export type SupportDetail = {
   contenu: Support;
   date: string | null;
   moduleNom: string | null;
+  /** Le module du chapitre : c'est par lui qu'on revient au sommaire (§4.5bis). */
+  moduleId: string | null;
   questions: QuestionSupport[];
   /** Pour savoir, côté stagiaire, s'il y a lieu de proposer le champ. */
   reglages: ReglagesCommentaires;
@@ -228,7 +230,7 @@ export async function getSupportDetail(
   const { data, error } = await supabase
     .from("supports_seance")
     .select(
-      "id, contenu, seance_id, seances(date, modules(nom, competences(code_operationnel)), seance_groupes(groupe_id))",
+      "id, contenu, seance_id, seances(date, module_id, modules(nom, competences(code_operationnel)), seance_groupes(groupe_id))",
     )
     .eq("id", supportId)
     .eq("destinataire", "stagiaire")
@@ -243,6 +245,7 @@ export async function getSupportDetail(
     seance_id: string;
     seances: {
       date: string | null;
+      module_id: string | null;
       modules: {
         nom: string;
         competences: { code_operationnel: string | null } | null;
@@ -261,6 +264,7 @@ export async function getSupportDetail(
           s.seances.modules.nom,
         )
       : null,
+    moduleId: s.seances?.module_id ?? null,
     // Une séance FAD partagée a plusieurs groupes ; les questions posées
     // sur son support le sont depuis l'un d'eux.
     questions: await chargerQuestions(
