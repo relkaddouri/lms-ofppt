@@ -632,6 +632,15 @@ Demande du 24/09/2026 : « les cours par module, avec des quiz d'auto-évaluatio
 
 ---
 
+## Répétition générale avant le CC 2 et l'EFML
+
+- [x] **R.1 — Toute la chaîne d'un contrôle, rejouée sur un contrôle de test** · branche `repetition-controle`
+  Le 24 septembre 2026, pendant que DDOUX201 composait le CC 1 : un contrôle de test créé pour l'occasion, **jamais ouvert au groupe** — création, génération du sujet, aperçu, validation, PDF, passation depuis le compte de test, correction, publication, relecture côté stagiaire.
+  **Vérifié** : sujet écrit en 15 s (8 questions, barème ramené de 26 à 20 pts, avertissement « socle trop mince : 8 pts accessibles au lieu de 12 ») ; chrono parti à 59:57, réponses gardées dans le navigateur, pop-up de remise, chrono arrêté, saisie grisée ; correction notée question par question avec un commentaire juste ; `publie_le` écrit (le correctif de la 10.9 tient) ; côté stagiaire, note, « Juste / Fausse » sur chaque proposition, bonne réponse même non cochée, réponse attendue et commentaire du formateur. L'analyse de compréhension ignore le compte de test par conception (vérifiée en 10.6 sur 8 copies) ; « Ouvrir au groupe » n'a pas été touché — le groupe composait.
+  **Trois défauts corrigés** : `ContenuCouvert` prévenait son parent depuis la fonction de mise à jour d'état, donc pendant le rendu — React le signalait à chaque clic sur une séance et la sélection pouvait être comptée deux fois ; « Toutes les copies (PDF) » répondait « Aucun résultat publié pour ce contrôle » alors qu'il l'était — le dossier d'épreuve exclut la copie de test à juste titre, mais le message mentait ; même chose pour « Résultat à signer (PDF) ». Les deux messages disent maintenant ce qui se passe vraiment.
+
+---
+
 ## Points de vigilance — pas des atomes
 
 À garder en tête à chaque changement de schéma, sans traitement immédiat.
