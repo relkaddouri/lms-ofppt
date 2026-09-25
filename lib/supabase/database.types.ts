@@ -1572,6 +1572,35 @@ export type Database = {
           },
         ]
       }
+      quiz_chapitre: {
+        Row: {
+          genere_le: string
+          modele: string | null
+          questions: Json
+          support_id: string
+        }
+        Insert: {
+          genere_le?: string
+          modele?: string | null
+          questions: Json
+          support_id: string
+        }
+        Update: {
+          genere_le?: string
+          modele?: string | null
+          questions?: Json
+          support_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_chapitre_support_id_fkey"
+            columns: ["support_id"]
+            isOneToOne: true
+            referencedRelation: "supports_seance"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reactions_annonce: {
         Row: {
           annonce_id: string
