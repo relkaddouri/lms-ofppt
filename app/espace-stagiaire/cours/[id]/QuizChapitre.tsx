@@ -6,6 +6,7 @@ export default function QuizChapitre({ supportId }: { supportId: string }) {
     <QuizJoueur
       endpoint="/api/generate/quiz"
       corps={{ supportId }}
+      genre="chapitre"
       titre="Testez-vous sur ce chapitre"
       intro="Quelques questions tirées du cours, corrigées tout de suite. Ce n'est pas noté, et vous pouvez recommencer autant que vous voulez."
     />

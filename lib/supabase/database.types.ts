@@ -2268,6 +2268,70 @@ export type Database = {
           },
         ]
       }
+      tentatives_quiz: {
+        Row: {
+          created_at: string
+          genre: string
+          id: string
+          justes: number
+          module_id: string | null
+          questions: number
+          rang: number | null
+          reponses: Json
+          secondes: number | null
+          stagiaire_id: string
+          support_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          genre: string
+          id?: string
+          justes: number
+          module_id?: string | null
+          questions: number
+          rang?: number | null
+          reponses: Json
+          secondes?: number | null
+          stagiaire_id: string
+          support_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          genre?: string
+          id?: string
+          justes?: number
+          module_id?: string | null
+          questions?: number
+          rang?: number | null
+          reponses?: Json
+          secondes?: number | null
+          stagiaire_id?: string
+          support_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tentatives_quiz_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "modules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tentatives_quiz_stagiaire_id_fkey"
+            columns: ["stagiaire_id"]
+            isOneToOne: false
+            referencedRelation: "stagiaires"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tentatives_quiz_support_id_fkey"
+            columns: ["support_id"]
+            isOneToOne: false
+            referencedRelation: "supports_seance"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       versions_controle: {
         Row: {
           contenu: Json

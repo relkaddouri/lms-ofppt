@@ -653,6 +653,28 @@ Demande du 24/09/2026 : « les cours par module, avec des quiz d'auto-évaluatio
 
 ---
 
+## Phase 13 — Le suivi d'un stagiaire (demande du 25 septembre 2026)
+
+Le porteur de projet veut savoir, stagiaire par stagiaire : ce qu'il a réussi aux quiz d'auto-évaluation et aux bilans, ce qu'il travaille sur la plateforme et depuis quand, ses tentatives au fil des modules, et une lecture de son niveau et de ses lacunes.
+
+**Trois décisions prises le 25/09/2026.** Les tentatives sont conservées et ne remontent **qu'au formateur** — le stagiaire ne voit que sa correction immédiate, comme avant. Le temps passé se déduit **des actions** (chapitres ouverts, quiz passés, devoirs remis) et non d'un mouchard qui compterait les minutes d'onglet ouvert. L'interprétation est **calculée**, et l'IA ne la relit que sur demande, un stagiaire à la fois.
+
+- [x] **13.1 — La trace des quiz** · branche `suivi-stagiaire`
+  Enregistrer chaque tentative de quiz de chapitre et de bilan : le score, le détail question par question, la durée.
+  **Test** : passer un quiz depuis un compte stagiaire écrit une ligne lisible du formateur, et de lui seul.
+  **Fait** : table `tentatives_quiz` (migration 101) — genre chapitre ou bilan, la cible (support, ou module et rang), le nombre de bonnes réponses, les réponses détaillées `[{question, bonne, choisie, juste}]` et la durée. Le stagiaire écrit ses propres tentatives, le formateur du groupe les lit, personne d'autre. `progression_chapitre` s'ouvre au formateur **en lecture seule** : sans elle, « aucun quiz passé » ne se distingue pas de « cours jamais ouvert » ; l'écriture reste au seul stagiaire. L'enregistrement part à la dernière question corrigée et avale ses erreurs — perdre une ligne de statistique est sans conséquence, interrompre une révision par un message d'erreur en a une. Rien ne change pour le stagiaire : le quiz reste non noté et rejouable.
+  **Vérifié** : quiz de chapitre passé depuis le compte de test — une ligne écrite, 0/5, 5 réponses détaillées, 46 secondes. Politiques vérifiées dans des transactions annulées : le stagiaire lit 0 tentative, le formateur en lit 1.
+
+- [ ] **13.2 — La fiche de suivi d'un stagiaire**
+  Un écran par stagiaire : son activité (jours actifs, dernière trace, chapitres lus sur le total), ses quiz et bilans (combien, quel score, quelle progression), ses contrôles et ses notes, et les notions qui reviennent fausses.
+  **Test** : sur un stagiaire qui a lu des chapitres et passé des quiz, l'écran dit ce qu'il travaille, quand, et sur quoi il achoppe — sans une seule requête par ligne de tableau.
+
+- [ ] **13.3 — La lecture du niveau par l'IA**
+  Un bouton qui demande au modèle du formateur un paragraphe sur ce stagiaire : ce qu'il maîtrise, ses lacunes, quoi reprendre et à quelle séance. Écrit une fois, conservé, régénérable — jamais un appel par ouverture d'écran.
+  **Test** : sur un stagiaire aux quiz inégaux, le texte cite des notions réelles tirées de ses réponses fausses, sans jamais inventer de note.
+
+---
+
 ## Points de vigilance — pas des atomes
 
 À garder en tête à chaque changement de schéma, sans traitement immédiat.
