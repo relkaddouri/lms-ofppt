@@ -2,6 +2,7 @@
 
 import { createClient, getUser } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import type { LigneClassement } from "@/app/actions/classement";
 
 export type Commentaire = {
   id: string;
@@ -30,6 +31,22 @@ export type AnnonceFil = {
    * change : le texte seul ne fête rien.
    */
   distinction: DistinctionFil | null;
+  /**
+   * Renseigné quand l'annonce porte le classement d'une épreuve.
+   *
+   * Comme la distinction : l'annonce reste une annonce, seule sa carte change
+   * — un podium ne se raconte pas en texte.
+   */
+  classement: ClassementFil | null;
+};
+
+/** Le classement figé au moment de l'annonce (migration 100). */
+export type ClassementFil = {
+  lignes: LigneClassement[];
+  total: number;
+  moyenne: number | null;
+  /** L'identifiant du stagiaire qui lit, pour mettre sa ligne en avant. */
+  moiId: string | null;
 };
 
 /** Ce qu'il faut pour fêter, dans le fil, sans rouvrir la modale. */
@@ -62,8 +79,13 @@ export async function getFil(groupeId: string): Promise<AnnonceFil[]> {
 
   // Trois requêtes groupées plutôt qu'une paire par annonce
   // (conventions.md L.53).
-  const [reactionsRes, commentairesRes, stagiairesRes, distinctionsRes] =
-    await Promise.all([
+  const [
+    reactionsRes,
+    commentairesRes,
+    stagiairesRes,
+    distinctionsRes,
+    classementsRes,
+  ] = await Promise.all([
       supabase
         .from("reactions_annonce")
         .select("annonce_id, user_id")
@@ -87,6 +109,12 @@ export async function getFil(groupeId: string): Promise<AnnonceFil[]> {
         .select(
           "annonce_id, serie, stagiaire_id, stagiaires(nom, prenom, photo)",
         )
+        .in("annonce_id", ids),
+      // Le classement d'une épreuve, figé à l'annonce : on le lit tel quel,
+      // sans le recalculer (migration 100).
+      supabase
+        .from("classements_controle")
+        .select("annonce_id, lignes, moyenne, total")
         .in("annonce_id", ids),
     ]);
 
@@ -126,6 +154,16 @@ export async function getFil(groupeId: string): Promise<AnnonceFil[]> {
     });
   }
 
+  const classements = new Map<string, ClassementFil>();
+  for (const c of classementsRes.data ?? []) {
+    classements.set(c.annonce_id, {
+      lignes: (c.lignes ?? []) as unknown as LigneClassement[],
+      total: Number(c.total) || 20,
+      moyenne: c.moyenne === null ? null : Number(c.moyenne),
+      moiId: moi?.id ?? null,
+    });
+  }
+
   return annonces.map((a) => {
     const reactions = (reactionsRes.data ?? []).filter(
       (r) => r.annonce_id === a.id,
@@ -149,6 +187,7 @@ export async function getFil(groupeId: string): Promise<AnnonceFil[]> {
           estMien: c.auteur_id === user?.id,
         })),
       distinction: distinctions.get(a.id) ?? null,
+      classement: classements.get(a.id) ?? null,
     };
   });
 }

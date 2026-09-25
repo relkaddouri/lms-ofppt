@@ -7,8 +7,8 @@ import { useEffect, useRef } from "react";
  *
  * Dessinés sur un canvas plutôt qu'assemblés en éléments animés : deux cents
  * particules en DOM feraient ramer le téléphone qu'on veut justement faire
- * sourire. Ils s'arrêtent d'eux-mêmes, et ne démarrent pas du tout si le
- * système demande à réduire les animations.
+ * sourire. Ils s'arrêtent d'eux-mêmes — sauf en mode `continu` —, et ne
+ * démarrent pas du tout si le système demande à réduire les animations.
  *
  * Partagés entre la modale et le fil : la fête doit être la même où qu'on la
  * rencontre, et deux implémentations auraient divergé au premier réglage.
@@ -36,9 +36,21 @@ export default function Feux({
    * particules dans le texte.
    */
   hauteurGerbe = 0.38,
+  /**
+   * La fête ne s'éteint pas.
+   *
+   * Pour le podium d'un classement, qu'on relit plus tard dans le fil : trois
+   * gerbes jouées une fois ne diraient plus rien à celui qui arrive après. Le
+   * rythme est alors plus lent — une gerbe toutes les secondes et demie —
+   * pour tenir de la guirlande et non du gyrophare, et l'animation s'arrête
+   * dès que le podium sort de l'écran : personne ne doit payer en batterie
+   * une fête qu'il ne regarde pas.
+   */
+  continu = false,
 }: {
   actif: boolean;
   hauteurGerbe?: number;
+  continu?: boolean;
 }) {
   const toile = useRef<HTMLCanvasElement>(null);
 
@@ -82,10 +94,14 @@ export default function Feux({
     let animation = 0;
     const dessiner = () => {
       image++;
-      // Trois gerbes, espacées : une salve continue tiendrait de l'écran de
-      // veille, pas de la félicitation.
-      if (image === 1 || image === 28 || image === 58) {
-        gerbe(largeur * (0.25 + Math.random() * 0.5), hauteur * hauteurGerbe);
+      // Trois gerbes espacées puis le silence ; en continu, une gerbe toutes
+      // les quatre-vingt-dix images — une salve nourrie tiendrait de l'écran
+      // de veille, pas de la félicitation.
+      const tire = continu
+        ? image === 1 || image % 70 === 0
+        : image === 1 || image === 28 || image === 58;
+      if (tire) {
+        gerbe(largeur * (0.2 + Math.random() * 0.6), hauteur * hauteurGerbe);
       }
       ctx.clearRect(0, 0, largeur, hauteur);
       for (const p of particules) {
@@ -97,17 +113,51 @@ export default function Feux({
         ctx.globalAlpha = Math.max(p.vie, 0);
         ctx.fillStyle = p.teinte;
         ctx.beginPath();
-        ctx.arc(p.x, p.y, 2.4, 0, Math.PI * 2);
+        // Un peu plus gros en continu : la gerbe est seule à l'écran, et des
+        // points de deux pixels sur un fond pâle passeraient pour une
+        // poussière d'affichage.
+        ctx.arc(p.x, p.y, continu ? 3 : 2.4, 0, Math.PI * 2);
         ctx.fill();
       }
       ctx.globalAlpha = 1;
-      if (particules.some((p) => p.vie > 0)) {
+      // Les particules éteintes sortent du tableau : en continu, les garder
+      // ferait grossir la liste sans fin.
+      if (continu) {
+        for (let i = particules.length - 1; i >= 0; i--) {
+          if (particules[i]!.vie <= 0) particules.splice(i, 1);
+        }
+      }
+      if (continu || particules.some((p) => p.vie > 0)) {
         animation = requestAnimationFrame(dessiner);
+      } else {
+        animation = 0;
       }
     };
-    animation = requestAnimationFrame(dessiner);
-    return () => cancelAnimationFrame(animation);
-  }, [actif, hauteurGerbe]);
+
+    // Hors de l'écran, on ne dessine pas : un canvas qui tourne au bas d'un
+    // fil qu'on ne regarde plus coûte de la batterie pour rien.
+    const relancer = () => {
+      if (!animation) animation = requestAnimationFrame(dessiner);
+    };
+    const suspendre = () => {
+      if (animation) cancelAnimationFrame(animation);
+      animation = 0;
+    };
+
+    const observateur = continu
+      ? new IntersectionObserver(
+          ([entree]) => (entree?.isIntersecting ? relancer() : suspendre()),
+          { threshold: 0 },
+        )
+      : null;
+    if (observateur) observateur.observe(canvas);
+    else relancer();
+
+    return () => {
+      observateur?.disconnect();
+      suspendre();
+    };
+  }, [actif, hauteurGerbe, continu]);
 
   return (
     <canvas
