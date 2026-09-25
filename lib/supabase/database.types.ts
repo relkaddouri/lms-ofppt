@@ -1425,6 +1425,39 @@ export type Database = {
           },
         ]
       }
+      progression_chapitre: {
+        Row: {
+          lu_le: string
+          stagiaire_id: string
+          support_id: string
+        }
+        Insert: {
+          lu_le?: string
+          stagiaire_id: string
+          support_id: string
+        }
+        Update: {
+          lu_le?: string
+          stagiaire_id?: string
+          support_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "progression_chapitre_stagiaire_id_fkey"
+            columns: ["stagiaire_id"]
+            isOneToOne: false
+            referencedRelation: "stagiaires"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "progression_chapitre_support_id_fkey"
+            columns: ["support_id"]
+            isOneToOne: false
+            referencedRelation: "supports_seance"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       questions_controle: {
         Row: {
           bareme: number

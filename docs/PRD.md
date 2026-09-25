@@ -288,6 +288,18 @@ Fonctionnalités de l'espace stagiaire :
 
 *Question ouverte : la notion de "devoir" n'a pas été détaillée dans le brief initial — à clarifier lors du passage au backlog (nature du rendu attendu : texte, fichier, lien ; notation ou non).*
 
+### 4.5bis Les cours du stagiaire, en parcours par module (ajout du 24 septembre 2026, demande du porteur de projet)
+
+La liste chronologique des supports — « 13 supports, du plus récent au plus ancien » — ne se suit pas : le stagiaire qui révise cherche une notion, pas une date. Ses cours se rangent donc **par module**, comme un parcours de formation en ligne.
+
+**Trois niveaux.** La page Cours liste ses **modules**, chacun avec sa progression. Un module ouvre son **sommaire** : les parties du référentiel — les éléments de compétence, « A. Réaliser un travail de recherche » — et sous chacune ses **chapitres**, un par séance, dans l'ordre pédagogique et non par date. Un chapitre s'ouvre en lecture, avec le sommaire à gauche, ce qui précède et ce qui suit à portée de clic.
+
+**La progression appartient au stagiaire.** Un chapitre lu est marqué comme tel, par lui ; le module affiche le pourcentage atteint. Ce n'est pas une note, et le formateur ne la corrige pas — elle sert à savoir où l'on en est.
+
+**Les quiz d'auto-évaluation.** Chaque chapitre se termine par un court quiz tiré de son propre support : quelques questions à choix multiple, corrigées **immédiatement**, avec l'explication de la bonne réponse. Il ne compte pas dans la moyenne et se rejoue autant de fois qu'on veut — c'est un outil de révision, pas une évaluation. **Toutes les trois séances**, un quiz de partie reprend l'ensemble des chapitres traversés.
+
+**Ce qui ne change pas** : les questions posées sur un support, les mentions entre camarades, la correction de TP partagée (§4.4) ; ils suivent le chapitre dans sa nouvelle place.
+
 ### 4.6 Suivi de progression et rappel de contrôle (seuil des 30h)
 
 - Progression trackée par couple groupe+module, séance par séance (contenu prévu vs contenu réalisé, statut)

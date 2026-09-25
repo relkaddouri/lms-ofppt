@@ -595,6 +595,36 @@ Demande du porteur de projet du 16 septembre 2026, à partir d'un sujet de CC de
   **Fait** : migration 096 — `ouvert_le` / `ferme_le` valent pour tous les types ; la politique de lecture exige, hors compte de test, un contrôle validé **et** ouvert (une copie déjà rendue reste consultable) ; `controle_ouvert` ne fait plus d'exception pour les CC et EFM ; la remise (route) refuse hors fenêtre quel que soit le type. Panneau « Passation en ligne » sur tout contrôle, réduit à deux gestes — « Ouvrir au groupe », « Fermer maintenant » — l'heure de fermeture étant calculée avec la durée du contrôle (2 h → ferme deux heures après). `ouvrirTest`/`fermerTest` deviennent `ouvrirControle`/`fermerControle`.
   **Vérifié** : en base, sur un contrôle neuf (transaction annulée) — validé jamais ouvert : invisible et sujet refusé ; ouvert : visible avec son sujet ; fermé sans copie : visible sans sujet ; brouillon vu du compte de test : visible avec sujet. À l'écran : panneau présent sur un CC (« Jamais ouvert… il se fermera seul au bout de 2 h », bouton désactivé tant que c'est un brouillon) et sur le test (« Rouvrir au groupe », plus aucun menu de durée).
 
+## Phase 11 — Les cours du stagiaire, en parcours par module (PRD §4.5bis)
+
+Demande du 24/09/2026 : « les cours par module, avec des quiz d'auto-évaluation pour chaque séance et après 3 séances un quiz, comme OpenClassrooms ». La liste chronologique des supports ne se suit pas ; l'espace stagiaire doit se lire comme un parcours.
+
+- [x] **11.1 — Les cours rangés par module** · branche `cours-par-module`
+  Page Cours : la liste des modules du stagiaire, avec sa progression et le nombre de chapitres. Page module : le sommaire, parties du référentiel (éléments de compétence) et sous chacune les chapitres — un par séance, dans l'ordre pédagogique —, l'état lu / à lire, et le chapitre où reprendre.
+  **Test** : depuis le compte de test, les 13 supports de M202 se retrouvent rangés sous leurs parties, dans l'ordre du référentiel.
+  **Fait** : `app/actions/cours-stagiaire.ts` — les supports remis (une version par séance) se lisent en modules, puis en parties (éléments de compétence, dans l'ordre du référentiel) et en chapitres numérotés. Écran « Modules » : une carte par module, code, nombre de chapitres, date du dernier. Écran module : couverture encre, parties « PARTIE 1 · A » avec leur intitulé, chapitres avec leur type (Cours / TP), leur numéro et leur date. Le chapitre revient désormais au sommaire de son module, plus à la liste plate.
+  **Vérifié** : en base sous l'identité du compte de test, les supports de M202 se répartissent en 4 parties (A Collecter des données, B Analyser les données utilisateurs, C Identifier les points d'amélioration, D Documenter les utilisations), dans l'ordre du référentiel. Les deux écrans relus sur une page d'aperçu temporaire (supprimée) : liste des modules et sommaire complet.
+
+- [x] **11.2 — Le chapitre, et la progression du stagiaire** · branche `cours-chapitre`
+  Lecture d'un chapitre avec le sommaire à gauche, « chapitre suivant », marquer comme lu (table de progression, propre au stagiaire), pourcentage du module. Les questions sur le support et la correction de TP restent à leur place.
+  **Test** : lire trois chapitres, la progression du module suit ; le formateur ne voit pas cette progression.
+  **Fait** : table `progression_chapitre` (migration 097), ouverte au seul stagiaire concerné — ni ses camarades ni le formateur n'y accèdent. Chapitre : sommaire du module à gauche (replié sur téléphone) avec la partie, l'état de chaque chapitre et celui qu'on lit ; « Chapitre N sur M » en tête ; en pied, « J'ai terminé ce chapitre » (réversible), « Précédent » et « Chapitre suivant : … ». Sommaire du module : barre de progression, « Reprendre au chapitre N » (ou « Commencer », ou « Revoir » quand tout est terminé), coche verte sur les chapitres terminés. Liste des modules : barre et « 3 / 8 chapitres ».
+  **Vérifié** : en base, la ligne de progression du compte de test est vue par lui seul — 0 ligne pour un autre stagiaire, 0 pour le formateur —, et un stagiaire ne peut pas écrire celle d'un autre (refus de la politique). Écrans relus sur page d'aperçu temporaire (supprimée) : sommaire avec progression 38 %, coches, reprise au chapitre 4, et sommaire latéral avec le chapitre courant en évidence.
+
+- [ ] **11.3 — Le quiz d'auto-évaluation d'un chapitre** · branche `quiz-chapitre`
+  Quiz court tiré du support du chapitre par l'IA (QCM), corrigé immédiatement avec l'explication, rejouable, hors moyenne. Généré une fois, conservé, régénérable par le formateur.
+  **Test** : sur un support de M202, le quiz porte sur son contenu ; une mauvaise réponse explique pourquoi.
+
+- [ ] **11.4 — Le quiz de partie, toutes les trois séances** · branche `quiz-partie`
+  Un quiz de bilan à la fin de chaque groupe de trois chapitres, tiré de leurs supports, présenté dans le sommaire comme un jalon.
+  **Test** : après le troisième chapitre d'une partie, le quiz de bilan apparaît et porte sur les trois.
+
+- [ ] **11.5 — L'espace stagiaire au même niveau** · branche `espace-stagiaire-v2`
+  Reprise de l'en-tête, de la navigation et des cartes des autres écrans (fil, devoirs, contrôles, emploi du temps) dans la même tenue que les cours.
+  **Test** : les cinq écrans se lisent sur téléphone comme sur ordinateur, sans rupture de style.
+
+---
+
 ## Points de vigilance — pas des atomes
 
 À garder en tête à chaque changement de schéma, sans traitement immédiat.
