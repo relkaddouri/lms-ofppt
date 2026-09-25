@@ -1,14 +1,22 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { getPassations, type Passation } from "@/app/actions/controles";
+import {
+  annoncerClassement,
+  getClassement,
+  type Classement,
+} from "@/app/actions/classement";
+import PodiumClassement from "@/components/PodiumClassement";
 import Link from "next/link";
 import {
   ClipboardList,
   FileCheck2,
   FileSignature,
   Files,
+  Megaphone,
   PenLine,
+  Trophy,
 } from "lucide-react";
 import Badge from "@/components/ui/Badge";
 import Button, { buttonStyles } from "@/components/ui/Button";
@@ -55,6 +63,8 @@ export default function CopiesManager({
   // présence. Le formateur qui n'imprime que pour rendre les copies décoche.
   const [avecEmargement, setAvecEmargement] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [classement, setClassement] = useState<Classement | null>(null);
+  const [busyAnnonce, setBusyAnnonce] = useState(false);
   const toast = useToast();
 
   const selected = passations.find((p) => p.id === selectedId) ?? null;
@@ -81,6 +91,43 @@ export default function CopiesManager({
       cancelled = true;
     };
   }, [controleId]);
+
+  // Le classement se relit à chaque publication de copie : c'est la même
+  // page, et une note publiée juste avant doit y figurer.
+  const relireClassement = useCallback(() => {
+    getClassement(controleId)
+      .then(setClassement)
+      .catch(() => setClassement(null));
+  }, [controleId]);
+
+  useEffect(relireClassement, [relireClassement]);
+
+  /**
+   * Annonce le classement au groupe (demande du 25/09/2026).
+   *
+   * Le podium au fil, pour entretenir l'émulation. Réannoncer réécrit
+   * l'annonce existante plutôt que d'en empiler une seconde.
+   */
+  async function handleAnnonce() {
+    setBusyAnnonce(true);
+    try {
+      const dejaAnnonce = !!classement?.annonceId;
+      await annoncerClassement(controleId);
+      relireClassement();
+      toast(
+        dejaAnnonce
+          ? "Classement mis à jour dans le fil du groupe."
+          : "Classement annoncé dans le fil du groupe.",
+      );
+    } catch (err) {
+      toast(
+        err instanceof Error ? err.message : "Annonce impossible",
+        "error",
+      );
+    } finally {
+      setBusyAnnonce(false);
+    }
+  }
 
 
 
@@ -198,6 +245,60 @@ export default function CopiesManager({
             présent, puis ce que chacun a obtenu. Ils vivent au-dessus de la
             liste parce qu'ils portent sur le contrôle entier, pas sur la
             copie sélectionnée. */}
+        {/* ── Le classement de l'épreuve ────────────────────────────────
+            Il n'apparaît qu'une fois des résultats publiés : un podium tiré
+            de notes que les stagiaires n'ont pas encore vues annoncerait
+            leur note avant eux. */}
+        {classement && classement.lignes.length > 0 ? (
+          <div className="mb-5 flex flex-col gap-4 rounded-[14px] border border-border bg-surface p-[18px] shadow-repos">
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-wash-strong text-ink">
+                <Trophy size={17} strokeWidth={1.9} aria-hidden />
+              </span>
+              <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                <span className="text-[15.5px] font-semibold text-ink">
+                  Classement de l&apos;épreuve
+                </span>
+                <span className="font-mono text-[12.5px] text-slate-light">
+                  {classement.publiees} résultat
+                  {classement.publiees > 1 ? "s" : ""} publié
+                  {classement.publiees > 1 ? "s" : ""} sur {classement.effectif}
+                  {classement.annonceLe
+                    ? ` · annoncé le ${formatDateTime(classement.annonceLe)}`
+                    : " · pas encore annoncé"}
+                </span>
+              </span>
+              <Button
+                variant={classement.annonceId ? "secondary" : "primary"}
+                size="sm"
+                icon={Megaphone}
+                onClick={handleAnnonce}
+                loading={busyAnnonce}
+                loadingLabel="Publication…"
+              >
+                {classement.annonceId
+                  ? "Mettre à jour l'annonce"
+                  : "Annoncer au fil du groupe"}
+              </Button>
+            </div>
+
+            {classement.publiees < classement.effectif ? (
+              <p className="text-[13.5px] text-slate">
+                Il reste {classement.effectif - classement.publiees} copie
+                {classement.effectif - classement.publiees > 1 ? "s" : ""} à
+                publier : annoncez plutôt une fois la correction terminée, sans
+                quoi le classement changera sous les yeux du groupe.
+              </p>
+            ) : null}
+
+            <PodiumClassement
+              lignes={classement.lignes}
+              total={classement.total}
+              moyenne={classement.moyenne}
+            />
+          </div>
+        ) : null}
+
         <div className="mb-5 flex flex-wrap items-center gap-3 rounded-[14px] border border-border bg-surface p-[18px] shadow-repos">
           <Button
             variant="secondary"

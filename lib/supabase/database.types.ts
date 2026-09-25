@@ -158,6 +158,58 @@ export type Database = {
         }
         Relationships: []
       }
+      classements_controle: {
+        Row: {
+          annonce_id: string
+          controle_id: string
+          created_at: string
+          groupe_id: string
+          lignes: Json
+          moyenne: number | null
+          total: number
+        }
+        Insert: {
+          annonce_id: string
+          controle_id: string
+          created_at?: string
+          groupe_id: string
+          lignes: Json
+          moyenne?: number | null
+          total: number
+        }
+        Update: {
+          annonce_id?: string
+          controle_id?: string
+          created_at?: string
+          groupe_id?: string
+          lignes?: Json
+          moyenne?: number | null
+          total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "classements_controle_annonce_id_fkey"
+            columns: ["annonce_id"]
+            isOneToOne: true
+            referencedRelation: "annonces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "classements_controle_controle_id_fkey"
+            columns: ["controle_id"]
+            isOneToOne: false
+            referencedRelation: "controles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "classements_controle_groupe_id_fkey"
+            columns: ["groupe_id"]
+            isOneToOne: false
+            referencedRelation: "groupes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       commentaires_annonce: {
         Row: {
           annonce_id: string

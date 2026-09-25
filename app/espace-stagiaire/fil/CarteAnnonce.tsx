@@ -7,6 +7,7 @@ import Avatar from "@/components/ui/Avatar";
 import TexteMentions from "@/components/TexteMentions";
 import FilCommentaires from "@/components/FilCommentaires";
 import CarteDistinction from "@/components/CarteDistinction";
+import PodiumClassement from "@/components/PodiumClassement";
 import {
   basculerJaime,
   type AnnonceFil,
@@ -79,7 +80,7 @@ export default function CarteAnnonce({
           contenu={annonce.contenu}
         />
       ) : (
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-3">
           {annonce.titre ? (
             <h2 className="font-display text-[19px] font-semibold leading-snug text-ink">
               {annonce.titre}
@@ -89,6 +90,16 @@ export default function CarteAnnonce({
             <p className="whitespace-pre-line text-base leading-relaxed text-body">
               <TexteMentions texte={annonce.contenu} camarades={camarades} />
             </p>
+          ) : null}
+          {/* Le classement d'une épreuve : le podium sous le texte, et non à
+              sa place — le formateur y ajoute souvent un mot. */}
+          {annonce.classement ? (
+            <PodiumClassement
+              lignes={annonce.classement.lignes}
+              total={annonce.classement.total}
+              moyenne={annonce.classement.moyenne}
+              moiId={annonce.classement.moiId}
+            />
           ) : null}
         </div>
       )}
