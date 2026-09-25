@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowRight, Milestone } from "lucide-react";
 import { getIdentiteStagiaire } from "@/app/actions/stagiaire";
 import { getCamarades } from "@/app/actions/fil";
 import { getSupportDetail } from "@/app/actions/questions-support";
@@ -11,7 +11,7 @@ import TelechargerDiapos from "@/components/TelechargerDiapos";
 import SommaireLateral from "../SommaireLateral";
 import MarquerLu from "./MarquerLu";
 import QuizChapitre from "./QuizChapitre";
-import { getChapitre } from "@/app/actions/cours-stagiaire";
+import { getChapitre, getJalons } from "@/app/actions/cours-stagiaire";
 
 export default async function CoursDetailPage({
   params,
@@ -28,6 +28,11 @@ export default async function CoursDetailPage({
     getChapitre(id),
   ]);
   if (!support) notFound();
+
+  // Le bilan se propose au chapitre qui clôt son jalon : trois chapitres lus,
+  // le moment de vérifier ce qui reste (PRD §4.5bis).
+  const jalons = support.moduleId ? await getJalons(support.moduleId) : [];
+  const bilan = jalons.find((j) => j.chapitres.at(-1)?.id === id) ?? null;
 
   return (
     <div className="flex gap-6">
@@ -170,6 +175,26 @@ export default async function CoursDetailPage({
       {/* Le quiz vient après le cours et avant la navigation : on se teste
           quand on vient de lire, pas au retour (PRD §4.5bis). */}
       <QuizChapitre supportId={support.id} />
+
+      {bilan ? (
+        <Link
+          href={`/espace-stagiaire/cours/module/${bilan.moduleId}/bilan/${bilan.rang}`}
+          className="flex items-center gap-3 rounded-[14px] border border-ink bg-ink px-4 py-4 text-white no-underline hover:no-underline md:px-5"
+        >
+          <Milestone className="h-5 w-5 shrink-0" aria-hidden />
+          <span className="flex min-w-0 flex-col gap-0.5">
+            <span className="text-[15.5px] font-semibold">
+              Bilan des chapitres {bilan.chapitres[0]!.numero} à{" "}
+              {bilan.chapitres.at(-1)!.numero}
+            </span>
+            <span className="text-[13.5px] text-white/70">
+              Huit questions qui relient les trois chapitres que vous venez de
+              voir.
+            </span>
+          </span>
+          <ArrowRight className="ml-auto h-4 w-4 shrink-0" aria-hidden />
+        </Link>
+      ) : null}
 
       {/* Terminer le chapitre, et passer au suivant : le parcours se suit
           sans repasser par le sommaire (PRD §4.5bis). */}

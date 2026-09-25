@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getSommaireModule } from "@/app/actions/cours-stagiaire";
+import { getJalons, getSommaireModule } from "@/app/actions/cours-stagiaire";
 import SommaireVue from "./SommaireVue";
 
 /**
@@ -16,8 +16,11 @@ export default async function ModuleCoursPage({
   params: Promise<{ moduleId: string }>;
 }) {
   const { moduleId } = await params;
-  const module = await getSommaireModule(moduleId);
+  const [module, jalons] = await Promise.all([
+    getSommaireModule(moduleId),
+    getJalons(moduleId),
+  ]);
   if (!module) notFound();
 
-  return <SommaireVue module={module} />;
+  return <SommaireVue module={module} jalons={jalons} />;
 }

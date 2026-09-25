@@ -13,6 +13,29 @@ import type { Support } from "@/lib/support";
 
 export const NB_QUESTIONS_QUIZ = 5;
 
+/** Un bilan tous les trois chapitres (PRD §4.5bis). */
+export const CHAPITRES_PAR_BILAN = 3;
+export const NB_QUESTIONS_BILAN = 8;
+
+/**
+ * Les jalons d'un module : un bilan par groupe de trois chapitres.
+ *
+ * Seuls les groupes complets donnent un bilan. Les deux derniers chapitres
+ * d'un module qui en compte onze attendent le troisième : un « bilan » sur
+ * deux cours ne ferait pas le lien qu'on en attend, et il faudrait le
+ * réécrire à la séance suivante.
+ */
+export function jalonsDeBilan<T>(chapitres: T[]): { rang: number; chapitres: T[] }[] {
+  const jalons: { rang: number; chapitres: T[] }[] = [];
+  for (let i = 0; i + CHAPITRES_PAR_BILAN <= chapitres.length; i += CHAPITRES_PAR_BILAN) {
+    jalons.push({
+      rang: jalons.length + 1,
+      chapitres: chapitres.slice(i, i + CHAPITRES_PAR_BILAN),
+    });
+  }
+  return jalons;
+}
+
 export type QuestionQuiz = {
   question: string;
   /** Trois ou quatre propositions, dans l'ordre où elles s'affichent. */
@@ -89,7 +112,10 @@ const texte = (v: unknown, max = 600) => String(v ?? "").trim().slice(0, max);
  * indiscernables, vaut mieux jetée : un quiz de révision qui corrige à tort
  * est pire que pas de quiz.
  */
-export function questionsValides(brut: unknown): QuestionQuiz[] {
+export function questionsValides(
+  brut: unknown,
+  maximum: number = NB_QUESTIONS_QUIZ,
+): QuestionQuiz[] {
   const liste = Array.isArray(brut) ? brut : [];
   const retenues: QuestionQuiz[] = [];
 
@@ -120,7 +146,7 @@ export function questionsValides(brut: unknown): QuestionQuiz[] {
       bonne,
       explication: texte(o.explication, 600),
     });
-    if (retenues.length >= NB_QUESTIONS_QUIZ) break;
+    if (retenues.length >= maximum) break;
   }
 
   return retenues;
