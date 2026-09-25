@@ -2,7 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
-import type { SeanceParallele } from "@/lib/partage";
+import type { PropositionsPartage, SeanceParallele } from "@/lib/partage";
 
 /**
  * Partage du contenu pédagogique entre séances de groupes parallèles (§4.3bis).
@@ -48,7 +48,7 @@ export async function sourceContenu(seanceId: string): Promise<string> {
  */
 export async function getSeancesParalleles(
   seanceId: string,
-): Promise<SeanceParallele[]> {
+): Promise<PropositionsPartage> {
   const supabase = await createClient();
 
   const { data: moi } = await supabase
@@ -59,7 +59,8 @@ export async function getSeancesParalleles(
     .eq("id", seanceId)
     .maybeSingle();
 
-  if (!moi) return [];
+  const vide: PropositionsPartage = { mienAvecContenu: false, paralleles: [] };
+  if (!moi) return vide;
 
   const r = moi as unknown as {
     module_id: string;
@@ -71,20 +72,35 @@ export async function getSeancesParalleles(
   const mesElements = [...r.seance_elements_contenu.map((e) => e.element_contenu_id)].sort();
   // Sans élément assigné, il n'y a rien sur quoi rapprocher : mieux vaut ne
   // rien proposer que proposer au hasard.
-  if (mesElements.length === 0) return [];
+  if (mesElements.length === 0) return vide;
 
   const mesGroupes = new Set(r.seance_groupes.map((g) => g.groupe_id));
 
   const { data: candidates, error } = await supabase
     .from("seances")
     .select(
-      "id, date, heure_debut, heure_fin, objectif_operationnel, contenu_source_id, seance_elements_contenu(element_contenu_id), seance_groupes(groupe_id, groupes(nom))",
+      "id, date, heure_debut, heure_fin, objectif_operationnel, contenu_source_id, fiches_preparation(seance_id), supports_seance(seance_id), seance_elements_contenu(element_contenu_id), seance_groupes(groupe_id, groupes(nom))",
     )
     .eq("module_id", r.module_id)
     .neq("id", seanceId);
 
   if (error) throw new Error(error.message);
 
+  // Ai-je quelque chose à donner ? C'est ce qui décide du sens du partage.
+  const [fichesRes, supportsRes] = await Promise.all([
+    supabase
+      .from("fiches_preparation")
+      .select("seance_id", { count: "exact", head: true })
+      .eq("seance_id", seanceId),
+    supabase
+      .from("supports_seance")
+      .select("seance_id", { count: "exact", head: true })
+      .eq("seance_id", seanceId),
+  ]);
+  const mienAvecContenu =
+    (fichesRes.count ?? 0) > 0 || (supportsRes.count ?? 0) > 0;
+
+  const porteuse = r.contenu_source_id ?? seanceId;
   const paralleles: SeanceParallele[] = [];
 
   for (const ligne of candidates ?? []) {
@@ -95,6 +111,8 @@ export async function getSeancesParalleles(
       heure_fin: string | null;
       objectif_operationnel: string | null;
       contenu_source_id: string | null;
+      fiches_preparation: { seance_id: string }[];
+      supports_seance: { seance_id: string }[];
       seance_elements_contenu: { element_contenu_id: string }[];
       seance_groupes: { groupe_id: string; groupes: { nom: string } | null }[];
     };
@@ -115,22 +133,28 @@ export async function getSeancesParalleles(
       heure_debut: c.heure_debut,
       heure_fin: c.heure_fin,
       objectif: c.objectif_operationnel,
-      dejaLiee:
-        c.contenu_source_id === seanceId ||
-        c.contenu_source_id === r.contenu_source_id ||
-        c.id === r.contenu_source_id,
+      // La séance qui porte le contenu : la mienne, ou sa source si je suis
+      // déjà un miroir. Comparer deux `contenu_source_id` nuls rendait
+      // « déjà partagée » vrai pour toutes les propositions — et le bouton
+      // était grisé partout, donc rien ne pouvait jamais être partagé.
+      dejaLiee: c.contenu_source_id === porteuse || c.id === porteuse,
+      aDuContenu:
+        c.fiches_preparation.length > 0 || c.supports_seance.length > 0,
     });
   }
 
   // Tri par date : quand un objectif s'étale sur plusieurs créneaux, toutes
   // ses séances portent le même ensemble d'éléments et se ressemblent — c'est
   // la date qui permet au formateur de reconnaître la bonne.
-  return paralleles.sort(
-    (a, b) =>
-      (a.date ?? "9999").localeCompare(b.date ?? "9999") ||
-      (a.heure_debut ?? "").localeCompare(b.heure_debut ?? "") ||
-      a.groupeNom.localeCompare(b.groupeNom, "fr"),
-  );
+  return {
+    mienAvecContenu,
+    paralleles: paralleles.sort(
+      (a, b) =>
+        (a.date ?? "9999").localeCompare(b.date ?? "9999") ||
+        (a.heure_debut ?? "").localeCompare(b.heure_debut ?? "") ||
+        a.groupeNom.localeCompare(b.groupeNom, "fr"),
+    ),
+  };
 }
 
 /**
