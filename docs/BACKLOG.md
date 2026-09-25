@@ -652,6 +652,16 @@ Demande du 24/09/2026 : « les cours par module, avec des quiz d'auto-évaluatio
 
 ---
 
+## Correctifs signalés par le porteur de projet
+
+- [x] **C.1 — Le partage entre groupes parallèles ne partageait rien** · branche `partage-parallele`
+  Signalé le 25 septembre 2026 : « je génère une persona pour DES101, je veux la partager avec DES102 — ça ne marche pas ».
+  **La cause** : dans `getSeancesParalleles`, une séance était dite déjà partagée si `c.contenu_source_id === r.contenu_source_id`. Deux séances non partagées portent toutes deux `null`, et `null === null` est vrai : **toutes** les propositions s'affichaient « Déjà partagée », bouton grisé. La détection, elle, fonctionnait — les paires DES101 / DES102 étaient bien trouvées. La comparaison se fait désormais sur la séance qui porte le contenu (la mienne, ou ma source), jamais sur deux nuls.
+  **Le sens du partage, à l'endroit** : le bouton annonçait « Partager avec un groupe parallèle » et le message de confirmation disait l'inverse — la séance regardée devenait le miroir de l'autre, et **sa propre fiche était supprimée**. Deux défauts qui s'annulaient : le bouton grisé a empêché la casse. Désormais, celui qui a écrit la fiche la donne : depuis une séance qui porte une fiche ou un support, le partage pousse vers le groupe parallèle ; depuis une séance vide, il propose « Utiliser cette fiche ». Le message de confirmation dit dans les deux cas ce qui sera supprimé, et de quel côté.
+  **Vérifié** : sur la séance DES101 du 11/09/2026, les deux séances parallèles de DES102 sont proposées avec un bouton actif « Partager avec ce groupe » (elles affichaient « Déjà partagée » avant le correctif). Le partage lui-même n'a pas été exécuté : les séances DES102 concernées portent chacune un support, que le partage remplacerait — c'est au formateur de le décider.
+
+---
+
 ## Points de vigilance — pas des atomes
 
 À garder en tête à chaque changement de schéma, sans traitement immédiat.

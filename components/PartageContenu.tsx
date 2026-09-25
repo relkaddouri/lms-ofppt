@@ -12,7 +12,7 @@ import {
   partagerContenu,
   cesserPartage,
 } from "@/app/actions/partage";
-import type { SeanceParallele } from "@/lib/partage";
+import type { PropositionsPartage, SeanceParallele } from "@/lib/partage";
 import { Link2, Link2Off, Users } from "lucide-react";
 
 /**
@@ -34,7 +34,7 @@ export default function PartageContenu({
   const toast = useToast();
   const [enCours, startTransition] = useTransition();
 
-  const [propositions, setPropositions] = useState<SeanceParallele[] | null>(
+  const [propositions, setPropositions] = useState<PropositionsPartage | null>(
     null,
   );
   const [aDetacher, setADetacher] = useState(false);
@@ -45,7 +45,7 @@ export default function PartageContenu({
       try {
         const trouvees = await getSeancesParalleles(seanceId);
         setPropositions(trouvees);
-        if (trouvees.length === 0) {
+        if (trouvees.paralleles.length === 0) {
           toast("Aucune séance parallèle repérée sur ce contenu");
         }
       } catch (e) {
@@ -54,15 +54,35 @@ export default function PartageContenu({
     });
   }
 
+  /**
+   * Qui donne, qui reçoit.
+   *
+   * Celui qui a écrit la fiche la donne. Sans cette règle, l'écran de la
+   * séance source proposait de remplacer sa propre fiche par celle — souvent
+   * vide — du groupe parallèle, alors que son bouton annonçait l'inverse.
+   */
+  function jeDonne(cible: SeanceParallele): boolean {
+    if (propositions?.mienAvecContenu) return true;
+    return !cible.aDuContenu;
+  }
+
   function lier() {
     const cible = aLier;
     if (!cible) return;
+    const donner = jeDonne(cible);
     startTransition(async () => {
       try {
-        await partagerContenu(seanceId, cible.id);
+        await partagerContenu(
+          donner ? cible.id : seanceId,
+          donner ? seanceId : cible.id,
+        );
         setALier(null);
         setPropositions(null);
-        toast(`Fiche et support partagés avec ${cible.groupeNom}`);
+        toast(
+          donner
+            ? `Fiche et support partagés avec ${cible.groupeNom}`
+            : `Cette séance utilise désormais la fiche de ${cible.groupeNom}`,
+        );
         router.refresh();
       } catch (e) {
         toast(e instanceof Error ? e.message : "Partage impossible");
@@ -86,9 +106,10 @@ export default function PartageContenu({
   const listeGroupes = partage?.groupes.join(", ") ?? "";
   // Plusieurs séances d'un même groupe peuvent porter les mêmes éléments :
   // le rapprochement ne tranche pas, il le dit.
+  const liste = propositions?.paralleles ?? [];
   const ambigu =
     propositions !== null &&
-    new Set(propositions.map((p) => p.groupeNom)).size < propositions.length;
+    new Set(liste.map((p) => p.groupeNom)).size < liste.length;
 
   return (
     <>
@@ -148,7 +169,7 @@ export default function PartageContenu({
             </p>
           ) : null}
           <ul className="mt-3 flex flex-col gap-2">
-            {propositions.map((p) => (
+            {liste.map((p) => (
               <li
                 key={p.id}
                 className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-separator bg-surface px-3.5 py-2.5"
@@ -171,7 +192,11 @@ export default function PartageContenu({
                   onClick={() => setALier(p)}
                   disabled={enCours || p.dejaLiee}
                 >
-                  {p.dejaLiee ? "Déjà partagée" : "Partager"}
+                  {p.dejaLiee
+                    ? "Déjà partagée"
+                    : jeDonne(p)
+                      ? "Partager avec ce groupe"
+                      : "Utiliser cette fiche"}
                 </Button>
               </li>
             ))}
@@ -192,7 +217,11 @@ export default function PartageContenu({
       <ConfirmModal
         open={aLier !== null}
         title="Partager le contenu ?"
-        message={`La fiche et le support de cette séance seront ceux de ${aLier?.groupeNom ?? ""}. Le contenu propre à cette séance, s'il existe, sera supprimé. Les présences, les remarques et le contrôle ne sont pas concernés.`}
+        message={
+          aLier && jeDonne(aLier)
+            ? `La fiche et le support de cette séance serviront aussi à ${aLier.groupeNom}. Le contenu propre à la séance de ${aLier.groupeNom}, s'il existe, sera supprimé. Les présences, les remarques et le contrôle ne sont pas concernés.`
+            : `La fiche et le support de cette séance seront ceux de ${aLier?.groupeNom ?? ""}. Le contenu propre à cette séance, s'il existe, sera supprimé. Les présences, les remarques et le contrôle ne sont pas concernés.`
+        }
         confirmLabel="Partager"
         onConfirm={lier}
         onClose={() => setALier(null)}
