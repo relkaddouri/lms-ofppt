@@ -98,7 +98,9 @@ export default function CopiesManager({
       const fait = await telechargerResultatSigne(selected.id);
       if (!fait) {
         toast(
-          "Publiez d'abord le résultat, depuis l'écran de correction.",
+          selected.est_test
+            ? "Une copie de test n'a pas de résultat à signer : ce document est officiel."
+            : "Publiez d'abord le résultat, depuis l'écran de correction.",
           "error",
         );
       }
@@ -118,7 +120,17 @@ export default function CopiesManager({
     try {
       const nombre = await telechargerLotResultats(controleId, avecEmargement);
       if (nombre === 0) {
-        toast("Aucun résultat publié pour ce contrôle.", "error");
+        // Le dossier d'épreuve est un document officiel : la copie du compte
+        // de test n'y entre pas (migration 093). Le dire, plutôt que de
+        // laisser croire que la publication n'a pas pris.
+        const queDuTest =
+          passations.length > 0 && passations.every((p) => p.est_test);
+        toast(
+          queDuTest
+            ? "Seule votre copie de test est publiée : elle n'entre pas dans le dossier d'épreuve."
+            : "Aucun résultat publié pour ce contrôle.",
+          "error",
+        );
       } else {
         toast(
           `${nombre} résultat${nombre > 1 ? "s" : ""} dans un seul fichier.`,

@@ -90,15 +90,17 @@ export default function ContenuCouvert({
   }, [groupeId, moduleId, type]);
 
   function basculer(id: string) {
-    setRetenuesIds((precedent) => {
-      const suivant = new Set(precedent);
-      if (suivant.has(id)) suivant.delete(id);
-      else suivant.add(id);
-      onSelection?.(
-        (donnees?.seances ?? []).map((s) => s.id).filter((x) => suivant.has(x)),
-      );
-      return suivant;
-    });
+    // Le nouvel ensemble se calcule ici, pas dans la fonction de mise à jour :
+    // React exécute celle-ci pendant le rendu, et prévenir le parent depuis
+    // là revient à changer son état au milieu du rendu d'un enfant — React
+    // le signale, et la sélection remontée pouvait être comptée deux fois.
+    const suivant = new Set(retenuesIds);
+    if (suivant.has(id)) suivant.delete(id);
+    else suivant.add(id);
+    setRetenuesIds(suivant);
+    onSelection?.(
+      (donnees?.seances ?? []).map((s) => s.id).filter((x) => suivant.has(x)),
+    );
   }
 
   if (!groupeId) {
