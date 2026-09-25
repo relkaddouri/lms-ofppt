@@ -3,6 +3,7 @@ import { getIdentiteStagiaire } from "@/app/actions/stagiaire";
 import { getFil, getCamarades } from "@/app/actions/fil";
 import CarteAnnonce from "./CarteAnnonce";
 import EnConstruction from "../EnConstruction";
+import EnTete from "../EnTete";
 
 export const metadata = { title: "Fil" };
 
@@ -27,15 +28,17 @@ export default async function FilPage() {
   }
 
   return (
-    <div className="bg-surface md:overflow-hidden md:rounded-[14px] md:border md:border-border">
-      <div className="flex flex-col gap-1.5 px-5 pb-2.5 pt-[22px]">
-        <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted">
-          Fil du groupe
-        </span>
-        <h1 className="font-display text-[26px] font-bold leading-tight tracking-[-0.02em] text-ink">
-          Annonces
-        </h1>
-      </div>
+    <div className="mx-auto w-full max-w-3xl bg-surface md:overflow-hidden md:rounded-[14px] md:border md:border-border">
+      <EnTete
+        surtitre="Fil du groupe"
+        titre="Annonces"
+        resume={
+          <>
+            <span className="font-mono text-body">{annonces.length}</span>{" "}
+            annonce{annonces.length > 1 ? "s" : ""} de votre formateur
+          </>
+        }
+      />
 
       {annonces.map((a) => (
         <CarteAnnonce key={a.id} annonce={a} camarades={camarades} />

@@ -23,7 +23,7 @@ export default async function BilanPage({
   const dernier = jalon.chapitres.at(-1)!.numero;
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-5">
       <Link
         href={`/espace-stagiaire/cours/module/${moduleId}`}
         className="mx-5 inline-flex min-h-[44px] items-center gap-1.5 self-start text-sm text-slate hover:text-ink md:mx-0"

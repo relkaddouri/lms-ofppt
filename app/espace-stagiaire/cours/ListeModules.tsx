@@ -2,27 +2,27 @@ import Link from "next/link";
 import { ChevronRight, Layers } from "lucide-react";
 import { formatDateJour } from "@/lib/format";
 import type { ModuleCours } from "@/app/actions/cours-stagiaire";
+import EnTete from "../EnTete";
 
 /** La liste des modules du stagiaire (PRD §4.5bis), séparée pour se relire seule. */
 export default function ListeModules({ modules }: { modules: ModuleCours[] }) {
   const total = modules.reduce((t, m) => t + m.chapitres, 0);
 
   return (
-    <div className="flex flex-col gap-5">
-      <header className="flex flex-col gap-1.5 px-5 pt-[22px] md:px-0">
-        <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted">
-          Mes cours
-        </span>
-        <h1 className="font-display text-[26px] font-bold leading-tight tracking-[-0.02em] text-ink">
-          Modules
-        </h1>
-        <span className="text-[14.5px] text-slate-light">
-          <span className="font-mono text-body">{modules.length}</span> module
-          {modules.length > 1 ? "s" : ""} ·{" "}
-          <span className="font-mono text-body">{total}</span> chapitre
-          {total > 1 ? "s" : ""} à réviser
-        </span>
-      </header>
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-5">
+      <EnTete
+        surtitre="Mes cours"
+        titre="Modules"
+        dansCarte={false}
+        resume={
+          <>
+            <span className="font-mono text-body">{modules.length}</span> module
+            {modules.length > 1 ? "s" : ""} ·{" "}
+            <span className="font-mono text-body">{total}</span> chapitre
+            {total > 1 ? "s" : ""} à réviser
+          </>
+        }
+      />
 
       <ul className="flex flex-col gap-3 px-5 md:px-0">
         {modules.map((m) => (

@@ -6,6 +6,7 @@ import { baremeAttendu, noteSur20, testOuvert } from "@/lib/controles";
 import { instantEtablissement } from "@/lib/format";
 import { dureeEnTexte, formatHeure } from "@/lib/creneaux";
 import EnConstruction from "../EnConstruction";
+import EnTete from "../EnTete";
 
 export const metadata = { title: "Contrôles" };
 
@@ -41,16 +42,12 @@ export default async function ControlesPage() {
       : null;
 
   return (
-    <div className="bg-surface md:overflow-hidden md:rounded-[14px] md:border md:border-border">
-      <div className="flex flex-col gap-1.5 px-5 pb-4 pt-[22px]">
-        <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted">
-          Évaluations
-        </span>
-        <h1 className="font-display text-[26px] font-bold leading-tight tracking-[-0.02em] text-ink">
-          Contrôles
-        </h1>
-        <span className="text-[14.5px] text-slate-light">
-          {moyenne === null ? (
+    <div className="mx-auto w-full max-w-5xl bg-surface md:overflow-hidden md:rounded-[14px] md:border md:border-border">
+      <EnTete
+        surtitre="Évaluations"
+        titre="Contrôles"
+        resume={
+          moyenne === null ? (
             "Aucune copie notée pour l'instant"
           ) : (
             <>
@@ -63,9 +60,9 @@ export default async function ControlesPage() {
                 {moyenne.toLocaleString("fr-FR")} / 20
               </span>
             </>
-          )}
-        </span>
-      </div>
+          )
+        }
+      />
 
       {controles.map((c) => {
         const rendu = c.passationId !== null;

@@ -18,7 +18,7 @@ import {
   RENDU_TYPES,
   tailleLisible,
 } from "@/lib/devoirs";
-import { Check, Paperclip, Save, X } from "lucide-react";
+import { Check, ClipboardList, Paperclip, Save, X } from "lucide-react";
 
 /** Jours restants avant l'échéance ; négatif si elle est passée. */
 function joursRestants(echeance: string | null): number | null {
@@ -92,177 +92,213 @@ export default function CarteDevoir({ devoir }: { devoir: DevoirStagiaire }) {
   }
 
   return (
-    <article className="border-b border-border p-4 last:border-0">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h2 className="text-base font-semibold text-ink">{devoir.titre}</h2>
-          {devoir.moduleNom ? (
-            <p className="mt-0.5 text-xs text-slate">{devoir.moduleNom}</p>
-          ) : null}
-        </div>
-        {rendu ? (
-          <Badge tone="success">rendu</Badge>
-        ) : enRetard ? (
-          <Badge tone="danger">en retard</Badge>
-        ) : devoir.monRendu ? (
-          <Badge tone="info">brouillon</Badge>
-        ) : null}
-      </div>
-
-      {devoir.date_echeance ? (
-        <p
-          className={`mt-2 text-sm ${enRetard ? "text-coral-dark" : "text-slate"}`}
+    <article className="border-b border-separator px-5 py-4 last:border-0">
+      {/* Même grammaire de carte que les chapitres et les contrôles : une
+          pastille qui dit l'état, le titre, une ligne d'appoint, l'étiquette
+          à droite. */}
+      <div className="flex items-start gap-[13px]">
+        <span
+          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] ${
+            rendu
+              ? "bg-green text-white"
+              : enRetard
+                ? "bg-alert-wash text-coral-dark"
+                : "bg-tint-teal text-teal-dark"
+          }`}
         >
-          À rendre le {formatDateJour(devoir.date_echeance, { court: true })}
-          {jours !== null && !rendu ? (
-            <span>
-              {" — "}
-              {jours < 0
-                ? `en retard de ${-jours} jour${-jours > 1 ? "s" : ""}`
-                : jours === 0
-                  ? "aujourd'hui"
-                  : `dans ${jours} jour${jours > 1 ? "s" : ""}`}
+          {rendu ? (
+            <Check size={17} strokeWidth={2.6} aria-hidden />
+          ) : (
+            <ClipboardList size={17} strokeWidth={1.9} aria-hidden />
+          )}
+        </span>
+
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
+          <h2 className="text-[15.5px] font-semibold leading-snug text-ink">
+            {devoir.titre}
+          </h2>
+          <span className="font-mono text-[12.5px] text-slate-light">
+            {devoir.moduleNom}
+          </span>
+          {devoir.date_echeance ? (
+            <span
+              className={`font-mono text-[12.5px] ${
+                enRetard ? "text-coral-dark" : "text-slate-light"
+              }`}
+            >
+              À rendre le{" "}
+              {formatDateJour(devoir.date_echeance, { court: true })}
+              {jours !== null && !rendu
+                ? jours < 0
+                  ? ` · en retard de ${-jours} jour${-jours > 1 ? "s" : ""}`
+                  : jours === 0
+                    ? " · aujourd'hui"
+                    : ` · dans ${jours} jour${jours > 1 ? "s" : ""}`
+                : ""}
             </span>
           ) : null}
-        </p>
-      ) : null}
+        </div>
 
-      {devoir.description ? (
-        <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-ink">
-          {devoir.description}
-        </p>
-      ) : null}
+        <span className="shrink-0">
+          {rendu ? (
+            <Badge tone="success">rendu</Badge>
+          ) : enRetard ? (
+            <Badge tone="danger">en retard</Badge>
+          ) : devoir.monRendu ? (
+            <Badge tone="info">brouillon</Badge>
+          ) : null}
+        </span>
+      </div>
 
-      {rendu ? (
-        <div className="mt-3 rounded-lg bg-wash px-3 py-2">
-          <p className="text-xs text-ink">
-            Remis le {formatDateTime(devoir.monRendu!.date_rendu!)}
+      {/* Le corps s'aligne sur le titre là où il y a la place ; sur
+          téléphone, il prend toute la largeur — une zone de saisie retranchée
+          de 49 px n'y tiendrait plus. */}
+      <div className="md:pl-[49px]">
+        {devoir.description ? (
+          <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-ink">
+            {devoir.description}
           </p>
-          {devoir.monRendu?.contenu ? (
-            <p className="mt-1 whitespace-pre-line break-words text-sm text-ink">
-              {devoir.monRendu.contenu}
+        ) : null}
+
+        {rendu ? (
+          <div className="mt-3 rounded-lg bg-wash px-3 py-2">
+            <p className="text-xs text-ink">
+              Remis le {formatDateTime(devoir.monRendu!.date_rendu!)}
             </p>
-          ) : null}
-          {devoir.monRendu?.fichier ? (
-            <p className="mt-1.5 flex items-center gap-1.5 text-xs text-slate-2">
-              <Paperclip size={13} aria-hidden />
-              <span className="truncate">{devoir.monRendu.fichier.nom}</span>
-              <span className="shrink-0 font-mono text-slate-light">
-                {tailleLisible(devoir.monRendu.fichier.taille)}
-              </span>
-            </p>
-          ) : null}
-        </div>
-      ) : ouvert ? (
-        <div className="mt-3">
-          {devoir.type_rendu === "lien" ? (
-            <input
-              value={contenu}
-              onChange={(e) => setContenu(e.target.value)}
-              placeholder="https://…"
-              aria-label="Lien du rendu"
-              className={inputStyles}
-            />
-          ) : (
-            <AutoTextarea
-              value={contenu}
-              minRows={attendFichier ? 2 : 4}
-              onChange={(e) => setContenu(e.target.value)}
-              placeholder={
-                attendFichier ? "Un mot pour accompagner (facultatif)…" : "Votre réponse…"
-              }
-              aria-label="Votre rendu"
-            />
-          )}
-
-          {attendFichier ? (
-            <div className="mt-2 flex flex-col gap-2">
-              <input
-                ref={fichierRef}
-                type="file"
-                accept={RENDU_EXTENSIONS}
-                className="sr-only"
-                onChange={(e) => {
-                  choisirFichier(e.target.files?.[0]);
-                  // Sans cela, redéposer le même fichier après un retrait
-                  // n'émettrait aucun évènement.
-                  e.target.value = "";
-                }}
-              />
-
-              {depot || fichier ? (
-                <span className="flex items-center gap-2 rounded-lg border border-border bg-wash px-3 py-2">
-                  <Paperclip size={14} className="shrink-0 text-slate-2" aria-hidden />
-                  <span className="min-w-0 flex-1 truncate text-sm text-ink">
-                    {depot ? depot.name : fichier!.nom}
-                  </span>
-                  <span className="shrink-0 font-mono text-xs text-slate-light">
-                    {tailleLisible(depot ? depot.size : fichier!.taille)}
-                  </span>
-                  <button
-                    type="button"
-                    aria-label="Retirer le fichier"
-                    onClick={() => {
-                      setDepot(null);
-                      setFichier(null);
-                    }}
-                    disabled={enCours}
-                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-slate-2 hover:bg-surface hover:text-ink"
-                  >
-                    <X size={14} aria-hidden />
-                  </button>
-                </span>
-              ) : null}
-
-              <Button
-                variant="secondary"
-                icon={Paperclip}
-                onClick={() => fichierRef.current?.click()}
-                disabled={enCours}
-                className="min-h-[44px] self-start"
-              >
-                {depot || fichier ? "Remplacer le fichier" : "Choisir un fichier"}
-              </Button>
-
-              <p className="text-xs text-slate">
-                PDF, image, ZIP ou document Office,{" "}
-                {tailleLisible(RENDU_TAILLE_MAX)} au maximum. Votre fichier
-                n&apos;est visible que de vous et de votre formateur.
+            {devoir.monRendu?.contenu ? (
+              <p className="mt-1 whitespace-pre-line break-words text-sm text-ink">
+                {devoir.monRendu.contenu}
               </p>
-            </div>
-          ) : null}
-
-          <div className="mt-2 flex gap-2">
-            <Button
-              icon={Check}
-              onClick={() => enregistrer(true)}
-              disabled={enCours || (!contenu.trim() && !depot && !fichier)}
-              loading={televerse}
-              loadingLabel="Envoi du fichier…"
-              className="min-h-[44px]"
-            >
-              Remettre
-            </Button>
-            <Button
-              variant="ghost"
-              icon={Save}
-              onClick={() => enregistrer(false)}
-              disabled={enCours}
-              className="min-h-[44px]"
-            >
-              Brouillon
-            </Button>
+            ) : null}
+            {devoir.monRendu?.fichier ? (
+              <p className="mt-1.5 flex items-center gap-1.5 text-xs text-slate-2">
+                <Paperclip size={13} aria-hidden />
+                <span className="truncate">{devoir.monRendu.fichier.nom}</span>
+                <span className="shrink-0 font-mono text-slate-light">
+                  {tailleLisible(devoir.monRendu.fichier.taille)}
+                </span>
+              </p>
+            ) : null}
           </div>
-        </div>
-      ) : (
-        <Button
-          variant="secondary"
-          onClick={() => setOuvert(true)}
-          className="mt-3 min-h-[44px]"
-        >
-          {devoir.monRendu ? "Reprendre mon brouillon" : "Faire ce devoir"}
-        </Button>
-      )}
+        ) : ouvert ? (
+          <div className="mt-3">
+            {devoir.type_rendu === "lien" ? (
+              <input
+                value={contenu}
+                onChange={(e) => setContenu(e.target.value)}
+                placeholder="https://…"
+                aria-label="Lien du rendu"
+                className={inputStyles}
+              />
+            ) : (
+              <AutoTextarea
+                value={contenu}
+                minRows={attendFichier ? 2 : 4}
+                onChange={(e) => setContenu(e.target.value)}
+                placeholder={
+                  attendFichier
+                    ? "Un mot pour accompagner (facultatif)…"
+                    : "Votre réponse…"
+                }
+                aria-label="Votre rendu"
+              />
+            )}
+
+            {attendFichier ? (
+              <div className="mt-2 flex flex-col gap-2">
+                <input
+                  ref={fichierRef}
+                  type="file"
+                  accept={RENDU_EXTENSIONS}
+                  className="sr-only"
+                  onChange={(e) => {
+                    choisirFichier(e.target.files?.[0]);
+                    // Sans cela, redéposer le même fichier après un retrait
+                    // n'émettrait aucun évènement.
+                    e.target.value = "";
+                  }}
+                />
+
+                {depot || fichier ? (
+                  <span className="flex items-center gap-2 rounded-lg border border-border bg-wash px-3 py-2">
+                    <Paperclip
+                      size={14}
+                      className="shrink-0 text-slate-2"
+                      aria-hidden
+                    />
+                    <span className="min-w-0 flex-1 truncate text-sm text-ink">
+                      {depot ? depot.name : fichier!.nom}
+                    </span>
+                    <span className="shrink-0 font-mono text-xs text-slate-light">
+                      {tailleLisible(depot ? depot.size : fichier!.taille)}
+                    </span>
+                    <button
+                      type="button"
+                      aria-label="Retirer le fichier"
+                      onClick={() => {
+                        setDepot(null);
+                        setFichier(null);
+                      }}
+                      disabled={enCours}
+                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-slate-2 hover:bg-surface hover:text-ink"
+                    >
+                      <X size={14} aria-hidden />
+                    </button>
+                  </span>
+                ) : null}
+
+                <Button
+                  variant="secondary"
+                  icon={Paperclip}
+                  onClick={() => fichierRef.current?.click()}
+                  disabled={enCours}
+                  className="min-h-[44px] self-start"
+                >
+                  {depot || fichier
+                    ? "Remplacer le fichier"
+                    : "Choisir un fichier"}
+                </Button>
+
+                <p className="text-xs text-slate">
+                  PDF, image, ZIP ou document Office,{" "}
+                  {tailleLisible(RENDU_TAILLE_MAX)} au maximum. Votre fichier
+                  n&apos;est visible que de vous et de votre formateur.
+                </p>
+              </div>
+            ) : null}
+
+            <div className="mt-2 flex gap-2">
+              <Button
+                icon={Check}
+                onClick={() => enregistrer(true)}
+                disabled={enCours || (!contenu.trim() && !depot && !fichier)}
+                loading={televerse}
+                loadingLabel="Envoi du fichier…"
+                className="min-h-[44px]"
+              >
+                Remettre
+              </Button>
+              <Button
+                variant="ghost"
+                icon={Save}
+                onClick={() => enregistrer(false)}
+                disabled={enCours}
+                className="min-h-[44px]"
+              >
+                Brouillon
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <Button
+            variant="secondary"
+            onClick={() => setOuvert(true)}
+            className="mt-3 min-h-[44px]"
+          >
+            {devoir.monRendu ? "Reprendre mon brouillon" : "Faire ce devoir"}
+          </Button>
+        )}
+      </div>
     </article>
   );
 }

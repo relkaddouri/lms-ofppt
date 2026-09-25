@@ -35,7 +35,10 @@ export default async function CoursDetailPage({
   const bilan = jalons.find((j) => j.chapitres.at(-1)?.id === id) ?? null;
 
   return (
-    <div className="flex gap-6">
+    // Sur téléphone, le sommaire se replie au-dessus du cours ; il ne prend
+    // une colonne que lorsqu'il y a la place. En ligne dès le premier pixel,
+    // il volait la moitié de la largeur au chapitre lui-même.
+    <div className="flex flex-col gap-4 md:flex-row md:gap-6">
       {chapitre ? (
         <SommaireLateral module={chapitre.module} courantId={id} />
       ) : null}
