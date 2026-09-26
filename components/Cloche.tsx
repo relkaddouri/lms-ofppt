@@ -227,14 +227,21 @@ export default function Cloche({
 /**
  * Le rythme de vérification.
  *
- * Quarante-cinq secondes : assez court pour qu'un commentaire posté en classe
- * sonne pendant la séance, assez long pour qu'une matinée entière de fil
- * ouvert coûte moins de cent requêtes. Le projet n'a pas de canal temps réel,
- * et en ouvrir un pour trois tables demanderait une publication Postgres et
- * des policies de diffusion — beaucoup d'appareillage pour gagner trente
- * secondes sur une notification de cours.
+ * Cinq minutes. Quarante-cinq secondes paraissaient raisonnables — « moins de
+ * cent requêtes pour une matinée » — mais le calcul oubliait le nombre de
+ * lecteurs : la cloche est montée sur **toutes** les pages des deux espaces,
+ * donc chez soixante stagiaires à la fois. Une séance de cinq heures avec
+ * quinze d'entre eux faisait six mille appels serveur pour cette seule
+ * pastille, et l'hébergeur facture le temps de calcul (audit du 26/09/2026,
+ * `docs/audit-cpu-vercel.md`).
+ *
+ * Ce qui rend l'espacement acceptable : la relecture repart immédiatement au
+ * retour sur l'onglet (`visibilitychange`), et rien ici n'est urgent — une
+ * annonce de cours n'est pas un message instantané. Le projet n'a pas de
+ * canal temps réel ; en ouvrir un pour trois tables demanderait une
+ * publication Postgres et des policies de diffusion.
  */
-const RYTHME = 45_000;
+const RYTHME = 300_000;
 
 /**
  * Les réglages tiennent dans le navigateur, et c'est assumé.
