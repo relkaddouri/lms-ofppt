@@ -1,10 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Check, Lightbulb, RotateCcw, X } from "lucide-react";
 import Button from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
 import type { QuestionQuiz } from "@/lib/quiz";
+import {
+  enregistrerTentative,
+  type ReponseTentative,
+} from "@/app/actions/tentatives";
 
 /**
  * Le joueur de quiz, partagé par le chapitre et le bilan (PRD §4.5bis).
@@ -14,8 +18,10 @@ import type { QuestionQuiz } from "@/lib/quiz";
  * s'affiche même quand la réponse est juste — savoir pourquoi on a bon vaut
  * autant que savoir pourquoi on s'est trompé.
  *
- * Rien n'est enregistré : ni score, ni tentative, ni remontée au formateur. Le
- * quiz se rejoue autant de fois qu'on veut.
+ * Le quiz reste non noté et rejouable autant de fois qu'on veut. La
+ * tentative, elle, est conservée depuis le 25/09/2026 : elle ne change rien à
+ * ce que le stagiaire voit, et sert au formateur à savoir qui s'entraîne et
+ * quelles notions ne rentrent pas (migration 101).
  *
  * Les questions viennent d'une route, appelée à la demande : elles sont
  * écrites une fois puis servies depuis la base, et un quiz jamais ouvert ne
@@ -24,6 +30,7 @@ import type { QuestionQuiz } from "@/lib/quiz";
 export default function QuizJoueur({
   endpoint,
   corps,
+  genre,
   titre,
   intro,
   bouton = "Commencer le quiz",
@@ -31,6 +38,8 @@ export default function QuizJoueur({
   endpoint: string;
   /** Ce qui désigne le quiz : un chapitre, ou un jalon de module. */
   corps: Record<string, unknown>;
+  /** Ce qu'on enregistre de la tentative : un chapitre, ou un bilan. */
+  genre: "chapitre" | "bilan";
   titre: string;
   intro: string;
   bouton?: string;
@@ -42,6 +51,10 @@ export default function QuizJoueur({
   const [choix, setChoix] = useState<number | null>(null);
   const [justes, setJustes] = useState(0);
   const [fini, setFini] = useState(false);
+  // Le déroulé de la tentative, gardé hors du rendu : personne ne l'affiche,
+  // et un état de plus rejouerait le composant à chaque réponse.
+  const parcours = useRef<ReponseTentative[]>([]);
+  const debut = useRef<number>(0);
 
   async function commencer() {
     setEnCours(true);
@@ -58,6 +71,8 @@ export default function QuizJoueur({
       setChoix(null);
       setJustes(0);
       setFini(false);
+      parcours.current = [];
+      debut.current = Date.now();
     } catch (e) {
       toast(e instanceof Error ? e.message : "Quiz indisponible.", "error");
     } finally {
@@ -67,14 +82,35 @@ export default function QuizJoueur({
 
   function repondre(i: number) {
     if (choix !== null || !questions) return;
+    const q = questions[index]!;
     setChoix(i);
-    if (i === questions[index]!.bonne) setJustes((n) => n + 1);
+    if (i === q.bonne) setJustes((n) => n + 1);
+    parcours.current.push({
+      question: q.question,
+      bonne: q.bonne,
+      choisie: i,
+      juste: i === q.bonne,
+    });
   }
 
   function suite() {
     if (!questions) return;
     if (index + 1 >= questions.length) {
       setFini(true);
+      // La tentative part une fois la dernière question corrigée : partir
+      // avant fausserait le compte de celui qui abandonne en route.
+      void enregistrerTentative({
+        genre,
+        supportId: (corps.supportId as string) ?? null,
+        moduleId: (corps.moduleId as string) ?? null,
+        rang: (corps.rang as number) ?? null,
+        justes: parcours.current.filter((r) => r.juste).length,
+        questions: questions.length,
+        reponses: parcours.current,
+        secondes: debut.current
+          ? Math.round((Date.now() - debut.current) / 1000)
+          : null,
+      });
       return;
     }
     setIndex((n) => n + 1);

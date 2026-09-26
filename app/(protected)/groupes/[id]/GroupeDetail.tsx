@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   addStagiaire,
   updateStagiaire,
@@ -355,10 +356,16 @@ export default function GroupeDetail({
                             retrait
                           />
                           <div className="min-w-0">
-                            <p className="truncate text-sm font-semibold text-ink">
+                            {/* Le nom ouvre son suivi : c'est de là qu'on
+                                part quand on se demande pourquoi un stagiaire
+                                décroche. */}
+                            <Link
+                              href={`/groupes/${groupeId}/stagiaires/${s.id}`}
+                              className="truncate text-sm font-semibold text-ink no-underline hover:underline"
+                            >
                               {s.prenom} {s.nom}
-                            </p>
-                            <p className="truncate text-xs text-slate">
+                            </Link>
+                            <p className="mt-0.5 truncate text-xs text-slate">
                               {/* Le CEF passe devant : c'est lui que le
                                   formateur retrouve dans ses listes. Le CNE
                                   suit, en retrait, parce qu'il ne sert qu'aux

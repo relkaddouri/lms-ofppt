@@ -58,6 +58,7 @@ export default async function BilanPage({
         <QuizJoueur
           endpoint="/api/generate/quiz/bilan"
           corps={{ moduleId, rang: jalon.rang }}
+          genre="bilan"
           titre={`Bilan des chapitres ${premier} à ${dernier}`}
           intro="Huit questions qui relient les trois chapitres. Ce n'est pas noté : c'est pour savoir ce qui tient et ce qu'il faut relire."
           bouton="Commencer le bilan"
