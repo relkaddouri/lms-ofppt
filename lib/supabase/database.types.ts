@@ -1063,6 +1063,38 @@ export type Database = {
           },
         ]
       }
+      lectures_suivi: {
+        Row: {
+          assise: string | null
+          contenu: Json
+          genere_le: string
+          modele: string | null
+          stagiaire_id: string
+        }
+        Insert: {
+          assise?: string | null
+          contenu: Json
+          genere_le?: string
+          modele?: string | null
+          stagiaire_id: string
+        }
+        Update: {
+          assise?: string | null
+          contenu?: Json
+          genere_le?: string
+          modele?: string | null
+          stagiaire_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lectures_suivi_stagiaire_id_fkey"
+            columns: ["stagiaire_id"]
+            isOneToOne: true
+            referencedRelation: "stagiaires"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       modules: {
         Row: {
           competence_id: string | null
@@ -2378,6 +2410,45 @@ export type Database = {
       }
     }
     Views: {
+      v_copies_a_corriger: {
+        Row: {
+          controle_id: string | null
+          id: string | null
+          nom_complet: string | null
+          stagiaire_id: string | null
+          submitted_at: string | null
+        }
+        Insert: {
+          controle_id?: string | null
+          id?: string | null
+          nom_complet?: string | null
+          stagiaire_id?: string | null
+          submitted_at?: string | null
+        }
+        Update: {
+          controle_id?: string | null
+          id?: string | null
+          nom_complet?: string | null
+          stagiaire_id?: string | null
+          submitted_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "passations_controle_controle_id_fkey"
+            columns: ["controle_id"]
+            isOneToOne: false
+            referencedRelation: "controles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "passations_controle_stagiaire_id_fkey"
+            columns: ["stagiaire_id"]
+            isOneToOne: false
+            referencedRelation: "stagiaires"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       v_mes_remises: {
         Row: {
           controle_id: string | null

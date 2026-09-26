@@ -1,5 +1,6 @@
 "use server";
 
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { libelleModule } from "@/lib/modules";
 import { revalidatePath } from "next/cache";
@@ -57,7 +58,15 @@ type LigneSupport = {
   id: string;
   seance_id: string;
   type: "theorique" | "pratique";
-  contenu: unknown;
+  /**
+   * Le seul champ dont ces écrans ont besoin dans le contenu : son titre.
+   *
+   * Il est extrait en base (`contenu->>titre`) et non rapatrié avec le
+   * support entier. Charger `contenu` pour lire un titre transportait les
+   * trente-trois cours du groupe — environ 800 Ko — à chaque affichage de la
+   * liste des modules, du sommaire ou d'un chapitre (audit du 26/09/2026).
+   */
+  titre: string | null;
   version: number;
   seances: {
     date: string | null;
@@ -80,21 +89,30 @@ type LigneSupport = {
 
 /** Le titre écrit dans le support, à défaut le nom de son apprentissage. */
 function titreDu(ligne: LigneSupport): string {
-  const t = (ligne.contenu as { titre?: unknown } | null)?.titre;
+  const t = ligne.titre;
   if (typeof t === "string" && t.trim()) return t.trim();
   const base = ligne.seances?.suggestions_pedagogiques?.apprentissage_base;
   return base?.trim() || "Chapitre";
 }
 
-/** Les chapitres que le stagiaire a marqués comme lus (migration 097). */
-async function lireProgression(): Promise<Set<string>> {
+/**
+ * Les chapitres que le stagiaire a marqués comme lus (migration 097).
+ *
+ * `cache` mémorise le résultat pour la durée d'un rendu : la page d'un
+ * chapitre appelle `getChapitre` puis `getJalons`, qui lisent tous deux la
+ * progression et les supports. Sans cette mémoire, la même paire de requêtes
+ * partait deux fois pour afficher une seule page.
+ */
+const lireProgression = cache(async function lireProgression(): Promise<
+  Set<string>
+> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("progression_chapitre")
     .select("support_id");
   if (error) throw new Error(error.message);
   return new Set((data ?? []).map((l) => l.support_id));
-}
+});
 
 /** Le pourcentage d'un module, arrondi à l'entier — jamais 99 % pour un module fini. */
 const pourcentage = (lus: number, total: number) =>
@@ -106,12 +124,14 @@ const pourcentage = (lus: number, total: number) =>
  * La politique `supports_lecture_stagiaire` borne déjà la lecture à son
  * groupe et aux supports qui lui sont destinés.
  */
-async function lireSupports(): Promise<LigneSupport[]> {
+const lireSupports = cache(async function lireSupports(): Promise<
+  LigneSupport[]
+> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("supports_seance")
     .select(
-      "id, seance_id, type, contenu, version, seances(date, module_id, modules(nom, competences(code_operationnel)), suggestions_pedagogiques(ordre, apprentissage_base, elements_competence(lettre, intitule, ordre)))",
+      "id, seance_id, type, version, titre:contenu->>titre, seances(date, module_id, modules(nom, competences(code_operationnel)), suggestions_pedagogiques(ordre, apprentissage_base, elements_competence(lettre, intitule, ordre)))",
     )
     .eq("destinataire", "stagiaire")
     .order("version", { ascending: false });
@@ -123,7 +143,7 @@ async function lireSupports(): Promise<LigneSupport[]> {
     if (!parSeance.has(l.seance_id)) parSeance.set(l.seance_id, l);
   }
   return [...parSeance.values()];
-}
+});
 
 /** L'ordre du parcours : la partie, puis l'apprentissage, puis la date. */
 function comparer(a: LigneSupport, b: LigneSupport): number {

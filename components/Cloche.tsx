@@ -29,7 +29,7 @@ export default function Cloche({
   cle,
   mesure = "nouveaux",
   sonnePour,
-  compteInitial = 0,
+  compteInitial = null,
   className,
 }: {
   charger: () => Promise<Notification[]>;
@@ -56,13 +56,28 @@ export default function Cloche({
    * qui remonte ne vient de lui.
    */
   sonnePour?: (notification: Notification) => boolean;
-  /** Compte rendu par le serveur, affiché avant que la première relecture réponde. */
-  compteInitial?: number;
+  /**
+   * Compte rendu par le serveur avec la page.
+   *
+   * Quand il est fourni, la cloche ne relit pas au montage : le serveur vient
+   * de le faire pour l'afficher, et relancer les mêmes lectures une seconde
+   * plus tard doublait le coût de chaque chargement de page (audit du
+   * 26/09/2026). `null` — le cas du stagiaire, dont le layout ne compte rien
+   * — garde la relecture immédiate.
+   */
+  compteInitial?: number | null;
   /** Le bouton n'a pas la même taille d'un espace à l'autre. */
   className?: string;
 }) {
   const [ouvert, setOuvert] = useState(false);
-  const [compte, setCompte] = useState(compteInitial);
+  const [compte, setCompte] = useState(compteInitial ?? 0);
+  /**
+   * Le compte venait-il du serveur au montage ?
+   *
+   * Dans une référence et non dans les dépendances de l'effet : sa valeur
+   * change à chaque navigation, ce qui relancerait la minuterie sans raison.
+   */
+  const rendueParLeServeur = useRef(compteInitial !== null);
   const [sonne, setSonne] = useState(false);
   const [avecSon, setAvecSon] = useState(true);
 
@@ -129,7 +144,10 @@ export default function Cloche({
       }
     }
 
-    void verifier();
+    // Au montage, on ne relit que si le serveur n'a rien rendu. Les entrées
+    // connues restent alors vides jusqu'au premier tour : c'est déjà ce qui
+    // se passait, la première relecture ne sonnant jamais.
+    if (!rendueParLeServeur.current) void verifier();
     const minuterie = window.setInterval(verifier, RYTHME);
     // Au retour sur l'onglet, on vérifie tout de suite : attendre le prochain
     // tour ferait rater ce qui est arrivé pendant l'absence.
@@ -227,14 +245,21 @@ export default function Cloche({
 /**
  * Le rythme de vérification.
  *
- * Quarante-cinq secondes : assez court pour qu'un commentaire posté en classe
- * sonne pendant la séance, assez long pour qu'une matinée entière de fil
- * ouvert coûte moins de cent requêtes. Le projet n'a pas de canal temps réel,
- * et en ouvrir un pour trois tables demanderait une publication Postgres et
- * des policies de diffusion — beaucoup d'appareillage pour gagner trente
- * secondes sur une notification de cours.
+ * Cinq minutes. Quarante-cinq secondes paraissaient raisonnables — « moins de
+ * cent requêtes pour une matinée » — mais le calcul oubliait le nombre de
+ * lecteurs : la cloche est montée sur **toutes** les pages des deux espaces,
+ * donc chez soixante stagiaires à la fois. Une séance de cinq heures avec
+ * quinze d'entre eux faisait six mille appels serveur pour cette seule
+ * pastille, et l'hébergeur facture le temps de calcul (audit du 26/09/2026,
+ * `docs/audit-cpu-vercel.md`).
+ *
+ * Ce qui rend l'espacement acceptable : la relecture repart immédiatement au
+ * retour sur l'onglet (`visibilitychange`), et rien ici n'est urgent — une
+ * annonce de cours n'est pas un message instantané. Le projet n'a pas de
+ * canal temps réel ; en ouvrir un pour trois tables demanderait une
+ * publication Postgres et des policies de diffusion.
  */
-const RYTHME = 45_000;
+const RYTHME = 300_000;
 
 /**
  * Les réglages tiennent dans le navigateur, et c'est assumé.
