@@ -44,8 +44,14 @@ export type Notification = {
 export async function getNotifications(): Promise<Notification[]> {
   const supabase = await createClient();
 
-  const [controlesRes, questionsRes, reponsesRes, copiesRes, rendusRes] =
-    await Promise.all([
+  const [
+    controlesRes,
+    questionsRes,
+    publieesRes,
+    enAttenteRes,
+    copiesRes,
+    rendusRes,
+  ] = await Promise.all([
       supabase
         .from("controles")
         .select(
@@ -61,18 +67,31 @@ export async function getNotifications(): Promise<Notification[]> {
         )
         .order("created_at", { ascending: false })
         .limit(40),
-      // Les réponses servent deux fois : savoir quelles questions ont déjà
-      // été répondues, et trouver celles d'un stagiaire qui attendent la
-      // validation (migration 085).
+      // Les réponses servent deux fois, et les deux usages n'ont pas besoin
+      // des mêmes colonnes : savoir quelles questions sont déjà répondues ne
+      // demande que des identifiants. Une seule lecture sans limite les
+      // rapportait toutes, texte compris, et grossissait à chaque réponse
+      // écrite depuis le début de l'année (migration 085).
+      supabase
+        .from("reponses_question")
+        .select("question_id")
+        .eq("statut", "publiee")
+        .limit(1000),
       supabase
         .from("reponses_question")
         .select(
           "id, question_id, texte, created_at, statut, questions_support(support_titre, groupe_id, supports_seance(seance_id))",
         )
-        .order("created_at", { ascending: false }),
+        .eq("statut", "en_attente")
+        .order("created_at", { ascending: false })
+        .limit(40),
+      // La vue `v_copies_a_corriger` (migration 103) ne rend que les copies
+      // dont une question reste à noter. Demander `responses` pour faire ce
+      // test ici transportait 343 Ko à chaque vérification, toutes les cinq
+      // minutes, pour les jeter aussitôt.
       supabase
-        .from("passations_controle")
-        .select("id, nom_complet, note, responses, submitted_at, controle_id")
+        .from("v_copies_a_corriger")
+        .select("id, nom_complet, submitted_at, controle_id")
         .order("submitted_at", { ascending: false })
         .limit(40),
       supabase
@@ -138,9 +157,7 @@ export async function getNotifications(): Promise<Notification[]> {
   // Une réponse en attente ne répond encore à rien : le groupe ne la voit
   // pas. Seules les publiées retirent une question de la liste.
   const repondues = new Set(
-    (reponsesRes.data ?? [])
-      .filter((r) => r.statut === "publiee")
-      .map((r) => r.question_id as string),
+    (publieesRes.data ?? []).map((r) => r.question_id as string),
   );
   for (const q of questionsRes.data ?? []) {
     const r = q as unknown as {
@@ -188,8 +205,9 @@ export async function getNotifications(): Promise<Notification[]> {
       supports_seance: { seance_id: string } | null;
     } | null;
   };
-  for (const r of (reponsesRes.data ?? []) as unknown as ReponseLue[]) {
-    if (r.statut !== "en_attente") continue;
+  // La lecture est déjà bornée aux réponses en attente : le filtre est en
+  // base, il n'a plus à être refait ici.
+  for (const r of (enAttenteRes.data ?? []) as unknown as ReponseLue[]) {
     const q = r.questions_support;
     notifications.push({
       id: `reponse-${r.id}`,
@@ -306,20 +324,15 @@ export async function getNotifications(): Promise<Notification[]> {
     });
   }
 
+  // La vue ne rend que les copies qui attendent : la règle « au moins une
+  // question non notée » est appliquée en base, à l'identique.
   for (const p of copiesRes.data ?? []) {
     const r = p as unknown as {
       id: string;
       nom_complet: string;
-      note: number | null;
-      responses: { points: number | null }[] | null;
       submitted_at: string;
       controle_id: string;
     };
-    // Une copie n'est en attente que si au moins une question n'est pas notée.
-    const incomplete = (r.responses ?? []).some(
-      (d) => d.points === null || d.points === undefined,
-    );
-    if (!incomplete) continue;
     notifications.push({
       id: `copie-${r.id}`,
       genre: "copie",
