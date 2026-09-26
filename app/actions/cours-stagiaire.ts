@@ -1,5 +1,6 @@
 "use server";
 
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { libelleModule } from "@/lib/modules";
 import { revalidatePath } from "next/cache";
@@ -94,15 +95,24 @@ function titreDu(ligne: LigneSupport): string {
   return base?.trim() || "Chapitre";
 }
 
-/** Les chapitres que le stagiaire a marqués comme lus (migration 097). */
-async function lireProgression(): Promise<Set<string>> {
+/**
+ * Les chapitres que le stagiaire a marqués comme lus (migration 097).
+ *
+ * `cache` mémorise le résultat pour la durée d'un rendu : la page d'un
+ * chapitre appelle `getChapitre` puis `getJalons`, qui lisent tous deux la
+ * progression et les supports. Sans cette mémoire, la même paire de requêtes
+ * partait deux fois pour afficher une seule page.
+ */
+const lireProgression = cache(async function lireProgression(): Promise<
+  Set<string>
+> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("progression_chapitre")
     .select("support_id");
   if (error) throw new Error(error.message);
   return new Set((data ?? []).map((l) => l.support_id));
-}
+});
 
 /** Le pourcentage d'un module, arrondi à l'entier — jamais 99 % pour un module fini. */
 const pourcentage = (lus: number, total: number) =>
@@ -114,7 +124,9 @@ const pourcentage = (lus: number, total: number) =>
  * La politique `supports_lecture_stagiaire` borne déjà la lecture à son
  * groupe et aux supports qui lui sont destinés.
  */
-async function lireSupports(): Promise<LigneSupport[]> {
+const lireSupports = cache(async function lireSupports(): Promise<
+  LigneSupport[]
+> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("supports_seance")
@@ -131,7 +143,7 @@ async function lireSupports(): Promise<LigneSupport[]> {
     if (!parSeance.has(l.seance_id)) parSeance.set(l.seance_id, l);
   }
   return [...parSeance.values()];
-}
+});
 
 /** L'ordre du parcours : la partie, puis l'apprentissage, puis la date. */
 function comparer(a: LigneSupport, b: LigneSupport): number {
