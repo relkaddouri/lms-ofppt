@@ -57,7 +57,15 @@ type LigneSupport = {
   id: string;
   seance_id: string;
   type: "theorique" | "pratique";
-  contenu: unknown;
+  /**
+   * Le seul champ dont ces écrans ont besoin dans le contenu : son titre.
+   *
+   * Il est extrait en base (`contenu->>titre`) et non rapatrié avec le
+   * support entier. Charger `contenu` pour lire un titre transportait les
+   * trente-trois cours du groupe — environ 800 Ko — à chaque affichage de la
+   * liste des modules, du sommaire ou d'un chapitre (audit du 26/09/2026).
+   */
+  titre: string | null;
   version: number;
   seances: {
     date: string | null;
@@ -80,7 +88,7 @@ type LigneSupport = {
 
 /** Le titre écrit dans le support, à défaut le nom de son apprentissage. */
 function titreDu(ligne: LigneSupport): string {
-  const t = (ligne.contenu as { titre?: unknown } | null)?.titre;
+  const t = ligne.titre;
   if (typeof t === "string" && t.trim()) return t.trim();
   const base = ligne.seances?.suggestions_pedagogiques?.apprentissage_base;
   return base?.trim() || "Chapitre";
@@ -111,7 +119,7 @@ async function lireSupports(): Promise<LigneSupport[]> {
   const { data, error } = await supabase
     .from("supports_seance")
     .select(
-      "id, seance_id, type, contenu, version, seances(date, module_id, modules(nom, competences(code_operationnel)), suggestions_pedagogiques(ordre, apprentissage_base, elements_competence(lettre, intitule, ordre)))",
+      "id, seance_id, type, version, titre:contenu->>titre, seances(date, module_id, modules(nom, competences(code_operationnel)), suggestions_pedagogiques(ordre, apprentissage_base, elements_competence(lettre, intitule, ordre)))",
     )
     .eq("destinataire", "stagiaire")
     .order("version", { ascending: false });
