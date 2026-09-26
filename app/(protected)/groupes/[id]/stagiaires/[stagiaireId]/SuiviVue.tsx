@@ -9,6 +9,8 @@ import {
   Target,
 } from "lucide-react";
 import Avatar from "@/components/ui/Avatar";
+import LectureIA from "./LectureIA";
+import type { LectureSuivi } from "@/lib/lecture-suivi";
 import { formatDateJour, formatDateTime } from "@/lib/format";
 import type { SuiviStagiaire } from "@/app/actions/suivi";
 
@@ -54,7 +56,19 @@ function Tuile({
   );
 }
 
-export default function SuiviVue({ suivi }: { suivi: SuiviStagiaire }) {
+export default function SuiviVue({
+  suivi,
+  lecture,
+}: {
+  suivi: SuiviStagiaire;
+  /** La lecture déjà écrite, s'il y en a une (atome 13.3). */
+  lecture: {
+    lecture: LectureSuivi;
+    assise: string | null;
+    modele: string | null;
+    genereLe: string;
+  } | null;
+}) {
   const { identite, activite, modules, quiz, notions, controles, devoirs } = suivi;
   const notes = controles.filter((c) => c.note !== null);
   const maximum = Math.max(1, ...activite.calendrier.map((j) => j.actions));
@@ -166,6 +180,8 @@ export default function SuiviVue({ suivi }: { suivi: SuiviStagiaire }) {
           devoir remis, copie rendue.
         </p>
       </section>
+
+      <LectureIA stagiaireId={identite.id} initiale={lecture} />
 
       <section className="flex flex-col gap-3">
         <h2 className="px-1 font-display text-[16px] font-semibold text-ink">

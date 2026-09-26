@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { libelleModule } from "@/lib/modules";
 import { baremeAttendu, type TypeControleBareme } from "@/lib/controles";
+import type { LectureSuivi } from "@/lib/lecture-suivi";
 
 /**
  * Le suivi d'un stagiaire (demande du 25/09/2026).
@@ -353,5 +354,32 @@ export async function getSuiviStagiaire(
       remis: (devoirsRes.data ?? []).filter((d) => d.statut === "rendu").length,
       total: (devoirsRes.data ?? []).length,
     },
+  };
+}
+
+/**
+ * La lecture déjà écrite pour ce stagiaire, s'il y en a une (atome 13.3).
+ *
+ * Lue au rendu de la page : la fiche s'ouvre avec la dernière lecture, sans
+ * appeler le modèle. C'est le bouton qui en demande une nouvelle.
+ */
+export async function getLectureSuivi(stagiaireId: string): Promise<{
+  lecture: LectureSuivi;
+  assise: string | null;
+  modele: string | null;
+  genereLe: string;
+} | null> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("lectures_suivi")
+    .select("contenu, assise, modele, genere_le")
+    .eq("stagiaire_id", stagiaireId)
+    .maybeSingle();
+  if (!data) return null;
+  return {
+    lecture: data.contenu as unknown as LectureSuivi,
+    assise: data.assise,
+    modele: data.modele,
+    genereLe: data.genere_le,
   };
 }

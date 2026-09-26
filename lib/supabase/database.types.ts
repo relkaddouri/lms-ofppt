@@ -1063,6 +1063,38 @@ export type Database = {
           },
         ]
       }
+      lectures_suivi: {
+        Row: {
+          assise: string | null
+          contenu: Json
+          genere_le: string
+          modele: string | null
+          stagiaire_id: string
+        }
+        Insert: {
+          assise?: string | null
+          contenu: Json
+          genere_le?: string
+          modele?: string | null
+          stagiaire_id: string
+        }
+        Update: {
+          assise?: string | null
+          contenu?: Json
+          genere_le?: string
+          modele?: string | null
+          stagiaire_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lectures_suivi_stagiaire_id_fkey"
+            columns: ["stagiaire_id"]
+            isOneToOne: true
+            referencedRelation: "stagiaires"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       modules: {
         Row: {
           competence_id: string | null
