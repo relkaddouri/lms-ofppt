@@ -275,7 +275,10 @@ Avant de corriger, confirmez le diagnostic — mes chiffres sont des estimations
 
 ## 7. Corrections appliquées
 
-Validées le 26 septembre 2026 : corrections **1, 2, 3, 4 et 6**. Branche `perf-cpu`, un commit par correction, `npm run build` et vérification à l'écran après chacune.
+Deux vagues, un commit par correction, `npm run build` et vérification à l'écran après chacune.
+
+- **26 septembre 2026** — corrections **1, 2, 3, 4 et 6**, branche `perf-cpu`.
+- **27 septembre 2026** — corrections **7 et 9**, branche `perf-cpu-2`.
 
 > **Note sur la numérotation** : le tableau des problèmes (§ 2) et le plan (§ 4) ne numérotaient pas la correction 4 de la même façon — l'un désignait le layout formateur, l'autre la double lecture sur la page de cours. C'était un défaut de mon rapport. **Les deux ont été corrigées**, en deux commits distincts.
 
@@ -287,6 +290,8 @@ Validées le 26 septembre 2026 : corrections **1, 2, 3, 4 et 6**. Branche `perf-
 | `perf: une page de cours ne relit plus deux fois…` | `lireSupports()` et `lireProgression()` sont mémorisées pour la durée d'un rendu (`cache()` de React) : `getChapitre` et `getJalons` partagent la même lecture. | `app/actions/cours-stagiaire.ts` |
 | `perf: la cloche ne refait pas au montage…` | Quand le serveur a rendu le compte avec la page, la cloche ne relance pas les mêmes lectures à la seconde suivante. Côté stagiaire, où rien n'est rendu par le serveur, la relecture immédiate est conservée. | `components/Cloche.tsx` |
 | `perf: le proxy ne tourne plus sur les routes API…` | `api/` et `.ttf` sortent du matcher. Les onze routes `/api` ont été vérifiées une par une : toutes appellent `getUser()` et répondent 401. | `proxy.ts` |
+| `perf: la fête n'est plus cherchée à chaque page…` | Répit de quinze minutes après une recherche **infructueuse**. Une fête trouvée ne se mémorise jamais. | `components/ModaleDistinction.tsx` |
+| `perf: les robots d'indexation n'ont accès qu'à…` | `/robots.txt` : tout interdit sauf `/login`. | `app/robots.ts` (nouveau) |
 
 **Mesures relevées pendant la correction**
 
@@ -302,14 +307,60 @@ Validées le 26 septembre 2026 : corrections **1, 2, 3, 4 et 6**. Branche `perf-
 - Les polices `.ttf` sont servies normalement.
 - `npm run build` passe après chaque commit.
 
+### La fête : pourquoi quinze minutes, et pas « une fois par jour »
+
+Le plan (§ 4, correction 7) proposait de ne chercher la fête qu'une fois par jour. **C'était faux, et il fallait le dire avant de coder** : le stagiaire du jour est désigné à la **clôture de la séance**, donc en fin d'après-midi. Un stagiaire venu le matin aurait vu la fête le lendemain — la perte exacte qu'il fallait éviter.
+
+Le répit ne dure donc que quinze minutes, et il ne s'écrit **qu'après une recherche vide**. Ce que cela change, cas par cas :
+
+| Situation | Avant | Après |
+|---|---|---|
+| Il revient le soir, après la clôture | il voit la fête | identique |
+| Il navigue à l'instant de la clôture | au prochain chargement de page | au prochain chargement passé quinze minutes |
+| Il ouvre l'application le lendemain | il voit la fête | identique |
+
+Le pire cas est un quart d'heure de retard, pour le seul stagiaire qui naviguait pendant la clôture. Aucune fête n'est perdue : c'est toujours `distinctions_vues` qui éteint la modale, une fois fermée.
+
+**Vérifié** : sans répit en mémoire, la recherche part (une trace `getDistinctionAFeter()` dans le journal) ; avec un répit récent, les chargements de page suivants n'en déclenchent aucune. `/robots.txt` est servi avec `Allow: /login` puis `Disallow: /`, et la page de connexion répond toujours 200.
+
 **Ce qui reste à faire**
 
 | Reste | Pourquoi ce n'est pas fait | Effort |
 |---|---|---|
 | **5 — Activer le crochet de jeton Supabase** | Deux clics dans le tableau de bord Supabase, côté porteur de projet (atome 6.2 du backlog). Une requête de moins par page formateur. | 5 min |
-| **7 — La fête cherchée à chaque arrivée** | Non validée. Mémoriser la date de vérification côté navigateur suffirait. | 20 min |
 | **8 — Mise en cache du rendu d'un support** | Non validée, et c'est la plus délicate : il faut invalider à la republication, sans quoi un stagiaire lirait une version périmée. | 1 h 30 |
-| **9 — `app/robots.ts`** | Non validée. Gain marginal, effort nul. | 5 min |
 | **10 — Cache des données stables** (années scolaires, référentiel) | Non validée. | 45 min |
+
+**Repéré en corrigeant, pour une prochaine fois** : côté stagiaire, la cloche relit au montage à chaque chargement de page, parce que son gabarit — contrairement à celui du formateur — ne rend aucun compte avec la page. Faire compter le serveur dans le rendu supprimerait une invocation par page, sans rien changer à l'écran. Même geste que la correction 4, côté stagiaire.
+
+### La vue `v_copies_a_corriger` n'ouvre rien de plus
+
+Une vue peut contourner les politiques de ses tables : par défaut elle s'exécute avec les droits de son propriétaire, et rendrait alors à tout le monde ce que son propriétaire peut lire. Celle-ci est créée `with (security_invoker = on)` — vérifié en base : `reloptions = {security_invoker=on}` —, donc elle lit sous l'identité de l'appelant.
+
+Vérifié sur une vraie copie rendue incomplète dans une transaction annulée (aucune donnée modifiée) :
+
+| Qui regarde | Lignes dans la vue |
+|---|---|
+| Sans politiques (clé de service) | 1 — la copie de Y. L. |
+| **Un autre stagiaire du groupe** | **0** |
+| Le stagiaire propriétaire de la copie | 1 — la sienne, et seulement la sienne |
+| Le formateur du groupe | 1 |
+
+La bonne formulation n'est donc pas « un stagiaire n'y lit rien », mais **« un stagiaire n'y lit rien de plus que ce que `passations_controle` lui accorde déjà »** : la même session lit déjà ses deux copies dans la table elle-même. La vue n'élargit aucun accès ; elle déplace un test de JavaScript vers SQL.
+
+### Appliquer la migration en production
+
+La base liée au projet (`supabase/.temp`, URL `jzvjxq….supabase.co`) est celle que sert l'application : **la migration 103 y est déjà appliquée**, `npx supabase db push` ayant poussé en ligne. L'ordre à respecter est donc déjà respecté, et il vaut pour les prochaines fois :
+
+1. **La migration d'abord**, code non déployé : `npx supabase db push`. La vue apparaît ; rien ne l'utilise encore, donc rien ne peut casser.
+2. **Le code ensuite** : `git push`, puis le déploiement Vercel.
+
+L'inverse casserait la cloche du formateur entre les deux : le nouveau code demande `v_copies_a_corriger`, et PostgREST répondrait `relation does not exist`. La cloche avale ses erreurs (`catch` silencieux), donc la pastille se figerait sans message — une panne muette, la pire sorte.
+
+Dans ce sens-ci, l'entre-deux est inoffensif : la vue existe sans être lue, et l'ancien code continue de fonctionner tel quel. Aucun retour arrière n'est nécessaire si le déploiement échoue.
+
+### Une erreur rencontrée pendant les essais, sans rapport avec ces corrections
+
+Une page a échoué une fois sur `PGRST303 — JWT issued at future`. C'est un **décalage d'horloge** : le jeton venait d'être créé par la machine de développement, dont l'heure est légèrement en avance sur celle de Supabase, et PostgREST refuse un jeton daté du futur. Ce n'est pas causé par l'absence du crochet de jeton — le crochet ne ferait que rendre cette lecture inutile dans ce cas précis, il ne corrigerait pas les horloges. Le vrai remède est la synchronisation d'horloge côté machine.
 
 **À refaire dans une semaine** : relire la courbe Usage → Fluid Active CPU de Vercel. Si les corrections tiennent leurs promesses, la consommation quotidienne devrait avoir été divisée par cinq environ. Si ce n'est pas le cas, le § 5 dit où regarder ensuite.

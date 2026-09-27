@@ -112,6 +112,40 @@ export function FeteDistinction({
 }
 
 /**
+ * Le répit entre deux recherches infructueuses (audit CPU du 26/09/2026).
+ *
+ * La modale vit dans le gabarit : elle cherchait une fête à chaque
+ * chargement de page, pour un évènement qui arrive une fois par jour au
+ * mieux — quatre requêtes, soixante stagiaires, plusieurs fois par jour.
+ *
+ * Quinze minutes, et pas « une fois par jour » comme le proposait d'abord
+ * l'audit : le stagiaire du jour est désigné à la clôture de la séance, donc
+ * en fin d'après-midi. Un répit d'une journée aurait fait découvrir la fête
+ * le lendemain à celui qui était venu le matin — exactement ce qu'il ne faut
+ * pas perdre. Au pire, la fête arrive maintenant un quart d'heure plus tard,
+ * et seulement pour qui naviguait à l'instant de la clôture.
+ */
+const REPIT = 15 * 60 * 1000;
+const CLE_REPIT = "pedago:fete-cherchee";
+
+/** Lecture et écriture tolérantes : navigation privée, stockage refusé. */
+function lu(cle: string): number {
+  try {
+    return Number(window.sessionStorage.getItem(cle) ?? 0);
+  } catch {
+    return 0;
+  }
+}
+
+function ecrit(cle: string, valeur: number) {
+  try {
+    window.sessionStorage.setItem(cle, String(valeur));
+  } catch {
+    // Sans stockage, on cherche à chaque page : c'est le comportement d'avant.
+  }
+}
+
+/**
  * Ce que le stagiaire voit en arrivant : la fête, une fois, puis plus jamais.
  */
 export default function ModaleDistinction() {
@@ -119,9 +153,17 @@ export default function ModaleDistinction() {
 
   useEffect(() => {
     let annule = false;
+    // Rien trouvé il y a moins d'un quart d'heure : inutile de redemander.
+    if (Date.now() - lu(CLE_REPIT) < REPIT) return;
+
     getDistinctionAFeter()
       .then((d) => {
-        if (!annule) setFete(d);
+        if (annule) return;
+        setFete(d);
+        // Seule l'absence de fête se mémorise. Une fête trouvée doit rester
+        // trouvable tant qu'elle n'a pas été fermée — `distinctions_vues` est
+        // ce qui l'éteint, pas ce répit.
+        if (!d) ecrit(CLE_REPIT, Date.now());
       })
       // Silencieux : rater une fête n'est pas une erreur à signaler au
       // stagiaire, qui n'y peut rien et n'attendait rien.
