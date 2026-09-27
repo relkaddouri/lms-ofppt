@@ -28,7 +28,7 @@ function vientDunStagiaire(n: Notification): boolean {
 
 export default function Topbar({
   email,
-  notifications = 0,
+  notifications = null,
   annees,
   anneeCouranteId,
   onMenuClick,
@@ -38,7 +38,7 @@ export default function Topbar({
    * Compteur rendu par le serveur, affiché avant que la cloche ait relu.
    * Elle le tient à jour ensuite, toutes les quarante-cinq secondes.
    */
-  notifications?: number;
+  notifications?: { id: string; date: string }[] | null;
   annees: AnneeScolaire[];
   anneeCouranteId: string | null;
   onMenuClick: () => void;
@@ -93,7 +93,7 @@ export default function Topbar({
           cle="notifications"
           mesure="total"
           sonnePour={vientDunStagiaire}
-          compteInitial={notifications}
+          apercuInitial={notifications}
         />
 
         <span className="mx-1 hidden h-6 w-0.5 bg-separator sm:block" />

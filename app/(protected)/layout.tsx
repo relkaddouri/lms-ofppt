@@ -26,10 +26,16 @@ export default async function ProtectedLayout({
 
   // Le compte vient de la liste elle-même, et non d'un second calcul : les
   // deux divergeaient — la pastille disait 7 pendant que le panneau en listait
-  // 19 — et la cloche, qui relit toutes les 45 secondes, faisait sauter le
-  // chiffre une seconde après chaque chargement de page.
+  // 19 — et la cloche faisait sauter le chiffre une seconde après chaque
+  // chargement de page.
+  //
+  // Ce qui descend jusqu'à la cloche n'est pas un nombre mais un identifiant
+  // et une date par notification : de quoi afficher la pastille et savoir ce
+  // qui est nouveau, sans relire (audit du 26/09/2026, correction 4).
   const [notifications, annees, courante] = await Promise.all([
-    getNotifications().then((n) => n.length),
+    getNotifications().then((liste) =>
+      liste.map((n) => ({ id: n.id, date: n.date })),
+    ),
     getAnneesScolaires(),
     getAnneeCourante(),
   ]);

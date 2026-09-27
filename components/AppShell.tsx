@@ -8,14 +8,14 @@ import type { AnneeScolaire } from "@/lib/annees";
 export default function AppShell({
   email,
   role,
-  notifications = 0,
+  notifications = null,
   annees = [],
   anneeCouranteId = null,
   children,
 }: {
   email: string | null;
   role: string | null;
-  notifications?: number;
+  notifications?: { id: string; date: string }[] | null;
   annees?: AnneeScolaire[];
   anneeCouranteId?: string | null;
   children: React.ReactNode;
