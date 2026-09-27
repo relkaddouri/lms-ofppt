@@ -292,6 +292,7 @@ Deux vagues, un commit par correction, `npm run build` et vérification à l'éc
 | `perf: le proxy ne tourne plus sur les routes API…` | `api/` et `.ttf` sortent du matcher. Les onze routes `/api` ont été vérifiées une par une : toutes appellent `getUser()` et répondent 401. | `proxy.ts` |
 | `perf: la fête n'est plus cherchée à chaque page…` | Répit de quinze minutes après une recherche **infructueuse**. Une fête trouvée ne se mémorise jamais. | `components/ModaleDistinction.tsx` |
 | `perf: les robots d'indexation n'ont accès qu'à…` | `/robots.txt` : tout interdit sauf `/login`. | `app/robots.ts` (nouveau) |
+| `perf: la cloche du stagiaire non plus ne relit au montage` | Ce que le serveur a lu en rendant la page descend jusqu'à la cloche, des deux côtés. Un seul mécanisme remplace les deux : ce n'est plus un compte qui descend mais un identifiant et une date par notification. | `components/Cloche.tsx`, `components/AppShell.tsx`, `components/Topbar.tsx`, `components/ClocheStagiaire.tsx`, `app/(protected)/layout.tsx`, `app/espace-stagiaire/layout.tsx` |
 
 **Mesures relevées pendant la correction**
 
@@ -331,7 +332,13 @@ Le pire cas est un quart d'heure de retard, pour le seul stagiaire qui naviguait
 | **8 — Mise en cache du rendu d'un support** | Non validée, et c'est la plus délicate : il faut invalider à la republication, sans quoi un stagiaire lirait une version périmée. | 1 h 30 |
 | **10 — Cache des données stables** (années scolaires, référentiel) | Non validée. | 45 min |
 
-**Repéré en corrigeant, pour une prochaine fois** : côté stagiaire, la cloche relit au montage à chaque chargement de page, parce que son gabarit — contrairement à celui du formateur — ne rend aucun compte avec la page. Faire compter le serveur dans le rendu supprimerait une invocation par page, sans rien changer à l'écran. Même geste que la correction 4, côté stagiaire.
+### La cloche du stagiaire : pourquoi un aperçu, et pas un compte
+
+Côté formateur, le gabarit rendait déjà le nombre de notifications ; il suffisait que la cloche s'en contente. Côté stagiaire, **un nombre n'aurait pas suffi** : sa pastille ne montre que ce qui est arrivé **depuis son dernier regard**, un horodatage gardé dans son navigateur et que le serveur ignore. Un compte total rendu par le serveur aurait affiché « 35 » à un stagiaire qui a tout lu — une pastille qui ment pendant cinq minutes, jusqu'au premier tour de minuterie.
+
+Ce qui descend est donc un **identifiant et une date par notification** : de quoi refaire exactement le calcul d'avant, côté navigateur, sans rien demander. Les deux espaces partagent désormais le même mécanisme.
+
+**Vérifié** : pastille à 0 quand tout a été vu, à 35 dès 600 ms après effacement du repère de dernier regard — et aucune lecture ne part au montage (aucune trace de `getNotificationsStagiaire()` après un chargement de page).
 
 ### La vue `v_copies_a_corriger` n'ouvre rien de plus
 
