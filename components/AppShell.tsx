@@ -38,7 +38,6 @@ export default function AppShell({
       ) : null}
       <div className="flex min-h-screen min-w-0 flex-1 flex-col">
         <Topbar
-          email={email}
           notifications={notifications}
           annees={annees}
           anneeCouranteId={anneeCouranteId}
