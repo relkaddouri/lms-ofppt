@@ -13,6 +13,7 @@ import {
   type AnnonceFil,
   type Camarade,
 } from "@/app/actions/fil";
+import type { IdentiteFormateur } from "@/app/actions/profil";
 import { Heart, MessageCircle } from "lucide-react";
 
 /**
@@ -26,9 +27,11 @@ import { Heart, MessageCircle } from "lucide-react";
 export default function CarteAnnonce({
   annonce,
   camarades,
+  formateur,
 }: {
   annonce: AnnonceFil;
   camarades: Camarade[];
+  formateur: IdentiteFormateur;
 }) {
   const toast = useToast();
   const [, startTransition] = useTransition();
@@ -58,11 +61,25 @@ export default function CarteAnnonce({
 
   return (
     <article className="flex flex-col gap-3.5 border-t border-separator px-5 py-[22px] first:border-t-0">
+      {/* Qui parle. L'anneau d'or et l'étiquette disent, dans un fil où tout
+          le monde porte la même pastille, que celui-ci vient du formateur —
+          sans quoi il faudrait lire le nom et savoir qui il désigne. */}
       <div className="flex items-center gap-[11px]">
-        <Avatar prenom="Formateur" texte="F" taille="xs" />
+        <Avatar
+          prenom={formateur.nom || "Formateur"}
+          {...(formateur.nom ? {} : { texte: "F" })}
+          photoUrl={formateur.photoUrl}
+          taille="xs"
+          anneauOr
+        />
         <span className="flex min-w-0 flex-col gap-px">
-          <span className="text-[14.5px] font-semibold text-ink">
-            Votre formateur
+          <span className="flex items-center gap-2">
+            <span className="truncate text-[14.5px] font-semibold text-ink">
+              {formateur.nom || "Votre formateur"}
+            </span>
+            <span className="shrink-0 rounded-full border border-or bg-or-clair px-2 py-px text-[11px] font-semibold text-or">
+              Formateur
+            </span>
           </span>
           <span className="font-mono text-xs text-muted">
             {formatDateTime(annonce.date ?? annonce.created_at)}

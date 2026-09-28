@@ -7,6 +7,8 @@ import type { AnneeScolaire } from "@/lib/annees";
 
 export default function AppShell({
   email,
+  nom = null,
+  photoUrl = null,
   role,
   notifications = null,
   annees = [],
@@ -14,6 +16,8 @@ export default function AppShell({
   children,
 }: {
   email: string | null;
+  nom?: string | null;
+  photoUrl?: string | null;
   role: string | null;
   notifications?: { id: string; date: string }[] | null;
   annees?: AnneeScolaire[];
@@ -26,6 +30,8 @@ export default function AppShell({
     <div className="flex min-h-screen bg-paper">
       <Sidebar
         email={email}
+        nom={nom}
+        photoUrl={photoUrl}
         role={role}
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
@@ -38,7 +44,6 @@ export default function AppShell({
       ) : null}
       <div className="flex min-h-screen min-w-0 flex-1 flex-col">
         <Topbar
-          email={email}
           notifications={notifications}
           annees={annees}
           anneeCouranteId={anneeCouranteId}

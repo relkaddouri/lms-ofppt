@@ -1,7 +1,6 @@
 "use client";
 
 import { Menu, Search } from "lucide-react";
-import Avatar from "./ui/Avatar";
 import Cloche from "./Cloche";
 import { getNotifications } from "@/app/actions/notifications";
 import SelecteurAnnee from "./SelecteurAnnee";
@@ -9,6 +8,13 @@ import type { AnneeScolaire } from "@/lib/annees";
 import type { Notification } from "@/app/actions/notifications";
 
 /**
+ * La barre du haut : la portée de l'écran, la recherche, la cloche.
+ *
+ * L'identité du compte n'y est plus. Elle s'affichait ici *et* au pied de la
+ * barre latérale, à trente centimètres l'une de l'autre, sans qu'aucune des
+ * deux ne dise quelque chose que l'autre ne disait pas. Elle reste là où se
+ * trouve aussi la déconnexion, c'est-à-dire là où on la cherche.
+ *
  * Ce qui vaut un carillon côté formateur.
  *
  * Le rappel qu'il se donne à lui-même — un contrôle laissé en brouillon,
@@ -27,16 +33,14 @@ function vientDunStagiaire(n: Notification): boolean {
 }
 
 export default function Topbar({
-  email,
   notifications = null,
   annees,
   anneeCouranteId,
   onMenuClick,
 }: {
-  email: string | null;
   /**
    * Compteur rendu par le serveur, affiché avant que la cloche ait relu.
-   * Elle le tient à jour ensuite, toutes les quarante-cinq secondes.
+   * Elle le tient à jour ensuite, toutes les cinq minutes.
    */
   notifications?: { id: string; date: string }[] | null;
   annees: AnneeScolaire[];
@@ -95,10 +99,6 @@ export default function Topbar({
           sonnePour={vientDunStagiaire}
           apercuInitial={notifications}
         />
-
-        <span className="mx-1 hidden h-6 w-0.5 bg-separator sm:block" />
-        <span className="hidden text-[13px] text-slate sm:block">{email}</span>
-        <Avatar prenom={email ?? "F"} />
       </div>
     </header>
   );

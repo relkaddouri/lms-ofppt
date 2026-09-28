@@ -21,6 +21,7 @@ import {
   type ReglagesCommentaires,
 } from "@/app/actions/questions-support";
 import type { Camarade } from "@/app/actions/fil";
+import Avatar from "@/components/ui/Avatar";
 import {
   Check,
   Lock,
@@ -194,7 +195,12 @@ export default function QuestionsSupport({
                       className={
                         r.enAttente
                           ? "rounded-[10px] border border-dashed border-border-strong bg-paper-alt p-2.5"
-                          : ""
+                          : r.auteurFormateur
+                            ? // La réponse du formateur, dans une pile de
+                              // réponses de camarades : c'est celle qu'on est
+                              // venu chercher.
+                              "rounded-[10px] border border-or-clair bg-or-fond p-2.5"
+                            : ""
                       }
                     >
                       <Entete message={r} formateur={formateur} />
@@ -385,12 +391,24 @@ function Entete({
 }) {
   return (
     <p className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-slate">
+      {/* Le visage du formateur, et lui seul : sous un cours, la question
+          vient du groupe et la réponse de qui l'anime — c'est cette
+          asymétrie-là qu'il faut voir avant de lire. */}
+      {message.auteurFormateur ? (
+        <Avatar
+          prenom={message.auteurNom}
+          photoUrl={message.auteurPhotoUrl}
+          taille="xs"
+          anneauOr
+          className="mr-1 h-6 w-6 text-[9.5px]"
+        />
+      ) : null}
       <span className="font-medium text-ink">
         {message.estMien ? "Vous" : message.auteurNom}
       </span>
       {message.auteurFormateur ? (
-        <span className="rounded-full bg-wash px-1.5 py-0.5 text-[10px] font-medium text-ink">
-          formateur
+        <span className="rounded-full border border-or bg-or-clair px-1.5 py-0.5 text-[10px] font-semibold text-or">
+          Formateur
         </span>
       ) : null}
       <span>{formatDateTime(message.created_at)}</span>

@@ -46,6 +46,19 @@ export default function Avatar({
   empile = false,
   /** Chemin de la photo dans le bucket ; les initiales restent le défaut. */
   photo,
+  /**
+   * Adresse déjà résolue, pour les visages qui ne vivent pas dans le bucket
+   * des stagiaires — celui du formateur a le sien (migration 106).
+   */
+  photoUrl,
+  /**
+   * L'anneau d'or du formateur.
+   *
+   * Dans un fil de stagiaires, toutes les pastilles se ressemblent : c'est ce
+   * liseré, et lui seul, qui dit d'un coup d'œil que ce message-là vient de
+   * qui anime le groupe.
+   */
+  anneauOr = false,
   className = "",
 }: {
   nom?: string | null;
@@ -55,6 +68,8 @@ export default function Avatar({
   neutre?: boolean;
   empile?: boolean;
   photo?: string | null;
+  photoUrl?: string | null;
+  anneauOr?: boolean;
   className?: string;
 }) {
   const libelle = `${prenom ?? ""} ${nom ?? ""}`.trim();
@@ -67,6 +82,7 @@ export default function Avatar({
     texte ? "font-mono" : "font-display",
     tailles[taille],
     empile ? "border-2 border-surface -ml-[9px] first:ml-0" : "",
+    anneauOr ? "anneau-formateur" : "",
     className,
   ]
     .filter(Boolean)
@@ -76,7 +92,7 @@ export default function Avatar({
   // chemin cassé ou un bucket injoignable laisserait sinon un trou gris à la
   // place d'une personne. Le fond coloré reste dessous et réapparaît si
   // l'image ne charge pas.
-  const source = urlPhoto(photo);
+  const source = photoUrl ?? urlPhoto(photo);
   if (source && !texte) {
     return (
       <span aria-hidden className={`${cadre} ${apparence}`}>

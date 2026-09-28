@@ -61,6 +61,17 @@
   --coral-soft: #f0bdb8;
   --coral-wash: #fef6f5;
 
+  /* L'or — la couronne du podium, et l'anneau qui désigne le formateur dans
+     un fil de stagiaires. Même valeur que --groupe-5, nom distinct : la
+     palette catégorielle distingue des groupes, elle ne signale rien. */
+  --or: #8a6416;
+  --or-clair: #fbf0dd;
+  /* Le fond d'un message du formateur, précalculé et non obtenu par un
+     modificateur d'opacité : sur un alias de variable, Tailwind laisse tomber
+     le canal alpha et la teinte ressort pleine — assez soutenue, sur une
+     colonne entière de commentaires, pour tirer l'œil plus que le texte. */
+  --or-fond: #fdf8ee;
+
   /* Statuts (texte) */
   --status-success: #3c8c5c;
   --status-danger: #e2574c;
@@ -140,6 +151,9 @@
   --color-tint-teal-strong: var(--tint-teal-strong);
   --color-tint-green: var(--tint-green);
   --color-tint-alert-strong: var(--tint-alert-strong);
+  --color-or: var(--or);
+  --color-or-clair: var(--or-clair);
+  --color-or-fond: var(--or-fond);
 
   /* Quatre niveaux d'élévation, pas un cinquième */
   --shadow-repos: var(--ombre-repos);
@@ -188,9 +202,14 @@ body {
     text-decoration: none;
   }
 
+  /* Le survol change la couleur, il ne souligne pas. Le soulignement passait
+     sur tout ce qui est un lien sans en avoir l'air — une entrée de menu, une
+     carte de groupe, une ligne de tableau — d'où les quelque quarante
+     `hover:no-underline` semés dans les écrans pour l'éteindre au cas par
+     cas. On l'éteint ici une fois. Les liens au fil d'un texte gardent leur
+     soulignement, posé explicitement là où il est le seul repère. */
   a:hover {
     color: var(--ofppt-ink);
-    text-decoration: underline;
   }
 }
 
@@ -577,4 +596,30 @@ body {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
+}
+
+/* L'anneau du formateur.
+   Dans un fil où tout le monde se ressemble — même pastille, même taille —
+   il faut qu'on voie d'un coup d'œil qui est le formateur. L'anneau est en
+   `outline` et non en bordure : il ne prend pas de place et ne décale donc
+   pas l'avatar par rapport à ceux des stagiaires, côte à côte dans la même
+   liste.
+
+   Le halo respire au lieu de clignoter : deux secondes et demie par cycle,
+   et il s'éteint en s'écartant. Le respect de `prefers-reduced-motion` est
+   déjà posé plus haut, pour toute la feuille. */
+@keyframes halo-formateur {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(138, 100, 22, 0.42);
+  }
+  55% {
+    box-shadow: 0 0 0 7px rgba(138, 100, 22, 0);
+  }
+}
+
+.anneau-formateur {
+  outline: 2px solid var(--or);
+  outline-offset: 2px;
+  animation: halo-formateur 2.5s ease-in-out infinite;
 }

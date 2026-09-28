@@ -2,16 +2,18 @@ import { getParametresLlm } from "@/app/actions/parametres-llm";
 import { getParametresFormateur } from "@/app/actions/heures";
 import { getEtablissement } from "@/app/actions/etablissement";
 import { getMesReglagesCommentaires } from "@/app/actions/questions-support";
+import { getMonProfil } from "@/app/actions/profil";
 import ParametresOnglets from "./ParametresOnglets";
 
 export const metadata = { title: "Paramètres" };
 
 export default async function ParametresPage() {
-  const [llm, heures, etablissement, commentaires] = await Promise.all([
+  const [llm, heures, etablissement, commentaires, profil] = await Promise.all([
     getParametresLlm(),
     getParametresFormateur(),
     getEtablissement(),
     getMesReglagesCommentaires(),
+    getMonProfil(),
   ]);
 
   return (
@@ -26,6 +28,7 @@ export default async function ParametresPage() {
       </header>
 
       <ParametresOnglets
+        profil={profil}
         llm={llm}
         heures={heures}
         etablissement={etablissement}

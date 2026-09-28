@@ -9,12 +9,15 @@ import ParametresLlmForm from "./ParametresLlmForm";
 import ParametresHeuresForm from "./ParametresHeuresForm";
 import ParametresEtablissementForm from "./ParametresEtablissementForm";
 import ParametresCommentairesForm from "./ParametresCommentairesForm";
+import ParametresProfilForm from "./ParametresProfilForm";
 import type { ParametresLlm } from "@/app/actions/parametres-llm";
 import type { ParametresFormateur } from "@/app/actions/heures";
 import type { Etablissement } from "@/app/actions/etablissement";
 import type { ReglagesCommentaires } from "@/app/actions/questions-support";
+import type { MonProfil } from "@/app/actions/profil";
 
 const ONGLETS = [
+  { cle: "profil", libelle: "Mon profil" },
   { cle: "heures", libelle: "Ma charge horaire" },
   { cle: "etablissement", libelle: "Établissement" },
   { cle: "commentaires", libelle: "Questions des cours" },
@@ -24,21 +27,27 @@ const ONGLETS = [
 type Onglet = (typeof ONGLETS)[number]["cle"];
 
 /**
- * Des réglages sans rapport les uns avec les autres : la charge horaire du
- * formateur, l'identité de son établissement, la modération des questions de
- * cours et le fournisseur d'intelligence artificielle. Les empiler sur une
- * seule page obligeait à traverser l'un pour atteindre l'autre.
+ * Des réglages sans rapport les uns avec les autres : le profil du formateur,
+ * sa charge horaire, l'identité de son établissement, la modération des
+ * questions de cours et le fournisseur d'intelligence artificielle. Les
+ * empiler sur une seule page obligeait à traverser l'un pour atteindre
+ * l'autre.
+ *
+ * Le profil ouvre la série : c'est le seul de ces réglages que les stagiaires
+ * voient, et le seul qu'on remplit une fois pour toutes en arrivant.
  *
  * L'onglet d'arrivée peut venir de l'adresse : le lien « Réglages des
  * questions », posé sous un cours, doit ouvrir le bon onglet et pas le
  * premier.
  */
 export default function ParametresOnglets({
+  profil,
   llm,
   heures,
   etablissement,
   commentaires,
 }: {
+  profil: MonProfil;
   llm: ParametresLlm | null;
   heures: ParametresFormateur;
   etablissement: Etablissement;
@@ -46,7 +55,7 @@ export default function ParametresOnglets({
 }) {
   const demande = useSearchParams().get("onglet");
   const [onglet, setOnglet] = useState<Onglet>(
-    ONGLETS.some((o) => o.cle === demande) ? (demande as Onglet) : "heures",
+    ONGLETS.some((o) => o.cle === demande) ? (demande as Onglet) : "profil",
   );
 
   return (
@@ -58,6 +67,7 @@ export default function ParametresOnglets({
         options={ONGLETS.map((o) => ({ valeur: o.cle, libelle: o.libelle }))}
       />
 
+      {onglet === "profil" ? <ParametresProfilForm initial={profil} /> : null}
       {onglet === "heures" ? <ParametresHeuresForm initial={heures} /> : null}
       {onglet === "etablissement" ? (
         <ParametresEtablissementForm initial={etablissement} />
