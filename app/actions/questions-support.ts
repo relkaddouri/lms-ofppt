@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import type { Support } from "@/lib/support";
 import { libelleModule } from "@/lib/modules";
 import { lireCorrection, type CorrectionTp } from "@/lib/correction";
+import { getIdentiteFormateur } from "@/app/actions/profil";
 
 export type SupportListe = {
   id: string;
@@ -23,6 +24,8 @@ export type Message = {
   auteurNom: string;
   /** Vrai si l'auteur est le formateur et non un stagiaire du groupe. */
   auteurFormateur: boolean;
+  /** Le visage du formateur, quand il en a déposé un (migration 106). */
+  auteurPhotoUrl: string | null;
   estMien: boolean;
   /**
    * Vrai tant que le formateur n'a pas validé ce message (migration 085).
@@ -176,13 +179,16 @@ export async function chargerQuestions(
   const supabase = await createClient();
   const user = await getUser();
 
-  const [questionsRes, noms] = await Promise.all([
+  const [questionsRes, noms, formateur] = await Promise.all([
     supabase
       .from("questions_support")
       .select("id, auteur_id, texte, created_at, statut")
       .eq("support_id", supportId)
       .order("created_at"),
     nomsDesAuteurs(groupeId),
+    // Qui répond. Mémorisée pour le rendu : sans cela, la même identité serait
+    // relue une fois par message.
+    getIdentiteFormateur(),
   ]);
   if (questionsRes.error) throw new Error(questionsRes.error.message);
 
@@ -206,8 +212,9 @@ export async function chargerQuestions(
     id: m.id,
     texte: m.texte,
     created_at: m.created_at,
-    auteurNom: noms.get(m.auteur_id) ?? "Formateur",
+    auteurNom: noms.get(m.auteur_id) ?? formateur.nom ?? "Votre formateur",
     auteurFormateur: !noms.has(m.auteur_id),
+    auteurPhotoUrl: noms.has(m.auteur_id) ? null : formateur.photoUrl,
     estMien: m.auteur_id === user?.id,
     enAttente: m.statut === "en_attente",
   });

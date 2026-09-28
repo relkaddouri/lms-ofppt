@@ -3,6 +3,7 @@
 import { createClient, getUser } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import type { LigneClassement } from "@/app/actions/classement";
+import { getIdentiteFormateur } from "@/app/actions/profil";
 
 export type Commentaire = {
   id: string;
@@ -11,6 +12,8 @@ export type Commentaire = {
   auteurNom: string;
   /** Vrai si l'auteur est le formateur du groupe et non un stagiaire. */
   auteurFormateur: boolean;
+  /** Le visage du formateur, quand il en a déposé un (migration 106). */
+  auteurPhotoUrl: string | null;
   estMien: boolean;
 };
 
@@ -85,6 +88,7 @@ export async function getFil(groupeId: string): Promise<AnnonceFil[]> {
     stagiairesRes,
     distinctionsRes,
     classementsRes,
+    formateur,
   ] = await Promise.all([
       supabase
         .from("reactions_annonce")
@@ -116,6 +120,9 @@ export async function getFil(groupeId: string): Promise<AnnonceFil[]> {
         .from("classements_controle")
         .select("annonce_id, lignes, moyenne, total")
         .in("annonce_id", ids),
+      // Qui signe. Mémorisée pour le rendu : le fil la redemanderait une fois
+      // par commentaire sans cela.
+      getIdentiteFormateur(),
     ]);
 
   if (reactionsRes.error) throw new Error(reactionsRes.error.message);
@@ -182,8 +189,14 @@ export async function getFil(groupeId: string): Promise<AnnonceFil[]> {
           id: c.id,
           texte: c.texte,
           created_at: c.created_at,
-          auteurNom: nomsParCompte.get(c.auteur_id) ?? "Formateur",
+          auteurNom:
+            nomsParCompte.get(c.auteur_id) ??
+            formateur.nom ??
+            "Votre formateur",
           auteurFormateur: !nomsParCompte.has(c.auteur_id),
+          auteurPhotoUrl: nomsParCompte.has(c.auteur_id)
+            ? null
+            : formateur.photoUrl,
           estMien: c.auteur_id === user?.id,
         })),
       distinction: distinctions.get(a.id) ?? null,

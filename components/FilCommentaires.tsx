@@ -149,15 +149,26 @@ export default function FilCommentaires({
       ) : null}
 
       {visibles.map((c) => (
+        /* Le commentaire du formateur ne se lit pas comme les autres : dans un
+           fil de vingt réponses, c'est celui qu'on cherche. Il porte donc son
+           propre fond, et non le simple liseré d'étiquette qui se perdait dans
+           la colonne. Le surlignage d'une ancre reste prioritaire : il ne dure
+           que trois secondes et il répond à un clic. */
         <div
           key={c.id}
           id={`commentaire-${c.id}`}
           className={`flex gap-[11px] rounded-xl transition-colors duration-500 ease-out ${
-            vise === c.id ? "bg-tint-teal px-2.5 py-2 -mx-2.5" : ""
+            vise === c.id
+              ? "-mx-2.5 bg-tint-teal px-2.5 py-2"
+              : c.auteurFormateur
+                ? "-mx-2.5 border border-or-clair bg-or-clair/45 px-2.5 py-2"
+                : ""
           }`}
         >
           <Avatar
             prenom={c.auteurNom}
+            photoUrl={c.auteurPhotoUrl}
+            anneauOr={c.auteurFormateur}
             taille="xs"
             className="h-8 w-8 text-[11px]"
           />
@@ -167,8 +178,8 @@ export default function FilCommentaires({
                 {c.auteurNom}
               </span>
               {c.auteurFormateur ? (
-                <span className="rounded-full border border-tint-teal-strong bg-tint-teal px-2 py-px text-[11px] font-semibold text-teal-dark">
-                  formateur
+                <span className="rounded-full border border-or bg-surface px-2 py-px text-[11px] font-semibold text-or">
+                  Formateur
                 </span>
               ) : null}
               <span className="font-mono text-[11.5px] text-muted">
