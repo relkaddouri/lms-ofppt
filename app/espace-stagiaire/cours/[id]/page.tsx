@@ -9,7 +9,6 @@ import SupportLecture from "./SupportLecture";
 import QuestionsSupport from "@/components/QuestionsSupport";
 import TelechargerDiapos from "@/components/TelechargerDiapos";
 import SommaireLateral from "../SommaireLateral";
-import BasculeSommaire from "@/components/BasculeSommaire";
 import MarquerLu from "./MarquerLu";
 import QuizChapitre from "./QuizChapitre";
 import { getChapitre, getJalons } from "@/app/actions/cours-stagiaire";
@@ -46,9 +45,6 @@ export default async function CoursDetailPage({
       ) : null}
 
       <div className="min-w-0 flex-1 space-y-6">
-      {/* Le retour au module et la commande du sommaire sur la même ligne :
-          les deux disent où l'on est dans le parcours, et c'est la première
-          ligne de l'écran. */}
       <div className="flex flex-wrap items-center gap-2">
         <Link
           href={
@@ -61,7 +57,6 @@ export default async function CoursDetailPage({
           <ArrowLeft className="h-4 w-4" aria-hidden />
           {support.moduleNom ?? "Mes cours"}
         </Link>
-        {chapitre ? <BasculeSommaire /> : null}
       </div>
 
       <article className="rounded-[14px] border border-border bg-surface p-4 md:p-6">

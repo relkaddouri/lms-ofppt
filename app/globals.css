@@ -938,9 +938,27 @@ body {
    avant le premier pixel, donc la page s'ouvre déjà dans la bonne disposition.
    En passant par un état, elle se serait affichée en deux colonnes puis aurait
    sauté en une seule à l'hydratation — un déplacement du texte sous les yeux,
-   juste avant de commencer à lire. */
+   juste avant de commencer à lire.
+
+   Replié ne veut pas dire disparu. La colonne se réduit à un rail de
+   quarante-huit pixels — cliquable en entier — qui garde la réponse à la seule
+   question qu'on se pose en lisant : « j'en suis où ? ».
+
+   Une version a fait reparaître le panneau entier au survol du rail, posé
+   par-dessus le cours. À l'usage, il surgissait dès qu'on passait la souris
+   par là pour aller ailleurs, et recouvrait la barre d'outils du chapitre.
+   Un panneau qui s'ouvre sans qu'on l'ait demandé dérange plus qu'il ne sert :
+   on ouvre d'un clic, on referme d'un clic, et rien ne bouge entre les deux. */
 @media (min-width: 768px) {
   :root[data-sommaire="ferme"] .sommaire-repliable {
+    width: 48px;
+  }
+
+  :root[data-sommaire="ferme"] .sommaire-rail {
+    display: flex;
+  }
+
+  :root[data-sommaire="ferme"] .sommaire-panneau {
     display: none;
   }
 }

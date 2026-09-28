@@ -22,10 +22,15 @@ import BoutonJaime from "@/components/BoutonJaime";
 /**
  * Une annonce dans le fil.
  *
- * Carte pleine largeur séparée par un filet, pas une carte flottante à ombre :
- * empilées sur un téléphone, celles-ci donnent un effet de liste de courses
- * (design_system.md). « J'aime » et commentaires restent visibles en bas, ce
- * sont les deux actions principales.
+ * Une carte détachée, posée sur le fond de la page. Le système visuel
+ * recommandait l'inverse — pleine largeur, séparée par un simple filet, pour
+ * éviter l'effet de liste de courses sur un téléphone. Il avait raison tant
+ * qu'une annonce tenait en trois lignes ; depuis qu'elle porte son podium, ses
+ * réactions et son fil de commentaires, deux annonces à la suite se
+ * confondaient — on ne voyait plus où l'une finissait.
+ *
+ * « J'aime » et commentaires restent visibles en bas, ce sont les deux actions
+ * principales.
  */
 export default function CarteAnnonce({
   annonce,
@@ -74,7 +79,7 @@ export default function CarteAnnonce({
   const compteCommentaires = annonce.commentaires.length;
 
   return (
-    <article className="flex flex-col gap-3.5 border-t border-separator px-5 py-[22px] first:border-t-0">
+    <article className="mx-5 flex flex-col gap-3.5 rounded-[14px] border border-border bg-surface px-5 py-[22px] shadow-detachee md:mx-0 md:px-6">
       {/* Qui parle. L'anneau d'or et l'étiquette disent, dans un fil où tout
           le monde porte la même pastille, que celui-ci vient du formateur —
           sans quoi il faudrait lire le nom et savoir qui il désigne. */}

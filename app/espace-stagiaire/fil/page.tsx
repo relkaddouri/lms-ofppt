@@ -31,10 +31,15 @@ export default async function FilPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-3xl bg-surface md:overflow-hidden md:rounded-[14px] md:border md:border-border">
+    // Une carte par annonce, et non un seul bloc découpé par des filets.
+    // Empilées sans respiration, les annonces se lisaient comme une liste de
+    // courses : on ne voyait plus où l'une finissait et où la suivante
+    // commençait, d'autant que chacune porte maintenant ses commentaires.
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">
       <EnTete
         surtitre="Fil du groupe"
         titre="Annonces"
+        dansCarte={false}
         resume={
           <>
             <span className="font-mono text-body">{annonces.length}</span>{" "}
@@ -59,7 +64,7 @@ export default async function FilPage() {
         />
       ))}
 
-      <div className="flex justify-center border-t border-separator px-5 pb-2 pt-[26px]">
+      <div className="flex justify-center px-5 pb-2 pt-2">
         <span className="font-mono text-xs text-border-strong">
           Fin du fil · {annonces.length} annonce{annonces.length > 1 ? "s" : ""}
         </span>
