@@ -230,7 +230,7 @@ function Tableau({ entetes, lignes }: { entetes: string[]; lignes: string[][] })
       <table className="w-full border-collapse text-left text-[0.84em]">
         {/* En-tête encre, texte blanc : c'est ce qui fait qu'un tableau se
             repère d'un coup d'œil dans une page dense. */}
-        <thead className="bg-ink text-white">
+        <thead className="bg-encre text-white">
           <tr>
             {entetes.map((e, k) => (
               <th key={k} className="px-3 py-2 font-medium">
@@ -469,7 +469,7 @@ function Couverture({
     // garde entière avant d'atteindre la première ligne de son cours, alors
     // que le titre et la date de la séance sont déjà au-dessus. Elle garde son
     // rôle — dire de quel support il s'agit — dans un tiers de la place.
-    <section className="flex flex-col rounded-[14px] bg-ink px-5 py-6 text-white md:min-h-[900px] md:px-12 md:py-14">
+    <section className="flex flex-col rounded-[14px] bg-encre px-5 py-6 text-white md:min-h-[900px] md:px-12 md:py-14">
       <span aria-hidden className="mb-5 flex items-center gap-1.5 md:mb-7">
         {["bg-green", "bg-teal", "bg-coral"].map((c) => (
           <span key={c} className={`h-2.5 w-2.5 rounded-full ${c}`} />

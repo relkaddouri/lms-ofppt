@@ -96,7 +96,7 @@ export default function ParticipationSeance({
         <button
           type="button"
           onClick={onNoter}
-          className="flex min-h-11 items-center rounded-[9px] border border-border-strong bg-surface px-3.5 text-sm font-semibold text-body transition-colors duration-150 ease-out hover:border-ink hover:bg-paper"
+          className="flex min-h-11 items-center rounded-[9px] border border-border-strong bg-surface px-3.5 text-sm font-semibold text-body transition-colors duration-150 ease-out hover:border-encre hover:bg-paper"
         >
           {notes.length === 0
             ? "Noter la participation"

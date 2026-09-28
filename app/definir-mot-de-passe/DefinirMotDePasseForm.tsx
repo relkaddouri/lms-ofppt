@@ -191,7 +191,7 @@ export default function DefinirMotDePasseForm({ email }: { email: string }) {
             disabled={!pret || busy}
             className={`w-full rounded-[10px] border px-5 py-3.5 text-[15px] font-semibold text-white transition-colors duration-150 ease-out focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_rgba(46,125,158,0.15)] ${
               pret && !busy
-                ? "border-ink bg-ink hover:border-ofppt-ink-dark hover:bg-ofppt-ink-dark"
+                ? "border-encre bg-encre hover:border-encre-fort hover:bg-encre-fort"
                 : "cursor-not-allowed border-muted bg-muted"
             }`}
           >

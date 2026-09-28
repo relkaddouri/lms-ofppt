@@ -131,7 +131,7 @@ function Bloc({ bloc }: { bloc: BlocDiapo }) {
             key={k}
             className={`flex flex-col rounded-[0.6cqw] border ${
               c.accent === "encre"
-                ? "border-ink bg-ink"
+                ? "border-encre bg-encre"
                 : c.accent === "sarcelle"
                   ? "border-tint-teal-strong bg-tint-teal"
                   : "border-border bg-surface"
@@ -203,7 +203,7 @@ function Bloc({ bloc }: { bloc: BlocDiapo }) {
         className="w-full border-collapse text-left"
         style={{ fontSize: pt(11) }}
       >
-        <thead className="bg-ink">
+        <thead className="bg-encre">
           <tr>
             {bloc.entetes.map((e, k) => (
               <th
@@ -249,7 +249,7 @@ export default function DiapoRedigee({
   if (diapo.type === "couverture" || diapo.type === "intercalaire") {
     const couverture = diapo.type === "couverture";
     return (
-      <div className="relative h-full w-full overflow-hidden bg-ink text-white">
+      <div className="relative h-full w-full overflow-hidden bg-encre text-white">
         <Pastilles x={6} y={10.67} taille={1.65} ecart={2.175} />
 
         <p
@@ -400,7 +400,7 @@ export default function DiapoRedigee({
               <div key={i} className="flex items-start" style={{ gap: "1.4%" }}>
                 <span
                   className={`flex shrink-0 items-center justify-center rounded-[0.35cqw] font-display font-semibold text-white ${
-                    ["bg-ink", "bg-teal", "bg-green", "bg-coral"][i % 4]
+                    ["bg-encre", "bg-teal", "bg-green", "bg-coral"][i % 4]
                   }`}
                   style={{
                     width: "3.3%",

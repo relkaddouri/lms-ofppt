@@ -108,7 +108,7 @@ export default function ChampMention({
           onClick={envoyer}
           disabled={busy || !texte.trim()}
           aria-label="Envoyer"
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-ink bg-ink text-white transition-colors duration-150 ease-out hover:border-ofppt-ink-dark hover:bg-ofppt-ink-dark disabled:cursor-not-allowed disabled:border-muted disabled:bg-muted"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-encre bg-encre text-white transition-colors duration-150 ease-out hover:border-encre-fort hover:bg-encre-fort disabled:cursor-not-allowed disabled:border-muted disabled:bg-muted"
         >
           <Send size={17} aria-hidden />
         </button>

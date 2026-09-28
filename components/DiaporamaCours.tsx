@@ -227,7 +227,7 @@ export default function DiaporamaCours({
 
       <div
         ref={cadre}
-        className="mt-3 bg-ink"
+        className="mt-3 bg-encre"
         // En plein écran le cadre occupe l'écran ; sinon il garde le 16:9.
         style={
           pleinEcran
@@ -251,7 +251,7 @@ export default function DiaporamaCours({
               pied={pied ?? sousTitre}
             />
           ) : !d ? null : d.type === "titre" ? (
-            <div className="flex h-full flex-col justify-center bg-ink px-[7cqw] text-white">
+            <div className="flex h-full flex-col justify-center bg-encre px-[7cqw] text-white">
               <p
                 className="font-mono uppercase tracking-widest text-mint/70"
                 style={{ fontSize: "1.6cqw" }}
@@ -288,7 +288,7 @@ export default function DiaporamaCours({
                 </h2>
               </div>
               <div
-                className="mt-[1cqh] h-[0.4cqh] w-[10cqw] rounded-full bg-ink"
+                className="mt-[1cqh] h-[0.4cqh] w-[10cqw] rounded-full bg-encre"
                 aria-hidden
               />
 
@@ -296,7 +296,7 @@ export default function DiaporamaCours({
                 {d.notions.map((n, i) => (
                   <li key={i} className="flex gap-[1.6cqw]">
                     <span
-                      className="mt-[0.9cqh] h-[1cqh] w-[1cqh] shrink-0 rounded-full bg-ink"
+                      className="mt-[0.9cqh] h-[1cqh] w-[1cqh] shrink-0 rounded-full bg-encre"
                       aria-hidden
                     />
                     <span
@@ -310,7 +310,7 @@ export default function DiaporamaCours({
               </ul>
 
               {d.exemple ? (
-                <div className="mt-[2cqh] rounded-[1cqw] border-l-[0.6cqw] border-ink bg-wash px-[2.5cqw] py-[2cqh]">
+                <div className="mt-[2cqh] rounded-[1cqw] border-l-[0.6cqw] border-encre bg-wash px-[2.5cqw] py-[2cqh]">
                   <p
                     className="font-mono uppercase tracking-widest text-ink/70"
                     style={{ fontSize: "1.3cqw" }}
@@ -338,7 +338,7 @@ export default function DiaporamaCours({
                 {d.etapes.map((e, i) => (
                   <li key={i} className="flex items-center gap-[1.4cqw]">
                     <span
-                      className="rounded-[0.8cqw] border-[0.15cqw] border-ink bg-wash px-[2cqw] py-[1.6cqh] leading-snug text-ink"
+                      className="rounded-[0.8cqw] border-[0.15cqw] border-encre bg-wash px-[2cqw] py-[1.6cqh] leading-snug text-ink"
                       style={{ fontSize: "1.9cqw" }}
                     >
                       {e}
@@ -419,7 +419,7 @@ export default function DiaporamaCours({
               onClick={() => aller(-1)}
               disabled={index === 0}
               aria-label="Diapositive précédente"
-              className="m-[1cqw] rounded-full bg-ink/60 p-[1cqw] text-white disabled:opacity-30"
+              className="m-[1cqw] rounded-full bg-encre/60 p-[1cqw] text-white disabled:opacity-30"
             >
               <ChevronLeft className="h-[2cqw] w-[2cqw]" />
             </button>
@@ -430,7 +430,7 @@ export default function DiaporamaCours({
               onClick={() => aller(1)}
               disabled={index === nombre - 1}
               aria-label="Diapositive suivante"
-              className="m-[1cqw] rounded-full bg-ink/60 p-[1cqw] text-white disabled:opacity-30"
+              className="m-[1cqw] rounded-full bg-encre/60 p-[1cqw] text-white disabled:opacity-30"
             >
               <ChevronRight className="h-[2cqw] w-[2cqw]" />
             </button>

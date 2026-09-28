@@ -15,7 +15,7 @@ export type AvatarTaille = "xs" | "sm" | "md" | "lg";
  * sept stagiaires afficherait plusieurs avatars corail sur le même écran, ce
  * que la règle du corail interdit (design_system.md §1).
  */
-const FONDS = ["bg-ink", "bg-green", "bg-teal"] as const;
+const FONDS = ["bg-encre", "bg-green", "bg-teal"] as const;
 
 const tailles: Record<AvatarTaille, string> = {
   xs: "h-[34px] w-[34px] text-[11.5px]",

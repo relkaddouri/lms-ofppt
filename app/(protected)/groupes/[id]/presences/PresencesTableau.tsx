@@ -76,7 +76,7 @@ export default function PresencesTableau({ bilan }: { bilan: BilanPresences }) {
           id="module"
           value={moduleId}
           onChange={(e) => setModuleId(e.target.value)}
-          className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-ink focus:border-ink focus:outline-none focus:ring-2 focus:ring-ink/20 max-md:min-h-11 max-md:w-full"
+          className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-ink focus:border-encre focus:outline-none focus:ring-2 focus:ring-encre/20 max-md:min-h-11 max-md:w-full"
         >
           <option value="tous">Tous les modules</option>
           {bilan.modules.map((m) => (

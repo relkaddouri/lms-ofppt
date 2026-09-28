@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { signOutAction } from "@/app/actions/auth";
 import MarquePedago from "./MarquePedago";
+import BasculeTheme from "./BasculeTheme";
 import Avatar from "./ui/Avatar";
 
 /**
@@ -146,7 +147,13 @@ export default function Sidebar({
             </span>
           </span>
         </div>
-        <form action={signOutAction} className="mt-3">
+        {/* L'apparence se règle là où se trouve déjà le compte : c'est le
+            seul coin de l'écran qui parle de la personne et non du travail. */}
+        <div className="mt-3 flex items-center justify-between gap-2">
+          <BasculeTheme />
+        </div>
+
+        <form action={signOutAction} className="mt-2">
           <button
             type="submit"
             className="flex w-full items-center gap-2 rounded-[9px] px-3 py-2 text-sm font-semibold text-slate-2 transition-colors duration-150 ease-out hover:bg-paper hover:text-ink focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_rgba(46,125,158,0.15)]"

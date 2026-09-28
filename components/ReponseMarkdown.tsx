@@ -144,7 +144,7 @@ export default function ReponseMarkdown({
       </div>
     ),
     thead: ({ children }) => (
-      <thead className="bg-ink text-white">{children}</thead>
+      <thead className="bg-encre text-white">{children}</thead>
     ),
     th: ({ children }) => (
       <th className="whitespace-nowrap px-3 py-2 font-semibold">{children}</th>

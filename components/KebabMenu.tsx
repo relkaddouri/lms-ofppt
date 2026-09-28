@@ -69,7 +69,7 @@ export default function KebabMenu({ items }: { items: KebabItem[] }) {
       <button
         ref={btnRef}
         onClick={toggle}
-        className="flex items-center justify-center rounded-lg border border-border px-2 py-1.5 text-slate hover:bg-paper focus:outline-none focus:ring-2 focus:ring-ink max-md:h-11 max-md:w-11"
+        className="flex items-center justify-center rounded-lg border border-border px-2 py-1.5 text-slate hover:bg-paper focus:outline-none focus:ring-2 focus:ring-encre max-md:h-11 max-md:w-11"
         aria-label="Actions"
         aria-haspopup="menu"
         aria-expanded={open}

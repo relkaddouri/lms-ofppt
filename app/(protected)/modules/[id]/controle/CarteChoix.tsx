@@ -53,7 +53,7 @@ export default function CarteChoix<T extends string>({
               onClick={() => onChange(c.cle)}
               className={`flex flex-col gap-2 rounded-xl border p-4 text-left transition-colors duration-150 ease-out ${
                 actif
-                  ? "border-ink bg-paper-alt"
+                  ? "border-encre bg-paper-alt"
                   : "border-border bg-surface hover:border-border-strong"
               }`}
             >
@@ -61,12 +61,12 @@ export default function CarteChoix<T extends string>({
                 <span
                   aria-hidden
                   className={`flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full border-2 bg-surface ${
-                    actif ? "border-ink" : "border-border-strong"
+                    actif ? "border-encre" : "border-border-strong"
                   }`}
                 >
                   <span
                     className={`h-2 w-2 rounded-full ${
-                      actif ? "bg-ink" : "bg-transparent"
+                      actif ? "bg-encre" : "bg-transparent"
                     }`}
                   />
                 </span>

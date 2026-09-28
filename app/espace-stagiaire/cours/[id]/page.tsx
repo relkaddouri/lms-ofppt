@@ -132,7 +132,7 @@ export default async function CoursDetailPage({
                       {e.attendu.map((a, k) => (
                         <li key={k} className="flex gap-2">
                           <span
-                            className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-ink"
+                            className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-encre"
                             aria-hidden
                           />
                           <span>{a}</span>
@@ -165,7 +165,7 @@ export default async function CoursDetailPage({
                 {support.correction.aReprendre.map((r, i) => (
                   <li key={i} className="flex gap-2">
                     <span
-                      className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-ink"
+                      className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-encre"
                       aria-hidden
                     />
                     <span>{r}</span>
@@ -184,7 +184,7 @@ export default async function CoursDetailPage({
       {bilan ? (
         <Link
           href={`/espace-stagiaire/cours/module/${bilan.moduleId}/bilan/${bilan.rang}`}
-          className="flex items-center gap-3 rounded-[14px] border border-ink bg-ink px-4 py-4 text-white no-underline hover:no-underline md:px-5"
+          className="flex items-center gap-3 rounded-[14px] border border-encre bg-encre px-4 py-4 text-white no-underline hover:no-underline md:px-5"
         >
           <Milestone className="h-5 w-5 shrink-0" aria-hidden />
           <span className="flex min-w-0 flex-col gap-0.5">
@@ -222,7 +222,7 @@ export default async function CoursDetailPage({
             {chapitre.suivant ? (
               <Link
                 href={`/espace-stagiaire/cours/${chapitre.suivant.id}`}
-                className="inline-flex min-h-[44px] max-w-full items-center gap-1.5 rounded-[10px] border border-ink bg-ink px-3.5 text-[14px] font-semibold text-white no-underline hover:no-underline"
+                className="inline-flex min-h-[44px] max-w-full items-center gap-1.5 rounded-[10px] border border-encre bg-encre px-3.5 text-[14px] font-semibold text-white no-underline hover:no-underline"
               >
                 <span className="truncate">Chapitre suivant : {chapitre.suivant.titre}</span>
                 <ArrowRight className="h-4 w-4 shrink-0" aria-hidden />

@@ -111,7 +111,7 @@ export default async function LoginPage({
 
             <button
               type="submit"
-              className="w-full rounded-[10px] border border-ink bg-ink px-5 py-3.5 text-[15px] font-semibold text-white transition-colors duration-150 ease-out hover:border-ofppt-ink-dark hover:bg-ofppt-ink-dark focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_rgba(46,125,158,0.15)]"
+              className="w-full rounded-[10px] border border-encre bg-encre px-5 py-3.5 text-[15px] font-semibold text-white transition-colors duration-150 ease-out hover:border-encre-fort hover:bg-encre-fort focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_rgba(46,125,158,0.15)]"
             >
               Se connecter
             </button>

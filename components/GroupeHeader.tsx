@@ -35,7 +35,7 @@ export default function GroupeHeader({
 
       <div className="flex flex-wrap items-start justify-between gap-6">
         <div className="flex min-w-0 items-start gap-4">
-          <span className="flex h-[50px] w-[50px] shrink-0 items-center justify-center rounded-xl bg-ink font-mono text-base font-semibold text-white">
+          <span className="flex h-[50px] w-[50px] shrink-0 items-center justify-center rounded-xl bg-encre font-mono text-base font-semibold text-white">
             {numero}
           </span>
           <div className="flex min-w-0 flex-col gap-2">

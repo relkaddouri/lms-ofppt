@@ -257,7 +257,7 @@ export default function Passation({
       )}
 
       {/* ── Couverture ───────────────────────────────────────────────────── */}
-      <section className="flex flex-col rounded-[14px] bg-ink px-5 py-6 text-white md:px-10 md:py-9">
+      <section className="flex flex-col rounded-[14px] bg-encre px-5 py-6 text-white md:px-10 md:py-9">
         <span aria-hidden className="mb-4 flex items-center gap-1.5">
           {["bg-green", "bg-teal", "bg-coral"].map((c) => (
             <span key={c} className={`h-2.5 w-2.5 rounded-full ${c}`} />
@@ -367,7 +367,7 @@ export default function Passation({
                           key={j}
                           className={`flex min-h-[48px] cursor-pointer items-center gap-3 rounded-[10px] border px-3.5 py-2.5 transition-colors duration-150 ${
                             coche
-                              ? "border-ink bg-wash"
+                              ? "border-encre bg-wash"
                               : "border-border hover:border-border-strong"
                           }`}
                         >
@@ -397,7 +397,7 @@ export default function Passation({
                   </div>
                 </fieldset>
               ) : (
-                <div className="mt-5 overflow-hidden rounded-[12px] border border-border-strong bg-paper-alt focus-within:border-ink">
+                <div className="mt-5 overflow-hidden rounded-[12px] border border-border-strong bg-paper-alt focus-within:border-encre">
                   <label
                     htmlFor={`reponse-${q.id}`}
                     className="flex items-center gap-2 border-b border-separator bg-surface px-4 py-2 font-mono text-[11px] uppercase tracking-[0.12em] text-slate-light"
@@ -478,7 +478,7 @@ export default function Passation({
                 aria-label={`Question ${i + 1}${fait ? ", répondue" : ""}`}
                 className={`flex h-8 min-w-8 items-center justify-center rounded-[8px] px-2 font-mono text-[12.5px] font-semibold ${
                   fait
-                    ? "bg-ink text-white"
+                    ? "bg-encre text-white"
                     : "border border-border text-slate-2 hover:border-border-strong"
                 }`}
               >

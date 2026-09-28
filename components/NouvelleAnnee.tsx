@@ -190,7 +190,7 @@ export default function NouvelleAnnee({
                       aria-hidden
                       className={`flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[5px] border transition-colors duration-150 ease-out ${
                         coche
-                          ? "border-ink bg-ink text-white"
+                          ? "border-encre bg-encre text-white"
                           : "border-border-strong bg-surface"
                       }`}
                     >

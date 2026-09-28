@@ -72,8 +72,8 @@ export default function LigneSeance({
         aria-label={`Séance ${numero} ${fait ? "faite" : "à faire"}`}
         className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border transition-colors ${
           fait
-            ? "border-ink bg-ink text-white"
-            : "border-border text-transparent hover:border-ink"
+            ? "border-encre bg-encre text-white"
+            : "border-border text-transparent hover:border-encre"
         }`}
       >
         <Check className="h-3.5 w-3.5" />

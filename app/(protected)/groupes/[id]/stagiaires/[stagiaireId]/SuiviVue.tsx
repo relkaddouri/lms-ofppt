@@ -286,7 +286,7 @@ export default function SuiviVue({
                   <span
                     className={`shrink-0 rounded-[8px] px-2 py-0.5 font-mono text-[11px] font-semibold uppercase ${
                       t.genre === "bilan"
-                        ? "bg-ink text-white"
+                        ? "bg-encre text-white"
                         : "bg-tint-teal text-teal-dark"
                     }`}
                   >

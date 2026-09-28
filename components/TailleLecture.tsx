@@ -103,7 +103,7 @@ export default function TailleLecture() {
           <span
             key={i}
             className={`h-[3px] w-[3px] rounded-full ${
-              i <= rang ? "bg-ink" : "bg-border-strong"
+              i <= rang ? "bg-encre" : "bg-border-strong"
             }`}
           />
         ))}

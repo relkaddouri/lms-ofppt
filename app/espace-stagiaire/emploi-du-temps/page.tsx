@@ -159,7 +159,7 @@ function Evenement({ ev }: { ev: EvenementStagiaire }) {
         {controle ? (
           <Link
             href={`/espace-stagiaire/controles/${ev.id}`}
-            className="flex min-h-[44px] w-full items-center justify-center gap-2.5 rounded-xl border border-ink bg-ink px-4 py-3 text-[14.5px] font-semibold text-white no-underline transition-colors duration-150 ease-out hover:border-ofppt-ink-dark hover:bg-ofppt-ink-dark hover:no-underline"
+            className="flex min-h-[44px] w-full items-center justify-center gap-2.5 rounded-xl border border-encre bg-encre px-4 py-3 text-[14.5px] font-semibold text-white no-underline transition-colors duration-150 ease-out hover:border-encre-fort hover:bg-encre-fort hover:no-underline"
           >
             <FileCheck2 size={16} strokeWidth={2.1} aria-hidden />
             Ouvrir le contrôle
