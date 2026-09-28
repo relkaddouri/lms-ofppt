@@ -225,6 +225,7 @@ export default function ControleManager({
   groupeId,
   groupeNom,
   controles,
+  controleInitial = null,
 }: {
   moduleId: string;
   moduleNom: string;
@@ -233,11 +234,19 @@ export default function ControleManager({
   groupeId: string;
   groupeNom: string;
   controles: Controle[];
+  /** Le contrôle à ouvrir, quand on arrive depuis une ligne précise. */
+  controleInitial?: string | null;
 }) {
   const router = useRouter();
 
   const [activeId, setActiveId] = useState<string | null>(
-    controles[0]?.id ?? null,
+    // Celui qu'on vient voir s'il est nommé dans l'adresse, le plus récent
+    // sinon. Un identifiant qui ne serait plus dans la liste — contrôle
+    // supprimé, lien vieilli — retombe sur le plus récent plutôt que sur un
+    // écran vide.
+    (controleInitial && controles.some((c) => c.id === controleInitial)
+      ? controleInitial
+      : controles[0]?.id) ?? null,
   );
   const [titre, setTitre] = useState("");
   const [consignes, setConsignes] = useState("");

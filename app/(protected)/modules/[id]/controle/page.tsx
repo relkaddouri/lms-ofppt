@@ -9,9 +9,12 @@ export default async function ControlePage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ groupe?: string }>;
+  searchParams: Promise<{ groupe?: string; controle?: string }>;
 }) {
-  const [{ id }, { groupe }] = await Promise.all([params, searchParams]);
+  const [{ id }, { groupe, controle }] = await Promise.all([
+    params,
+    searchParams,
+  ]);
 
   const detail = await getModuleDetail(id);
   if (!detail) redirect("/modules");
@@ -35,6 +38,10 @@ export default async function ControlePage({
       groupeId={groupe}
       groupeNom={groupeDetail.nom}
       controles={controles}
+      // Le contrôle à ouvrir, quand on arrive depuis une ligne précise — la
+      // progression du groupe, par exemple. Sans lui, c'est le plus récent
+      // qui s'ouvre, et on ne tombe pas sur celui qu'on venait voir.
+      controleInitial={controle ?? null}
     />
   );
 }

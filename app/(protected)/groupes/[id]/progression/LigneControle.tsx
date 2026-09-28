@@ -48,7 +48,7 @@ export default function LigneControle({
   return (
     <li className="border-b border-border last:border-0">
       <Link
-        href={`/modules/${controle.module_id}/controle?groupe=${groupeId}`}
+        href={`/modules/${controle.module_id}/controle?groupe=${groupeId}&controle=${controle.id}`}
         className={`flex items-center gap-3 px-3 py-2 no-underline transition-colors hover:no-underline ${
           test ? "bg-success-wash/40 hover:bg-success-wash" : "bg-coral-wash hover:bg-alert-wash"
         }`}
