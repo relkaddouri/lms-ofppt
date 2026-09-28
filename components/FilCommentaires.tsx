@@ -169,6 +169,7 @@ export default function FilCommentaires({
         >
           <Avatar
             prenom={c.auteurNom}
+            photo={c.auteurPhoto}
             photoUrl={c.auteurPhotoUrl}
             anneauOr={c.auteurFormateur}
             taille="xs"

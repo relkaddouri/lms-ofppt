@@ -261,7 +261,11 @@ export default function CorrectionManager({
 
       <header className="mt-6 flex flex-wrap items-start justify-between gap-6">
         <div className="flex min-w-0 items-start gap-4">
-          <Avatar prenom={copie?.nom_complet ?? "?"} taille="lg" />
+          <Avatar
+            prenom={copie?.nom_complet ?? "?"}
+            photo={copie?.photo}
+            taille="lg"
+          />
           <div className="flex min-w-0 flex-col gap-1.5">
             <h1 className="font-display text-[27px] font-bold leading-tight tracking-[-0.02em] text-ink">
               {copie?.nom_complet ?? "Copie"}

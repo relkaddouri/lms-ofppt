@@ -26,6 +26,8 @@ export type Message = {
   auteurFormateur: boolean;
   /** Le visage du formateur, quand il en a déposé un (migration 106). */
   auteurPhotoUrl: string | null;
+  /** Le visage d'un stagiaire : son chemin dans le seau des stagiaires. */
+  auteurPhoto: string | null;
   estMien: boolean;
   /**
    * Vrai tant que le formateur n'a pas validé ce message (migration 085).
@@ -145,23 +147,32 @@ export async function getMesSupports(): Promise<SupportListe[]> {
   return supports.sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""));
 }
 
-/** Résout les noms des auteurs : hors stagiaires du groupe, c'est le formateur. */
+/**
+ * Résout les auteurs : hors stagiaires du groupe, c'est le formateur.
+ *
+ * Le visage voyage avec le nom. Sous un cours, une question et sa réponse
+ * s'enchaînent sans qu'on sache qui parle : deux initiales grises se
+ * ressemblent toutes, et la photo est déjà là — le trombinoscope du groupe.
+ */
 async function nomsDesAuteurs(groupeId: string) {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("stagiaires")
-    .select("user_id, nom, prenom")
+    .select("user_id, nom, prenom, photo")
     .eq("groupe_id", groupeId)
     // Le compte de test du formateur n'est pas un stagiaire (migration 093).
-    .eq("est_test", false);
+    .eq("est_test", false)
+    .limit(60);
 
   // Sans ce contrôle, une lecture en échec affichait tout le monde comme
   // « Formateur » — un fil de discussion faux, sans rien qui le signale.
   if (error) throw new Error(error.message);
 
-  const noms = new Map<string, string>();
+  const noms = new Map<string, { nom: string; photo: string | null }>();
   for (const s of data ?? []) {
-    if (s.user_id) noms.set(s.user_id, `${s.prenom} ${s.nom}`);
+    if (s.user_id) {
+      noms.set(s.user_id, { nom: `${s.prenom} ${s.nom}`, photo: s.photo });
+    }
   }
   return noms;
 }
@@ -212,9 +223,10 @@ export async function chargerQuestions(
     id: m.id,
     texte: m.texte,
     created_at: m.created_at,
-    auteurNom: noms.get(m.auteur_id) ?? formateur.nom ?? "Votre formateur",
+    auteurNom: noms.get(m.auteur_id)?.nom ?? formateur.nom ?? "Votre formateur",
     auteurFormateur: !noms.has(m.auteur_id),
     auteurPhotoUrl: noms.has(m.auteur_id) ? null : formateur.photoUrl,
+    auteurPhoto: noms.get(m.auteur_id)?.photo ?? null,
     estMien: m.auteur_id === user?.id,
     enAttente: m.statut === "en_attente",
   });

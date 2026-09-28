@@ -197,6 +197,8 @@ export type PresenceStagiaire = {
   stagiaire_id: string;
   nom: string;
   prenom: string;
+  /** Son visage : la feuille d'émargement se pointe des yeux, pas des noms. */
+  photo: string | null;
   present: boolean | null;
   motif: string | null;
 };
@@ -408,11 +410,12 @@ export async function getSeanceDetail(
   ] = await Promise.all([
     supabase
       .from("stagiaires")
-      .select("id, nom, prenom")
+      .select("id, nom, prenom, photo")
       .eq("groupe_id", groupeId)
       // Le compte de test du formateur n'est pas un stagiaire (migration 093).
       .eq("est_test", false)
-      .order("nom"),
+      .order("nom")
+      .limit(60),
     supabase
       .from("presences")
       .select("stagiaire_id, present, motif")
@@ -483,6 +486,7 @@ export async function getSeanceDetail(
         stagiaire_id: st.id,
         nom: st.nom,
         prenom: st.prenom,
+        photo: st.photo,
         present: p ? p.present : null,
         motif: p?.motif ?? null,
       };
