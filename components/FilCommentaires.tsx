@@ -8,11 +8,13 @@ import Avatar from "@/components/ui/Avatar";
 import TexteMentions from "@/components/TexteMentions";
 import ChampMention from "@/components/ChampMention";
 import {
+  basculerJaimeCommentaire,
   commenter,
   supprimerCommentaire,
   type Commentaire,
   type Camarade,
 } from "@/app/actions/fil";
+import BoutonJaime from "@/components/BoutonJaime";
 import { ChevronUp, Trash2 } from "lucide-react";
 
 /**
@@ -201,6 +203,8 @@ export default function FilCommentaires({
               <TexteMentions texte={c.texte} camarades={camarades} />
             </p>
 
+            <JaimeCommentaire commentaire={c} />
+
             {c.estMien && aSupprimer === c.id ? (
               // Confirmation en ligne plutôt qu'en modale : sur un téléphone,
               // une boîte de dialogue pour effacer une ligne de texte est
@@ -234,5 +238,51 @@ export default function FilCommentaires({
         {...(placeholder ? { placeholder } : {})}
       />
     </div>
+  );
+}
+
+/**
+ * Le « j'aime » d'un commentaire (migration 109).
+ *
+ * Son état vit ici et non dans le fil : le cœur doit répondre au doigt, donc
+ * changer avant que le serveur ait répondu, et un état par commentaire tenu
+ * dans la boucle du fil aurait demandé une table d'états indexée par
+ * identifiant — pour la même chose.
+ *
+ * L'écriture ne revalide rien : reconstruire tout le fil pour un cœur coûte
+ * plus cher que ce qu'il affiche. En cas d'échec, l'état revient d'où il
+ * vient et le message le dit.
+ */
+function JaimeCommentaire({ commentaire }: { commentaire: Commentaire }) {
+  const toast = useToast();
+  const [, startTransition] = useTransition();
+  const [aime, setAime] = useState(commentaire.jaimePersonnel);
+  const [total, setTotal] = useState(commentaire.jaime);
+
+  function basculer() {
+    const cible = !aime;
+    setAime(cible);
+    setTotal((t) => t + (cible ? 1 : -1));
+    startTransition(async () => {
+      try {
+        await basculerJaimeCommentaire(commentaire.id, cible);
+      } catch {
+        setAime(!cible);
+        setTotal((t) => t + (cible ? -1 : 1));
+        toast("Réaction non enregistrée.", "error");
+      }
+    });
+  }
+
+  return (
+    <span className="-ml-2 flex">
+      <BoutonJaime
+        aime={aime}
+        total={total}
+        onBasculer={basculer}
+        petit
+        libelle={`le commentaire de ${commentaire.auteurNom}`}
+      />
+    </span>
   );
 }

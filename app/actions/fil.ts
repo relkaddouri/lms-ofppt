@@ -15,6 +15,9 @@ export type Commentaire = {
   /** Le visage du formateur, quand il en a déposé un (migration 106). */
   auteurPhotoUrl: string | null;
   estMien: boolean;
+  /** Réactions au commentaire lui-même (migration 109). */
+  jaime: number;
+  jaimePersonnel: boolean;
 };
 
 export type AnnonceFil = {
@@ -125,6 +128,29 @@ export async function getFil(groupeId: string): Promise<AnnonceFil[]> {
       getIdentiteFormateur(),
     ]);
 
+  // Les réactions aux commentaires ne se lisent qu'une fois les commentaires
+  // connus : leur clé est l'identifiant du commentaire, pas celui de
+  // l'annonce. Une lecture pour tout le fil, jamais une par commentaire.
+  const idsCommentaires = (commentairesRes.data ?? []).map((c) => c.id);
+  const { data: reactionsCommentaires } = idsCommentaires.length
+    ? await supabase
+        .from("reactions_commentaire")
+        .select("commentaire_id, user_id")
+        .in("commentaire_id", idsCommentaires)
+        .limit(2000)
+    : { data: [] };
+
+  const jaimeParCommentaire = new Map<string, { total: number; mien: boolean }>();
+  for (const r of reactionsCommentaires ?? []) {
+    const vue = jaimeParCommentaire.get(r.commentaire_id) ?? {
+      total: 0,
+      mien: false,
+    };
+    vue.total += 1;
+    if (r.user_id === user?.id) vue.mien = true;
+    jaimeParCommentaire.set(r.commentaire_id, vue);
+  }
+
   if (reactionsRes.error) throw new Error(reactionsRes.error.message);
   if (commentairesRes.error) throw new Error(commentairesRes.error.message);
 
@@ -198,6 +224,8 @@ export async function getFil(groupeId: string): Promise<AnnonceFil[]> {
             ? null
             : formateur.photoUrl,
           estMien: c.auteur_id === user?.id,
+          jaime: jaimeParCommentaire.get(c.id)?.total ?? 0,
+          jaimePersonnel: jaimeParCommentaire.get(c.id)?.mien ?? false,
         })),
       distinction: distinctions.get(a.id) ?? null,
       classement: classements.get(a.id) ?? null,
@@ -237,6 +265,41 @@ export async function basculerJaime(annonceId: string, aimer: boolean) {
 
   if (error) throw new Error(error.message);
   revalidatePath("/espace-stagiaire/fil");
+}
+
+/**
+ * Aimer un commentaire, ou retirer son « j'aime ».
+ *
+ * Même forme que `basculerJaime` sur une annonce : un `upsert` plutôt qu'un
+ * `insert`, pour qu'un double appui — deux doigts, un réseau lent — ne parte
+ * pas en erreur de clé dupliquée alors que l'état visé est déjà atteint.
+ *
+ * Pas de `revalidatePath` : l'écran a déjà bougé quand l'appel part, et
+ * reconstruire tout le fil pour un cœur coûterait plus cher que ce qu'il
+ * affiche. Le compte juste revient au prochain chargement.
+ */
+export async function basculerJaimeCommentaire(
+  commentaireId: string,
+  aimer: boolean,
+) {
+  const user = await getUser();
+  if (!user) throw new Error("Authentification requise.");
+
+  const supabase = await createClient();
+  const { error } = aimer
+    ? await supabase
+        .from("reactions_commentaire")
+        .upsert(
+          { commentaire_id: commentaireId, user_id: user.id },
+          { onConflict: "commentaire_id,user_id" },
+        )
+    : await supabase
+        .from("reactions_commentaire")
+        .delete()
+        .eq("commentaire_id", commentaireId)
+        .eq("user_id", user.id);
+
+  if (error) throw new Error(error.message);
 }
 
 /**

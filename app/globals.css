@@ -623,3 +623,50 @@ body {
   outline-offset: 2px;
   animation: halo-formateur 2.5s ease-in-out infinite;
 }
+
+/* Le « j'aime » du fil.
+   Le cœur bat une fois quand on le donne — assez pour qu'on sache que le doigt
+   a porté sur une liste de seize annonces où le compte ne bouge que d'une
+   unité. Il ne bat pas quand on le retire : on ne fête pas ce qu'on annule.
+   Le respect de `prefers-reduced-motion` est posé plus haut, pour toute la
+   feuille : les deux animations s'y réduisent à rien, et l'état final — cœur
+   plein, cœur disparu — reste celui qu'attend le code. */
+@keyframes coeur-bat {
+  0% {
+    transform: scale(1);
+  }
+  35% {
+    transform: scale(1.4);
+  }
+  65% {
+    transform: scale(0.9);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.coeur-bat {
+  animation: coeur-bat 420ms ease-out;
+}
+
+/* La volée. Chaque cœur porte sa dérive et son inclinaison en variables, ce
+   qui donne cinq trajectoires au lieu d'un seul gros cœur qui monte. */
+@keyframes coeur-envol {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 0) scale(0.35) rotate(var(--tourne, 0deg));
+  }
+  18% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--derive, 0px)), -52px) scale(1.1)
+      rotate(var(--tourne, 0deg));
+  }
+}
+
+.coeur-envol {
+  animation: coeur-envol 900ms cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+}
