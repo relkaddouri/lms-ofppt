@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import Avatar from "@/components/ui/Avatar";
 import type { Camarade } from "@/app/actions/fil";
 import { Send } from "lucide-react";
 
@@ -66,8 +67,16 @@ export default function ChampMention({
               <button
                 type="button"
                 onClick={() => choisir(c.nom)}
-                className="flex min-h-[44px] w-full items-center px-3 text-left text-sm text-ink hover:bg-wash"
+                className="flex min-h-[44px] w-full items-center gap-2.5 px-3 text-left text-sm text-ink hover:bg-wash"
               >
+                {/* Le visage avant le nom : dans un groupe où trois prénoms
+                    commencent pareil, c'est lui qui départage. */}
+                <Avatar
+                  prenom={c.nom}
+                  photo={c.photo}
+                  taille="xs"
+                  className="h-[26px] w-[26px] text-[9.5px]"
+                />
                 {c.nom}
               </button>
             </li>

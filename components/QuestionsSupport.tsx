@@ -391,18 +391,19 @@ function Entete({
 }) {
   return (
     <p className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-slate">
-      {/* Le visage du formateur, et lui seul : sous un cours, la question
-          vient du groupe et la réponse de qui l'anime — c'est cette
-          asymétrie-là qu'il faut voir avant de lire. */}
-      {message.auteurFormateur ? (
-        <Avatar
-          prenom={message.auteurNom}
-          photoUrl={message.auteurPhotoUrl}
-          taille="xs"
-          anneauOr
-          className="mr-1 h-6 w-6 text-[9.5px]"
-        />
-      ) : null}
+      {/* Tout le monde a un visage, pas seulement le formateur. Sous un
+          cours, une question et sa réponse s'enchaînent sans qu'on sache qui
+          parle : deux initiales grises se ressemblent toutes, et les photos
+          sont déjà là — c'est le trombinoscope du groupe. L'anneau d'or, lui,
+          reste au formateur. */}
+      <Avatar
+        prenom={message.auteurNom}
+        photo={message.auteurPhoto}
+        photoUrl={message.auteurPhotoUrl}
+        taille="xs"
+        anneauOr={message.auteurFormateur}
+        className="mr-1 h-[22px] w-[22px] text-[9px]"
+      />
       <span className="font-medium text-ink">
         {message.estMien ? "Vous" : message.auteurNom}
       </span>

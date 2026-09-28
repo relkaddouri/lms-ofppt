@@ -14,6 +14,8 @@ export type Commentaire = {
   auteurFormateur: boolean;
   /** Le visage du formateur, quand il en a déposé un (migration 106). */
   auteurPhotoUrl: string | null;
+  /** Le visage d'un camarade : son chemin dans le seau des stagiaires. */
+  auteurPhoto: string | null;
   estMien: boolean;
   /** Réactions au commentaire lui-même (migration 109). */
   jaime: number;
@@ -89,7 +91,12 @@ export type QuiAime = {
 };
 
 /** Camarade mentionnable, pour l'autocomplétion. */
-export type Camarade = { id: string; nom: string };
+export type Camarade = {
+  id: string;
+  nom: string;
+  /** Son visage, pour le reconnaître dans la liste avant de lire le nom. */
+  photo: string | null;
+};
 
 export async function getFil(groupeId: string): Promise<AnnonceFil[]> {
   const supabase = await createClient();
@@ -273,6 +280,7 @@ export async function getFil(groupeId: string): Promise<AnnonceFil[]> {
           auteurPhotoUrl: nomsParCompte.has(c.auteur_id)
             ? null
             : formateur.photoUrl,
+          auteurPhoto: photosParCompte.get(c.auteur_id) ?? null,
           estMien: c.auteur_id === user?.id,
           jaime: jaimeParCommentaire.get(c.id)?.total ?? 0,
           jaimePersonnel: jaimeParCommentaire.get(c.id)?.mien ?? false,
@@ -287,12 +295,17 @@ export async function getCamarades(groupeId: string): Promise<Camarade[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("stagiaires")
-    .select("id, nom, prenom")
+    .select("id, nom, prenom, photo")
     .eq("groupe_id", groupeId)
-    .order("prenom");
+    .order("prenom")
+    .limit(60);
 
   if (error) throw new Error(error.message);
-  return (data ?? []).map((s) => ({ id: s.id, nom: `${s.prenom} ${s.nom}` }));
+  return (data ?? []).map((s) => ({
+    id: s.id,
+    nom: `${s.prenom} ${s.nom}`,
+    photo: s.photo,
+  }));
 }
 
 export async function basculerJaime(annonceId: string, aimer: boolean) {

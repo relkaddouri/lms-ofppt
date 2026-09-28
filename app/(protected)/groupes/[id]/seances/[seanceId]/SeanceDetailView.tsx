@@ -533,6 +533,7 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
                   camarades={seance.presences.map((p) => ({
                     id: p.stagiaire_id,
                     nom: `${p.prenom} ${p.nom}`,
+                    photo: p.photo,
                   }))}
                   vue="formateur"
                 />
@@ -680,7 +681,12 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
                             />
                           ) : null}
                         </span>
-                        <Avatar prenom={p.prenom} nom={p.nom} taille="xs" />
+                        <Avatar
+                          prenom={p.prenom}
+                          nom={p.nom}
+                          photo={p.photo}
+                          taille="xs"
+                        />
                         <span className="flex min-w-0 flex-col gap-[2px]">
                           <span
                             className={`truncate text-[14.5px] font-semibold ${

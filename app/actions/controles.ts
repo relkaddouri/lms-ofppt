@@ -151,6 +151,8 @@ export type Passation = {
   publie_le?: string | null;
   /** Copie du compte de test du formateur (migration 093). */
   est_test?: boolean;
+  /** Le visage du stagiaire : on corrige une personne, pas un identifiant. */
+  photo?: string | null;
   nom_complet: string;
   email: string | null;
   note: number;
@@ -826,7 +828,7 @@ export async function getPassations(controleId: string): Promise<Passation[]> {
   const { data, error } = await supabase
     .from("passations_controle")
     .select(
-      "id, controle_id, nom_complet, email, note, responses, submitted_at, publie_le, stagiaires(cef, est_test)",
+      "id, controle_id, nom_complet, email, note, responses, submitted_at, publie_le, stagiaires(cef, est_test, photo)",
     )
     .eq("controle_id", controleId)
     .order("submitted_at", { ascending: true });
@@ -834,12 +836,17 @@ export async function getPassations(controleId: string): Promise<Passation[]> {
   if (error) throw new Error(error.message);
   return (data ?? []).map((p) => {
     const { stagiaires, ...reste } = p as typeof p & {
-      stagiaires: { cef: string | null; est_test: boolean } | null;
+      stagiaires: {
+        cef: string | null;
+        est_test: boolean;
+        photo: string | null;
+      } | null;
     };
     return {
       ...reste,
       cef: stagiaires?.cef ?? null,
       est_test: stagiaires?.est_test ?? false,
+      photo: stagiaires?.photo ?? null,
     } as Passation;
   });
 }
