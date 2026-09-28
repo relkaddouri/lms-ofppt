@@ -371,3 +371,245 @@ Dans ce sens-ci, l'entre-deux est inoffensif : la vue existe sans être lue, et 
 Une page a échoué une fois sur `PGRST303 — JWT issued at future`. C'est un **décalage d'horloge** : le jeton venait d'être créé par la machine de développement, dont l'heure est légèrement en avance sur celle de Supabase, et PostgREST refuse un jeton daté du futur. Ce n'est pas causé par l'absence du crochet de jeton — le crochet ne ferait que rendre cette lecture inutile dans ce cas précis, il ne corrigerait pas les horloges. Le vrai remède est la synchronisation d'horloge côté machine.
 
 **À refaire dans une semaine** : relire la courbe Usage → Fluid Active CPU de Vercel. Si les corrections tiennent leurs promesses, la consommation quotidienne devrait avoir été divisée par cinq environ. Si ce n'est pas le cas, le § 5 dit où regarder ensuite.
+
+---
+
+## 8. Deuxième audit — 28/09/2026
+
+Les corrections du premier audit sont en ligne depuis le 27 septembre. La
+consommation a baissé d'environ **40 %**, pas de 80 % comme annoncé. Voici
+pourquoi, et quoi faire maintenant.
+
+Ce que disent les captures Vercel :
+
+| | Avant | Aujourd'hui (journée non finie) |
+| --- | --- | --- |
+| Un jour de cours | 9 à 14 min | 7 min 25 s |
+| Part « function » | — | 4 min 52 s (65 %) |
+| Part « middleware » (proxy) | — | 2 min 35 s (35 %) |
+
+La part « function » a bien baissé. La part « middleware » n'a presque pas
+bougé. **Aucune correction du premier audit ne visait ce qui la fait tourner.**
+
+### 8.1 Ce qui déclenche encore le proxy
+
+Le proxy ne s'exécute pas seulement quand on change de page. Il s'exécute sur :
+
+1. **Le chargement d'une page** — normal, c'est fait pour ça.
+2. **La navigation entre deux pages** — normal aussi.
+3. **Les préchargements (« prefetch »)** — **c'est là qu'est le problème.**
+4. **Les Server Actions** — un « j'aime », un commentaire, un enregistrement.
+   Peu nombreux, ce n'est pas le sujet.
+
+Le préchargement, c'est Next.js qui va chercher une page **à l'avance**, sans
+qu'on ait cliqué. Il le fait pour **chaque lien qui apparaît à l'écran**, et
+seulement en production — c'est pour cela qu'on ne le voit jamais en local.
+
+Combien de liens par écran ? Mesuré sur l'application, liens distincts :
+
+| Écran | Liens |
+| --- | --- |
+| Progression d'un groupe | **40** |
+| Fiche d'un groupe | 30 |
+| Modules | 16 |
+| Calendrier | 15 |
+| Tableau de bord | 11 |
+| Liste des groupes | 11 |
+
+Ouvrir la progression d'un groupe, c'est donc **jusqu'à 41 exécutions du
+proxy** : la page, plus quarante préchargements. Et chaque exécution du proxy
+appelle Supabase pour vérifier qui vous êtes.
+
+Vérifié aussi : **aucun `prefetch={false}` dans le projet**, et **aucun
+fichier `loading.tsx`**. Autrement dit, rien ne freine les préchargements
+nulle part.
+
+### 8.2 Peut-on exclure les préchargements ? Oui, sans risque
+
+Next.js marque ses préchargements avec un en-tête : `next-router-prefetch`. Le
+matcher du proxy sait exclure une requête à cause d'un en-tête — c'est écrit
+dans la documentation de Next 16 livrée avec le projet
+(`node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/proxy.md`,
+option `missing`).
+
+Pourquoi c'est sans risque pour la session : un préchargement n'est pas une
+visite. Personne ne regarde la page à ce moment-là. La session sera rafraîchie
+à la vraie navigation qui suit, comme aujourd'hui. Et le seul rôle du proxy est
+justement ce rafraîchissement — il ne décide d'aucune autorisation (voir le
+commentaire en tête de `proxy.ts`). Les vraies barrières sont les policies RLS
+de Postgres et les redirections dans les layouts : elles ne bougent pas.
+
+**Attention à ne pas confondre** : il ne faut **pas** exclure sur le paramètre
+`_rsc`, que portent aussi les vraies navigations. Il faut exclure sur l'en-tête
+de préchargement, et lui seul.
+
+### 8.3 `getUser()` ou `getClaims()` ?
+
+Le proxy appelle aujourd'hui `supabase.auth.getUser()`, qui envoie une requête
+réseau à Supabase à **chaque** exécution.
+
+`getClaims()` peut vérifier le jeton **sur place**, sans réseau. Trois choses
+vérifiées dans le code installé :
+
+1. **Le projet s'y prête.** Les jetons sont signés en `ES256` (clé asymétrique,
+   `kid` présent). Avec l'ancien secret partagé `HS256`, `getClaims()` serait
+   retombé sur `getUser()` et n'aurait rien changé du tout.
+2. **Le rafraîchissement est conservé.** `getClaims()` commence par
+   `getSession()`, qui renouvelle le jeton s'il est près d'expirer. L'effet de
+   bord qu'on recherche reste là.
+3. **Mais le cache des clés est par client, pas global.** Le proxy crée un
+   client neuf à chaque requête : tel quel, `getClaims()` irait chercher le
+   trousseau de clés (`jwks.json`) à chaque fois — on remplacerait un appel
+   réseau par un autre. Il faut lire le trousseau **une fois**, le garder dans
+   une variable de module, et le passer à `getClaims()` (option `keys`).
+
+**Et surtout** : Vercel facture le **temps de calcul**, pas l'attente réseau
+(§ 0). Supprimer un appel réseau améliore la **rapidité**, mais ne réduit pas
+forcément la **facture** — la vérification de signature `ES256`, elle, est du
+calcul. Ce changement est bon pour l'utilisateur ; ce n'est pas le levier du
+quota.
+
+**Ce qui réduit la facture, c'est le nombre d'exécutions, pas leur contenu.**
+
+### 8.4 Le proxy fait-il autre chose ?
+
+Non. Il crée le client Supabase, appelle `getUser()`, recopie les cookies
+rafraîchis, et rend la réponse. Aucune redirection, aucune lecture de rôle,
+aucun test d'autorisation. De ce côté, il n'y a rien à retirer.
+
+### 8.5 Côté « function » : ce qui coûte le plus
+
+Le plus gros poste est le même des deux côtés : **ce que le gabarit (layout)
+lit avant même la page**.
+
+| Gabarit | Lectures en base par chargement de page |
+| --- | --- |
+| Espace formateur | **12** — dont 9 pour la seule cloche (`getNotifications`) |
+| Espace stagiaire | **4 à 6** |
+
+Et la page la plus visitée de tout le projet, le fil du stagiaire, ajoute
+**une dizaine de lectures** par-dessus (annonces, réactions, commentaires,
+camarades, distinctions, classements, réactions aux commentaires…). C'est
+l'écran d'arrivée de soixante personnes.
+
+La règle du `CLAUDE.md` — « les layouts tournent sur toutes les pages : y
+mettre le minimum » — n'est pas respectée par le gabarit formateur. La cloche
+n'a besoin que d'un identifiant et d'une date par notification ;
+`getNotifications` construit en plus tous les textes, les extraits, les noms et
+les photos, puis on jette tout sauf deux champs.
+
+### 8.6 L'état des branches
+
+À la date de cet audit, depuis cette machine, `git fetch` ne peut pas joindre
+le dépôt : **impossible de vérifier ici ce qui est réellement déployé.**
+
+- `perf-cpu` : d'après vous, en ligne depuis le 27 septembre. Cohérent avec la
+  baisse de la part « function ».
+- `perf-cpu-2` (corrections 7 et 9) : **non vérifiable d'ici**. Test simple :
+  ouvrir `/robots.txt` sur le site en ligne. S'il affiche `Disallow: /`, la
+  branche est en ligne. Sinon elle ne l'est pas.
+- Gain restant si `perf-cpu-2` n'est pas déployée : **faible**. La correction 7
+  (la fête) économise une lecture par arrivée sur l'espace stagiaire ; la
+  correction 9 (`robots.txt`) empêche les robots d'indexer — utile, mais ce
+  n'est pas ce qui remplit le quota.
+
+### 8.7 La mesure — ce que la correction 1 a donné
+
+Mesuré le 28/09/2026 sur une **build de production lancée en local**
+(`npm run build && npx next start -p 3002`), donc sans toucher au quota Vercel.
+Instruments temporaires, retirés depuis : un en-tête `x-pedago-proxy` posé par
+le proxy, et une ligne de journal au début de chaque gabarit.
+
+**a) Les préchargements partent bien tout seuls.** Sur la progression d'un
+groupe, sans le moindre clic : **environ 35 requêtes de préchargement**, rien
+qu'en affichant l'écran et en le faisant défiler. Sur l'écran d'arrivée du
+stagiaire : **9 requêtes, 5 pages distinctes** (Fil, Cours, Devoirs, Contrôles,
+Emploi du temps — les deux barres de navigation, haute et basse, pointent les
+mêmes adresses).
+
+**b) Ils ne réveillent plus le proxy.** Trois requêtes sur la même page, pour
+comparer :
+
+| Requête | Proxy exécuté | Réponse |
+| --- | --- | --- |
+| Chargement de page | **oui** | 82 Ko |
+| Navigation entre pages (`_rsc`) | **oui** | 60 Ko |
+| Préchargement | **non** | 330 octets |
+
+C'est exactement le but, et c'est aussi la preuve qu'il ne fallait **pas**
+exclure sur `_rsc` : la vraie navigation le porte aussi, et l'exclure aurait
+cessé de rafraîchir la session dès qu'on ne recharge plus la page entière.
+
+**c) Un préchargement n'exécute ni la page ni les gabarits.** C'est le résultat
+le plus important, et il n'était pas prévu.
+
+| Ce qu'on a fait | Préchargements partis | Gabarits exécutés côté serveur |
+| --- | --- | --- |
+| Ouvrir la progression d'un groupe | ~35 | **1** (le vrai chargement) |
+| Arriver sur le fil du stagiaire | 9 | **1** (le vrai chargement) |
+| Trois requêtes contrôlées (page, navigation, préchargement) | 1 | **2** sur 3 |
+
+Le préchargement rend 330 octets et ne lit rien en base. La raison : il n'y a
+**aucun `loading.tsx`** dans le projet, donc Next n'a aucune frontière où
+s'arrêter et se contente de rendre une coquille vide.
+
+**d) Connexion, déconnexion et navigation : intactes.** Connexion par lien
+magique côté formateur et côté stagiaire, quatre navigations d'affilée dans
+l'espace stagiaire (Fil → Cours → Devoirs → Contrôles → Fil), puis déconnexion
+— après quoi `/dashboard` et `/espace-stagiaire/fil` renvoient bien vers la
+page de connexion.
+
+### 8.8 Ce que la mesure change au plan
+
+Deux corrections prévues **tombent**, et pour la même raison : un préchargement
+ne coûte plus rien du tout.
+
+**La correction 2 (`loading.tsx`) est à écarter — elle ferait le contraire de
+ce qu'on cherche.** Sans frontière, un préchargement rend 330 octets. Avec un
+`loading.tsx`, on lui donne justement quelque chose à rendre : la coquille
+au-dessus de la frontière, **gabarit compris** — c'est-à-dire les douze
+lectures en base du gabarit formateur, multipliées par quarante préchargements.
+`loading.tsx` reste une bonne idée pour le **confort** (un écran d'attente
+plutôt qu'une page figée), mais il faudrait alors le payer. À décider comme un
+choix de confort, jamais comme une économie.
+
+**La correction 4 (`prefetch={false}`) n'a plus d'objet.** Elle visait le coût
+des préchargements ; ils ne coûtent plus ni proxy ni fonction. La retirer
+n'économiserait rien et rendrait la navigation moins vive.
+
+**Reste la correction 3, qui devient la première.** Le gabarit formateur lit
+douze fois la base à chaque chargement de page, dont neuf pour la seule cloche,
+et on jette tout sauf un identifiant et une date par notification. C'est
+maintenant le plus gros poste identifié.
+
+### 8.9 Le plan révisé, après mesure
+
+| # | Correction | Gain estimé | Risque | Temps | État |
+| --- | --- | --- | --- | --- | --- |
+| 1 | Exclure les préchargements du proxy | **−25 à −30 %** | très faible | 15 min | **fait**, mesuré |
+| 2 | Alléger la cloche dans le gabarit formateur | −10 à −15 % | faible | 1 h | à faire |
+| 3 | `getClaims()` avec trousseau en cache de module | rapidité, pas facture | faible | 45 min | optionnel |
+| — | ~~`loading.tsx`~~ | **augmenterait** le travail | — | — | **écartée** |
+| — | ~~`prefetch={false}`~~ | plus d'objet | — | — | **écartée** |
+
+Ce qu'il faut regarder ensuite dans Vercel : la part « middleware », qui doit
+passer de 35 % à une dizaine de pour cent. Si elle ne bouge pas, c'est que les
+préchargements n'étaient pas le gros du trafic en vrai usage, et il faudra
+compter les invocations par type dans l'onglet Observability.
+
+### 8.10 Comment refaire la mesure
+
+Les préchargements **n'existent pas en `npm run dev`** : Next les désactive
+hors production. Il faut une build de production, mais **en local** :
+
+```bash
+npm run build && npx next start -p 3002
+```
+
+Puis, dans la console du navigateur, compter ce qui est parti sans clic :
+
+```js
+performance.getEntriesByType('resource').filter((r) => r.name.includes('_rsc='))
+```
+
+Rien de tout cela ne passe par Vercel : le quota n'est pas touché.
