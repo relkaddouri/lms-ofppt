@@ -50,6 +50,12 @@ export default async function FilPage() {
           annonce={a}
           camarades={camarades}
           formateur={formateur}
+          moi={{
+            nom: `${identite.prenom} ${identite.nom}`,
+            photo: identite.photo,
+            photoUrl: null,
+            cestMoi: true,
+          }}
         />
       ))}
 

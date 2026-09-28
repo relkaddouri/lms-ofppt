@@ -12,7 +12,9 @@ import {
   basculerJaime,
   type AnnonceFil,
   type Camarade,
+  type QuiAime,
 } from "@/app/actions/fil";
+import QuiAAime from "@/components/QuiAAime";
 import type { IdentiteFormateur } from "@/app/actions/profil";
 import { MessageCircle } from "lucide-react";
 import BoutonJaime from "@/components/BoutonJaime";
@@ -29,15 +31,19 @@ export default function CarteAnnonce({
   annonce,
   camarades,
   formateur,
+  moi,
 }: {
   annonce: AnnonceFil;
   camarades: Camarade[];
   formateur: IdentiteFormateur;
+  /** Le lecteur, pour s'ajouter à la liste sans attendre le serveur. */
+  moi: QuiAime;
 }) {
   const toast = useToast();
   const [, startTransition] = useTransition();
   const [aime, setAime] = useState(annonce.jaimePersonnel);
   const [total, setTotal] = useState(annonce.jaime);
+  const [qui, setQui] = useState(annonce.qui);
   const [commentairesOuverts, setCommentairesOuverts] = useState(
     annonce.commentaires.length > 0,
   );
@@ -47,12 +53,19 @@ export default function CarteAnnonce({
     // L'état part en premier : un « j'aime » doit répondre au doigt.
     setAime(cible);
     setTotal((t) => t + (cible ? 1 : -1));
+    // La liste suit le compte : sans cela, « Vous et 6 autres » resterait
+    // « 6 autres » jusqu'au prochain chargement, et le geste n'aurait pas eu
+    // lieu pour celui qui vient de le faire.
+    setQui((l) =>
+      cible ? [moi, ...l.filter((p) => !p.cestMoi)] : l.filter((p) => !p.cestMoi),
+    );
     startTransition(async () => {
       try {
         await basculerJaime(annonce.id, cible);
       } catch {
         setAime(!cible);
         setTotal((t) => t + (cible ? -1 : 1));
+        setQui(annonce.qui);
         toast("Réaction non enregistrée.", "error");
       }
     });
@@ -121,6 +134,10 @@ export default function CarteAnnonce({
           ) : null}
         </div>
       )}
+
+      {/* Qui aime, avant les boutons : c'est une information sur l'annonce,
+          pas une commande. Rien ne s'affiche tant que personne n'a aimé. */}
+      <QuiAAime qui={qui} />
 
       {/* Deux icônes et deux nombres. Les mots « J'aime » et « Commenter »
           prenaient la moitié de la largeur d'un téléphone pour répéter ce que

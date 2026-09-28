@@ -16,6 +16,7 @@ import CarteDistinction from "@/components/CarteDistinction";
 import { type AnnonceFil, type Camarade } from "@/app/actions/fil";
 import { formatDateJour } from "@/lib/format";
 import { Megaphone, MessageCircle, Plus, Send, Trash2 } from "lucide-react";
+import QuiAAime from "@/components/QuiAAime";
 
 const VIDE = { titre: "", contenu: "", date: "" };
 
@@ -39,6 +40,9 @@ export default function AnnoncesManager({
   camarades: Camarade[];
 }) {
   const commentairesDe = new Map(fil.map((a) => [a.id, a.commentaires]));
+  // Qui a aimé : le formateur publie pour être lu, et le compte seul ne lui
+  // dit pas qui a répondu présent.
+  const quiAimeDe = new Map(fil.map((a) => [a.id, a.qui]));
   // Le formateur voit la fête telle qu'il l'a envoyée. Il n'a pas écrit cette
   // annonce à la main — la clôture l'a publiée pour lui — et un paragraphe de
   // texte brut ne lui dirait pas ce que le groupe a reçu.
@@ -175,6 +179,7 @@ export default function AnnoncesManager({
                   trouvait rien jusqu'ici. Ouvrir la saisie sans qu'il ait à
                   la chercher est la moitié du geste. */}
               <div className="mt-4 border-t border-separator pt-3.5">
+                <QuiAAime qui={quiAimeDe.get(a.id) ?? []} />
                 <p className="flex items-center gap-2 text-[13px] font-semibold text-slate-2">
                   <MessageCircle size={15} className="shrink-0" aria-hidden />
                   {(commentairesDe.get(a.id) ?? []).length === 0
