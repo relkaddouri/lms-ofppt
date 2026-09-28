@@ -51,15 +51,14 @@ export default function BasculeSommaire() {
       aria-pressed={!ouvert}
       aria-label={ouvert ? "Replier le sommaire" : "Afficher le sommaire"}
       title={ouvert ? "Replier le sommaire" : "Afficher le sommaire"}
+      // Ancré au coin haut-droit de la colonne, et non dans le flux : il
+      // garde exactement la même place que le panneau soit déployé ou réduit
+      // au rail, ce qui en fait un repère plutôt qu'un bouton qui se promène.
+      // `-right-5` le pose à cheval sur le bord, dans la gouttière.
+      //
       // Sur téléphone, le sommaire est déjà un dépliant au-dessus du cours :
       // un second bouton pour la même chose n'y aurait aucun sens.
-      //
-      // Une icône seule, et carrée : le mot « Sommaire » à côté de « M202 —
-      // Analyser les besoins des utilisateurs » faisait deux libellés pour
-      // deux choses différentes sur la même ligne, et c'est le titre du module
-      // qu'on venait y lire. Le nom reste, pour les lecteurs d'écran et au
-      // survol.
-      className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-[10px] border border-border bg-surface text-slate-2 transition-colors duration-150 ease-out hover:border-border-strong hover:text-ink md:inline-flex"
+      className="sommaire-bouton absolute -right-5 top-0 z-20 hidden h-10 w-10 items-center justify-center rounded-[10px] border border-border bg-surface text-slate-2 shadow-repos transition-colors duration-150 ease-out hover:border-border-strong hover:text-ink md:inline-flex"
     >
       <Icone size={17} aria-hidden />
     </button>

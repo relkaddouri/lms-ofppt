@@ -938,9 +938,60 @@ body {
    avant le premier pixel, donc la page s'ouvre déjà dans la bonne disposition.
    En passant par un état, elle se serait affichée en deux colonnes puis aurait
    sauté en une seule à l'hydratation — un déplacement du texte sous les yeux,
-   juste avant de commencer à lire. */
+   juste avant de commencer à lire.
+
+   Replié ne veut pas dire disparu. La colonne se réduit à un rail de
+   quarante-huit pixels qui garde la réponse à la seule question qu'on se pose
+   en lisant — « j'en suis où ? » —, et le panneau entier revient au survol,
+   posé par-dessus le cours au lieu de le décaler. Rouvrir pour consulter, puis
+   refermer pour lire, était un aller-retour de trop.
+
+   `focus-within` autant que `hover` : au clavier, on n'a pas de souris à
+   poser dessus. */
 @media (min-width: 768px) {
   :root[data-sommaire="ferme"] .sommaire-repliable {
+    width: 48px;
+  }
+
+  :root[data-sommaire="ferme"] .sommaire-rail {
+    display: flex;
+    height: calc(100dvh - 110px);
+    max-height: 420px;
+  }
+
+  :root[data-sommaire="ferme"] .sommaire-panneau {
     display: none;
+  }
+
+  /* Le panneau reparaît par-dessus, sans rien pousser. */
+  :root[data-sommaire="ferme"] .sommaire-repliable:hover .sommaire-panneau,
+  :root[data-sommaire="ferme"] .sommaire-repliable:focus-within .sommaire-panneau {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 15;
+    display: flex;
+    width: 280px;
+    box-shadow: var(--ombre-flottant);
+  }
+
+  :root[data-sommaire="ferme"] .sommaire-repliable:hover .sommaire-rail,
+  :root[data-sommaire="ferme"] .sommaire-repliable:focus-within .sommaire-rail {
+    visibility: hidden;
+  }
+
+  /* Le bouton suit le bord droit de ce qui est affiché, et lui seul bouge.
+     Déployé, la colonne fait 280 px et il est posé à cheval sur son bord ;
+     replié, il rentre dans le rail de 48 px ; et quand le panneau revient au
+     survol, il retrouve exactement la place qu'il occupe déployé — le même
+     point à 300 px du bord gauche de la colonne. Le laisser au bord du rail
+     pendant le survol le faisait chevaucher le titre du module. */
+  :root[data-sommaire="ferme"] .sommaire-bouton {
+    right: 4px;
+  }
+
+  :root[data-sommaire="ferme"] .sommaire-repliable:hover .sommaire-bouton,
+  :root[data-sommaire="ferme"] .sommaire-repliable:focus-within .sommaire-bouton {
+    right: -252px;
   }
 }

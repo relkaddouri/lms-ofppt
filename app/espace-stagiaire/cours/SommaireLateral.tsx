@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Check } from "lucide-react";
+import BasculeSommaire from "@/components/BasculeSommaire";
 import type { SommaireModule } from "@/app/actions/cours-stagiaire";
 
 /**
@@ -22,6 +23,11 @@ export default function SommaireLateral({
   module: SommaireModule;
   courantId: string;
 }) {
+  // Le rang du chapitre lu dans la suite complète : c'est ce que le rail
+  // affiche quand le panneau est replié — « où j'en suis », en trois
+  // caractères.
+  const tous = module.parties.flatMap((p) => p.chapitres);
+  const rang = tous.findIndex((c) => c.id === courantId) + 1;
   const liste = (
     <ol className="flex flex-col gap-4">
       {module.parties.map((p, i) => (
@@ -99,12 +105,42 @@ export default function SommaireLateral({
         <div className="mt-3 border-t border-separator pt-3">{liste}</div>
       </details>
 
-      {/* `sommaire-repliable` : la classe que vise la règle de repli. Le
-          bouton qui la commande vit dans la colonne de lecture — il doit
-          rester visible quand le panneau, lui, ne l'est plus. */}
-      <aside className="sommaire-repliable sticky top-[84px] hidden max-h-[calc(100dvh-110px)] w-[280px] shrink-0 flex-col gap-3 overflow-y-auto rounded-[14px] border border-border bg-surface px-4 py-4 md:flex">
-        {entete}
-        <div className="border-t border-separator pt-3">{liste}</div>
+      {/* Replié, le sommaire ne disparaît pas : il se réduit à un rail qui
+          dit où l'on en est, et le panneau entier revient au survol — posé
+          par-dessus le cours, sans le décaler. Un sommaire qui s'efface tout
+          à fait oblige à le rouvrir pour la seule question qu'on se pose en
+          lisant : « j'en suis où ? ».
+
+          `sommaire-repliable` est la classe que visent les règles de repli ;
+          le bouton, lui, est ancré au coin de la colonne et ne bouge pas d'un
+          état à l'autre. */}
+      <aside className="sommaire-repliable sticky top-[84px] hidden w-[280px] shrink-0 md:block">
+        <BasculeSommaire />
+
+        {/* Le rail : visible seulement quand le panneau est replié. */}
+        <div className="sommaire-rail hidden flex-col items-center gap-3 rounded-[14px] border border-border bg-surface py-4">
+          <span
+            className="flex w-1.5 flex-1 overflow-hidden rounded-full bg-wash-strong"
+            aria-hidden
+          >
+            {/* Elle se remplit par le haut, comme la liste qu'elle résume se
+                lit de haut en bas. Ancrée en bas, elle disait le contraire de
+                ce qu'elle montre. */}
+            <span
+              className="w-full self-start rounded-full bg-green"
+              style={{ height: `${module.progression}%` }}
+            />
+          </span>
+          <span className="flex flex-col items-center font-mono text-[11px] leading-tight text-slate">
+            <span className="font-semibold text-ink">{rang || "—"}</span>
+            <span className="text-muted">/{module.chapitres}</span>
+          </span>
+        </div>
+
+        <div className="sommaire-panneau flex max-h-[calc(100dvh-110px)] flex-col gap-3 overflow-y-auto rounded-[14px] border border-border bg-surface px-4 py-4">
+          {entete}
+          <div className="border-t border-separator pt-3">{liste}</div>
+        </div>
       </aside>
     </>
   );

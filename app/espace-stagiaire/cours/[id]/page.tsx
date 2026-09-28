@@ -9,7 +9,6 @@ import SupportLecture from "./SupportLecture";
 import QuestionsSupport from "@/components/QuestionsSupport";
 import TelechargerDiapos from "@/components/TelechargerDiapos";
 import SommaireLateral from "../SommaireLateral";
-import BasculeSommaire from "@/components/BasculeSommaire";
 import MarquerLu from "./MarquerLu";
 import QuizChapitre from "./QuizChapitre";
 import { getChapitre, getJalons } from "@/app/actions/cours-stagiaire";
@@ -46,11 +45,7 @@ export default async function CoursDetailPage({
       ) : null}
 
       <div className="min-w-0 flex-1 space-y-6">
-      {/* La commande du sommaire d'abord, puis le retour au module : le
-          bouton est à l'aplomb de la colonne qu'il ouvre et ferme, ce qui
-          dit sans un mot sur quoi il agit. */}
       <div className="flex flex-wrap items-center gap-2">
-        {chapitre ? <BasculeSommaire /> : null}
         <Link
           href={
             support.moduleId
