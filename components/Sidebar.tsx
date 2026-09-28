@@ -69,12 +69,17 @@ export default function Sidebar({
     href === "/dashboard" ? pathname === href : pathname.startsWith(href);
 
   return (
+    /* Elle occupe la hauteur de la fenêtre, et pas celle de la page : en
+       `md:static`, l'aside s'étirait sur toute la colonne, et le bloc du
+       compte avec « Déconnexion » descendait au pied d'un tableau de service
+       de trois écrans. `sticky` la laisse dans le flux — la grille à deux
+       colonnes tient donc toujours — tout en la fixant au bord haut. */
     <aside
-      className={`fixed inset-y-0 left-0 z-40 flex w-[264px] shrink-0 flex-col justify-between border-r border-border bg-surface py-[22px] transition-transform duration-200 ease-out md:static md:translate-x-0 ${
+      className={`fixed inset-y-0 left-0 z-40 flex w-[264px] shrink-0 flex-col justify-between border-r border-border bg-surface py-[22px] transition-transform duration-200 ease-out md:sticky md:top-0 md:h-screen md:self-start md:translate-x-0 ${
         open ? "translate-x-0" : "-translate-x-full"
       }`}
     >
-      <div className="flex flex-col gap-8">
+      <div className="flex min-h-0 flex-col gap-8 overflow-y-auto">
         <div className="flex items-center gap-[11px] px-6">
           <MarquePedago taille={12} ecart={3} />
           <span className="flex flex-col gap-px">
