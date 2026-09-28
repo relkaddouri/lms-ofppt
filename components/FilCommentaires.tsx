@@ -161,7 +161,7 @@ export default function FilCommentaires({
             vise === c.id
               ? "-mx-2.5 bg-tint-teal px-2.5 py-2"
               : c.auteurFormateur
-                ? "-mx-2.5 border border-or-clair bg-or-clair/45 px-2.5 py-2"
+                ? "-mx-2.5 border border-or-clair bg-or-fond px-2.5 py-2"
                 : ""
           }`}
         >

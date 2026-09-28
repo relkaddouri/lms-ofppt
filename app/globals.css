@@ -66,6 +66,11 @@
      palette catégorielle distingue des groupes, elle ne signale rien. */
   --or: #8a6416;
   --or-clair: #fbf0dd;
+  /* Le fond d'un message du formateur, précalculé et non obtenu par un
+     modificateur d'opacité : sur un alias de variable, Tailwind laisse tomber
+     le canal alpha et la teinte ressort pleine — assez soutenue, sur une
+     colonne entière de commentaires, pour tirer l'œil plus que le texte. */
+  --or-fond: #fdf8ee;
 
   /* Statuts (texte) */
   --status-success: #3c8c5c;
@@ -148,6 +153,7 @@
   --color-tint-alert-strong: var(--tint-alert-strong);
   --color-or: var(--or);
   --color-or-clair: var(--or-clair);
+  --color-or-fond: var(--or-fond);
 
   /* Quatre niveaux d'élévation, pas un cinquième */
   --shadow-repos: var(--ombre-repos);

@@ -199,7 +199,7 @@ export default function QuestionsSupport({
                             ? // La réponse du formateur, dans une pile de
                               // réponses de camarades : c'est celle qu'on est
                               // venu chercher.
-                              "rounded-[10px] border border-or-clair bg-or-clair/45 p-2.5"
+                              "rounded-[10px] border border-or-clair bg-or-fond p-2.5"
                             : ""
                       }
                     >
