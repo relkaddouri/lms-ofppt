@@ -1762,6 +1762,32 @@ export type Database = {
           },
         ]
       }
+      reactions_commentaire: {
+        Row: {
+          commentaire_id: string
+          created_at: string
+          user_id: string
+        }
+        Insert: {
+          commentaire_id: string
+          created_at?: string
+          user_id: string
+        }
+        Update: {
+          commentaire_id?: string
+          created_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reactions_commentaire_commentaire_id_fkey"
+            columns: ["commentaire_id"]
+            isOneToOne: false
+            referencedRelation: "commentaires_annonce"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       remarques_seance: {
         Row: {
           created_at: string
@@ -2637,6 +2663,10 @@ export type Database = {
       peut_acceder_annonce: { Args: { p_annonce_id: string }; Returns: boolean }
       peut_acceder_audit: {
         Args: { p_ligne: string; p_table: string }
+        Returns: boolean
+      }
+      peut_acceder_commentaire: {
+        Args: { p_commentaire_id: string }
         Returns: boolean
       }
       peut_acceder_controle: {
