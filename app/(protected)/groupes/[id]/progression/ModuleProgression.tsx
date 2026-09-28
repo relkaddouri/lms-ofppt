@@ -106,8 +106,14 @@ export default function ModuleProgression({
           </span>
 
           <span className="mt-1.5 flex flex-wrap items-center gap-3">
+            {/* Vert, comme partout ailleurs où l'application montre un
+                avancement — la fiche d'un stagiaire, la couverture d'un
+                module, le sommaire du stagiaire. Cette barre-ci était la
+                seule en encre : une inconsistance qui ne se voyait pas en
+                clair, et qui la rendait illisible en sombre. Le vert n'est
+                pas ici un statut ; c'est la couleur de ce qui est fait. */}
             <span
-              className="h-1.5 w-40 overflow-hidden rounded-full bg-wash"
+              className="h-1.5 w-40 overflow-hidden rounded-full bg-wash-strong"
               role="progressbar"
               aria-valuenow={pct}
               aria-valuemin={0}
@@ -115,7 +121,7 @@ export default function ModuleProgression({
               aria-label={`Avancement de ${nom}`}
             >
               <span
-                className="block h-full rounded-full bg-ink"
+                className="block h-full rounded-full bg-green transition-[width] duration-300"
                 style={{ width: `${pct}%` }}
               />
             </span>
