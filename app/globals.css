@@ -942,12 +942,13 @@ body {
 
    Replié ne veut pas dire disparu. La colonne se réduit à un rail de
    quarante-huit pixels — cliquable en entier — qui garde la réponse à la seule
-   question qu'on se pose en lisant : « j'en suis où ? ». Le panneau entier
-   revient au survol, posé par-dessus le cours au lieu de le décaler. Rouvrir
-   pour consulter, puis refermer pour lire, était un aller-retour de trop.
+   question qu'on se pose en lisant : « j'en suis où ? ».
 
-   `focus-within` autant que `hover` : au clavier, on n'a pas de souris à
-   poser dessus. */
+   Une version a fait reparaître le panneau entier au survol du rail, posé
+   par-dessus le cours. À l'usage, il surgissait dès qu'on passait la souris
+   par là pour aller ailleurs, et recouvrait la barre d'outils du chapitre.
+   Un panneau qui s'ouvre sans qu'on l'ait demandé dérange plus qu'il ne sert :
+   on ouvre d'un clic, on referme d'un clic, et rien ne bouge entre les deux. */
 @media (min-width: 768px) {
   :root[data-sommaire="ferme"] .sommaire-repliable {
     width: 48px;
@@ -959,25 +960,5 @@ body {
 
   :root[data-sommaire="ferme"] .sommaire-panneau {
     display: none;
-  }
-
-  /* Le panneau reparaît par-dessus, sans rien pousser. */
-  :root[data-sommaire="ferme"] .sommaire-repliable:hover .sommaire-panneau,
-  :root[data-sommaire="ferme"] .sommaire-repliable:focus-within .sommaire-panneau {
-    position: absolute;
-    top: 0;
-    left: 0;
-    z-index: 15;
-    display: flex;
-    width: 280px;
-    box-shadow: var(--ombre-flottant);
-  }
-
-  /* Le rail s'efface sous le panneau qu'il vient d'appeler, mais garde sa
-     place : le retirer du flux ferait perdre le survol, et le panneau
-     clignoterait à l'infini. */
-  :root[data-sommaire="ferme"] .sommaire-repliable:hover .sommaire-rail,
-  :root[data-sommaire="ferme"] .sommaire-repliable:focus-within .sommaire-rail {
-    visibility: hidden;
   }
 }
