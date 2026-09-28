@@ -331,7 +331,7 @@ export default function CalendrierSemaine({
                       </span>
                       {j.estAujourdhui ? (
                         <span
-                          className="ml-auto h-1.5 w-1.5 rounded-full bg-encre"
+                          className="ml-auto h-1.5 w-1.5 rounded-full bg-ink"
                           aria-label="aujourd'hui"
                         />
                       ) : null}

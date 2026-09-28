@@ -214,7 +214,7 @@ export default async function DashboardPage() {
 
           <div className="flex items-center gap-5 border-t border-separator pt-[18px]">
             <span className="flex items-center gap-2 text-[13.5px] text-body">
-              <span className="h-[2.5px] w-3.5 rounded-sm bg-encre" aria-hidden />
+              <span className="h-[2.5px] w-3.5 rounded-sm bg-ink" aria-hidden />
               Réalisé
             </span>
             <span className="flex items-center gap-2 text-[13.5px] text-slate">

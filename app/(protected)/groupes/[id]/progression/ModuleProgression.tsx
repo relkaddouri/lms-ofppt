@@ -115,7 +115,7 @@ export default function ModuleProgression({
               aria-label={`Avancement de ${nom}`}
             >
               <span
-                className="block h-full rounded-full bg-encre"
+                className="block h-full rounded-full bg-ink"
                 style={{ width: `${pct}%` }}
               />
             </span>

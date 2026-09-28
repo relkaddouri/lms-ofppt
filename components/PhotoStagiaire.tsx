@@ -63,7 +63,7 @@ function VoileDepot({ etape }: { etape: Etape }) {
       aria-modal="true"
       aria-label="Dépôt de la photo"
       aria-busy="true"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-encre/40 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-voile p-4"
     >
       <div className="w-full max-w-xs rounded-[14px] border border-border bg-surface p-6 shadow-flottant">
         <div className="flex items-center gap-3">
@@ -87,7 +87,7 @@ function VoileDepot({ etape }: { etape: Etape }) {
               key={e}
               aria-hidden
               className={`h-1 flex-1 rounded-full ${
-                i <= ORDRE.indexOf(etape) ? "bg-encre" : "bg-wash"
+                i <= ORDRE.indexOf(etape) ? "bg-ink" : "bg-wash"
               }`}
             />
           ))}

@@ -62,7 +62,7 @@ export default function Modal({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-encre/40 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-voile p-4"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) fermerRef.current();
       }}

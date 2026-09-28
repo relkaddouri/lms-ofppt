@@ -125,7 +125,7 @@ export default function ParticipationSeance({
                 {gagnant ? (
                   <span
                     aria-hidden
-                    className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full border-2 border-surface bg-[#F4C542] text-ink"
+                    className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full border-2 border-surface bg-[#F4C542] text-encre"
                   >
                     <Crown size={10} aria-hidden />
                   </span>

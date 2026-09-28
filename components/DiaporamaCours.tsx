@@ -288,7 +288,7 @@ export default function DiaporamaCours({
                 </h2>
               </div>
               <div
-                className="mt-[1cqh] h-[0.4cqh] w-[10cqw] rounded-full bg-encre"
+                className="mt-[1cqh] h-[0.4cqh] w-[10cqw] rounded-full bg-ink"
                 aria-hidden
               />
 
@@ -296,7 +296,7 @@ export default function DiaporamaCours({
                 {d.notions.map((n, i) => (
                   <li key={i} className="flex gap-[1.6cqw]">
                     <span
-                      className="mt-[0.9cqh] h-[1cqh] w-[1cqh] shrink-0 rounded-full bg-encre"
+                      className="mt-[0.9cqh] h-[1cqh] w-[1cqh] shrink-0 rounded-full bg-ink"
                       aria-hidden
                     />
                     <span

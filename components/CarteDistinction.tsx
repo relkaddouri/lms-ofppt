@@ -58,7 +58,10 @@ export default function CarteDistinction({
   return (
     <div
       ref={cadre}
-      className="relative overflow-hidden rounded-[16px] border border-[#E8D9A6] bg-[linear-gradient(180deg,#FDF8EA_0%,var(--surface)_78%)] px-5 py-6"
+      // Le halo et son liseré sont des jetons : écrits en dur, ils donnaient
+      // en thème sombre une crème claire qui s'assombrissait vers le bas —
+      // un dégradé sale, et un titre clair illisible sur sa moitié haute.
+      className="relative overflow-hidden rounded-[16px] border border-or-lisere bg-[linear-gradient(180deg,var(--or-halo)_0%,var(--surface)_78%)] px-5 py-6"
     >
       {/* 0,3 et non 0,38 : la carte est basse et large, et les gerbes de la
           modale éclateraient dans le texte. */}
@@ -79,7 +82,7 @@ export default function CarteDistinction({
           />
           <span
             aria-hidden
-            className="absolute -right-1 -top-1 flex h-7 w-7 items-center justify-center rounded-full border-2 border-surface bg-[#F4C542] text-ink"
+            className="absolute -right-1 -top-1 flex h-7 w-7 items-center justify-center rounded-full border-2 border-surface bg-[#F4C542] text-encre"
           >
             <Crown size={14} aria-hidden />
           </span>
