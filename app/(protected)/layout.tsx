@@ -1,6 +1,7 @@
 import { getUser, getCurrentUserRole } from "@/lib/supabase/server";
 import { getNotifications } from "@/app/actions/notifications";
 import { getAnneeCourante, getAnneesScolaires } from "@/app/actions/annees";
+import { getMonProfil } from "@/app/actions/profil";
 import { redirect } from "next/navigation";
 import AppShell from "@/components/AppShell";
 
@@ -32,17 +33,23 @@ export default async function ProtectedLayout({
   // Ce qui descend jusqu'à la cloche n'est pas un nombre mais un identifiant
   // et une date par notification : de quoi afficher la pastille et savoir ce
   // qui est nouveau, sans relire (audit du 26/09/2026, correction 4).
-  const [notifications, annees, courante] = await Promise.all([
+  // Le profil part dans le même lot que le reste : une ligne de deux colonnes
+  // lue par clé primaire, sans aller-retour supplémentaire puisqu'elle voyage
+  // avec les trois autres lectures du layout.
+  const [notifications, annees, courante, profil] = await Promise.all([
     getNotifications().then((liste) =>
       liste.map((n) => ({ id: n.id, date: n.date })),
     ),
     getAnneesScolaires(),
     getAnneeCourante(),
+    getMonProfil(),
   ]);
 
   return (
     <AppShell
       email={user.email ?? null}
+      nom={profil.nom}
+      photoUrl={profil.photoUrl}
       role={role}
       notifications={notifications}
       annees={annees}

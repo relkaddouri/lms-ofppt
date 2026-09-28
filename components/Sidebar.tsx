@@ -54,11 +54,16 @@ const GROUPES_NAV: { label: string; items: Entree[] }[] = [
 
 export default function Sidebar({
   email,
+  nom,
+  photoUrl,
   role,
   open,
   onClose,
 }: {
   email: string | null;
+  /** Le nom que le formateur s'est donné dans ses paramètres, s'il l'a fait. */
+  nom: string | null;
+  photoUrl: string | null;
   role: string | null;
   open: boolean;
   onClose: () => void;
@@ -126,17 +131,19 @@ export default function Sidebar({
       </div>
 
       <div className="mx-3 border-t border-separator px-3 pt-3.5">
+        {/* Le seul endroit où l'application dit à qui appartient la session :
+            le nom et le visage tels que les stagiaires les voient, et
+            l'adresse du compte dessous — celle par laquelle on se reconnecte,
+            donc celle qu'on cherche ici et nulle part ailleurs. */}
         <div className="flex items-center gap-3">
-          <Avatar prenom={email ?? "F"} taille="sm" />
+          <Avatar prenom={nom || email || "F"} photoUrl={photoUrl} taille="sm" />
           <span className="flex min-w-0 flex-col gap-px">
             <span className="truncate text-[14.5px] font-semibold text-ink">
-              {email ?? "Formateur"}
+              {nom || email || "Formateur"}
             </span>
-            {role ? (
-              <span className="text-[12.5px] capitalize text-slate-light">
-                {role}
-              </span>
-            ) : null}
+            <span className="truncate text-[12.5px] text-slate-light">
+              {nom && email ? email : (role ?? "")}
+            </span>
           </span>
         </div>
         <form action={signOutAction} className="mt-3">
