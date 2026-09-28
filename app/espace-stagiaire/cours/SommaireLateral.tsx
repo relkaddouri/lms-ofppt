@@ -9,6 +9,11 @@ import type { SommaireModule } from "@/app/actions/cours-stagiaire";
  * saute d'un chapitre à l'autre sans repasser par la liste. Sur téléphone il
  * se replie derrière un résumé — la place va au cours, pas à la table des
  * matières.
+ *
+ * Sur grand écran, il se replie aussi, mais à la demande : deux cent quatre-
+ * vingts pixels de table des matières valent le coup quand on cherche son
+ * chapitre, beaucoup moins quand on lit — surtout depuis qu'on peut grossir le
+ * texte, ce qui rétrécit d'autant la colonne qui reste.
  */
 export default function SommaireLateral({
   module,
@@ -94,7 +99,10 @@ export default function SommaireLateral({
         <div className="mt-3 border-t border-separator pt-3">{liste}</div>
       </details>
 
-      <aside className="sticky top-[84px] hidden max-h-[calc(100dvh-110px)] w-[280px] shrink-0 flex-col gap-3 overflow-y-auto rounded-[14px] border border-border bg-surface px-4 py-4 md:flex">
+      {/* `sommaire-repliable` : la classe que vise la règle de repli. Le
+          bouton qui la commande vit dans la colonne de lecture — il doit
+          rester visible quand le panneau, lui, ne l'est plus. */}
+      <aside className="sommaire-repliable sticky top-[84px] hidden max-h-[calc(100dvh-110px)] w-[280px] shrink-0 flex-col gap-3 overflow-y-auto rounded-[14px] border border-border bg-surface px-4 py-4 md:flex">
         {entete}
         <div className="border-t border-separator pt-3">{liste}</div>
       </aside>
