@@ -46,6 +46,13 @@
   --encre: #2e3b4e;
   --encre-fort: #25303f;
 
+  /* Le voile posé sous une modale. Il doit toujours assombrir ce qu'il couvre,
+     dans les deux thèmes : exprimé en encre, il s'éclaircissait en sombre et
+     éclairait la page au lieu de l'éteindre. L'opacité est cuite dans le
+     jeton — c'est elle qui change d'un thème à l'autre, pas seulement la
+     teinte. */
+  --voile: rgba(46, 59, 78, 0.4);
+
   /* Échelle de texte, du plus soutenu au plus effacé.
      --body et --slate-2 n'existent pas dans design_system.md alors qu'ils
      portent 143 et 110 occurrences dans les écrans livrés : divergence
@@ -84,6 +91,12 @@
      le canal alpha et la teinte ressort pleine — assez soutenue, sur une
      colonne entière de commentaires, pour tirer l'œil plus que le texte. */
   --or-fond: #fdf8ee;
+  /* Le haut du halo d'une carte de distinction. Un jeton et non une valeur
+     écrite dans le composant : en sombre, la carte passait d'une crème claire
+     à la surface sombre, ce qui donnait un dégradé sale et un titre illisible
+     sur sa moitié haute. */
+  --or-halo: #fdf8ea;
+  --or-liseré: #e8d9a6;
 
   /* Statuts (texte) */
   --status-success: #3c8c5c;
@@ -177,6 +190,7 @@
      « plus appuyé » veut dire « plus lumineux ». */
   --encre: #3a4a5d;
   --encre-fort: #4a5d73;
+  --voile: rgba(8, 12, 17, 0.66);
 
   /* Surfaces — jamais du noir pur : l'œil s'y fatigue autant que sur du blanc. */
     --paper: #141a22;
@@ -265,6 +279,7 @@
      « plus appuyé » veut dire « plus lumineux ». */
   --encre: #3a4a5d;
   --encre-fort: #4a5d73;
+  --voile: rgba(8, 12, 17, 0.66);
 
   /* Surfaces — jamais du noir pur : l'œil s'y fatigue autant que sur du blanc. */
   --paper: #141a22;
@@ -303,6 +318,10 @@
   --or: #d8ad50;
   --or-clair: #3c3119;
   --or-fond: #2a2416;
+  /* Le halo descend au lieu de monter : sur fond sombre, c'est une lueur
+     chaude qui s'éteint, pas une crème qui s'assombrit. */
+  --or-halo: #322814;
+  --or-liseré: #4a3d1c;
 
   /* Statuts (texte) */
   --status-success: #5fb883;
@@ -351,6 +370,7 @@
   --color-ofppt-ink-dark: var(--ofppt-ink-dark);
   --color-encre: var(--encre);
   --color-encre-fort: var(--encre-fort);
+  --color-voile: var(--voile);
   --color-coral: var(--ofppt-coral);
   --color-coral-dark: var(--ofppt-coral-dark);
   --color-coral-soft: var(--coral-soft);
@@ -381,6 +401,8 @@
   --color-or: var(--or);
   --color-or-clair: var(--or-clair);
   --color-or-fond: var(--or-fond);
+  --color-or-halo: var(--or-halo);
+  --color-or-lisere: var(--or-liseré);
 
   /* Quatre niveaux d'élévation, pas un cinquième */
   --shadow-repos: var(--ombre-repos);

@@ -44,7 +44,7 @@ export function FeteDistinction({
       role="dialog"
       aria-modal="true"
       aria-label="Stagiaire de la journée"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-encre/70 px-5 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-voile px-5 backdrop-blur-sm"
     >
       <div className="relative w-full max-w-sm overflow-hidden rounded-[20px] border border-border bg-surface px-6 py-8 text-center shadow-repos">
         <Feux actif />
@@ -68,7 +68,7 @@ export function FeteDistinction({
             />
             <span
               aria-hidden
-              className="absolute -right-1 -top-1 flex h-8 w-8 items-center justify-center rounded-full border-2 border-surface bg-[#F4C542] text-ink"
+              className="absolute -right-1 -top-1 flex h-8 w-8 items-center justify-center rounded-full border-2 border-surface bg-[#F4C542] text-encre"
             >
               <Crown size={15} aria-hidden />
             </span>

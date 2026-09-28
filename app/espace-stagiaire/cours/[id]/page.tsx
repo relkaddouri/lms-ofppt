@@ -139,7 +139,7 @@ export default async function CoursDetailPage({
                       {e.attendu.map((a, k) => (
                         <li key={k} className="flex gap-2">
                           <span
-                            className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-encre"
+                            className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-ink"
                             aria-hidden
                           />
                           <span>{a}</span>
@@ -172,7 +172,7 @@ export default async function CoursDetailPage({
                 {support.correction.aReprendre.map((r, i) => (
                   <li key={i} className="flex gap-2">
                     <span
-                      className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-encre"
+                      className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-ink"
                       aria-hidden
                     />
                     <span>{r}</span>

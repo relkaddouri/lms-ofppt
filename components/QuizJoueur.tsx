@@ -180,7 +180,7 @@ export default function QuizJoueur({
             <span
               key={i}
               className={`h-1.5 w-6 rounded-full ${
-                i < index ? "bg-teal" : i === index ? "bg-encre" : "bg-wash-strong"
+                i < index ? "bg-teal" : i === index ? "bg-ink" : "bg-wash-strong"
               }`}
             />
           ))}

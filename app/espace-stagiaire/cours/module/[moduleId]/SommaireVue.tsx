@@ -64,7 +64,7 @@ export default function SommaireVue({
         {reprendre ? (
           <Link
             href={`/espace-stagiaire/cours/${reprendre.id}`}
-            className="mt-3 inline-flex min-h-[44px] items-center gap-2 self-start rounded-[10px] bg-white px-4 text-[14.5px] font-semibold text-ink no-underline hover:no-underline"
+            className="mt-3 inline-flex min-h-[44px] items-center gap-2 self-start rounded-[10px] bg-white px-4 text-[14.5px] font-semibold text-encre no-underline hover:no-underline"
           >
             <Play className="h-4 w-4" aria-hidden />
             {fini

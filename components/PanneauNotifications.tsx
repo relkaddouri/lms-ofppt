@@ -157,7 +157,7 @@ export default function PanneauNotifications({
       <div
         aria-hidden
         onClick={onFermer}
-        className="fixed inset-0 z-40 bg-[rgba(46,59,78,0.32)] backdrop-blur-[1px]"
+        className="fixed inset-0 z-40 bg-voile backdrop-blur-[1px]"
       />
 
       <aside

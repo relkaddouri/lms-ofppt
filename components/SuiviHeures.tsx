@@ -9,7 +9,7 @@ function Jauge({ p }: { p: Plafond }) {
       ? "bg-coral"
       : p.niveau === "proche"
         ? "bg-teal"
-        : "bg-encre";
+        : "bg-ink";
 
   return (
     <div>
@@ -79,7 +79,7 @@ export default function SuiviHeures({
                     ? "bg-coral"
                     : annuel.niveau === "proche"
                       ? "bg-teal"
-                      : "bg-encre"
+                      : "bg-ink"
                 }`}
                 style={{ width: `${Math.min(100, Math.round(annuel.taux * 100))}%` }}
               />

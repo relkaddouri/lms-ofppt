@@ -101,7 +101,7 @@ export function Stepper({
       </ol>
       <div className="h-[5px] overflow-hidden rounded-full bg-wash">
         <div
-          className="h-full rounded-full bg-encre transition-[width] duration-200 ease-out"
+          className="h-full rounded-full bg-ink transition-[width] duration-200 ease-out"
           style={{ width: `${(etape / ETAPES.length) * 100}%` }}
         />
       </div>
