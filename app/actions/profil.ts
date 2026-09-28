@@ -47,6 +47,8 @@ export type MonProfil = {
 const lireIdentiteFormateur = cache(
   async function lireIdentiteFormateur(): Promise<IdentiteFormateur> {
     const supabase = await createClient();
+    // Même parti pris que `getMonProfil` : cette lecture décore un fil, elle
+    // ne le conditionne pas. Une erreur laisse « Votre formateur ».
     const { data } = await supabase
       .from("profils")
       .select("nom_complet, photo")
@@ -76,14 +78,17 @@ export async function getMonProfil(): Promise<MonProfil> {
   if (!user) throw new Error("Authentification requise.");
 
   const supabase = await createClient();
-  const { data, error } = await supabase
+  const { data } = await supabase
     .from("profils")
     .select("nom_complet, photo")
     .eq("id", user.id)
     .maybeSingle();
 
-  if (error) throw new Error(error.message);
-
+  // L'échec ne se propage pas : le layout de tout l'espace formateur lit cette
+  // ligne pour afficher un nom au pied du menu, et un `throw` y remplace
+  // l'application entière par la page d'erreur de Next — c'est l'incident que
+  // documente la migration 075. Un nom manquant vaut mieux qu'un écran rouge,
+  // et l'écran des paramètres, lui, dira l'erreur au moment d'enregistrer.
   return {
     id: user.id,
     nom: data?.nom_complet?.trim() || null,
