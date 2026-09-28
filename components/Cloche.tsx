@@ -9,11 +9,17 @@ import { jouerCarillon, preparerSon } from "@/lib/son";
 /**
  * La cloche, et le carillon qui la fait entendre.
  *
- * Une seule pour les deux espaces. Ce qui les sépare tient en trois choses —
- * la source, les mots, et ce que compte la pastille — et tout le reste est
- * identique : le rythme de vérification, le déverrouillage du son, la
+ * Une seule pour les deux espaces. Ce qui les sépare tient en deux choses —
+ * la source et les mots — et tout le reste est identique : le rythme de
+ * vérification, ce que compte la pastille, le déverrouillage du son, la
  * secousse, la coupure. Deux cloches auraient divergé au premier correctif,
  * comme les deux panneaux avant elles.
+ *
+ * La pastille compte ce qui est arrivé depuis le dernier regard, et se vide
+ * quand on regarde. Elle affichait chez le formateur le reste à faire, qu'un
+ * regard ne change pas : un « 40 » rouge en permanence, qui ne disait plus si
+ * quelque chose venait d'arriver. Ce reste se lit toujours, mais dans le
+ * panneau et en toutes lettres.
  *
  * Le carillon se déclenche sur l'**apparition d'une entrée**, jamais sur la
  * valeur du compteur. Chez le formateur le compteur descend quand il traite
@@ -27,7 +33,6 @@ export default function Cloche({
   resume,
   vide,
   cle,
-  mesure = "nouveaux",
   sonnePour,
   apercuInitial = null,
   className,
@@ -38,14 +43,6 @@ export default function Cloche({
   vide: string;
   /** Préfixe des clés de stockage : les deux espaces ne partagent pas leurs réglages. */
   cle: string;
-  /**
-   * Ce que dit la pastille.
-   *
-   * `total` chez le formateur — c'est un reste à faire, et il doit le voir en
-   * entier même s'il a déjà ouvert le panneau. `nouveaux` chez le stagiaire —
-   * rien ne l'attend, seul compte ce qui est arrivé depuis son dernier regard.
-   */
-  mesure?: "total" | "nouveaux";
   /**
    * Ce qui mérite d'être entendu, quand tout ne le mérite pas.
    *
@@ -87,6 +84,14 @@ export default function Cloche({
 
   /** L'horodatage du dernier regard ; tout ce qui suit est « nouveau ». */
   const depuis = useRef<string | null>(null);
+  /**
+   * Celui d'**avant** cette ouverture, figé pour la durée du panneau.
+   *
+   * Sans lui, ouvrir le panneau remettrait la pendule à l'heure une fraction
+   * de seconde avant qu'il s'affiche : tout y serait déjà ancien, et il n'y
+   * aurait plus rien à repérer dans une liste de quarante lignes.
+   */
+  const [vuAvant, setVuAvant] = useState<string | null>(null);
   /** Les entrées déjà vues : c'est leur nouveauté, pas leur nombre, qui sonne. */
   const connues = useRef<Set<string> | null>(null);
   const sonActif = useRef(true);
@@ -117,13 +122,7 @@ export default function Cloche({
         if (annule) return;
 
         const vu = depuis.current;
-        setCompte(
-          mesure === "total"
-            ? liste.length
-            : vu
-              ? liste.filter((n) => n.date > vu).length
-              : liste.length,
-        );
+        setCompte(vu ? liste.filter((n) => n.date > vu).length : liste.length);
 
         const ids = new Set(liste.map((n) => n.id));
         // La première relecture ne sonne pas : arriver sur une page n'est pas
@@ -154,13 +153,7 @@ export default function Cloche({
     const depart = apercu.current;
     if (depart) {
       const vu = depuis.current;
-      setCompte(
-        mesure === "total"
-          ? depart.length
-          : vu
-            ? depart.filter((n) => n.date > vu).length
-            : depart.length,
-      );
+      setCompte(vu ? depart.filter((n) => n.date > vu).length : depart.length);
       // Les entrées connues viennent du serveur : le premier tour ne sonnera
       // donc que pour ce qui est arrivé depuis le chargement de la page.
       connues.current = new Set(depart.map((n) => n.id));
@@ -177,17 +170,22 @@ export default function Cloche({
       window.clearTimeout(finSecousse.current);
       document.removeEventListener("visibilitychange", verifier);
     };
-  }, [charger, mesure, sonnePour]);
+  }, [charger, sonnePour]);
 
   const ouvrir = useCallback(() => {
     setOuvert(true);
     setSonne(false);
+    // Ce que le panneau montrera comme neuf : l'état d'avant l'ouverture.
+    setVuAvant(depuis.current);
     const maintenant = new Date().toISOString();
     depuis.current = maintenant;
     ecrire(cleVues, maintenant);
-    // Le reste à faire du formateur ne s'efface pas parce qu'il l'a regardé.
-    if (mesure === "nouveaux") setCompte(0);
-  }, [cleVues, mesure]);
+    // Regarder, c'est avoir vu : la pastille repart de zéro des deux côtés.
+    // Elle comptait auparavant le reste à faire du formateur, qui ne bougeait
+    // pas d'un regard — un « 40 » permanent, que l'œil finit par ne plus lire.
+    // Ce reste n'a pas disparu : il se lit dans le panneau, en toutes lettres.
+    setCompte(0);
+  }, [cleVues]);
 
   const basculerSon = useCallback(() => {
     // L'état courant se lit dans la référence et non dans une fonction de mise
@@ -236,6 +234,7 @@ export default function Cloche({
         titre={titre}
         resume={resume}
         vide={vide}
+        depuis={vuAvant}
         actions={
           <button
             type="button"

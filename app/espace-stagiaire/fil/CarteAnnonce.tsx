@@ -14,7 +14,8 @@ import {
   type Camarade,
 } from "@/app/actions/fil";
 import type { IdentiteFormateur } from "@/app/actions/profil";
-import { Heart, MessageCircle } from "lucide-react";
+import { MessageCircle } from "lucide-react";
+import BoutonJaime from "@/components/BoutonJaime";
 
 /**
  * Une annonce dans le fil.
@@ -121,35 +122,35 @@ export default function CarteAnnonce({
         </div>
       )}
 
+      {/* Deux icônes et deux nombres. Les mots « J'aime » et « Commenter »
+          prenaient la moitié de la largeur d'un téléphone pour répéter ce que
+          le cœur et la bulle montrent ; le compte, lui, est la seule chose
+          que l'icône ne peut pas dire. */}
       <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={jaimer}
-          aria-pressed={aime}
-          aria-label={aime ? "Retirer j'aime" : "J'aime"}
-          className={`flex min-h-[44px] items-center gap-2 rounded-[11px] border px-[15px] py-[11px] text-sm font-semibold transition-colors duration-150 ease-out ${
-            aime
-              ? "border-ink bg-ink text-white"
-              : "border-border-strong bg-surface text-body hover:border-ink hover:bg-paper"
-          }`}
-        >
-          <Heart
-            size={17}
-            className={`shrink-0 ${aime ? "fill-white" : ""}`}
-            aria-hidden
-          />
-          J&apos;aime <span className="font-mono font-medium">{total}</span>
-        </button>
+        <BoutonJaime
+          aime={aime}
+          total={total}
+          onBasculer={jaimer}
+          libelle="cette annonce"
+        />
 
         <button
           type="button"
           onClick={() => setCommentairesOuverts((o) => !o)}
           aria-expanded={commentairesOuverts}
-          className="flex min-h-[44px] items-center gap-2 rounded-[11px] border border-border-strong bg-surface px-[15px] py-[11px] text-sm font-semibold text-body transition-colors duration-150 ease-out hover:border-ink hover:bg-paper"
+          aria-label={
+            commentairesOuverts
+              ? "Masquer les commentaires"
+              : "Afficher les commentaires et commenter"
+          }
+          className="flex min-h-[44px] items-center gap-1.5 rounded-[11px] border border-border-strong bg-surface px-[15px] py-[11px] text-sm font-semibold text-body transition-colors duration-150 ease-out hover:border-ink hover:bg-paper"
         >
           <MessageCircle size={17} className="shrink-0" aria-hidden />
-          Commenter{" "}
-          <span className="font-mono font-medium">{compteCommentaires}</span>
+          {compteCommentaires > 0 ? (
+            <span className="font-mono font-medium tabular-nums">
+              {compteCommentaires}
+            </span>
+          ) : null}
         </button>
       </div>
 

@@ -80,6 +80,7 @@ export default function PanneauNotifications({
   titre,
   resume,
   vide,
+  depuis,
   actions,
 }: {
   ouvert: boolean;
@@ -98,6 +99,16 @@ export default function PanneauNotifications({
   resume: (nombre: number) => string;
   /** Ce qui s'affiche quand il n'y a rien : le sens diffère d'un espace à l'autre. */
   vide: string;
+  /**
+   * L'horodatage du regard **précédent** — pas celui-ci.
+   *
+   * C'est lui qui sépare le neuf de l'ancien. La cloche le remplace à
+   * l'ouverture ; si le panneau lisait la nouvelle valeur, tout serait déjà
+   * ancien au moment de s'afficher, et on ne saurait jamais ce qui vient
+   * d'arriver. Il garde donc celle d'avant, et la prochaine ouverture rangera
+   * ces lignes parmi les anciennes.
+   */
+  depuis?: string | null;
   /**
    * Réglages propres à l'espace, posés à gauche de la fermeture.
    *
@@ -135,6 +146,10 @@ export default function PanneauNotifications({
 
   if (!ouvert) return null;
 
+  const nouvelles = depuis
+    ? (entrees ?? []).filter((n) => n.date > depuis).length
+    : (entrees?.length ?? 0);
+
   let trancheCourante = "";
 
   return (
@@ -156,9 +171,12 @@ export default function PanneauNotifications({
             <h2 className="font-display text-xl font-semibold text-ink">
               {titre}
             </h2>
-            {entrees && entrees.length > 0 ? (
+            {/* Elle ne compte que ce qui est arrivé depuis le dernier regard.
+                Le total, lui, se lit dans la ligne de résumé juste dessous :
+                un chiffre rouge qui ne bouge jamais cesse d'être un signal. */}
+            {nouvelles > 0 ? (
               <span className="rounded-full bg-coral px-2.5 py-0.5 font-mono text-[12.5px] font-semibold text-white">
-                {String(entrees.length).padStart(2, "0")}
+                {String(nouvelles).padStart(2, "0")}
               </span>
             ) : null}
             <span className="ml-auto flex items-center gap-1.5">
@@ -184,7 +202,11 @@ export default function PanneauNotifications({
             const t = tranche(n.date);
             const nouvelleTranche = t !== trancheCourante;
             if (nouvelleTranche) trancheCourante = t;
-            const recente = t === "AUJOURD'HUI";
+            // Neuf = arrivé depuis le dernier regard. « Du jour » ne le
+            // disait pas : une notification vue dix fois restait soulignée
+            // jusqu'à minuit, et une arrivée avant-hier et jamais lue ne
+            // l'était pas.
+            const neuve = depuis ? n.date > depuis : true;
             return (
               <div key={n.id}>
                 {nouvelleTranche ? (
@@ -197,13 +219,31 @@ export default function PanneauNotifications({
                   href={n.href}
                   onClick={onFermer}
                   className={`flex gap-3 border-l-2 px-6 py-3.5 no-underline transition-colors duration-150 ease-out hover:no-underline ${
-                    recente
+                    neuve
                       ? "border-l-coral bg-paper-alt hover:bg-paper"
                       : "border-l-transparent hover:bg-paper-alt"
                   }`}
                 >
+                  {/* Le visage de qui a fait le geste, et l'icône du genre
+                      en pastille dessous : on reconnaît la personne avant de
+                      lire, et le genre avant de comprendre. Sans auteur — un
+                      contrôle qu'on s'est laissé à soi-même —, l'icône reprend
+                      toute la place. */}
                   {n.auteur ? (
-                    <Avatar prenom={n.auteur} taille="xs" className="h-9 w-9" />
+                    <span className="relative flex h-9 w-9 shrink-0">
+                      <Avatar
+                        prenom={n.auteur}
+                        photo={n.auteurPhoto}
+                        photoUrl={n.auteurPhotoUrl ?? null}
+                        taille="xs"
+                        className="h-9 w-9"
+                      />
+                      <span
+                        className={`absolute -bottom-0.5 -right-0.5 flex h-[17px] w-[17px] items-center justify-center rounded-full border-2 border-surface ${fond}`}
+                      >
+                        <Icone size={9} aria-hidden className={encre} />
+                      </span>
+                    </span>
                   ) : (
                     <span
                       className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-[9px] ${fond}`}
@@ -234,7 +274,7 @@ export default function PanneauNotifications({
                     </span>
                   </div>
 
-                  {recente ? (
+                  {neuve ? (
                     <span
                       aria-hidden
                       className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-coral"
