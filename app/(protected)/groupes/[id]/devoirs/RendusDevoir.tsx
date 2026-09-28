@@ -8,6 +8,7 @@ import { useToast } from "@/components/ui/Toast";
 import { formatDateTime } from "@/lib/format";
 import { tailleLisible } from "@/lib/devoirs";
 import { getRendusDevoir, lienRendu, type RenduRecu } from "@/app/actions/devoirs";
+import { telechargerFichier } from "@/lib/telechargement";
 
 /**
  * Les copies déposées sur un devoir.
@@ -51,8 +52,8 @@ export default function RendusDevoir({
       try {
         // Le bucket est privé : le lien est signé à la demande, sous la
         // session du formateur, et expire au bout de quelques minutes.
-        const url = await lienRendu(rendu.fichier!.chemin);
-        window.open(url, "_blank", "noopener,noreferrer");
+        const url = await lienRendu(rendu.fichier!.chemin, rendu.fichier!.nom);
+        telechargerFichier(url, rendu.fichier!.nom);
       } catch (e) {
         toast(e instanceof Error ? e.message : "Téléchargement impossible.", "error");
       }

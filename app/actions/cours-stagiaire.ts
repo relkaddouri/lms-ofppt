@@ -118,31 +118,94 @@ const lireProgression = cache(async function lireProgression(): Promise<
 const pourcentage = (lus: number, total: number) =>
   total > 0 ? Math.round((lus / total) * 100) : 0;
 
+/** Une séance du groupe du stagiaire, et la séance qui porte son contenu. */
+type LigneSeanceCours = {
+  id: string;
+  date: string | null;
+  module_id: string;
+  /** Renseigné quand la séance est un miroir d'un groupe parallèle (§4.3bis). */
+  contenu_source_id: string | null;
+  modules: LigneSupport["seances"] extends infer S
+    ? S extends { modules: infer M }
+      ? M
+      : never
+    : never;
+  suggestions_pedagogiques: LigneSupport["seances"] extends infer S
+    ? S extends { suggestions_pedagogiques: infer P }
+      ? P
+      : never
+    : never;
+};
+
 /**
- * Tous les supports remis au groupe du stagiaire, une version par séance.
+ * Le parcours du stagiaire : ses séances, et pour chacune le support qui la
+ * porte — le sien, ou celui de la séance dont elle tient son contenu.
  *
- * La politique `supports_lecture_stagiaire` borne déjà la lecture à son
- * groupe et aux supports qui lui sont destinés.
+ * Deux lectures, et le rapprochement se fait ici. Interroger directement les
+ * supports ne marchait que pour un groupe qui porte son propre contenu :
+ * quand la séance est un miroir (§4.3bis), le support appartient à la séance
+ * de l'autre groupe, et le parcours restait vide — dix-huit stagiaires de
+ * DES102 sans aucun cours, alors que le cours existait (signalé le
+ * 28/09/2026).
+ *
+ * C'est aussi ce qui garde les **bonnes dates** : le chapitre est daté de la
+ * séance du stagiaire, pas de celle du groupe parallèle.
  */
 const lireSupports = cache(async function lireSupports(): Promise<
   LigneSupport[]
 > {
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("supports_seance")
+
+  // La politique `seances_lecture_stagiaire` borne déjà ces séances à son
+  // groupe : rien à filtrer de plus.
+  const { data: seances, error: errSeances } = await supabase
+    .from("seances")
     .select(
-      "id, seance_id, type, version, titre:contenu->>titre, seances(date, module_id, modules(nom, competences(code_operationnel)), suggestions_pedagogiques(ordre, apprentissage_base, elements_competence(lettre, intitule, ordre)))",
-    )
+      "id, date, module_id, contenu_source_id, modules(nom, competences(code_operationnel)), suggestions_pedagogiques(ordre, apprentissage_base, elements_competence(lettre, intitule, ordre))",
+    );
+  if (errSeances) throw new Error(errSeances.message);
+
+  const lignes = (seances ?? []) as unknown as LigneSeanceCours[];
+  const porteuses = [
+    ...new Set(lignes.map((s) => s.contenu_source_id ?? s.id)),
+  ];
+  if (porteuses.length === 0) return [];
+
+  const { data: supports, error } = await supabase
+    .from("supports_seance")
+    .select("id, seance_id, type, version, titre:contenu->>titre")
     .eq("destinataire", "stagiaire")
+    .in("seance_id", porteuses)
     .order("version", { ascending: false });
   if (error) throw new Error(error.message);
 
-  // Une séance, un chapitre : la version la plus haute fait foi.
-  const parSeance = new Map<string, LigneSupport>();
-  for (const l of (data ?? []) as unknown as LigneSupport[]) {
-    if (!parSeance.has(l.seance_id)) parSeance.set(l.seance_id, l);
+  // Une séance porteuse, un chapitre : la version la plus haute fait foi.
+  const parPorteuse = new Map<string, (typeof supports)[number]>();
+  for (const l of supports ?? []) {
+    if (!parPorteuse.has(l.seance_id)) parPorteuse.set(l.seance_id, l);
   }
-  return [...parSeance.values()];
+
+  const chapitres: LigneSupport[] = [];
+  for (const s of lignes) {
+    const support = parPorteuse.get(s.contenu_source_id ?? s.id);
+    if (!support) continue;
+    chapitres.push({
+      id: support.id,
+      // La séance du stagiaire, et non celle qui porte le contenu : c'est la
+      // sienne qui donne la date et la place dans son parcours.
+      seance_id: s.id,
+      type: support.type as LigneSupport["type"],
+      version: support.version,
+      titre: (support as { titre: string | null }).titre,
+      seances: {
+        date: s.date,
+        module_id: s.module_id,
+        modules: s.modules,
+        suggestions_pedagogiques: s.suggestions_pedagogiques,
+      },
+    } as LigneSupport);
+  }
+  return chapitres;
 });
 
 /** L'ordre du parcours : la partie, puis l'apprentissage, puis la date. */

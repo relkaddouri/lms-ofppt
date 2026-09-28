@@ -27,6 +27,7 @@ import {
   type DocumentStage,
 } from "@/app/actions/stages";
 import { ChevronRight, Download, Trash2, Upload } from "lucide-react";
+import { telechargerFichier } from "@/lib/telechargement";
 
 const BUCKET = "documents-stage";
 
@@ -161,7 +162,7 @@ export default function CarteStage({ stage }: { stage: StageStagiaire }) {
     startTransition(async () => {
       try {
         const url = await urlDocumentStage(doc.chemin, doc.nom_fichier);
-        window.open(url, "_blank", "noopener");
+        telechargerFichier(url, doc.nom_fichier);
       } catch (e) {
         toast(e instanceof Error ? e.message : "Lien indisponible.", "error");
       }
