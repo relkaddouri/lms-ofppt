@@ -6,11 +6,11 @@ import { getNotificationsStagiaire } from "@/app/actions/notifications-stagiaire
 /**
  * La cloche du stagiaire (PRD §4.5).
  *
- * Même cloche que celle du formateur, trois choses en moins : ce qu'elle lit,
- * ce qu'elle dit, et ce qu'elle compte. Chez lui une notification est une
- * tâche, et la pastille un reste à faire ; ici c'est ce qui vient d'arriver
- * dans le groupe, et la pastille ne compte que ce qu'il n'a pas encore
- * regardé — il n'a rien à traiter, donc rien ne se résout.
+ * Même cloche que celle du formateur, deux choses en moins : ce qu'elle lit et
+ * ce qu'elle dit. Chez lui une notification est une tâche qui disparaît quand
+ * elle est faite ; ici c'est ce qui vient d'arriver dans le groupe, et rien ne
+ * se résout. Les deux pastilles comptent la même chose — ce qui est arrivé
+ * depuis le dernier regard.
  */
 export default function ClocheStagiaire({
   apercuInitial = null,
@@ -30,7 +30,6 @@ export default function ClocheStagiaire({
       }
       vide="Aucune annonce, aucun commentaire, aucune réponse depuis deux semaines."
       cle="nouveautes"
-      mesure="nouveaux"
       className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border bg-surface text-slate-2 transition-colors duration-150 ease-out hover:bg-paper hover:text-ink"
     />
   );

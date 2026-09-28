@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import type { Notification } from "@/app/actions/notifications";
+import { getIdentiteFormateur } from "@/app/actions/profil";
 
 /**
  * Ce qui vient de se passer dans le groupe du stagiaire (PRD §4.5).
@@ -35,7 +36,8 @@ export async function getNotificationsStagiaire(): Promise<Notification[]> {
     Date.now() - JOURS * 24 * 60 * 60 * 1000,
   ).toISOString();
 
-  const [annoncesRes, commentairesRes, reponsesRes, testsRes] = await Promise.all([
+  const [annoncesRes, commentairesRes, reponsesRes, testsRes, camaradesRes, formateur] =
+    await Promise.all([
     supabase
       .from("annonces")
       .select("id, titre, created_at")
@@ -69,7 +71,27 @@ export async function getNotificationsStagiaire(): Promise<Notification[]> {
       .gte("ouvert_le", depuis)
       .order("ouvert_le", { ascending: false })
       .limit(10),
+    // Qui a écrit : le nom et le visage de ses camarades, dans le seul groupe
+    // auquel il accède.
+    supabase
+      .from("stagiaires")
+      .select("user_id, nom, prenom, photo")
+      .eq("groupe_id", moi.groupe_id)
+      .not("user_id", "is", null)
+      .limit(60),
+    getIdentiteFormateur(),
   ]);
+
+  // Un auteur sans fiche de camarade est le formateur : c'est le seul autre
+  // compte qui accède au groupe. Sa photo vit dans un autre seau, d'où
+  // l'adresse déjà résolue plutôt qu'un chemin.
+  const camarades = new Map<string, { nom: string; photo: string | null }>();
+  for (const c of camaradesRes.data ?? []) {
+    if (c.user_id) {
+      camarades.set(c.user_id, { nom: `${c.prenom} ${c.nom}`, photo: c.photo });
+    }
+  }
+  const qui = (auteurId: string) => camarades.get(auteurId);
 
   const notifications: Notification[] = [];
 
@@ -77,10 +99,12 @@ export async function getNotificationsStagiaire(): Promise<Notification[]> {
     notifications.push({
       id: `annonce-${a.id}`,
       genre: "commentaire",
-      texte: "Une nouvelle annonce a été publiée",
+      texte: `${formateur.nom ?? "Votre formateur"} a publié une annonce`,
       reference: a.titre,
       extrait: null,
-      auteur: null,
+      auteur: formateur.nom,
+      auteurPhotoUrl: formateur.photoUrl,
+      auteurPhoto: null,
       date: a.created_at,
       href: "/espace-stagiaire/fil",
     });
@@ -92,10 +116,12 @@ export async function getNotificationsStagiaire(): Promise<Notification[]> {
     notifications.push({
       id: `commentaire-${c.id}`,
       genre: "commentaire",
-      texte: "Nouveau commentaire sur une annonce",
+      texte: `${qui(c.auteur_id)?.nom ?? formateur.nom ?? "Votre formateur"} a commenté une annonce`,
       reference: c.annonces?.titre ?? null,
       extrait: c.texte,
-      auteur: null,
+      auteur: qui(c.auteur_id)?.nom ?? formateur.nom,
+      auteurPhoto: qui(c.auteur_id)?.photo ?? null,
+      auteurPhotoUrl: qui(c.auteur_id) ? null : formateur.photoUrl,
       date: c.created_at,
       // Jusqu'au commentaire : le fil du stagiaire en porte l'ancre.
       href: `/espace-stagiaire/fil#commentaire-${c.id}`,
@@ -108,10 +134,12 @@ export async function getNotificationsStagiaire(): Promise<Notification[]> {
     notifications.push({
       id: `reponse-${r.id}`,
       genre: "question",
-      texte: "Réponse à une question sur un cours",
+      texte: `${qui(r.auteur_id)?.nom ?? formateur.nom ?? "Votre formateur"} a répondu à une question`,
       reference: question?.support_titre ?? null,
       extrait: r.texte,
-      auteur: null,
+      auteur: qui(r.auteur_id)?.nom ?? formateur.nom,
+      auteurPhoto: qui(r.auteur_id)?.photo ?? null,
+      auteurPhotoUrl: qui(r.auteur_id) ? null : formateur.photoUrl,
       date: r.created_at,
       href: question?.support_id
         ? `/espace-stagiaire/cours/${question.support_id}#question-${question.id}`
@@ -129,7 +157,9 @@ export async function getNotificationsStagiaire(): Promise<Notification[]> {
       extrait: t.ferme_le
         ? "Chronométré : il se ferme à une heure fixée par votre formateur."
         : null,
-      auteur: null,
+      auteur: formateur.nom,
+      auteurPhotoUrl: formateur.photoUrl,
+      auteurPhoto: null,
       date: t.ouvert_le,
       href: `/espace-stagiaire/controles/${t.id}`,
     });

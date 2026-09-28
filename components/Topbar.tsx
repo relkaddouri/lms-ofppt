@@ -95,7 +95,6 @@ export default function Topbar({
               : `${n} élément${n > 1 ? "s" : ""} en attente de votre intervention`
           }
           cle="notifications"
-          mesure="total"
           sonnePour={vientDunStagiaire}
           apercuInitial={notifications}
         />

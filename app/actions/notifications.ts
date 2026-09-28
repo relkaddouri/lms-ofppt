@@ -20,8 +20,15 @@ export type Notification = {
   reference: string | null;
   /** Citation, quand la notification en porte une (question d'un stagiaire). */
   extrait: string | null;
-  /** Auteur, quand c'est une personne — sert d'initiales à l'avatar. */
+  /** Auteur, quand c'est une personne — son nom, et son visage s'il en a un. */
   auteur: string | null;
+  /** Chemin de la photo dans le bucket des stagiaires, ou null. */
+  auteurPhoto: string | null;
+  /**
+   * Adresse déjà résolue, pour un visage qui ne vit pas dans ce seau — celui
+   * du formateur a le sien (migration 106). L'un ou l'autre, jamais les deux.
+   */
+  auteurPhotoUrl?: string | null;
   date: string;
   href: string;
 };
@@ -37,9 +44,13 @@ export type Notification = {
  *
  * Les « j'aime » font exception et l'assument. Ils n'appellent aucune action
  * et ne disparaîtront donc jamais d'eux-mêmes : ils sont bornés aux plus
- * récents, et rangés après le reste. Le formateur voulait savoir que sa classe
- * réagit ; le taire au motif que ce n'est pas une tâche revenait à décider
- * pour lui de ce qui l'intéresse.
+ * récents. Le formateur voulait savoir que sa classe réagit ; le taire au
+ * motif que ce n'est pas une tâche revenait à décider pour lui de ce qui
+ * l'intéresse.
+ *
+ * Tout se range par date, sans exception. Chaque entrée porte le nom et le
+ * visage de qui a fait le geste : dans un panneau de quarante lignes, « Un
+ * stagiaire a commenté » répété douze fois n'apprend rien.
  */
 export async function getNotifications(): Promise<Notification[]> {
   const supabase = await createClient();
@@ -51,6 +62,7 @@ export async function getNotifications(): Promise<Notification[]> {
     enAttenteRes,
     copiesRes,
     rendusRes,
+    stagiairesRes,
   ] = await Promise.all([
       supabase
         .from("controles")
@@ -63,7 +75,7 @@ export async function getNotifications(): Promise<Notification[]> {
       supabase
         .from("questions_support")
         .select(
-          "id, texte, created_at, statut, support_titre, module_id, groupe_id, supports_seance(seance_id)",
+          "id, texte, created_at, statut, auteur_id, support_titre, module_id, groupe_id, supports_seance(seance_id)",
         )
         .order("created_at", { ascending: false })
         .limit(40),
@@ -80,7 +92,7 @@ export async function getNotifications(): Promise<Notification[]> {
       supabase
         .from("reponses_question")
         .select(
-          "id, question_id, texte, created_at, statut, questions_support(support_titre, groupe_id, supports_seance(seance_id))",
+          "id, question_id, texte, created_at, statut, auteur_id, questions_support(support_titre, groupe_id, supports_seance(seance_id))",
         )
         .eq("statut", "en_attente")
         .order("created_at", { ascending: false })
@@ -91,41 +103,58 @@ export async function getNotifications(): Promise<Notification[]> {
       // minutes, pour les jeter aussitôt.
       supabase
         .from("v_copies_a_corriger")
-        .select("id, nom_complet, submitted_at, controle_id")
+        .select("id, nom_complet, submitted_at, controle_id, stagiaire_id")
         .order("submitted_at", { ascending: false })
         .limit(40),
       supabase
         .from("devoirs_rendus")
-        .select("id, date_rendu, statut, devoirs(titre)")
+        .select("id, date_rendu, statut, stagiaire_id, devoirs(titre)")
         .order("date_rendu", { ascending: false })
         .limit(20),
+      // Qui a fait le geste — le nom et le visage, comme dans un fil social.
+      // La question se pose à `stagiaires` et non à `profils` : la policy de
+      // `profils` ne rend au formateur que sa propre ligne, et l'ensemble
+      // revenait vide — c'est ce qui avait fait qu'**aucun commentaire ni
+      // aucun j'aime n'était notifié**. Est stagiaire celui qui est inscrit
+      // dans un des groupes du formateur, ce qui est exactement la question.
+      //
+      // Cette lecture servait déjà de filtre ; elle rapporte maintenant trois
+      // colonnes de plus, dans la même requête et le même aller-retour.
+      supabase
+        .from("stagiaires")
+        .select("id, user_id, nom, prenom, photo")
+        .not("user_id", "is", null)
+        .limit(400),
     ]);
 
   // Les réactions du fil se lisent à part : elles ne dépendent d'aucune des
   // cinq lectures ci-dessus et n'ont pas à les retarder si elles échouent.
-  const [commentairesRes, reactionsRes, comptesStagiairesRes] =
-    await Promise.all([
-      supabase
-        .from("commentaires_annonce")
-        .select(
-          "id, annonce_id, auteur_id, texte, created_at, annonces(titre, groupe_id)",
-        )
-        .order("created_at", { ascending: false })
-        .limit(60),
-      supabase
-        .from("reactions_annonce")
-        .select("annonce_id, user_id, created_at, annonces(titre, groupe_id)")
-        .order("created_at", { ascending: false })
-        .limit(30),
-      // Qui est stagiaire ? La question se pose à `stagiaires` et non à
-      // `profils` : la policy de `profils` ne rend au formateur que sa propre
-      // ligne — `profils_lecture_crochet_jeton` est réservée au crochet de
-      // jeton, donc à `supabase_auth_admin`. L'ensemble revenait vide, et comme
-      // il sert de filtre, **aucun commentaire ni aucun j'aime n'a jamais été
-      // notifié**. `stagiaires` répond mieux à la question posée : est stagiaire
-      // celui qui est inscrit dans un des groupes du formateur.
-      supabase.from("stagiaires").select("user_id").not("user_id", "is", null),
-    ]);
+  const [commentairesRes, reactionsRes] = await Promise.all([
+    supabase
+      .from("commentaires_annonce")
+      .select(
+        "id, annonce_id, auteur_id, texte, created_at, annonces(titre, groupe_id)",
+      )
+      .order("created_at", { ascending: false })
+      .limit(60),
+    supabase
+      .from("reactions_annonce")
+      .select("annonce_id, user_id, created_at, annonces(titre, groupe_id)")
+      .order("created_at", { ascending: false })
+      .limit(30),
+  ]);
+
+  // Deux entrées par personne, parce que les tables ne la désignent pas
+  // toutes de la même façon : un commentaire porte le compte qui l'a écrit,
+  // une copie porte la fiche du stagiaire.
+  type Personne = { nom: string; photo: string | null };
+  const parCompte = new Map<string, Personne>();
+  const parFiche = new Map<string, Personne>();
+  for (const s of stagiairesRes.data ?? []) {
+    const personne = { nom: `${s.prenom} ${s.nom}`, photo: s.photo };
+    parFiche.set(s.id, personne);
+    if (s.user_id) parCompte.set(s.user_id, personne);
+  }
 
   const notifications: Notification[] = [];
 
@@ -149,6 +178,7 @@ export async function getNotifications(): Promise<Notification[]> {
       reference: r.modules?.competences?.code_operationnel ?? null,
       extrait: null,
       auteur: null,
+      auteurPhoto: null,
       date: r.created_at,
       href: `/modules/${r.module_id}/controle?groupe=${r.groupe_id}`,
     });
@@ -165,6 +195,7 @@ export async function getNotifications(): Promise<Notification[]> {
       texte: string;
       created_at: string;
       statut: string;
+      auteur_id: string;
       support_titre: string | null;
       module_id: string;
       groupe_id: string;
@@ -172,6 +203,7 @@ export async function getNotifications(): Promise<Notification[]> {
     };
     const aValider = r.statut === "en_attente";
     if (!aValider && repondues.has(r.id)) continue;
+    const qui = parCompte.get(r.auteur_id);
     notifications.push({
       id: `question-${r.id}`,
       genre: "question",
@@ -182,7 +214,8 @@ export async function getNotifications(): Promise<Notification[]> {
         : "Une question de stagiaire attend une réponse",
       reference: r.support_titre,
       extrait: r.texte,
-      auteur: null,
+      auteur: qui?.nom ?? null,
+      auteurPhoto: qui?.photo ?? null,
       date: r.created_at,
       // La question vit dans l'onglet Support de sa séance. Pointer la
       // progression obligeait à la retrouver soi-même, alors que la
@@ -199,6 +232,7 @@ export async function getNotifications(): Promise<Notification[]> {
     texte: string;
     created_at: string;
     statut: string;
+    auteur_id: string;
     questions_support: {
       support_titre: string | null;
       groupe_id: string | null;
@@ -209,13 +243,15 @@ export async function getNotifications(): Promise<Notification[]> {
   // base, il n'a plus à être refait ici.
   for (const r of (enAttenteRes.data ?? []) as unknown as ReponseLue[]) {
     const q = r.questions_support;
+    const qui = parCompte.get(r.auteur_id);
     notifications.push({
       id: `reponse-${r.id}`,
       genre: "question",
       texte: "Une réponse de stagiaire attend votre validation",
       reference: q?.support_titre ?? null,
       extrait: r.texte,
-      auteur: null,
+      auteur: qui?.nom ?? null,
+      auteurPhoto: qui?.photo ?? null,
       date: r.created_at,
       href:
         q?.groupe_id && q.supports_seance?.seance_id
@@ -229,12 +265,6 @@ export async function getNotifications(): Promise<Notification[]> {
   // La règle du commentaire en attente est celle du tableau de bord : on
   // compare par fil et par date. Un formateur qui a répondu une fois à la fin
   // d'une discussion y a répondu, même si trois commentaires l'ont précédé.
-  const stagiaires = new Set(
-    (comptesStagiairesRes.data ?? [])
-      .map((s) => s.user_id)
-      .filter((id): id is string => id !== null),
-  );
-
   type CommentaireLu = {
     id: string;
     annonce_id: string;
@@ -248,7 +278,7 @@ export async function getNotifications(): Promise<Notification[]> {
 
   const dernierMotDuFormateur = new Map<string, string>();
   for (const c of commentaires) {
-    if (stagiaires.has(c.auteur_id)) continue;
+    if (parCompte.has(c.auteur_id)) continue;
     const vue = dernierMotDuFormateur.get(c.annonce_id);
     if (!vue || c.created_at > vue) {
       dernierMotDuFormateur.set(c.annonce_id, c.created_at);
@@ -256,16 +286,20 @@ export async function getNotifications(): Promise<Notification[]> {
   }
 
   for (const c of commentaires) {
-    if (!stagiaires.has(c.auteur_id)) continue;
+    if (!parCompte.has(c.auteur_id)) continue;
     const repondu = dernierMotDuFormateur.get(c.annonce_id);
     if (repondu && c.created_at <= repondu) continue;
+    const qui = parCompte.get(c.auteur_id);
     notifications.push({
       id: `commentaire-${c.id}`,
       genre: "commentaire",
-      texte: "Un stagiaire a commenté une annonce",
+      // Le nom prend la place de « Un stagiaire » : c'est ce qu'on cherche
+      // dans un panneau de trente lignes, et l'avatar le redit d'un coup d'œil.
+      texte: `${qui?.nom ?? "Un stagiaire"} a commenté une annonce`,
       reference: c.annonces?.titre ?? null,
       extrait: c.texte,
-      auteur: null,
+      auteur: qui?.nom ?? null,
+      auteurPhoto: qui?.photo ?? null,
       date: c.created_at,
       // Jusqu'au commentaire, non jusqu'à la page : un fil de dix-sept
       // réponses ne se parcourt pas pour retrouver celle qui a sonné.
@@ -291,10 +325,12 @@ export async function getNotifications(): Promise<Notification[]> {
       date: string;
       titre: string | null;
       groupe: string | null;
+      /** Le plus récent à avoir aimé : c'est son visage qu'on montre. */
+      premier: Personne | undefined;
     }
   >();
   for (const r of (reactionsRes.data ?? []) as unknown as ReactionLue[]) {
-    if (!stagiaires.has(r.user_id)) continue;
+    if (!parCompte.has(r.user_id)) continue;
     const vue = parAnnonce.get(r.annonce_id);
     if (vue) {
       vue.nombre += 1;
@@ -305,6 +341,9 @@ export async function getNotifications(): Promise<Notification[]> {
         date: r.created_at,
         titre: r.annonces?.titre ?? null,
         groupe: r.annonces?.groupe_id ?? null,
+        // La lecture est triée du plus récent au plus ancien : le premier vu
+        // est le dernier à avoir aimé.
+        premier: parCompte.get(r.user_id),
       });
     }
   }
@@ -312,13 +351,11 @@ export async function getNotifications(): Promise<Notification[]> {
     notifications.push({
       id: `jaime-${annonceId}`,
       genre: "jaime",
-      texte:
-        r.nombre > 1
-          ? `${r.nombre} stagiaires ont aimé une annonce`
-          : "Un stagiaire a aimé une annonce",
+      texte: nomDuGroupe(r.premier?.nom, r.nombre, "aimé une annonce"),
       reference: r.titre,
       extrait: null,
-      auteur: null,
+      auteur: r.premier?.nom ?? null,
+      auteurPhoto: r.premier?.photo ?? null,
       date: r.date,
       href: r.groupe ? `/groupes/${r.groupe}/annonces` : "/groupes",
     });
@@ -332,6 +369,7 @@ export async function getNotifications(): Promise<Notification[]> {
       nom_complet: string;
       submitted_at: string;
       controle_id: string;
+      stagiaire_id: string | null;
     };
     notifications.push({
       id: `copie-${r.id}`,
@@ -340,6 +378,9 @@ export async function getNotifications(): Promise<Notification[]> {
       reference: null,
       extrait: null,
       auteur: r.nom_complet,
+      auteurPhoto: r.stagiaire_id
+        ? (parFiche.get(r.stagiaire_id)?.photo ?? null)
+        : null,
       date: r.submitted_at,
       href: `/modules`,
     });
@@ -350,26 +391,55 @@ export async function getNotifications(): Promise<Notification[]> {
       id: string;
       date_rendu: string | null;
       statut: string | null;
+      stagiaire_id: string;
       devoirs: { titre: string } | null;
     };
     if (r.statut === "corrige" || !r.date_rendu) continue;
+    const qui = parFiche.get(r.stagiaire_id);
     notifications.push({
       id: `devoir-${r.id}`,
       genre: "devoir",
-      texte: "Un devoir a été rendu",
+      texte: `${qui?.nom ?? "Un stagiaire"} a rendu un devoir`,
       reference: r.devoirs?.titre ?? null,
       extrait: null,
-      auteur: null,
+      auteur: qui?.nom ?? null,
+      auteurPhoto: qui?.photo ?? null,
       date: r.date_rendu,
       href: `/groupes`,
     });
   }
 
-  // Les « j'aime » passent après tout le reste à date égale : ils
-  // n'appellent aucune action, et les laisser remonter en tête repousserait
-  // hors du panneau ce qui en attend une.
-  const rang = (n: Notification) => (n.genre === "jaime" ? 1 : 0);
+  // Du plus récent au plus ancien, et rien d'autre.
+  //
+  // Les « j'aime » passaient auparavant après tout le reste, au motif qu'ils
+  // n'appellent aucune action. Le résultat était un panneau où l'on trouvait
+  // des choses d'avant-hier au-dessus de choses d'aujourd'hui, sans qu'aucune
+  // colonne ne l'explique — on ne savait plus où regarder pour du neuf. Un fil
+  // se lit par le temps ; le reste se trie par les tranches AUJOURD'HUI /
+  // HIER / PLUS TÔT, qui, elles, se voient.
   return notifications
-    .sort((a, b) => rang(a) - rang(b) || b.date.localeCompare(a.date))
+    .sort((a, b) => b.date.localeCompare(a.date))
     .slice(0, 40);
+}
+
+/**
+ * « Sara a aimé une annonce », « Sara et 4 autres ont aimé une annonce ».
+ *
+ * Quinze lignes identiques pour un même billet noieraient le panneau : les
+ * réactions se groupent, et la phrase nomme la dernière personne plutôt que
+ * de compter des anonymes.
+ */
+function nomDuGroupe(
+  nom: string | undefined,
+  nombre: number,
+  quoi: string,
+): string {
+  if (!nom) {
+    return nombre > 1
+      ? `${nombre} stagiaires ont ${quoi}`
+      : `Un stagiaire a ${quoi}`;
+  }
+  if (nombre === 1) return `${nom} a ${quoi}`;
+  const autres = nombre - 1;
+  return `${nom} et ${autres} autre${autres > 1 ? "s" : ""} ont ${quoi}`;
 }
