@@ -28,6 +28,8 @@ export type AnnonceFil = {
   created_at: string;
   jaime: number;
   jaimePersonnel: boolean;
+  /** Les personnes derrière le compte, du plus récent au plus ancien. */
+  qui: QuiAime[];
   commentaires: Commentaire[];
   /**
    * Renseigné quand l'annonce est celle d'un stagiaire de la journée.
@@ -65,6 +67,27 @@ export type DistinctionFil = {
   cestMoi: boolean;
 };
 
+/**
+ * Qui a aimé une annonce.
+ *
+ * Le nombre seul ne dit rien dans une classe : savoir que sept personnes ont
+ * aimé n'apprend pas si les siens l'ont fait. C'est la question que pose le
+ * geste, et jusqu'ici le fil n'y répondait pas.
+ *
+ * Aucune lecture de plus : les réactions et les noms du groupe étaient déjà
+ * lus pour afficher le compte et signer les commentaires. Seule la photo
+ * s'ajoute, dans la même requête.
+ */
+export type QuiAime = {
+  nom: string;
+  /** Chemin dans le seau des stagiaires. */
+  photo: string | null;
+  /** Adresse déjà résolue, pour le formateur, dont le seau est un autre. */
+  photoUrl: string | null;
+  /** Vrai pour celui qui lit : il passe en tête, sous le nom « Vous ». */
+  cestMoi: boolean;
+};
+
 /** Camarade mentionnable, pour l'autocomplétion. */
 export type Camarade = { id: string; nom: string };
 
@@ -95,8 +118,10 @@ export async function getFil(groupeId: string): Promise<AnnonceFil[]> {
   ] = await Promise.all([
       supabase
         .from("reactions_annonce")
-        .select("annonce_id, user_id")
-        .in("annonce_id", ids),
+        .select("annonce_id, user_id, created_at")
+        .in("annonce_id", ids)
+        .order("created_at", { ascending: false })
+        .limit(2000),
       supabase
         .from("commentaires_annonce")
         .select("id, annonce_id, auteur_id, texte, created_at")
@@ -104,7 +129,7 @@ export async function getFil(groupeId: string): Promise<AnnonceFil[]> {
         .order("created_at"),
       supabase
         .from("stagiaires")
-        .select("user_id, nom, prenom")
+        .select("user_id, nom, prenom, photo")
         .eq("groupe_id", groupeId)
         // Le compte de test du formateur n'est pas un stagiaire (migration 093).
         .eq("est_test", false),
@@ -157,8 +182,11 @@ export async function getFil(groupeId: string): Promise<AnnonceFil[]> {
   // Un auteur sans fiche stagiaire est le formateur : c'est le seul autre
   // compte qui accède au groupe.
   const nomsParCompte = new Map<string, string>();
+  const photosParCompte = new Map<string, string | null>();
   for (const s of stagiairesRes.data ?? []) {
-    if (s.user_id) nomsParCompte.set(s.user_id, `${s.prenom} ${s.nom}`);
+    if (!s.user_id) continue;
+    nomsParCompte.set(s.user_id, `${s.prenom} ${s.nom}`);
+    photosParCompte.set(s.user_id, s.photo);
   }
 
   // Qui lit ? Pour tutoyer le distingué plutôt que de parler de lui à la
@@ -197,10 +225,31 @@ export async function getFil(groupeId: string): Promise<AnnonceFil[]> {
     });
   }
 
+  /**
+   * Un compte devient une personne.
+   *
+   * Sans fiche de stagiaire, c'est le formateur : le seul autre compte qui
+   * accède au groupe. Son visage vit dans un autre seau, d'où l'adresse déjà
+   * résolue plutôt qu'un chemin.
+   */
+  function personne(userId: string): QuiAime {
+    const nom = nomsParCompte.get(userId);
+    return {
+      nom: nom ?? formateur.nom ?? "Votre formateur",
+      photo: nom ? (photosParCompte.get(userId) ?? null) : null,
+      photoUrl: nom ? null : formateur.photoUrl,
+      cestMoi: userId === user?.id,
+    };
+  }
+
   return annonces.map((a) => {
     const reactions = (reactionsRes.data ?? []).filter(
       (r) => r.annonce_id === a.id,
     );
+    // Celui qui lit passe en tête : c'est le premier nom qu'on cherche.
+    const qui = reactions
+      .map((r) => personne(r.user_id))
+      .sort((x, y) => Number(y.cestMoi) - Number(x.cestMoi));
     return {
       id: a.id,
       titre: a.titre,
@@ -209,6 +258,7 @@ export async function getFil(groupeId: string): Promise<AnnonceFil[]> {
       created_at: a.created_at,
       jaime: reactions.length,
       jaimePersonnel: reactions.some((r) => r.user_id === user?.id),
+      qui,
       commentaires: (commentairesRes.data ?? [])
         .filter((c) => c.annonce_id === a.id)
         .map((c) => ({
