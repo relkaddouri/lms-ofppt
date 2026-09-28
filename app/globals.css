@@ -188,9 +188,14 @@ body {
     text-decoration: none;
   }
 
+  /* Le survol change la couleur, il ne souligne pas. Le soulignement passait
+     sur tout ce qui est un lien sans en avoir l'air — une entrée de menu, une
+     carte de groupe, une ligne de tableau — d'où les quelque quarante
+     `hover:no-underline` semés dans les écrans pour l'éteindre au cas par
+     cas. On l'éteint ici une fois. Les liens au fil d'un texte gardent leur
+     soulignement, posé explicitement là où il est le seul repère. */
   a:hover {
     color: var(--ofppt-ink);
-    text-decoration: underline;
   }
 }
 
