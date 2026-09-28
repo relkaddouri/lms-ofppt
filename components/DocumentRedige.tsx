@@ -196,7 +196,7 @@ function Tableau({ entetes, lignes }: { entetes: string[]; lignes: string[][] })
               key={k}
               className="rounded-[10px] border border-border bg-paper-alt px-3.5 py-3"
             >
-              <p className="break-words text-[15.5px] font-semibold leading-snug text-ink">
+              <p className="break-words text-[0.95em] font-semibold leading-snug text-ink">
                 {pastille(titre ?? "", 0) ?? <Ligne>{titre || entetes[0] || ""}</Ligne>}
               </p>
               <dl className="mt-2.5 flex flex-col gap-2">
@@ -214,7 +214,7 @@ function Tableau({ entetes, lignes }: { entetes: string[]; lignes: string[][] })
                           {e}
                         </dt>
                       ) : null}
-                      <dd className="break-words text-[15px] leading-relaxed text-body">
+                      <dd className="break-words text-[0.92em] leading-relaxed text-body">
                         {pastille(valeur, j + 1) ?? <Ligne>{valeur}</Ligne>}
                       </dd>
                     </div>
@@ -227,10 +227,10 @@ function Tableau({ entetes, lignes }: { entetes: string[]; lignes: string[][] })
       </div>
 
       <div className="hidden overflow-x-auto rounded-[10px] border border-border md:block">
-      <table className="w-full border-collapse text-left text-[13px]">
+      <table className="w-full border-collapse text-left text-[0.84em]">
         {/* En-tête encre, texte blanc : c'est ce qui fait qu'un tableau se
             repère d'un coup d'œil dans une page dense. */}
-        <thead className="bg-ink text-white">
+        <thead className="bg-encre text-white">
           <tr>
             {entetes.map((e, k) => (
               <th key={k} className="px-3 py-2 font-medium">
@@ -295,7 +295,7 @@ function Blocs({
         rendu.push(
           <h1
             key={i}
-            className="font-display text-[24px] font-bold leading-tight tracking-[-0.02em] text-ink md:text-[26px]"
+            className="font-display text-[1.6em] font-bold leading-tight tracking-[-0.02em] text-ink"
           >
             {n.texte}
           </h1>,
@@ -325,7 +325,7 @@ function Blocs({
                   {numero[1]}
                 </span>
               ) : null}
-              <h2 className="font-display text-[20px] font-semibold leading-snug text-ink md:text-[19px]">
+              <h2 className="font-display text-[1.28em] font-semibold leading-snug text-ink">
                 {numero ? numero[2] : n.texte}
               </h2>
             </div>
@@ -341,8 +341,8 @@ function Blocs({
           key={i}
           className={
             n.niveau === 3
-              ? "mt-2 font-display text-[17px] font-semibold text-ink md:text-[15.5px]"
-              : "mt-1 font-display text-[15px] font-semibold text-body md:text-[14px]"
+              ? "mt-2 font-display text-[1.08em] font-semibold text-ink"
+              : "mt-1 font-display text-[1em] font-semibold text-body"
           }
         >
           {n.texte}
@@ -381,14 +381,14 @@ function Blocs({
       rendu.push(
         <ol
           key={`l${i}`}
-          className={`flex ${largeur} flex-col gap-2 break-words pl-0 text-[16px] leading-relaxed text-body md:gap-1.5 md:text-[14px]`}
+          className={`flex ${largeur} flex-col gap-2 break-words pl-0 leading-relaxed text-body md:gap-1.5`}
         >
           {items.map((it, k) => (
             <li key={k} className="flex gap-2.5">
               <span
                 className={
                   ordonnee
-                    ? "shrink-0 font-mono text-[15px] font-semibold text-coral md:text-[13px]"
+                    ? "shrink-0 font-mono text-[0.9em] font-semibold text-coral"
                     : "mt-[9px] h-[5px] w-[5px] shrink-0 rounded-full bg-teal md:mt-[7px]"
                 }
                 aria-hidden={!ordonnee}
@@ -422,7 +422,7 @@ function Blocs({
       // caractères — il garde donc sa colonne.
       <p
         key={i}
-        className={`${largeur} break-words text-[16px] leading-relaxed text-body md:text-[14px]`}
+        className={`${largeur} break-words leading-relaxed text-body`}
       >
         <Ligne>{n.brut}</Ligne>
       </p>,
@@ -434,7 +434,7 @@ function Blocs({
     // `min-w-0` : sans lui, un enfant plus large que la colonne — un tableau —
     // élargit le conteneur au lieu d'être contenu, et c'est la page entière
     // qui défile en travers.
-    <div className="flex min-w-0 flex-col gap-4 md:gap-3">
+    <div className="texte-lecture flex min-w-0 flex-col gap-4 md:gap-3">
       {rendu.map((r, k) => (
         <Fragment key={k}>{r}</Fragment>
       ))}
@@ -469,7 +469,7 @@ function Couverture({
     // garde entière avant d'atteindre la première ligne de son cours, alors
     // que le titre et la date de la séance sont déjà au-dessus. Elle garde son
     // rôle — dire de quel support il s'agit — dans un tiers de la place.
-    <section className="flex flex-col rounded-[14px] bg-ink px-5 py-6 text-white md:min-h-[900px] md:px-12 md:py-14">
+    <section className="flex flex-col rounded-[14px] bg-encre px-5 py-6 text-white md:min-h-[900px] md:px-12 md:py-14">
       <span aria-hidden className="mb-5 flex items-center gap-1.5 md:mb-7">
         {["bg-green", "bg-teal", "bg-coral"].map((c) => (
           <span key={c} className={`h-2.5 w-2.5 rounded-full ${c}`} />

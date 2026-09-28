@@ -46,7 +46,7 @@ export default function RappelControle({
   );
 
   return href ? (
-    <Link href={href} className="focus:outline-none focus:ring-2 focus:ring-ink">
+    <Link href={href} className="focus:outline-none focus:ring-2 focus:ring-encre">
       {contenu}
     </Link>
   ) : (

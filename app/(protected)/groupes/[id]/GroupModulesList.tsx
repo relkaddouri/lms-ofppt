@@ -72,7 +72,7 @@ export default function GroupModulesList({
               {status}
               <Link
                 href={href}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-ink hover:bg-paper focus:outline-none focus:ring-2 focus:ring-ink max-md:min-h-11 max-md:flex-1 max-md:justify-center"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-ink hover:bg-paper focus:outline-none focus:ring-2 focus:ring-encre max-md:min-h-11 max-md:flex-1 max-md:justify-center"
               >
                 {kind === "fiches" ? (
                   <FileText size={16} />

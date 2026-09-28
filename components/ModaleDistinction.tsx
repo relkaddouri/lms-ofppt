@@ -44,7 +44,7 @@ export function FeteDistinction({
       role="dialog"
       aria-modal="true"
       aria-label="Stagiaire de la journée"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-ink/70 px-5 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-encre/70 px-5 backdrop-blur-sm"
     >
       <div className="relative w-full max-w-sm overflow-hidden rounded-[20px] border border-border bg-surface px-6 py-8 text-center shadow-repos">
         <Feux actif />

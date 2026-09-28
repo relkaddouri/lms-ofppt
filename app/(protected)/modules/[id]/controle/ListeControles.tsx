@@ -48,7 +48,7 @@ export default function ListeControles({
               onClick={() => (actif ? null : onOuvrir(c.id))}
               className={`flex min-h-[112px] flex-col gap-2 rounded-[12px] border bg-surface px-4 py-3.5 text-left transition-colors duration-150 ease-out focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
                 actif
-                  ? "border-ink shadow-[0_0_0_1px_var(--color-ink)]"
+                  ? "border-encre shadow-[0_0_0_1px_var(--color-ink)]"
                   : "border-border hover:border-border-strong"
               }`}
             >
@@ -97,8 +97,8 @@ export default function ListeControles({
           onClick={onNouveau}
           className={`flex min-h-[112px] flex-col items-center justify-center gap-1.5 rounded-[12px] border border-dashed px-4 py-3.5 text-center transition-colors duration-150 ease-out ${
             nouveau
-              ? "border-ink bg-surface text-ink"
-              : "border-border-strong text-slate-2 hover:border-ink hover:text-ink"
+              ? "border-encre bg-surface text-ink"
+              : "border-border-strong text-slate-2 hover:border-encre hover:text-ink"
           }`}
         >
           <Plus className="h-5 w-5" aria-hidden />

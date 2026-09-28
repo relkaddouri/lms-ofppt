@@ -32,7 +32,7 @@ export default async function BilanPage({
         {jalon.moduleNom}
       </Link>
 
-      <header className="mx-5 flex flex-col gap-2 rounded-[14px] bg-ink px-5 py-6 text-white md:mx-0 md:px-8">
+      <header className="mx-5 flex flex-col gap-2 rounded-[14px] bg-encre px-5 py-6 text-white md:mx-0 md:px-8">
         <span className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.16em] text-white/50">
           <Milestone className="h-4 w-4" aria-hidden />
           Bilan {jalon.rang} · chapitres {premier} à {dernier}

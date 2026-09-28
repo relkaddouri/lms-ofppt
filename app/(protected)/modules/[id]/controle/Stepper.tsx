@@ -63,7 +63,7 @@ export function Stepper({
                 <span
                   className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-[1.5px] font-mono text-[12.5px] font-semibold ${
                     courante
-                      ? "border-ink bg-ink text-white"
+                      ? "border-encre bg-encre text-white"
                       : faite
                         ? "border-tint-green bg-success-wash text-green-dark"
                         : "border-border-strong bg-surface text-muted"
@@ -101,7 +101,7 @@ export function Stepper({
       </ol>
       <div className="h-[5px] overflow-hidden rounded-full bg-wash">
         <div
-          className="h-full rounded-full bg-ink transition-[width] duration-200 ease-out"
+          className="h-full rounded-full bg-encre transition-[width] duration-200 ease-out"
           style={{ width: `${(etape / ETAPES.length) * 100}%` }}
         />
       </div>

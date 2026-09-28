@@ -26,7 +26,7 @@ import {
 } from "lucide-react";
 
 const linkBtn =
-  "inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-ink hover:bg-paper focus:outline-none focus:ring-2 focus:ring-ink";
+  "inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-ink hover:bg-paper focus:outline-none focus:ring-2 focus:ring-encre";
 
 export default async function ModuleDetailPage({
   params,
@@ -185,7 +185,7 @@ export default async function ModuleDetailPage({
                 <li key={g.id}>
                   <Link
                     href={`/groupes/${g.id}`}
-                    className="inline-flex items-center gap-1.5 rounded-lg px-1 py-1 text-sm text-ink hover:text-ink focus:outline-none focus:ring-2 focus:ring-ink"
+                    className="inline-flex items-center gap-1.5 rounded-lg px-1 py-1 text-sm text-ink hover:text-ink focus:outline-none focus:ring-2 focus:ring-encre"
                   >
                     <FolderKanban size={16} />
                     {g.nom}

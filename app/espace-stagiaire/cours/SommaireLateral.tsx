@@ -44,7 +44,7 @@ export default function SommaireLateral({
                         c.lu
                           ? "border-green bg-green text-white"
                           : courant
-                            ? "border-ink bg-surface"
+                            ? "border-encre bg-surface"
                             : "border-border-strong bg-surface"
                       }`}
                     >

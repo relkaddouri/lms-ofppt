@@ -160,7 +160,7 @@ export default function CarteAnnonce({
               ? "Masquer les commentaires"
               : "Afficher les commentaires et commenter"
           }
-          className="flex min-h-[44px] items-center gap-1.5 rounded-[11px] border border-border-strong bg-surface px-[15px] py-[11px] text-sm font-semibold text-body transition-colors duration-150 ease-out hover:border-ink hover:bg-paper"
+          className="flex min-h-[44px] items-center gap-1.5 rounded-[11px] border border-border-strong bg-surface px-[15px] py-[11px] text-sm font-semibold text-body transition-colors duration-150 ease-out hover:border-encre hover:bg-paper"
         >
           <MessageCircle size={17} className="shrink-0" aria-hidden />
           {compteCommentaires > 0 ? (

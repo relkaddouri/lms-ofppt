@@ -29,7 +29,7 @@ export default function SommaireVue({
         Mes modules
       </Link>
 
-      <header className="mx-5 flex flex-col gap-2 rounded-[14px] bg-ink px-5 py-6 text-white md:mx-0 md:px-8 md:py-7">
+      <header className="mx-5 flex flex-col gap-2 rounded-[14px] bg-encre px-5 py-6 text-white md:mx-0 md:px-8 md:py-7">
         <span className="font-mono text-[11px] uppercase tracking-[0.16em] text-white/50">
           {[module.code, `${module.chapitres} chapitre${module.chapitres > 1 ? "s" : ""}`]
             .filter(Boolean)
@@ -151,7 +151,7 @@ export default function SommaireVue({
                         href={`/espace-stagiaire/cours/module/${module.id}/bilan/${bilanApres.get(c.id)!.rang}`}
                         className="flex items-center gap-3.5 border-t border-separator bg-wash px-5 py-3.5 no-underline transition-colors duration-150 ease-out hover:bg-paper-alt hover:no-underline"
                       >
-                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-ink text-white">
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-encre text-white">
                           <Milestone size={17} strokeWidth={1.9} aria-hidden />
                         </span>
                         <span className="flex min-w-0 flex-1 flex-col gap-0.5">

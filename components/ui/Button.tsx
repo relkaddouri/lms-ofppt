@@ -28,9 +28,9 @@ const base =
 const variants: Record<ButtonVariant, string> = {
   // Fond plein bleu-ardoise, bordure de la même couleur pour que la hauteur
   // soit identique à celle des variantes bordées.
-  primary: "bg-ink border border-ink text-white hover:bg-ofppt-ink-dark hover:border-ofppt-ink-dark",
+  primary: "bg-encre border border-encre text-white hover:bg-encre-fort hover:border-encre-fort",
   secondary:
-    "bg-surface border border-border-strong text-ink hover:bg-paper hover:border-ink",
+    "bg-surface border border-border-strong text-ink hover:bg-paper hover:border-encre",
   // Sans bordure : dans les écrans livrés, les actions d'icône ne portent
   // aucun contour au repos.
   ghost: "border border-transparent text-slate hover:bg-paper hover:text-ink",

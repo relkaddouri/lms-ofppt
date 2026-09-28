@@ -63,7 +63,7 @@ function VoileDepot({ etape }: { etape: Etape }) {
       aria-modal="true"
       aria-label="Dépôt de la photo"
       aria-busy="true"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-encre/40 p-4"
     >
       <div className="w-full max-w-xs rounded-[14px] border border-border bg-surface p-6 shadow-flottant">
         <div className="flex items-center gap-3">
@@ -87,7 +87,7 @@ function VoileDepot({ etape }: { etape: Etape }) {
               key={e}
               aria-hidden
               className={`h-1 flex-1 rounded-full ${
-                i <= ORDRE.indexOf(etape) ? "bg-ink" : "bg-wash"
+                i <= ORDRE.indexOf(etape) ? "bg-encre" : "bg-wash"
               }`}
             />
           ))}
@@ -290,7 +290,7 @@ export default function PhotoStagiaire({
             {vignette}
             <span
               aria-hidden
-              className="absolute -bottom-0.5 -right-0.5 flex h-[18px] w-[18px] items-center justify-center rounded-full border-2 border-surface bg-ink text-white"
+              className="absolute -bottom-0.5 -right-0.5 flex h-[18px] w-[18px] items-center justify-center rounded-full border-2 border-surface bg-encre text-white"
             >
               <Camera size={9} aria-hidden />
             </span>
@@ -328,7 +328,7 @@ export default function PhotoStagiaire({
         type="button"
         onClick={() => champ.current?.click()}
         disabled={enCours}
-        className="flex min-h-11 items-center gap-2 rounded-[11px] border border-border-strong bg-surface px-3.5 text-sm font-semibold text-body transition-colors duration-150 ease-out hover:border-ink hover:bg-paper disabled:opacity-60"
+        className="flex min-h-11 items-center gap-2 rounded-[11px] border border-border-strong bg-surface px-3.5 text-sm font-semibold text-body transition-colors duration-150 ease-out hover:border-encre hover:bg-paper disabled:opacity-60"
       >
         <Camera size={16} aria-hidden />
         {libelle ?? (aUnePhoto ? "Changer" : "Ajouter une photo")}
