@@ -2,7 +2,18 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LogOut } from "lucide-react";
+import {
+  BookOpen,
+  CalendarClock,
+  CalendarDays,
+  ClipboardList,
+  FolderClosed,
+  LayoutDashboard,
+  LogOut,
+  Settings,
+  Users,
+  type LucideIcon,
+} from "lucide-react";
 import { signOutAction } from "@/app/actions/auth";
 import MarquePedago from "./MarquePedago";
 import Avatar from "./ui/Avatar";
@@ -10,29 +21,34 @@ import Avatar from "./ui/Avatar";
 /**
  * Barre latérale du système visuel v3.
  *
- * Les icônes ont disparu au profit d'un losange, repris du logo : dans les
- * écrans livrés, chaque entrée porte un petit losange plein quand elle est
- * active, en contour sinon. C'est aussi ce qui corrige un défaut de la v2 —
- * la fonction d'icône contenait un `return` inconditionnel avant les cas
+ * Chaque entrée porte son icône. La v3 les avait remplacées par un losange
+ * repris du logo, faute de pouvoir en garantir une par entrée : la fonction
+ * d'icône de la v2 contenait un `return` inconditionnel avant les cas
  * `calendrier` et `parametres`, si bien que Groupes, Calendrier et Paramètres
  * affichaient tous les trois la même icône « personnes ».
+ *
+ * L'icône est donc attachée à l'entrée elle-même, dans la table ci-dessous,
+ * et non calculée par une fonction que l'on peut interrompre trop tôt : une
+ * entrée sans icône ne compile pas.
  */
-const GROUPES_NAV = [
+type Entree = { href: string; label: string; Icone: LucideIcon };
+
+const GROUPES_NAV: { label: string; items: Entree[] }[] = [
   {
     label: "GESTION",
     items: [
-      { href: "/dashboard", label: "Tableau de bord" },
-      { href: "/modules", label: "Modules" },
-      { href: "/groupes", label: "Groupes" },
-      { href: "/calendrier", label: "Calendrier" },
-      { href: "/emploi-du-temps", label: "Emploi du temps" },
-      { href: "/classeur", label: "Classeur" },
-      { href: "/tableau-service", label: "Tableau de service" },
+      { href: "/dashboard", label: "Tableau de bord", Icone: LayoutDashboard },
+      { href: "/modules", label: "Modules", Icone: BookOpen },
+      { href: "/groupes", label: "Groupes", Icone: Users },
+      { href: "/calendrier", label: "Calendrier", Icone: CalendarDays },
+      { href: "/emploi-du-temps", label: "Emploi du temps", Icone: CalendarClock },
+      { href: "/classeur", label: "Classeur", Icone: FolderClosed },
+      { href: "/tableau-service", label: "Tableau de service", Icone: ClipboardList },
     ],
   },
   {
     label: "CONFIGURATION",
-    items: [{ href: "/parametres", label: "Paramètres" }],
+    items: [{ href: "/parametres", label: "Paramètres", Icone: Settings }],
   },
 ];
 
@@ -89,11 +105,11 @@ export default function Sidebar({
                         : "text-slate-2 hover:bg-paper hover:text-ink"
                     }`}
                   >
-                    <span
+                    <item.Icone
+                      size={18}
+                      strokeWidth={actif ? 2.2 : 1.8}
                       aria-hidden
-                      className={`h-2 w-2 shrink-0 rotate-45 ${
-                        actif ? "bg-ink" : "border-[1.5px] border-muted"
-                      }`}
+                      className={`shrink-0 ${actif ? "text-ink" : "text-slate-light"}`}
                     />
                     {item.label}
                   </Link>
