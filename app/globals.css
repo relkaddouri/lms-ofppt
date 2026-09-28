@@ -61,6 +61,12 @@
   --coral-soft: #f0bdb8;
   --coral-wash: #fef6f5;
 
+  /* L'or — la couronne du podium, et l'anneau qui désigne le formateur dans
+     un fil de stagiaires. Même valeur que --groupe-5, nom distinct : la
+     palette catégorielle distingue des groupes, elle ne signale rien. */
+  --or: #8a6416;
+  --or-clair: #fbf0dd;
+
   /* Statuts (texte) */
   --status-success: #3c8c5c;
   --status-danger: #e2574c;
@@ -140,6 +146,8 @@
   --color-tint-teal-strong: var(--tint-teal-strong);
   --color-tint-green: var(--tint-green);
   --color-tint-alert-strong: var(--tint-alert-strong);
+  --color-or: var(--or);
+  --color-or-clair: var(--or-clair);
 
   /* Quatre niveaux d'élévation, pas un cinquième */
   --shadow-repos: var(--ombre-repos);
@@ -582,4 +590,30 @@ body {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
+}
+
+/* L'anneau du formateur.
+   Dans un fil où tout le monde se ressemble — même pastille, même taille —
+   il faut qu'on voie d'un coup d'œil qui est le formateur. L'anneau est en
+   `outline` et non en bordure : il ne prend pas de place et ne décale donc
+   pas l'avatar par rapport à ceux des stagiaires, côte à côte dans la même
+   liste.
+
+   Le halo respire au lieu de clignoter : deux secondes et demie par cycle,
+   et il s'éteint en s'écartant. Le respect de `prefers-reduced-motion` est
+   déjà posé plus haut, pour toute la feuille. */
+@keyframes halo-formateur {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(138, 100, 22, 0.42);
+  }
+  55% {
+    box-shadow: 0 0 0 7px rgba(138, 100, 22, 0);
+  }
+}
+
+.anneau-formateur {
+  outline: 2px solid var(--or);
+  outline-offset: 2px;
+  animation: halo-formateur 2.5s ease-in-out infinite;
 }
