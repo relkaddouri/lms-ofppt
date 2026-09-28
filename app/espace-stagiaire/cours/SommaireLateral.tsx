@@ -74,12 +74,20 @@ export default function SommaireLateral({
 
   const entete = (
     <div className="flex flex-col gap-2">
-      <Link
-        href={`/espace-stagiaire/cours/module/${module.id}`}
-        className="text-[14px] font-semibold text-ink no-underline hover:underline"
-      >
-        {module.nom}
-      </Link>
+      {/* Le nom du module et la commande de repli sur la même ligne : dans le
+          flux, elle ne recouvre rien et ne se déplace pas d'un état à
+          l'autre. */}
+      <div className="flex items-start justify-between gap-2">
+        <Link
+          href={`/espace-stagiaire/cours/module/${module.id}`}
+          className="text-[14px] font-semibold text-ink no-underline hover:underline"
+        >
+          {module.nom}
+        </Link>
+        <span className="hidden md:block">
+          <BasculeSommaire variante="entete" />
+        </span>
+      </div>
       <div className="flex items-center gap-2">
         <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-wash-strong">
           <span
@@ -109,33 +117,14 @@ export default function SommaireLateral({
           dit où l'on en est, et le panneau entier revient au survol — posé
           par-dessus le cours, sans le décaler. Un sommaire qui s'efface tout
           à fait oblige à le rouvrir pour la seule question qu'on se pose en
-          lisant : « j'en suis où ? ».
-
-          `sommaire-repliable` est la classe que visent les règles de repli ;
-          le bouton, lui, est ancré au coin de la colonne et ne bouge pas d'un
-          état à l'autre. */}
+          lisant : « j'en suis où ? ». */}
       <aside className="sommaire-repliable sticky top-[84px] hidden w-[280px] shrink-0 md:block">
-        <BasculeSommaire />
-
-        {/* Le rail : visible seulement quand le panneau est replié. */}
-        <div className="sommaire-rail hidden flex-col items-center gap-3 rounded-[14px] border border-border bg-surface py-4">
-          <span
-            className="flex w-1.5 flex-1 overflow-hidden rounded-full bg-wash-strong"
-            aria-hidden
-          >
-            {/* Elle se remplit par le haut, comme la liste qu'elle résume se
-                lit de haut en bas. Ancrée en bas, elle disait le contraire de
-                ce qu'elle montre. */}
-            <span
-              className="w-full self-start rounded-full bg-green"
-              style={{ height: `${module.progression}%` }}
-            />
-          </span>
-          <span className="flex flex-col items-center font-mono text-[11px] leading-tight text-slate">
-            <span className="font-semibold text-ink">{rang || "—"}</span>
-            <span className="text-muted">/{module.chapitres}</span>
-          </span>
-        </div>
+        <BasculeSommaire
+          variante="rail"
+          progression={module.progression}
+          rang={rang}
+          total={module.chapitres}
+        />
 
         <div className="sommaire-panneau flex max-h-[calc(100dvh-110px)] flex-col gap-3 overflow-y-auto rounded-[14px] border border-border bg-surface px-4 py-4">
           {entete}

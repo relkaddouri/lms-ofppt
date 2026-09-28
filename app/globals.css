@@ -941,10 +941,10 @@ body {
    juste avant de commencer à lire.
 
    Replié ne veut pas dire disparu. La colonne se réduit à un rail de
-   quarante-huit pixels qui garde la réponse à la seule question qu'on se pose
-   en lisant — « j'en suis où ? » —, et le panneau entier revient au survol,
-   posé par-dessus le cours au lieu de le décaler. Rouvrir pour consulter, puis
-   refermer pour lire, était un aller-retour de trop.
+   quarante-huit pixels — cliquable en entier — qui garde la réponse à la seule
+   question qu'on se pose en lisant : « j'en suis où ? ». Le panneau entier
+   revient au survol, posé par-dessus le cours au lieu de le décaler. Rouvrir
+   pour consulter, puis refermer pour lire, était un aller-retour de trop.
 
    `focus-within` autant que `hover` : au clavier, on n'a pas de souris à
    poser dessus. */
@@ -955,8 +955,6 @@ body {
 
   :root[data-sommaire="ferme"] .sommaire-rail {
     display: flex;
-    height: calc(100dvh - 110px);
-    max-height: 420px;
   }
 
   :root[data-sommaire="ferme"] .sommaire-panneau {
@@ -975,23 +973,11 @@ body {
     box-shadow: var(--ombre-flottant);
   }
 
+  /* Le rail s'efface sous le panneau qu'il vient d'appeler, mais garde sa
+     place : le retirer du flux ferait perdre le survol, et le panneau
+     clignoterait à l'infini. */
   :root[data-sommaire="ferme"] .sommaire-repliable:hover .sommaire-rail,
   :root[data-sommaire="ferme"] .sommaire-repliable:focus-within .sommaire-rail {
     visibility: hidden;
-  }
-
-  /* Le bouton suit le bord droit de ce qui est affiché, et lui seul bouge.
-     Déployé, la colonne fait 280 px et il est posé à cheval sur son bord ;
-     replié, il rentre dans le rail de 48 px ; et quand le panneau revient au
-     survol, il retrouve exactement la place qu'il occupe déployé — le même
-     point à 300 px du bord gauche de la colonne. Le laisser au bord du rail
-     pendant le survol le faisait chevaucher le titre du module. */
-  :root[data-sommaire="ferme"] .sommaire-bouton {
-    right: 4px;
-  }
-
-  :root[data-sommaire="ferme"] .sommaire-repliable:hover .sommaire-bouton,
-  :root[data-sommaire="ferme"] .sommaire-repliable:focus-within .sommaire-bouton {
-    right: -252px;
   }
 }
