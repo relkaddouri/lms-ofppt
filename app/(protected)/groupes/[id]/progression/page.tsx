@@ -1,6 +1,10 @@
 import { getSeancesByGroupe, type Seance } from "@/app/actions/seances";
 import { getGroupeModules } from "@/app/actions/groupes";
 import { getRappelsControle } from "@/app/actions/rappels";
+import {
+  getControlesDuGroupe,
+  type ControleProgression,
+} from "@/app/actions/controles";
 import ModuleProgression, { type ObjectifBloc } from "./ModuleProgression";
 import PlanifierSeance from "./PlanifierSeance";
 import SuiviSeances from "./SuiviSeances";
@@ -11,10 +15,11 @@ export default async function ProgressionPage({
   params,
 }: PageProps<"/groupes/[id]/progression">) {
   const { id } = await params;
-  const [seances, modules, rappels] = await Promise.all([
+  const [seances, modules, rappels, controles] = await Promise.all([
     getSeancesByGroupe(id),
     getGroupeModules(id),
     getRappelsControle(id),
+    getControlesDuGroupe(id),
   ]);
 
   // Le rappel a besoin du nombre de contrôles réellement posés, que la liste
@@ -62,6 +67,37 @@ export default async function ProgressionPage({
       });
     }
     m.objectifs.get(cle)!.seances.push(s);
+  }
+
+  // Chaque contrôle se range sous la dernière séance qui l'a précédé : c'est
+  // là qu'il a eu lieu dans le déroulement, et c'est ce que le formateur
+  // cherche en regardant sa progression (demande du 28/09/2026). Le calcul se
+  // fait ici, une fois, plutôt que dans chaque bloc de module.
+  const controlesApres = new Map<string, ControleProgression[]>();
+  const sansAncrage = new Map<string, ControleProgression[]>();
+
+  for (const c of controles) {
+    const liste = parModule.get(c.module_id);
+    const jour = c.date_prevue;
+    // Les séances arrivent triées par date : la dernière qui précède le
+    // contrôle est la plus tardive qui ne lui soit pas postérieure.
+    const ancre = jour
+      ? [...(liste?.seances ?? [])]
+          .reverse()
+          .find((s) => s.date !== null && s.date <= jour)
+      : undefined;
+
+    if (ancre) {
+      const dejala = controlesApres.get(ancre.id) ?? [];
+      dejala.push(c);
+      controlesApres.set(ancre.id, dejala);
+    } else if (liste) {
+      const dejala = sansAncrage.get(c.module_id) ?? [];
+      dejala.push(c);
+      sansAncrage.set(c.module_id, dejala);
+    }
+    // Un contrôle dont le module n'a aucune séance dans ce groupe n'a pas de
+    // place dans cette progression : il s'affiche depuis l'onglet Contrôles.
   }
 
   // Le module en cours s'ouvre seul : c'est celui sur lequel le formateur
@@ -125,6 +161,12 @@ export default async function ProgressionPage({
               controlesCouverts={couverts.get(moduleId) ?? 0}
               objectifs={[...m.objectifs.values()]}
               seances={m.seances}
+              controlesApres={Object.fromEntries(
+                m.seances
+                  .filter((s) => controlesApres.has(s.id))
+                  .map((s) => [s.id, controlesApres.get(s.id)!]),
+              )}
+              controlesSansAncrage={sansAncrage.get(moduleId) ?? []}
                   ouvertParDefaut={moduleId === premierEnCours}
                 />
               ))}
