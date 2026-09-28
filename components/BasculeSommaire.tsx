@@ -53,10 +53,15 @@ export default function BasculeSommaire() {
       title={ouvert ? "Replier le sommaire" : "Afficher le sommaire"}
       // Sur téléphone, le sommaire est déjà un dépliant au-dessus du cours :
       // un second bouton pour la même chose n'y aurait aucun sens.
-      className="hidden min-h-[44px] items-center gap-2 rounded-[10px] border border-border bg-surface px-3 text-sm text-slate-2 transition-colors duration-150 ease-out hover:border-border-strong hover:text-ink md:inline-flex"
+      //
+      // Une icône seule, et carrée : le mot « Sommaire » à côté de « M202 —
+      // Analyser les besoins des utilisateurs » faisait deux libellés pour
+      // deux choses différentes sur la même ligne, et c'est le titre du module
+      // qu'on venait y lire. Le nom reste, pour les lecteurs d'écran et au
+      // survol.
+      className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-[10px] border border-border bg-surface text-slate-2 transition-colors duration-150 ease-out hover:border-border-strong hover:text-ink md:inline-flex"
     >
       <Icone size={17} aria-hidden />
-      Sommaire
     </button>
   );
 }
