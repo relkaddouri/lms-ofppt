@@ -39,12 +39,33 @@ export const metadata: Metadata = {
   description: "Plateforme de gestion pédagogique pour les formateurs OFPPT",
 };
 
+/**
+ * Les réglages de lecture, posés avant le premier affichage.
+ *
+ * Ce script s'exécute pendant l'analyse du document, donc avant que le
+ * navigateur ait peint quoi que ce soit. C'est la seule façon d'éviter le
+ * défaut classique : la page apparaît à la taille par défaut, puis saute à
+ * celle qu'on avait choisie une fois React arrivé. Un saut de texte sous les
+ * yeux au chargement de chaque page est pire que l'absence du réglage.
+ *
+ * Il est court et sans dépendance exprès : il tourne avant tout le reste, et
+ * une erreur ici bloquerait l'affichage. D'où le `try` qui avale tout —
+ * navigation privée, stockage refusé : on garde les valeurs par défaut.
+ */
+const AMORCE = `(function(){try{
+var t=localStorage.getItem('pedago:lecture');
+if(t)document.documentElement.style.setProperty('--lecture',t+'px');
+}catch(e){}})();`;
+
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="fr"
       className={`${sora.variable} ${sourceSans.variable} ${plexMono.variable} h-full antialiased`}
     >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: AMORCE }} />
+      </head>
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
         <ToastProvider>{children}</ToastProvider>
       </body>

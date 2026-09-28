@@ -12,6 +12,7 @@ import SommaireLateral from "../SommaireLateral";
 import MarquerLu from "./MarquerLu";
 import QuizChapitre from "./QuizChapitre";
 import { getChapitre, getJalons } from "@/app/actions/cours-stagiaire";
+import TailleLecture from "@/components/TailleLecture";
 
 export default async function CoursDetailPage({
   params,
@@ -74,10 +75,11 @@ export default async function CoursDetailPage({
             .join(" · ")}
         </p>
 
-        {/* Emporter le cours : le stagiaire révise hors ligne, imprime, ou
-            le range avec ses notes. Un support qu'on ne peut que consulter à
-            l'écran n'est pas un support de cours. */}
-        <div className="mt-4">
+        {/* Deux commandes de lecture, côte à côte : régler la taille du
+            texte, et emporter le cours. La taille d'abord — c'est celle qu'on
+            touche avant de commencer à lire, l'autre quand on a fini. */}
+        <div className="mt-4 flex flex-wrap items-center gap-2.5">
+          <TailleLecture />
           <TelechargerDiapos
             support={support.contenu}
             pied={[support.moduleNom, "Support du stagiaire"]
