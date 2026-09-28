@@ -1,13 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import Link from "next/link";
 import LigneSeance from "./LigneSeance";
+import LigneControle from "./LigneControle";
 import Badge from "@/components/ui/Badge";
 import RappelControle from "@/components/RappelControle";
 import { calculerRappel } from "@/lib/rappels";
 import { formatHeures } from "@/lib/format";
 import type { Seance } from "@/app/actions/seances";
+import type { ControleProgression } from "@/app/actions/controles";
 import { ChevronDown, ChevronRight } from "lucide-react";
 
 export type ObjectifBloc = {
@@ -32,6 +34,8 @@ export default function ModuleProgression({
   controlesCouverts,
   objectifs,
   seances,
+  controlesApres,
+  controlesSansAncrage,
   ouvertParDefaut = false,
 }: {
   groupeId: string;
@@ -43,6 +47,10 @@ export default function ModuleProgression({
   controlesCouverts: number;
   objectifs: ObjectifBloc[];
   seances: Seance[];
+  /** Les contrôles à poser sous la séance qui les précède, par identifiant. */
+  controlesApres: Record<string, ControleProgression[]>;
+  /** Ceux qu'aucune séance ne précède : sans date, ou avant la première. */
+  controlesSansAncrage: ControleProgression[];
   ouvertParDefaut?: boolean;
 }) {
   const [ouvert, setOuvert] = useState(ouvertParDefaut);
@@ -141,6 +149,16 @@ export default function ModuleProgression({
 
       {ouvert ? (
         <div className="space-y-3 border-t border-border bg-paper p-3">
+          {/* Un contrôle qu'aucune séance ne précède — sans date, ou posé
+              avant la première séance — ouvre le module plutôt que de
+              disparaître. */}
+          {controlesSansAncrage.length > 0 ? (
+            <ul className="overflow-hidden rounded-lg border border-border bg-surface">
+              {controlesSansAncrage.map((c) => (
+                <LigneControle key={c.id} controle={c} groupeId={groupeId} />
+              ))}
+            </ul>
+          ) : null}
           {objectifs.map((o) => {
             const heuresObjectif = o.seances.reduce(
               (t, s) => t + Number(s.duree_prevue ?? 0),
@@ -170,13 +188,23 @@ export default function ModuleProgression({
                   {o.seances.map((s) => {
                     numero += 1;
                     return (
-                      <LigneSeance
-                        key={s.id}
-                        seance={s}
-                        groupeId={groupeId}
-                        numero={numero}
-                        prochaine={s.id === prochaine?.id}
-                      />
+                      <Fragment key={s.id}>
+                        <LigneSeance
+                          seance={s}
+                          groupeId={groupeId}
+                          numero={numero}
+                          prochaine={s.id === prochaine?.id}
+                        />
+                        {/* Le contrôle se pose sous la dernière séance qui
+                            l'a précédé : c'est là qu'il a eu lieu. */}
+                        {(controlesApres[s.id] ?? []).map((c) => (
+                          <LigneControle
+                            key={c.id}
+                            controle={c}
+                            groupeId={groupeId}
+                          />
+                        ))}
+                      </Fragment>
                     );
                   })}
                 </ul>

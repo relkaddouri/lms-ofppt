@@ -29,7 +29,7 @@ export default function Cloche({
   cle,
   mesure = "nouveaux",
   sonnePour,
-  compteInitial = null,
+  apercuInitial = null,
   className,
 }: {
   charger: () => Promise<Notification[]>;
@@ -57,27 +57,31 @@ export default function Cloche({
    */
   sonnePour?: (notification: Notification) => boolean;
   /**
-   * Compte rendu par le serveur avec la page.
+   * Ce que le serveur a lu en rendant la page : un identifiant et une date
+   * par notification, rien de plus.
    *
-   * Quand il est fourni, la cloche ne relit pas au montage : le serveur vient
-   * de le faire pour l'afficher, et relancer les mêmes lectures une seconde
-   * plus tard doublait le coût de chaque chargement de page (audit du
-   * 26/09/2026). `null` — le cas du stagiaire, dont le layout ne compte rien
-   * — garde la relecture immédiate.
+   * Quand il est fourni, la cloche ne relit pas au montage — le serveur vient
+   * de le faire, et relancer les mêmes lectures une seconde plus tard
+   * doublait le coût de chaque chargement de page (audit du 26/09/2026).
+   *
+   * Un simple compte ne suffirait pas côté stagiaire : sa pastille ne montre
+   * que ce qui est arrivé depuis son dernier regard, une date qui vit dans
+   * son navigateur. Avec les dates, le calcul se refait à l'identique sans
+   * rien demander au serveur.
    */
-  compteInitial?: number | null;
+  apercuInitial?: { id: string; date: string }[] | null;
   /** Le bouton n'a pas la même taille d'un espace à l'autre. */
   className?: string;
 }) {
   const [ouvert, setOuvert] = useState(false);
-  const [compte, setCompte] = useState(compteInitial ?? 0);
+  const [compte, setCompte] = useState(0);
   /**
-   * Le compte venait-il du serveur au montage ?
+   * L'aperçu du serveur, figé au montage.
    *
-   * Dans une référence et non dans les dépendances de l'effet : sa valeur
-   * change à chaque navigation, ce qui relancerait la minuterie sans raison.
+   * Dans une référence et non dans les dépendances de l'effet : il change à
+   * chaque navigation, ce qui relancerait la minuterie sans raison.
    */
-  const rendueParLeServeur = useRef(compteInitial !== null);
+  const apercu = useRef(apercuInitial);
   const [sonne, setSonne] = useState(false);
   const [avecSon, setAvecSon] = useState(true);
 
@@ -144,10 +148,25 @@ export default function Cloche({
       }
     }
 
-    // Au montage, on ne relit que si le serveur n'a rien rendu. Les entrées
-    // connues restent alors vides jusqu'au premier tour : c'est déjà ce qui
-    // se passait, la première relecture ne sonnant jamais.
-    if (!rendueParLeServeur.current) void verifier();
+    // Au montage, on se contente de ce que le serveur a lu en rendant la
+    // page. Sans aperçu — un espace dont le gabarit ne lit rien —, on relit
+    // tout de suite, comme avant.
+    const depart = apercu.current;
+    if (depart) {
+      const vu = depuis.current;
+      setCompte(
+        mesure === "total"
+          ? depart.length
+          : vu
+            ? depart.filter((n) => n.date > vu).length
+            : depart.length,
+      );
+      // Les entrées connues viennent du serveur : le premier tour ne sonnera
+      // donc que pour ce qui est arrivé depuis le chargement de la page.
+      connues.current = new Set(depart.map((n) => n.id));
+    } else {
+      void verifier();
+    }
     const minuterie = window.setInterval(verifier, RYTHME);
     // Au retour sur l'onglet, on vérifie tout de suite : attendre le prochain
     // tour ferait rater ce qui est arrivé pendant l'absence.

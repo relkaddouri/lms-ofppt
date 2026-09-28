@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getUser } from "@/lib/supabase/server";
 import { getIdentiteStagiaire } from "@/app/actions/stagiaire";
+import { getNotificationsStagiaire } from "@/app/actions/notifications-stagiaire";
 import { NavigationHaute, NavigationBasse } from "./BarreNavigation";
 import PhotoStagiaire from "@/components/PhotoStagiaire";
 import ModaleDistinction from "@/components/ModaleDistinction";
@@ -20,6 +21,17 @@ export default async function EspaceStagiaireLayout({
   // plutôt que de voir un fil vide.
   const identite = await getIdentiteStagiaire();
   if (!identite) redirect("/dashboard");
+
+  // Les nouveautés se lisent en rendant la page, et non par un appel du
+  // navigateur une seconde plus tard : c'est le même travail, une invocation
+  // de moins (audit du 26/09/2026, correction 4 côté stagiaire). Seuls
+  // l'identifiant et la date descendent — la pastille ne montre que ce qui
+  // est arrivé depuis le dernier regard, une date qui vit dans son
+  // navigateur.
+  const nouveautes = await getNotificationsStagiaire()
+    .then((liste) => liste.map((n) => ({ id: n.id, date: n.date })))
+    // Une pastille manquante ne vaut pas une page en erreur.
+    .catch(() => null);
 
   return (
     <div className="min-h-dvh bg-paper">
@@ -61,7 +73,7 @@ export default async function EspaceStagiaireLayout({
                 contient : c'est tout l'objet de l'ancre posée sur chaque
                 commentaire. Elle reste dans l'en-tête aux deux tailles — la
                 barre du bas ne tient que la navigation (§6). */}
-            <ClocheStagiaire />
+            <ClocheStagiaire apercuInitial={nouveautes} />
 
             {/* La déconnexion tient dans l'en-tête : la barre du bas est
                 réservée à la navigation, et un cinquième onglet la

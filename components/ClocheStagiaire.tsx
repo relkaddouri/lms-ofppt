@@ -12,10 +12,16 @@ import { getNotificationsStagiaire } from "@/app/actions/notifications-stagiaire
  * dans le groupe, et la pastille ne compte que ce qu'il n'a pas encore
  * regardé — il n'a rien à traiter, donc rien ne se résout.
  */
-export default function ClocheStagiaire() {
+export default function ClocheStagiaire({
+  apercuInitial = null,
+}: {
+  /** Ce que le gabarit a lu en rendant la page (audit du 26/09/2026). */
+  apercuInitial?: { id: string; date: string }[] | null;
+}) {
   return (
     <Cloche
       charger={getNotificationsStagiaire}
+      apercuInitial={apercuInitial}
       titre="Nouveautés"
       resume={(n) =>
         n === 0

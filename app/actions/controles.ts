@@ -189,6 +189,45 @@ export async function getControles(
   }));
 }
 
+/**
+ * Les contrôles d'un groupe, tels qu'ils s'affichent dans sa progression.
+ *
+ * Une lecture volontairement maigre — huit colonnes, aucune jointure, une
+ * borne : la page de progression tourne à chaque visite, et ce qu'on y montre
+ * d'un contrôle tient en une ligne (règles de performance, CLAUDE.md).
+ *
+ * Les brouillons en font partie : le formateur doit voir sur sa progression
+ * qu'un contrôle est prévu là, même s'il n'est pas encore validé.
+ */
+export type ControleProgression = {
+  id: string;
+  module_id: string;
+  titre: string | null;
+  type: "CC" | "EFM" | "TEST";
+  type_efm: "local" | "regional" | null;
+  statut: string;
+  date_prevue: string | null;
+  ouvert_le: string | null;
+  ferme_le: string | null;
+};
+
+export async function getControlesDuGroupe(
+  groupeId: string,
+): Promise<ControleProgression[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("controles")
+    .select(
+      "id, module_id, titre, type, type_efm, statut, date_prevue, ouvert_le, ferme_le",
+    )
+    .eq("groupe_id", groupeId)
+    .order("date_prevue", { ascending: true, nullsFirst: false })
+    .limit(200);
+
+  if (error) throw new Error(error.message);
+  return (data ?? []) as unknown as ControleProgression[];
+}
+
 export async function getControle(id: string): Promise<ControleDetail | null> {
   const supabase = await createClient();
 
