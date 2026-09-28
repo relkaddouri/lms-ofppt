@@ -83,16 +83,30 @@ export default function LigneSeance({
         {numero}
       </span>
 
-      <span
-        className={`w-20 shrink-0 text-xs ${
-          seance.nature === "pratique" ? "text-teal-dark" : "text-slate"
-        }`}
-      >
-        {seance.nature === "pratique"
-          ? "pratique"
-          : seance.nature === "theorique"
-            ? "théorique"
-            : "—"}
+      <span className="flex w-20 shrink-0 items-center gap-1.5">
+        <span
+          className={`text-xs ${
+            seance.nature === "pratique" ? "text-teal-dark" : "text-slate"
+          }`}
+        >
+          {seance.nature === "pratique"
+            ? "pratique"
+            : seance.nature === "theorique"
+              ? "théorique"
+              : "—"}
+        </span>
+        {/* Une séance à distance ne se prépare pas comme une séance en salle
+            — lien Teams, présence autrement relevée. Elle se repère donc dans
+            la liste, sans avoir à ouvrir chaque séance (demande du
+            28/09/2026). */}
+        {seance.est_fad ? (
+          <span
+            title="Séance à distance"
+            className="rounded-full border border-tint-teal-strong bg-tint-teal px-1.5 py-px font-mono text-[10px] font-semibold text-teal-dark"
+          >
+            FAD
+          </span>
+        ) : null}
       </span>
 
       <span className="w-16 shrink-0 font-mono text-xs text-slate">
