@@ -40,7 +40,8 @@ export const metadata: Metadata = {
 };
 
 /**
- * Les réglages de lecture et d'apparence, posés avant le premier affichage.
+ * Les réglages de lecture, d'apparence et de disposition, posés avant le
+ * premier affichage.
  *
  * Ce script s'exécute pendant l'analyse du document, donc avant que le
  * navigateur ait peint quoi que ce soit. C'est la seule façon d'éviter le
@@ -55,6 +56,8 @@ export const metadata: Metadata = {
 const AMORCE = `(function(){try{
 var t=localStorage.getItem('pedago:lecture');
 if(t)document.documentElement.style.setProperty('--lecture',t+'px');
+var s=localStorage.getItem('pedago:sommaire');
+if(s==='ferme')document.documentElement.setAttribute('data-sommaire','ferme');
 var a=localStorage.getItem('pedago:apparence');
 if(a==='sombre')document.documentElement.setAttribute('data-theme','dark');
 else if(a==='clair')document.documentElement.setAttribute('data-theme','light');

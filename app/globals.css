@@ -907,3 +907,18 @@ body {
 .texte-lecture {
   font-size: var(--lecture);
 }
+
+/* Le sommaire du module, replié.
+   Sur grand écran seulement : sur téléphone le sommaire est déjà un
+   `<details>` refermé, et la colonne n'existe pas.
+
+   En CSS et non en état React : l'attribut est posé par le script d'amorçage
+   avant le premier pixel, donc la page s'ouvre déjà dans la bonne disposition.
+   En passant par un état, elle se serait affichée en deux colonnes puis aurait
+   sauté en une seule à l'hydratation — un déplacement du texte sous les yeux,
+   juste avant de commencer à lire. */
+@media (min-width: 768px) {
+  :root[data-sommaire="ferme"] .sommaire-repliable {
+    display: none;
+  }
+}
