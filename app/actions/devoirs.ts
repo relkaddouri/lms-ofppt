@@ -332,11 +332,17 @@ export async function getRendusDevoir(devoirId: string): Promise<RenduRecu[]> {
  * est demandée sous la session de l'appelant, donc les policies décident —
  * le formateur du groupe et l'auteur du rendu, personne d'autre.
  */
-export async function lienRendu(chemin: string): Promise<string> {
+export async function lienRendu(
+  chemin: string,
+  nomFichier?: string,
+): Promise<string> {
   const supabase = await createClient();
   const { data, error } = await supabase.storage
     .from(BUCKET_RENDUS)
-    .createSignedUrl(chemin, 60 * 5);
+    // En pièce jointe : sans cet en-tête, le navigateur quitterait
+    // l'application pour afficher le document — et n'afficherait rien du tout
+    // pour un .docx.
+    .createSignedUrl(chemin, 60 * 5, { download: nomFichier ?? true });
 
   if (error || !data?.signedUrl) {
     throw new Error(error?.message ?? "Fichier introuvable.");
