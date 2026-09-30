@@ -1,5 +1,6 @@
 import { Fragment } from "react";
 import { analyser, enTeteDocument, type Noeud } from "@/lib/diapos";
+import type { Video } from "@/lib/video";
 import { segmenter } from "@/lib/markdown";
 import { colonnesCategorielles } from "@/lib/tableaux";
 
@@ -405,6 +406,12 @@ function Blocs({
       continue;
     }
 
+    if (n.k === "video") {
+      rendu.push(<Lecteur key={i} video={n.video} largeur={largeur} />);
+      i++;
+      continue;
+    }
+
     if (n.k === "hr") {
       rendu.push(<hr key={i} className="border-t border-separator" />);
       i++;
@@ -439,6 +446,43 @@ function Blocs({
         <Fragment key={k}>{r}</Fragment>
       ))}
     </div>
+  );
+}
+
+/**
+ * Le lecteur d'une vidéo, au fil du cours.
+ *
+ * Un cadre 16:9 qui prend la largeur de la colonne : une démonstration se
+ * regarde à l'endroit du texte qui l'explique, pas dans un onglet à côté.
+ *
+ * `loading="lazy"` : une page de cours peut en porter cinq, et le lecteur de
+ * chacune pèse plus que tout le texte qui l'entoure. Elles ne se chargent
+ * qu'en approchant de l'écran.
+ *
+ * Rien de tout cela ne passe par le serveur du LMS : la vidéo vient de chez
+ * son hébergeur, directement au navigateur du stagiaire.
+ */
+function Lecteur({ video, largeur }: { video: Video; largeur: string }) {
+  return (
+    <figure className={`${largeur} flex flex-col gap-2`}>
+      <div className="overflow-hidden rounded-[12px] border border-border bg-encre">
+        <iframe
+          src={video.src}
+          title={video.titre ?? "Vidéo du cours"}
+          loading="lazy"
+          // La liste est celle dont un lecteur a besoin, et rien de plus.
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          referrerPolicy="strict-origin-when-cross-origin"
+          allowFullScreen
+          className="aspect-video w-full border-0"
+        />
+      </div>
+      {video.titre ? (
+        <figcaption className="text-[0.88em] text-slate-light">
+          {video.titre}
+        </figcaption>
+      ) : null}
+    </figure>
   );
 }
 
