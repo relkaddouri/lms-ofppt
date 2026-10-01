@@ -481,7 +481,8 @@ export async function genererSeances(
       .is("date", null)
       .order("created_at");
 
-  const [motifRes, seancesRes, indispoRes, occupesRes] = await Promise.all([
+  const [motifRes, seancesRes, indispoRes, occupesRes, agesRes] =
+    await Promise.all([
     supabase
       .from("motifs_hebdomadaires")
       .select(
@@ -504,12 +505,20 @@ export async function genererSeances(
       .select("date, heure_debut, heure_fin, seance_groupes!inner(groupe_id)")
       .eq("seance_groupes.groupe_id", groupeId)
       .gte("date", dateDebut),
+    // L'âge de chaque module du groupe, lu sur **toutes** ses séances —
+    // datées comprises. C'est lui qui ordonne les modules entre eux.
+    supabase
+      .from("seances")
+      .select("module_id, created_at, seance_groupes!inner(groupe_id)")
+      .eq("seance_groupes.groupe_id", groupeId)
+      .limit(2000),
   ]);
 
   if (motifRes.error) throw new Error(motifRes.error.message);
   if (seancesRes.error) throw new Error(seancesRes.error.message);
   if (indispoRes.error) throw new Error(indispoRes.error.message);
   if (occupesRes.error) throw new Error(occupesRes.error.message);
+  if (agesRes.error) throw new Error(agesRes.error.message);
 
   // Ce qui est déjà pris, jour par jour et en plages horaires : une séance
   // qui ne couvre qu'une moitié de créneau laisse l'autre à remplir.
@@ -661,7 +670,21 @@ export async function genererSeances(
   // `created_at` est postérieur à celui de leur module : s'en servir tel quel
   // les renverrait en fin de file. Le lot d'un module est donc le plus ancien
   // de ses horodatages, pas celui de la ligne.
+  //
+  // Et il se lit sur **toutes** les séances du module, pas sur les seules qui
+  // restent à placer. Avec ces dernières, un module dont il ne reste qu'un
+  // reliquat — né d'un recalcul, donc horodaté dix jours après son lot —
+  // prenait l'âge de ce reliquat et passait derrière tous les autres. Mesuré
+  // sur DDOUX201 : la dernière séance de M202, 2 h 30 créées le 13/09, partait
+  // au 02/03/2027 derrière M207, au lieu du 1er octobre à la suite de son
+  // module. Les modules s'ordonnent par leur naissance, pas par ce qu'il leur
+  // reste à faire.
   const lotDuModule = new Map<string, string>();
+  for (const s of agesRes.data ?? []) {
+    const t = String(s.created_at ?? "");
+    const vu = lotDuModule.get(s.module_id);
+    if (vu === undefined || t < vu) lotDuModule.set(s.module_id, t);
+  }
   for (const s of aPlacer) {
     const t = String(s.created_at ?? "");
     const vu = lotDuModule.get(s.module_id);
