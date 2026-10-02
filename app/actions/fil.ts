@@ -198,11 +198,17 @@ export async function getFil(groupeId: string): Promise<AnnonceFil[]> {
 
   // Qui lit ? Pour tutoyer le distingué plutôt que de parler de lui à la
   // troisième personne, comme le fait déjà la modale.
-  const { data: moi } = await supabase
-    .from("stagiaires")
-    .select("id")
-    .eq("user_id", user?.id ?? "")
-    .maybeSingle();
+  // Sans utilisateur — session expirée, jeton en cours de renouvellement — on
+  // ne demande pas « quel stagiaire a l'identifiant "" » : `user_id` est un
+  // uuid, et Postgres refuse la chaîne vide. Personne n'est alors le distingué
+  // du jour, ce qui est exactement ce qu'il faut répondre.
+  const { data: moi } = user
+    ? await supabase
+        .from("stagiaires")
+        .select("id")
+        .eq("user_id", user.id)
+        .maybeSingle()
+    : { data: null };
 
   type DistinctionLue = {
     annonce_id: string | null;

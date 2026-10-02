@@ -24,11 +24,15 @@ export async function getIndisponibilites(
   // Cette table pend du formateur et d'aucun groupe : elle porte donc le champ
   // et se borne par lui.
   const { anneeId } = await getPortee();
+  // Pas d'année, pas d'indisponibilité — et pas de requête : `annee_scolaire_id`
+  // est un uuid, une chaîne vide y déclenche « invalid input syntax for type
+  // uuid » et fait tomber l'écran du calendrier.
+  if (!anneeId) return [];
 
   const { data, error } = await supabase
     .from("indisponibilites")
     .select("id, type, date_debut, date_fin, demi_journee, libelle, motif")
-    .eq("annee_scolaire_id", anneeId ?? "")
+    .eq("annee_scolaire_id", anneeId)
     .lte("date_debut", fin)
     .gte("date_fin", debut)
     .order("date_debut");
@@ -51,11 +55,15 @@ export async function getIndisponibilitesAVenir(
   const supabase = await createClient();
 
   const { anneeId } = await getPortee();
+  // Pas d'année, pas d'indisponibilité — et pas de requête : `annee_scolaire_id`
+  // est un uuid, une chaîne vide y déclenche « invalid input syntax for type
+  // uuid » et fait tomber l'écran du calendrier.
+  if (!anneeId) return [];
 
   const { data, error } = await supabase
     .from("indisponibilites")
     .select("id, type, date_debut, date_fin, demi_journee, libelle, motif")
-    .eq("annee_scolaire_id", anneeId ?? "")
+    .eq("annee_scolaire_id", anneeId)
     .gte("date_fin", depuis)
     .order("date_debut")
     .limit(60);

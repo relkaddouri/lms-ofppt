@@ -59,13 +59,18 @@ export async function getMotifs(): Promise<MotifHebdomadaire[]> {
   // l'autre, il se redéclare. Les motifs des années passées restent en base
   // mais ne se mélangent pas à celui en cours.
   const { anneeId } = await getPortee();
+  // Sans année, il n'y a pas de motif à lire — et surtout pas de requête à
+  // envoyer : une chaîne vide dans une colonne uuid fait répondre à Postgres
+  // « invalid input syntax for type uuid: "" », et l'écran se change en page
+  // d'erreur pour une liste qui n'aurait de toute façon rien contenu.
+  if (!anneeId) return [];
 
   const { data, error } = await supabase
     .from("motifs_hebdomadaires")
     .select(
       "id, libelle, date_debut, date_fin, creneaux_motif(id, jour_semaine, heure_debut, heure_fin, groupe_id, recurrence, premiere_date, groupes(nom))",
     )
-    .eq("annee_scolaire_id", anneeId ?? "")
+    .eq("annee_scolaire_id", anneeId)
     .order("date_debut", { ascending: false });
 
   if (error) throw new Error(error.message);
@@ -295,6 +300,9 @@ export async function replanifier(
 
   const uniques = [...new Set(groupeIds)].filter(Boolean);
   if (uniques.length === 0) return { groupes };
+  // Même raison : sans année, la lecture du motif partirait avec une chaîne
+  // vide. Il n'y a rien à replanifier, on le dit en rendant la main.
+  if (!anneeId) return { groupes };
 
   const { data: nomsRes } = await supabase
     .from("groupes")
@@ -306,7 +314,7 @@ export async function replanifier(
   const { data: motifRes } = await supabase
     .from("motifs_hebdomadaires")
     .select("date_debut, creneaux_motif(groupe_id)")
-    .eq("annee_scolaire_id", anneeId ?? "")
+    .eq("annee_scolaire_id", anneeId)
     .is("date_fin", null)
     .order("date_debut", { ascending: false })
     .limit(1);
@@ -468,6 +476,15 @@ export async function genererSeances(
   if (!user) throw new Error("Authentification requise.");
 
   const { anneeId: porteeId } = await getPortee();
+  // Le remplissage lit le motif et les indisponibilités de l'année : sans
+  // elle, les deux requêtes partiraient avec une chaîne vide. On refuse en
+  // disant quoi faire, plutôt que de laisser remonter une erreur de syntaxe
+  // Postgres que personne ne peut relier à une année manquante.
+  if (!porteeId) {
+    throw new Error(
+      "Aucune année scolaire n'est sélectionnée. Choisissez-en une avant de placer des séances.",
+    );
+  }
 
   // Les séances du groupe encore sans date : le contenu à placer. Relue après
   // une reconstruction de module, d'où la fonction.
@@ -487,7 +504,7 @@ export async function genererSeances(
       .select(
         "id, date_fin, creneaux_motif(jour_semaine, heure_debut, heure_fin, groupe_id, recurrence, premiere_date)",
       )
-      .eq("annee_scolaire_id", porteeId ?? "")
+      .eq("annee_scolaire_id", porteeId)
       .lte("date_debut", dateDebut)
       .order("date_debut", { ascending: false })
       .limit(1),
@@ -495,7 +512,7 @@ export async function genererSeances(
     supabase
       .from("indisponibilites")
       .select("date_debut, date_fin, demi_journee")
-      .eq("annee_scolaire_id", porteeId ?? ""),
+      .eq("annee_scolaire_id", porteeId),
     // Ce qui occupe déjà un créneau : séances faites, et séances passées que
     // le recalcul a laissées en place. Y écrire créerait deux séances à la
     // même heure.
