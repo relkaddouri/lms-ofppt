@@ -58,11 +58,16 @@ export async function getBilanHeures(reference?: string): Promise<BilanHeures> {
       .not("date", "is", null)
       .gte("date", debut)
       .lte("date", fin),
-    supabase
-      .from("rythmes_hebdomadaires")
-      .select("date_debut, date_fin, heures_cible")
-      .eq("annee_scolaire_id", portee.anneeId ?? "")
-      .order("date_debut"),
+    // La cible hebdomadaire appartient à une année : sans elle, pas de
+    // requête. Une chaîne vide dans une colonne uuid fait tomber tout le
+    // bilan d'heures pour une ligne qui serait restée vide.
+    portee.anneeId
+      ? supabase
+          .from("rythmes_hebdomadaires")
+          .select("date_debut, date_fin, heures_cible")
+          .eq("annee_scolaire_id", portee.anneeId)
+          .order("date_debut")
+      : Promise.resolve({ data: [], error: null }),
     getParametresFormateur(),
   ]);
 

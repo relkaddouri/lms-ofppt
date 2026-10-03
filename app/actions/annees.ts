@@ -89,7 +89,15 @@ export async function getPortee(): Promise<Portee> {
   const supabase = await createClient();
   const annee = await getAnneeCourante();
 
-  if (!annee) return { anneeId: null, groupeIds: [] };
+  if (!annee) {
+    // Trace volontaire, sur ce seul chemin : tant qu'elle manquait, l'absence
+    // d'année se présentait en production sous la forme d'une erreur de
+    // syntaxe Postgres — « invalid input syntax for type uuid: "" » — que
+    // rien ne reliait à une année non sélectionnée. Elle ne coûte rien aux
+    // pages normales, qui ne passent jamais ici.
+    console.warn("[portée] aucune année scolaire lisible pour cette session");
+    return { anneeId: null, groupeIds: [] };
+  }
 
   const { data, error } = await supabase
     .from("groupes")
