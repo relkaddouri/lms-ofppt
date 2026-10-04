@@ -2,6 +2,10 @@ import { createClient } from "@/lib/supabase/server";
 import { appelerLlm, chargerConfigLlm, ErreurLlm } from "@/lib/llm";
 import { verifierQuota, QUOTA_GENERATION } from "@/lib/rate-limit";
 import { NextResponse } from "next/server";
+import {
+  choisirArchitecture,
+  consigneBudget,
+} from "@/lib/plan-controle";
 import { baremeAttendu, socleAccessible } from "@/lib/controles";
 import {
   alertesQuestion,
@@ -76,10 +80,12 @@ const CONSIGNES_FORMAT = {
     libelle: "théorique et pratique",
     types: ["qcm", "ouverte", "exercice"] as const,
     consigne: [
-      "Ce contrôle est THÉORIQUE ET PRATIQUE : il combine les deux. Commence",
-      'par les questions de connaissances ("qcm" et "ouverte"), puis termine',
-      'par au moins deux mises en situation de type "exercice".',
-      "Environ la moitié du barème doit porter sur la partie pratique.",
+      "Ce contrôle est THÉORIQUE ET PRATIQUE : il combine les deux. Emploie",
+      'les trois types, dont au moins deux mises en situation de type',
+      '"exercice". Environ la moitié du barème doit porter sur la partie',
+      "pratique.",
+      "L'ORDRE des questions n'est pas fixé ici : il est donné plus bas par le",
+      "plan du sujet, et il change d'un contrôle à l'autre.",
     ],
   },
 } as const;
@@ -164,6 +170,36 @@ export async function POST(request: Request) {
   }
 
   const duree = Number(dureeHeures) || 2;
+
+  // Les sujets déjà écrits pour ce module.
+  //
+  // Deux usages, et c'est le même défaut qu'ils corrigent : un modèle à qui
+  // l'on repose exactement la même question répond exactement la même chose.
+  // Leur nombre fait tourner le plan du sujet, de sorte que le suivant ne
+  // reprend pas la forme du précédent ; et leurs énoncés partent dans le
+  // prompt pour qu'il ne repose pas les mêmes questions.
+  const { data: anciens } = await supabase
+    .from("controles")
+    .select("id, titre, created_at, questions_controle(type, enonce)")
+    .eq("module_id", moduleId)
+    .neq("id", controleExistant?.id ?? "00000000-0000-0000-0000-000000000000")
+    .order("created_at", { ascending: false })
+    .limit(4);
+
+  const architecture = choisirArchitecture(format, (anciens ?? []).length);
+
+  // On ne donne que les énoncés, et pas plus de huit par sujet : c'est assez
+  // pour reconnaître une question déjà posée, et ça n'enfle pas le prompt.
+  const sujetsPrecedents = (anciens ?? [])
+    .map((c) => {
+      const qs = (c.questions_controle ?? [])
+        .slice(0, 8)
+        .map((q) => `  - (${q.type}) ${String(q.enonce ?? "").slice(0, 160)}`)
+        .join("\n");
+      return qs ? `« ${c.titre ?? "Sans titre"} » :\n${qs}` : null;
+    })
+    .filter(Boolean)
+    .join("\n\n");
 
   // Un contrôle continu porte sur ce qui a été fait à ce jour ; une épreuve de
   // fin de module porte sur le module entier, y compris ce qui reste à faire.
@@ -320,20 +356,27 @@ export async function POST(request: Request) {
     '- "ouverte" : réponse rédigée courte. Fournis `corrige`.',
     '- "exercice" : mise en application, réponse longue. Fournis `corrige` et `donnees`.',
     "",
+    ...consigneBudget(duree, format),
+    "",
+    "PLAN DU SUJET — à suivre.",
+    architecture.consigne,
+    "",
     "Exigences :",
-    format === "pratique"
-      ? "- Entre 3 et 6 mises en situation, de difficulté croissante."
-      : "- Entre 8 et 14 questions, en variant les types autorisés.",
     `- N'utilise que ces types : ${regles.types.map((t) => `"${t}"`).join(", ")}.`,
     `- Le barème DOIT totaliser exactement ${totalAttendu} points.`,
     "",
     "Calibration du barème — deux règles non négociables :",
-    "1. Le nombre de points d'une question suit sa difficulté réelle. Une",
-    "   restitution directe vaut peu (1 à 2 points) ; une question de",
-    "   raisonnement à plusieurs étapes, mobilisant plusieurs notions, vaut",
-    "   nettement plus (5 à 8 points). Un barème ne se choisit jamais pour",
-    "   tomber sur le total : il se choisit pour la question, et c'est la",
-    "   répartition d'ensemble qui tombe juste.",
+    "1. Le barème se répartit APRÈS que le sujet est composé, jamais avant.",
+    "   Compose d'abord les questions à partir du budget de temps ci-dessus,",
+    "   puis répartis les points entre elles. N'ampute JAMAIS le sujet pour",
+    "   tomber sur le total : un sujet court dont les questions valent cher",
+    "   est un sujet raté, parce que le stagiaire rend sa copie en une heure",
+    "   sur une épreuve qui en dure deux et demie.",
+    "   Le poids d'une question suit sa difficulté, en proportion du total et",
+    "   non en valeur absolue : une restitution directe pèse peu, une mise en",
+    "   situation complète pèse trois à cinq fois plus qu'une restitution.",
+    "   Sur un sujet qui compte beaucoup de questions, chacune vaut donc peu —",
+    `   c'est normal, les ${totalAttendu} points se partagent entre toutes.`,
     "   Pour CHAQUE question, renseigne `justification_bareme` : une phrase",
     "   qui dit pourquoi ce nombre de points correspond à cette difficulté.",
     "2. Répartis les questions sur deux niveaux, dans le champ `difficulte` :",
@@ -347,7 +390,26 @@ export async function POST(request: Request) {
     "   Un contrôle de difficulté homogène, ou dont la répartition est",
     "   aléatoire, est un contrôle raté.",
     "- Des consignes claires et brèves pour le stagiaire.",
+    "- VARIE la formulation des énoncés. Il est interdit d'ouvrir plus de deux",
+    "  questions par la même tournure. En particulier, n'écris pas « À partir",
+    "  des données ci-dessous », ni « À partir des observations ci-dessous »,",
+    "  ni aucune variante de cette tournure : le stagiaire a le matériau",
+    "  sous les yeux, l'énoncé n'a pas à le lui annoncer. Demande directement",
+    "  ce qu'il faut produire.",
     "",
+    sujetsPrecedents
+      ? [
+          "DÉJÀ POSÉ dans ce module — ne recommence pas.",
+          "Voici les énoncés des contrôles précédents. Tes questions doivent",
+          "porter sur les mêmes notions sans reprendre ces formulations, ces",
+          "situations ni ces jeux de données, et sans suivre le même",
+          "enchaînement. Un stagiaire qui a vu ces sujets ne doit pas pouvoir",
+          "deviner la forme de celui-ci.",
+          "",
+          sujetsPrecedents,
+          "",
+        ].join("\n")
+      : null,
     "Réponds UNIQUEMENT en JSON, sans markdown, avec exactement cette structure :",
     `{
   "titre": "Contrôle — {nom du module}",
@@ -375,7 +437,7 @@ export async function POST(request: Request) {
     },
     {
       "type": "exercice",
-      "enonce": "À partir des observations ci-dessous, regroupez les utilisateurs en types convergents et nommez les critères retenus.",
+      "enonce": "Regroupez ces utilisateurs en types convergents et nommez les critères que vous avez retenus.",
       "donnees": "1. Karim, 34 ans, réserve chaque lundi à 7 h depuis son téléphone…\n2. …",
       "bareme": 6,
       "difficulte": "discriminant",
@@ -388,16 +450,45 @@ export async function POST(request: Request) {
     .filter((l): l is string => l !== null)
     .join("\n");
 
-  let text: string;
-  try {
+  // Un sujet calibré sur sa durée est long : une épreuve de deux heures et
+  // demie demande une vingtaine de questions, avec leurs corrigés et leurs
+  // jeux de données. On s'approche alors du plafond de sortie du modèle, et
+  // une réponse tronquée n'est pas du JSON. Observé une fois sur trois essais.
+  //
+  // Un second essai suffit — l'échec tient à la longueur d'une génération
+  // donnée, pas au sujet demandé. Deux appels plutôt qu'un seul dans ce cas
+  // rare, plutôt qu'une erreur rendue au formateur qui n'a d'autre recours
+  // que de recliquer lui-même.
+  const demander = async () => {
     const config = await chargerConfigLlm(user.id);
-    text = await appelerLlm(config, {
+    return appelerLlm(config, {
       systeme:
         "Tu es un formateur expert du référentiel OFPPT. Tu rédiges des évaluations en français.",
       prompt,
       temperature: 0.7,
       json: true,
     });
+  };
+
+  const lisible = (brut: string) => {
+    try {
+      const lu = JSON.parse(brut) as ControleGenere;
+      return Array.isArray(lu.questions) ? lu : null;
+    } catch {
+      return null;
+    }
+  };
+
+  let text: string;
+  try {
+    text = await demander();
+    if (!lisible(text)) {
+      console.warn(
+        "[génération] première réponse illisible, second essai",
+        text.length,
+      );
+      text = await demander();
+    }
   } catch (e) {
     const err = e instanceof ErreurLlm ? e : null;
     return NextResponse.json(
@@ -406,13 +497,13 @@ export async function POST(request: Request) {
     );
   }
 
-  let genere: ControleGenere;
-  try {
-    genere = JSON.parse(text) as ControleGenere;
-    if (!Array.isArray(genere.questions)) throw new Error("mauvaise structure");
-  } catch {
+  const genere = lisible(text);
+  if (!genere) {
     return NextResponse.json(
-      { error: "Le modèle n'a pas retourné un JSON valide." },
+      {
+        error:
+          "Le modèle n'a pas retourné un JSON valide, deux fois de suite. Sa réponse est probablement tronquée : réduisez la durée du contrôle, ou relevez max_tokens dans vos paramètres.",
+      },
       { status: 502 },
     );
   }
