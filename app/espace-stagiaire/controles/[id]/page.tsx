@@ -9,6 +9,7 @@ import {
 import { testOuvert } from "@/lib/controles";
 import Passation from "./Passation";
 import MaCopieVue from "./MaCopieVue";
+import EcranSurveille from "./EcranSurveille";
 
 export default async function ControlePage({
   params,
@@ -56,5 +57,28 @@ export default async function ControlePage({
   }
 
   const sujet = await getSujet(id);
+
+  // Un contrôle surveillé n'affiche pas son sujet avant que l'écran ne soit
+  // partagé (migration 111) : l'enveloppe annonce la surveillance, obtient le
+  // partage, puis laisse passer l'épreuve. Les autres contrôles ne changent
+  // pas d'un iota — `surveille` est faux par défaut.
+  if (controle.surveille) {
+    // Surveillé sans stagiaire identifié : le cas ne devrait pas se présenter
+    // — `getMesControles` ne rend rien sans fiche. S'il se présentait quand
+    // même, on ne montre pas le sujet : une épreuve surveillée qui s'ouvre
+    // sans surveillance serait pire qu'une épreuve qui ne s'ouvre pas.
+    if (!controle.stagiaireId) notFound();
+
+    return (
+      <EcranSurveille
+        controleId={controle.id}
+        stagiaireId={controle.stagiaireId}
+        titre={controle.titre ?? "Ce contrôle"}
+      >
+        <Passation controle={controle} sujet={sujet} />
+      </EcranSurveille>
+    );
+  }
+
   return <Passation controle={controle} sujet={sujet} />;
 }
