@@ -354,7 +354,7 @@ export default function CopiesManager({
                 <li key={p.id}>
                   <button
                     onClick={() => setSelectedId(p.id)}
-                    className={`w-full rounded-lg px-3 py-2 text-left hover:bg-slate/5 focus:outline-none focus:ring-2 focus:ring-ink ${
+                    className={`w-full rounded-lg px-3 py-2 text-left hover:bg-slate/5 focus:outline-none focus:ring-2 focus:ring-encre ${
                       p.id === selectedId ? "bg-wash text-ink" : ""
                     }`}
                   >

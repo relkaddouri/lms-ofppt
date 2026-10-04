@@ -144,7 +144,7 @@ export default async function DashboardPage() {
             type="button"
             disabled
             title="Disponible prochainement"
-            className="rounded-[9px] border border-ink bg-ink px-[18px] py-2.5 text-[14.5px] font-semibold text-white disabled:cursor-not-allowed disabled:border-border disabled:bg-wash-strong disabled:text-muted"
+            className="rounded-[9px] border border-encre bg-encre px-[18px] py-2.5 text-[14.5px] font-semibold text-white disabled:cursor-not-allowed disabled:border-border disabled:bg-wash-strong disabled:text-muted"
           >
             Nouvelle séance
           </button>
@@ -263,7 +263,7 @@ export default async function DashboardPage() {
                 // autres en neutre.
                 const pastille =
                   rang === 0
-                    ? "bg-ink text-white"
+                    ? "bg-encre text-white"
                     : rang === 1
                       ? "bg-teal text-white"
                       : "bg-wash text-slate-2";

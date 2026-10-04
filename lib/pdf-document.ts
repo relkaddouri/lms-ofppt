@@ -433,6 +433,19 @@ function rendre(
       continue;
     }
 
+    // Une vidéo ne s'imprime pas. Elle laisse son titre et son adresse : le
+    // cours sur papier doit dire qu'il manque quelque chose, et où le trouver.
+    // Sans cela, elle disparaissait du document sans laisser de trace — le
+    // PDF part du même découpage que l'écran.
+    if (n.k === "video") {
+      const titre = n.video.titre ? `${n.video.titre} — ` : "";
+      const b = bloc(doc, `**Vidéo** : ${titre}${n.video.lien}`, largeur);
+      const yy = avancer(b.hauteur);
+      if (!mesurer) b.poser(x, yy);
+      i++;
+      continue;
+    }
+
     if (n.k === "hr") {
       const yy = avancer(mm(6));
       if (!mesurer) {

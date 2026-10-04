@@ -382,7 +382,7 @@ export default function AnalyseComprehension({ controleId }: { controleId: strin
               <ol className="flex flex-col gap-3">
                 {a.lecture.ajustements.map((j, i) => (
                   <li key={i} className="flex gap-3">
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] bg-ink font-mono text-[13px] font-semibold text-white">
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] bg-encre font-mono text-[13px] font-semibold text-white">
                       {i + 1}
                     </span>
                     <span className="flex min-w-0 flex-col gap-1">

@@ -81,7 +81,7 @@ export default function BoutonJaime({
             : "border-coral bg-coral-wash text-coral"
           : petit
             ? "text-slate-2 hover:text-ink"
-            : "border-border-strong bg-surface text-body hover:border-ink hover:bg-paper"
+            : "border-border-strong bg-surface text-body hover:border-encre hover:bg-paper"
       }`}
     >
       {/* Les cœurs s'échappent du cœur lui-même, et non d'un coin du bouton :

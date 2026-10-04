@@ -38,7 +38,7 @@ export default function AppShell({
       />
       {sidebarOpen ? (
         <div
-          className="fixed inset-0 z-30 bg-ink/40 md:hidden"
+          className="fixed inset-0 z-30 bg-voile md:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       ) : null}

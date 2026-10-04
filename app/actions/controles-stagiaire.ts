@@ -22,6 +22,24 @@ export type ControleStagiaire = {
   statut: "brouillon" | "valide";
   /** Le stagiaire connecté est le compte de test du formateur (migration 093). */
   compteTest: boolean;
+  /**
+   * Le contrôle est surveillé : l'épreuve exige le partage de l'écran entier
+   * avant d'afficher le sujet (migration 111).
+   */
+  surveille: boolean;
+  /**
+   * L'identifiant du stagiaire connecté — pas celui du contrôle.
+   *
+   * Il descend jusqu'à l'écran parce que la surveillance écrit ses événements
+   * depuis le navigateur, en direct, sans repasser par le serveur : il faut
+   * donc savoir sur quelle ligne écrire sans avoir à le redemander.
+   *
+   * `null` dans l'aperçu du formateur, qui compose la fiche de toutes pièces
+   * sans qu'aucun stagiaire soit là. Nul plutôt qu'une chaîne vide : une
+   * chaîne vide dans une colonne uuid est précisément ce qui a fait tomber
+   * des écrans en production.
+   */
+  stagiaireId: string | null;
   moduleNom: string | null;
   codeOperationnel: string | null;
   /** Note obtenue, si la copie a été rendue. */
@@ -59,7 +77,7 @@ export async function getMesControles(): Promise<ControleStagiaire[]> {
   const lecture = supabase
     .from("controles")
     .select(
-      "id, titre, type, type_efm, format, duree_heures, date_prevue, consignes, bareme_total, ouvert_le, ferme_le, statut, modules(nom, competences(code_operationnel))",
+      "id, titre, type, type_efm, format, duree_heures, date_prevue, consignes, bareme_total, ouvert_le, ferme_le, statut, surveille, modules(nom, competences(code_operationnel))",
     );
 
   const [controlesRes, passationsRes] = await Promise.all([
@@ -98,7 +116,12 @@ export async function getMesControles(): Promise<ControleStagiaire[]> {
   return (
     controlesRes.data as unknown as (Omit<
       ControleStagiaire,
-      "moduleNom" | "codeOperationnel" | "note" | "passationId"
+      | "moduleNom"
+      | "codeOperationnel"
+      | "note"
+      | "passationId"
+      | "compteTest"
+      | "stagiaireId"
     > & {
       modules: {
         nom: string;
@@ -121,6 +144,8 @@ export async function getMesControles(): Promise<ControleStagiaire[]> {
       ferme_le: c.ferme_le,
       statut: c.statut,
       compteTest: moi.est_test,
+      surveille: c.surveille,
+      stagiaireId: moi.id,
       moduleNom: c.modules?.nom ?? null,
       codeOperationnel: c.modules?.competences?.code_operationnel ?? null,
       // La note n'existe que si le formateur a publié ; la remise, elle, se

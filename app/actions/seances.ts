@@ -17,6 +17,7 @@ import {
 import type { Database, Json } from "@/lib/supabase/database.types";
 import { sourceContenu } from "@/app/actions/partage";
 import { getCorrection } from "@/app/actions/corrections";
+import { replanifier } from "@/app/actions/motifs";
 import type { CorrectionTp } from "@/lib/correction";
 
 /** Colonnes modifiables d'une séance, telles que la base les déclare. */
@@ -132,6 +133,45 @@ export async function createSeance(input: NouvelleSeance): Promise<string> {
   return data.id;
 }
 
+/**
+ * Replanifie les groupes d'une séance dont les heures viennent de changer.
+ *
+ * Le recalcul (PRD §4.9) ne partait que d'un changement de créneau ou
+ * d'indisponibilité : cocher une séance faite, corriger sa durée réelle ou
+ * supprimer une séance ne le réveillait pas. Les heures restantes du module
+ * étaient alors fausses jusqu'à ce qu'on touche un férié ou qu'on clique sur
+ * le bouton de l'emploi du temps — c'est-à-dire la plupart du temps.
+ *
+ * Seules les **heures** le déclenchent, jamais un déplacement à la main. Une
+ * séance « à faire » posée dans le futur est reprise par le recalcul : la
+ * replanifier après un déplacement l'aurait remise d'où le formateur venait
+ * de la sortir, sous ses yeux. Déplacer reste un geste qui fait autorité ;
+ * cocher, corriger ou supprimer sont des faits qui changent le compte.
+ *
+ * L'échec ne remonte pas : la séance est déjà écrite quand on arrive ici, et
+ * faire échouer l'enregistrement d'une séance bien enregistrée serait pire
+ * que de laisser le calendrier d'aplomb pour le prochain passage.
+ */
+async function replanifierApresHeures(seanceId: string): Promise<void> {
+  try {
+    const supabase = await createClient();
+    const { data } = await supabase
+      .from("seance_groupes")
+      .select("groupe_id")
+      .eq("seance_id", seanceId);
+
+    // Une séance partagée entre deux groupes parallèles les décale tous les
+    // deux : ce sont deux calendriers, pas un.
+    const groupes = [...new Set((data ?? []).map((l) => l.groupe_id))];
+    if (groupes.length > 0) await replanifier(groupes);
+  } catch (e) {
+    console.error(
+      "[recalcul] replanification après changement d'heures :",
+      e instanceof Error ? e.message : e,
+    );
+  }
+}
+
 export async function updateSeance(
   id: string,
   input: {
@@ -174,14 +214,39 @@ export async function updateSeance(
   for (const lien of data.seance_groupes ?? []) {
     revalidatePath(`/groupes/${lien.groupe_id}/progression`);
   }
+
+  // Cocher une séance, ou corriger sa durée réelle, change le compte d'heures
+  // du module : la suite du calendrier se replace.
+  if (input.statut !== undefined || input.duree_realisee !== undefined) {
+    await replanifierApresHeures(id);
+  }
 }
 
 export async function deleteSeance(id: string, groupeId: string) {
   const supabase = await createClient();
+  // Les groupes sont lus avant la suppression : la cascade emporte les liens,
+  // et après coup il n'y aurait plus rien à replanifier.
+  const { data: liens } = await supabase
+    .from("seance_groupes")
+    .select("groupe_id")
+    .eq("seance_id", id);
+
   const { error } = await supabase.from("seances").delete().eq("id", id);
 
   if (error) throw new Error(error.message);
   revalidatePath(`/groupes/${groupeId}/progression`);
+
+  // Les heures de la séance supprimée reviennent au module : le reste du
+  // calendrier remonte d'autant.
+  const groupes = [...new Set((liens ?? []).map((l) => l.groupe_id))];
+  try {
+    if (groupes.length > 0) await replanifier(groupes);
+  } catch (e) {
+    console.error(
+      "[recalcul] replanification après suppression de séance :",
+      e instanceof Error ? e.message : e,
+    );
+  }
 }
 
 /* ---------------------------------------------------------------------------
@@ -675,6 +740,10 @@ export async function majSeance(seanceId: string, input: MajSeance) {
 
   if (error) throw new Error(error.message);
   revalidatePath(`/groupes`);
+
+  // Le statut seul, et non la date ni les heures : celles-là sont un
+  // déplacement à la main, que le recalcul déferait aussitôt.
+  if (input.statut !== undefined) await replanifierApresHeures(seanceId);
 }
 
 /**

@@ -33,6 +33,26 @@
   --border: #e3e7ec;
   --border-strong: #c9d2dc;
 
+  /* L'encre pleine : le fond des éléments remplis — bouton principal, pastille
+     active, couverture d'un cours, avatar — et la bordure qui va avec. Elle
+     porte toujours du texte blanc.
+
+     Distincte de --ink, qui est la couleur du *texte* le plus soutenu, alors
+     qu'elles ont la même valeur en clair. C'est en sombre que la distinction
+     devient nécessaire : le texte doit s'éclaircir pour rester lisible, le
+     fond plein doit rester sombre pour que le blanc qu'il porte le reste
+     aussi. Une seule variable pour les deux rôles donnait une couverture de
+     cours en blanc sur blanc. */
+  --encre: #2e3b4e;
+  --encre-fort: #25303f;
+
+  /* Le voile posé sous une modale. Il doit toujours assombrir ce qu'il couvre,
+     dans les deux thèmes : exprimé en encre, il s'éclaircissait en sombre et
+     éclairait la page au lieu de l'éteindre. L'opacité est cuite dans le
+     jeton — c'est elle qui change d'un thème à l'autre, pas seulement la
+     teinte. */
+  --voile: rgba(46, 59, 78, 0.4);
+
   /* Échelle de texte, du plus soutenu au plus effacé.
      --body et --slate-2 n'existent pas dans design_system.md alors qu'ils
      portent 143 et 110 occurrences dans les écrans livrés : divergence
@@ -71,6 +91,12 @@
      le canal alpha et la teinte ressort pleine — assez soutenue, sur une
      colonne entière de commentaires, pour tirer l'œil plus que le texte. */
   --or-fond: #fdf8ee;
+  /* Le haut du halo d'une carte de distinction. Un jeton et non une valeur
+     écrite dans le composant : en sombre, la carte passait d'une crème claire
+     à la surface sombre, ce qui donnait un dégradé sale et un titre illisible
+     sur sa moitié haute. */
+  --or-halo: #fdf8ea;
+  --or-liseré: #e8d9a6;
 
   /* Statuts (texte) */
   --status-success: #3c8c5c;
@@ -81,6 +107,15 @@
   /* Alias de compatibilité : --forest était la couleur primaire de la v2,
      elle devient le bleu-ardoise sans qu'aucun appelant ait à changer. */
   --forest: var(--ofppt-ink);
+
+  /* La taille du texte suivi d'un cours.
+     Une variable, et non une valeur figée : le lecteur la règle lui-même par
+     A− / A+, et tout le document suit. 17 px au repos — les tailles précédentes
+     tombaient à 14 px au-delà du téléphone, ce qui faisait dire aux stagiaires,
+     à juste titre, que le cours était écrit petit. */
+  --lecture: 17px;
+
+  color-scheme: light;
 
   /* Élévation — toujours teintée --ofppt-ink, jamais du noir pur. */
   /* Palette catégorielle par groupe — design_system.md §5.4.
@@ -110,6 +145,215 @@
   --ombre-ancre: 0 -4px 16px rgba(46, 59, 78, 0.06);
 }
 
+/* ---------------------------------------------------------------------------
+   Thème sombre
+   ---------------------------------------------------------------------------
+   Un stagiaire lit longtemps, souvent le soir et souvent sur un téléphone :
+   c'est de là qu'est venue la demande. Il s'applique à tout le LMS, espace
+   formateur compris — on ne fait pas deux applications.
+
+   Rien d'autre que ces variables ne change. Les écrans sont écrits en jetons
+   (`bg-surface`, `text-ink`, `border-border`) et non en couleurs littérales,
+   ce qui est ce qui rend ce bloc possible : il redéfinit les jetons, et les
+   deux cents composants suivent sans être touchés.
+
+   Trois états, et non deux. Le lecteur peut avoir choisi clair, avoir choisi
+   sombre, ou n'avoir rien choisi — c'est le cas le plus courant, et c'est
+   alors la préférence du système qui tranche. D'où les deux blocs : la
+   requête média pour le défaut, protégée par `:not([data-theme="light"])`
+   pour qu'un choix explicite de clair l'emporte sur un système sombre ; et
+   l'attribut, pour que le choix explicite de sombre l'emporte dans l'autre
+   sens.
+
+   Les couleurs ne sont pas inversées mécaniquement. Sur un fond sombre, la
+   sarcelle et le vert de la marque deviennent illisibles : ils sont éclaircis
+   jusqu'à repasser le seuil de contraste, et les « -dark » — qui veulent dire
+   « plus appuyé » — deviennent donc plus clairs que leur base, ce qui est
+   exactement leur rôle des deux côtés. Les fonds de teinte, eux, descendent :
+   un tint pâle sur fond sombre ferait une tache lumineuse.
+--------------------------------------------------------------------------- */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    /* Identité — éclaircie pour rester lisible sur fond sombre. */
+    --ofppt-ink: #d7dfe8;
+    --ofppt-ink-dark: #e8eef4;
+    --ofppt-coral: #f07a6f;
+    --ofppt-coral-dark: #ff9a90;
+    --ofppt-green: #5fb883;
+    --ofppt-green-dark: #86cfa2;
+    --ofppt-teal: #62aecd;
+    --ofppt-teal-dark: #92cde3;
+
+    /* L'encre pleine reste sombre — c'est du texte blanc qu'elle porte — mais
+     elle se détache de la surface, sinon un bouton principal disparaîtrait
+     dans la carte qui le contient. Le survol va vers le clair : en sombre,
+     « plus appuyé » veut dire « plus lumineux ». */
+  --encre: #3a4a5d;
+  --encre-fort: #4a5d73;
+  --voile: rgba(8, 12, 17, 0.66);
+
+  /* Surfaces — jamais du noir pur : l'œil s'y fatigue autant que sur du blanc. */
+    --paper: #141a22;
+    --paper-alt: #1a212a;
+    --surface: #1c242e;
+    --wash: #253040;
+    --wash-strong: #2a3545;
+
+    /* Bordures */
+    --border: #2c3644;
+    --border-strong: #41505f;
+
+    /* Échelle de texte, du plus soutenu au plus effacé */
+    --ink: #e9eef4;
+    --body: #d3dbe4;
+    --slate-2: #b2bdc9;
+    --slate: #9aa6b4;
+    --slate-light: #7f8c9b;
+    --muted: #68757f;
+
+    /* Fond des états actifs et du survol */
+    --mint: #253040;
+    --separator: #26303d;
+
+    /* Teintes de statut — assombries, jamais pâlies */
+    --bg-success: #162c1f;
+    --bg-alert: #331d1a;
+    --tint-teal: #16303d;
+    --tint-green: #1e4430;
+    --tint-teal-strong: #1e4356;
+    --tint-alert-strong: #4d2b27;
+    --coral-soft: #6b3630;
+    --coral-wash: #2b1b19;
+
+    /* L'or */
+    --or: #d8ad50;
+    --or-clair: #3c3119;
+    --or-fond: #2a2416;
+
+    /* Statuts (texte) */
+    --status-success: #5fb883;
+    --status-danger: #f07a6f;
+    --status-neutral: #9aa6b4;
+    --status-info: #62aecd;
+
+    /* Palette catégorielle par groupe : fonds assombris, traits éclaircis. */
+    --groupe-1-fond: #2a323c;
+    --groupe-1-trait: #cdd6e0;
+    --groupe-2-fond: #1a3441;
+    --groupe-2-trait: #8cc6dd;
+    --groupe-3-fond: #1b3324;
+    --groupe-3-trait: #7fc79a;
+    --groupe-4-fond: #2a2440;
+    --groupe-4-trait: #b3a5dd;
+    --groupe-5-fond: #352c14;
+    --groupe-5-trait: #e0b862;
+
+    /* Élévation — l'ombre portée ne se voit pas sur du sombre ; c'est le noir
+       franc qui creuse, et plus fort qu'en clair. */
+    --ombre-repos: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --ombre-detachee: 0 2px 8px rgba(0, 0, 0, 0.35);
+    --ombre-flottant: 0 10px 28px rgba(0, 0, 0, 0.5);
+    --ombre-panneau: -18px 0 44px rgba(0, 0, 0, 0.55);
+    --ombre-ancre: 0 -4px 16px rgba(0, 0, 0, 0.35);
+
+    /* Les formulaires, les barres de défilement et les sélecteurs de date sont
+       dessinés par le navigateur : sans ceci, ils restent blancs au milieu. */
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  /* Identité — éclaircie pour rester lisible sur fond sombre. */
+  --ofppt-ink: #d7dfe8;
+  --ofppt-ink-dark: #e8eef4;
+  --ofppt-coral: #f07a6f;
+  --ofppt-coral-dark: #ff9a90;
+  --ofppt-green: #5fb883;
+  --ofppt-green-dark: #86cfa2;
+  --ofppt-teal: #62aecd;
+  --ofppt-teal-dark: #92cde3;
+
+  /* L'encre pleine reste sombre — c'est du texte blanc qu'elle porte — mais
+     elle se détache de la surface, sinon un bouton principal disparaîtrait
+     dans la carte qui le contient. Le survol va vers le clair : en sombre,
+     « plus appuyé » veut dire « plus lumineux ». */
+  --encre: #3a4a5d;
+  --encre-fort: #4a5d73;
+  --voile: rgba(8, 12, 17, 0.66);
+
+  /* Surfaces — jamais du noir pur : l'œil s'y fatigue autant que sur du blanc. */
+  --paper: #141a22;
+  --paper-alt: #1a212a;
+  --surface: #1c242e;
+  --wash: #253040;
+  --wash-strong: #2a3545;
+
+  /* Bordures */
+  --border: #2c3644;
+  --border-strong: #41505f;
+
+  /* Échelle de texte, du plus soutenu au plus effacé */
+  --ink: #e9eef4;
+  --body: #d3dbe4;
+  --slate-2: #b2bdc9;
+  --slate: #9aa6b4;
+  --slate-light: #7f8c9b;
+  --muted: #68757f;
+
+  /* Fond des états actifs et du survol */
+  --mint: #253040;
+  --separator: #26303d;
+
+  /* Teintes de statut — assombries, jamais pâlies */
+  --bg-success: #162c1f;
+  --bg-alert: #331d1a;
+  --tint-teal: #16303d;
+  --tint-green: #1e4430;
+  --tint-teal-strong: #1e4356;
+  --tint-alert-strong: #4d2b27;
+  --coral-soft: #6b3630;
+  --coral-wash: #2b1b19;
+
+  /* L'or */
+  --or: #d8ad50;
+  --or-clair: #3c3119;
+  --or-fond: #2a2416;
+  /* Le halo descend au lieu de monter : sur fond sombre, c'est une lueur
+     chaude qui s'éteint, pas une crème qui s'assombrit. */
+  --or-halo: #322814;
+  --or-liseré: #4a3d1c;
+
+  /* Statuts (texte) */
+  --status-success: #5fb883;
+  --status-danger: #f07a6f;
+  --status-neutral: #9aa6b4;
+  --status-info: #62aecd;
+
+  /* Palette catégorielle par groupe : fonds assombris, traits éclaircis. */
+  --groupe-1-fond: #2a323c;
+  --groupe-1-trait: #cdd6e0;
+  --groupe-2-fond: #1a3441;
+  --groupe-2-trait: #8cc6dd;
+  --groupe-3-fond: #1b3324;
+  --groupe-3-trait: #7fc79a;
+  --groupe-4-fond: #2a2440;
+  --groupe-4-trait: #b3a5dd;
+  --groupe-5-fond: #352c14;
+  --groupe-5-trait: #e0b862;
+
+  /* Élévation — l'ombre portée ne se voit pas sur du sombre ; c'est le noir
+     franc qui creuse, et plus fort qu'en clair. */
+  --ombre-repos: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --ombre-detachee: 0 2px 8px rgba(0, 0, 0, 0.35);
+  --ombre-flottant: 0 10px 28px rgba(0, 0, 0, 0.5);
+  --ombre-panneau: -18px 0 44px rgba(0, 0, 0, 0.55);
+  --ombre-ancre: 0 -4px 16px rgba(0, 0, 0, 0.35);
+
+  /* Les formulaires, les barres de défilement et les sélecteurs de date sont
+     dessinés par le navigateur : sans ceci, ils restent blancs au milieu. */
+  color-scheme: dark;
+}
+
 @theme inline {
   /* Noms historiques, remappés sur la nouvelle palette */
   --color-mint: var(--mint);
@@ -124,6 +368,9 @@
   /* Nouveaux noms de la v3 */
   --color-ofppt-ink: var(--ofppt-ink);
   --color-ofppt-ink-dark: var(--ofppt-ink-dark);
+  --color-encre: var(--encre);
+  --color-encre-fort: var(--encre-fort);
+  --color-voile: var(--voile);
   --color-coral: var(--ofppt-coral);
   --color-coral-dark: var(--ofppt-coral-dark);
   --color-coral-soft: var(--coral-soft);
@@ -154,6 +401,8 @@
   --color-or: var(--or);
   --color-or-clair: var(--or-clair);
   --color-or-fond: var(--or-fond);
+  --color-or-halo: var(--or-halo);
+  --color-or-lisere: var(--or-liseré);
 
   /* Quatre niveaux d'élévation, pas un cinquième */
   --shadow-repos: var(--ombre-repos);
@@ -669,4 +918,47 @@ body {
 
 .coeur-envol {
   animation: coeur-envol 900ms cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+}
+
+/* Le texte suivi d'un cours.
+   Posée sur le conteneur du document : tout ce qu'il contient s'exprime
+   ensuite en `em`, donc grandit et rapetisse d'un bloc quand le lecteur
+   touche à A− / A+. L'interface autour — étiquettes, badges, en-têtes de
+   tableau — garde ses tailles en pixels : elle ne se lit pas, elle se
+   repère. */
+.texte-lecture {
+  font-size: var(--lecture);
+}
+
+/* Le sommaire du module, replié.
+   Sur grand écran seulement : sur téléphone le sommaire est déjà un
+   `<details>` refermé, et la colonne n'existe pas.
+
+   En CSS et non en état React : l'attribut est posé par le script d'amorçage
+   avant le premier pixel, donc la page s'ouvre déjà dans la bonne disposition.
+   En passant par un état, elle se serait affichée en deux colonnes puis aurait
+   sauté en une seule à l'hydratation — un déplacement du texte sous les yeux,
+   juste avant de commencer à lire.
+
+   Replié ne veut pas dire disparu. La colonne se réduit à un rail de
+   quarante-huit pixels — cliquable en entier — qui garde la réponse à la seule
+   question qu'on se pose en lisant : « j'en suis où ? ».
+
+   Une version a fait reparaître le panneau entier au survol du rail, posé
+   par-dessus le cours. À l'usage, il surgissait dès qu'on passait la souris
+   par là pour aller ailleurs, et recouvrait la barre d'outils du chapitre.
+   Un panneau qui s'ouvre sans qu'on l'ait demandé dérange plus qu'il ne sert :
+   on ouvre d'un clic, on referme d'un clic, et rien ne bouge entre les deux. */
+@media (min-width: 768px) {
+  :root[data-sommaire="ferme"] .sommaire-repliable {
+    width: 48px;
+  }
+
+  :root[data-sommaire="ferme"] .sommaire-rail {
+    display: flex;
+  }
+
+  :root[data-sommaire="ferme"] .sommaire-panneau {
+    display: none;
+  }
 }

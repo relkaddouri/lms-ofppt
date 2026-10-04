@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { DoorClosed, DoorOpen } from "lucide-react";
+import { DoorClosed, DoorOpen, ScreenShare } from "lucide-react";
 import Button from "@/components/ui/Button";
+import Interrupteur from "@/components/ui/Interrupteur";
 import { ConfirmModal } from "@/components/ui/Modal";
 import { useToast } from "@/components/ui/Toast";
 import { dureeEnTexte, formatHeure } from "@/lib/creneaux";
@@ -47,6 +48,8 @@ export default function PassationControle({
   fermeLe,
   onChange,
   onVoirCopies,
+  onSurveiller,
+  surveille,
 }: {
   controleId: string;
   moduleId: string;
@@ -59,11 +62,28 @@ export default function PassationControle({
   fermeLe: string | null;
   onChange: (ouvertLe: string | null, fermeLe: string | null) => void;
   onVoirCopies: () => void;
+  /** Mène à la mosaïque des écrans, pendant que l'épreuve se passe. */
+  onSurveiller: () => void;
+  /** Le contrôle est-il surveillé, tel qu'enregistré (migration 111) ? */
+  surveille: boolean;
 }) {
   const toast = useToast();
   const [maintenant, setMaintenant] = useState(() => Date.now());
   const [enCours, setEnCours] = useState(false);
   const [confirmeFermeture, setConfirmeFermeture] = useState(false);
+  // Le choix fait avant d'ouvrir, puis ce que l'ouverture a enregistré. Le
+  // dernier mot revient à la base : rouvrir un contrôle surveillé reconduit
+  // la surveillance, sauf si on la décroche exprès.
+  const [surveiller, setSurveiller] = useState(surveille);
+
+  // Le contrôle se charge après le premier rendu, et la valeur initiale d'un
+  // `useState` ne se rejoue pas : sans cette synchronisation, l'interrupteur
+  // restait à l'arrêt devant un contrôle pourtant surveillé — ce qui est
+  // exactement le genre d'écart qui fait ouvrir une épreuve en croyant
+  // l'avoir surveillée. Repéré à l'essai, pas à la relecture.
+  useEffect(() => {
+    setSurveiller(surveille);
+  }, [surveille]);
 
   const ouvert = testOuvert({ ouvert_le: ouvertLe, ferme_le: fermeLe }, maintenant);
 
@@ -78,13 +98,17 @@ export default function PassationControle({
   async function ouvrir() {
     setEnCours(true);
     try {
-      const r = await ouvrirControle(controleId, moduleId);
+      const r = await ouvrirControle(controleId, moduleId, surveiller);
       setMaintenant(Date.now());
+      setSurveiller(r.surveille);
       onChange(r.ouvert_le, r.ferme_le);
+      const jusqua = r.ferme_le
+        ? `jusqu'à ${heure(r.ferme_le)}`
+        : "jusqu'à ce que vous le fermiez";
       toast(
-        r.ferme_le
-          ? `Contrôle ouvert au groupe jusqu'à ${heure(r.ferme_le)}.`
-          : "Contrôle ouvert au groupe, jusqu'à ce que vous le fermiez.",
+        r.surveille
+          ? `Contrôle ouvert ${jusqua}, écrans surveillés.`
+          : `Contrôle ouvert au groupe ${jusqua}.`,
       );
     } catch (err) {
       toast(err instanceof Error ? err.message : "Erreur inattendue", "error");
@@ -154,6 +178,12 @@ export default function PassationControle({
           </span>
         </span>
 
+        {ouvert && surveiller ? (
+          <Button icon={ScreenShare} onClick={onSurveiller}>
+            Surveiller
+          </Button>
+        ) : null}
+
         {ouvert ? (
           <Button
             variant="secondary"
@@ -174,6 +204,37 @@ export default function PassationControle({
             {ouvertLe ? "Rouvrir au groupe" : "Ouvrir au groupe"}
           </Button>
         )}
+      </div>
+
+      {/*
+        Le choix de surveiller se fait avant d'ouvrir, et se lit après.
+        Pendant l'épreuve il ne se décroche plus : le stagiaire a accepté un
+        partage pour cette passation-là, et le lui retirer en cours de route
+        ne rendrait pas la copie plus juste. Fermer, puis rouvrir autrement,
+        reste possible — et cette fois le groupe en est prévenu.
+      */}
+      <div className="flex flex-wrap items-center gap-3 rounded-[10px] bg-paper px-3.5 py-2.5">
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] bg-wash-strong text-slate-2">
+          <ScreenShare className="h-[15px] w-[15px]" aria-hidden />
+        </span>
+        <span className="flex min-w-0 flex-1 flex-col">
+          <span className="text-[14px] font-semibold text-ink">
+            Surveiller les écrans
+          </span>
+          <span className="text-[13px] leading-relaxed text-slate">
+            {ouvert
+              ? surveiller
+                ? "Les stagiaires partagent leur écran entier pour composer."
+                : "Cette épreuve n'est pas surveillée."
+              : "Le sujet ne s'affiche qu'une fois l'écran entier partagé. Le stagiaire l'apprend avant de commencer, et garde la main pour arrêter."}
+          </span>
+        </span>
+        <Interrupteur
+          actif={surveiller}
+          onChange={setSurveiller}
+          label="Surveiller les écrans pendant l'épreuve"
+          disabled={enCours || ouvert}
+        />
       </div>
 
       <p className="text-[13px] leading-relaxed text-slate">

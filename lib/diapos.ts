@@ -1,4 +1,5 @@
 import { texteNu } from "@/lib/markdown";
+import { videoDeLaLigne, type Video } from "./video";
 
 /**
  * Découpe un cours en markdown en diapositives 16:9.
@@ -64,6 +65,8 @@ export type Diapo =
 
 export type Noeud =
   | { k: "h"; niveau: number; texte: string }
+  /** Une vidéo seule sur sa ligne : elle se regarde, elle ne se lit pas. */
+  | { k: "video"; video: Video }
   | { k: "p"; texte: string; brut: string }
   | { k: "li"; texte: string; brut: string; ordonnee: boolean }
   | { k: "quote"; lignes: string[] }
@@ -125,6 +128,16 @@ export function analyser(markdown: string): Noeud[] {
         i++;
       }
       noeuds.push({ k: "table", entetes, lignes: corps });
+      continue;
+    }
+
+    // Une vidéo seule sur sa ligne, avant tout le reste : sans cela une
+    // adresse collée deviendrait un paragraphe, et le code d'intégration de
+    // YouTube s'afficherait en toutes lettres à l'écran du stagiaire.
+    const video = videoDeLaLigne(l);
+    if (video) {
+      noeuds.push({ k: "video", video });
+      i++;
       continue;
     }
 
@@ -487,6 +500,14 @@ export function decouperEnDiapositives(
         blocs.push({ type: "texte", texte: n.texte });
       } else if (n.k === "table") {
         blocs.push({ type: "tableau", entetes: n.entetes, lignes: n.lignes });
+      } else if (n.k === "video") {
+        // Une diapositive projetée ne joue pas de vidéo : elle annonce
+        // laquelle, et où la trouver. Sans cette ligne, la vidéo disparaissait
+        // du diaporama sans laisser de trace.
+        blocs.push({
+          type: "texte",
+          texte: `Vidéo : ${n.video.titre ? `${n.video.titre} — ` : ""}${n.video.lien}`,
+        });
       }
     }
     fermerListe();

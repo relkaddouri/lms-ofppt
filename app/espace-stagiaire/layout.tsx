@@ -6,6 +6,7 @@ import { NavigationHaute, NavigationBasse } from "./BarreNavigation";
 import PhotoStagiaire from "@/components/PhotoStagiaire";
 import ModaleDistinction from "@/components/ModaleDistinction";
 import ClocheStagiaire from "@/components/ClocheStagiaire";
+import BasculeTheme from "@/components/BasculeTheme";
 import { signOutAction } from "@/app/actions/auth";
 import { LogOut } from "lucide-react";
 
@@ -73,6 +74,11 @@ export default async function EspaceStagiaireLayout({
                 contient : c'est tout l'objet de l'ancre posée sur chaque
                 commentaire. Elle reste dans l'en-tête aux deux tailles — la
                 barre du bas ne tient que la navigation (§6). */}
+            {/* L'apparence : cachée sur téléphone, où l'en-tête est déjà
+                plein — le système y bascule de lui-même le soir, ce qui est
+                le cas d'usage. */}
+            <BasculeTheme className="max-md:hidden" />
+
             <ClocheStagiaire apercuInitial={nouveautes} />
 
             {/* La déconnexion tient dans l'en-tête : la barre du bas est
