@@ -241,7 +241,7 @@ export default function CalendrierSemaine({
             type="button"
             disabled
             title="Planification — passez par un module d'un groupe"
-            className="rounded-[9px] border border-ink bg-ink px-[18px] py-2.5 text-[14.5px] font-semibold text-white disabled:cursor-not-allowed disabled:border-border disabled:bg-wash-strong disabled:text-muted"
+            className="rounded-[9px] border border-encre bg-encre px-[18px] py-2.5 text-[14.5px] font-semibold text-white disabled:cursor-not-allowed disabled:border-border disabled:bg-wash-strong disabled:text-muted"
           >
             Planifier une séance
           </button>
@@ -255,7 +255,7 @@ export default function CalendrierSemaine({
             date estimée
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="inline-block h-3 w-6 rounded border-2 border-solid border-ink" />
+            <span className="inline-block h-3 w-6 rounded border-2 border-solid border-encre" />
             date arrêtée
           </span>
         </div>
@@ -410,8 +410,8 @@ export default function CalendrierSemaine({
                               title={`${c.groupeNom} — ${c.titre ?? c.moduleNom}`}
                               className={`block rounded-lg px-2 py-1.5 transition-colors ${
                                 c.confirmee
-                                  ? "border-2 border-solid border-ink bg-wash hover:bg-wash-strong"
-                                  : "border border-dashed border-slate/60 bg-surface hover:border-ink/60"
+                                  ? "border-2 border-solid border-encre bg-wash hover:bg-wash-strong"
+                                  : "border border-dashed border-slate/60 bg-surface hover:border-encre/60"
                               }`}
                             >
                               <span className="block text-[10px] font-semibold uppercase tracking-wide text-ink">
@@ -509,7 +509,7 @@ export default function CalendrierSemaine({
                   aria-label={`${j.nom} ${j.date.slice(8)} — ${compte} séance${compte > 1 ? "s" : ""}`}
                   className={`flex min-h-11 flex-1 flex-col items-center gap-1 rounded-[10px] border px-1 py-2 transition-colors duration-150 ease-out ${
                     actif
-                      ? "border-ink bg-ink text-white"
+                      ? "border-encre bg-encre text-white"
                       : j.estAujourdhui
                         ? "border-border-strong bg-surface text-ink"
                         : "border-border bg-surface text-slate-2"
@@ -523,7 +523,7 @@ export default function CalendrierSemaine({
                       compte === 0
                         ? "bg-transparent"
                         : actif
-                          ? "bg-white"
+                          ? "bg-surface"
                           : "bg-teal"
                     }`}
                   />
@@ -573,7 +573,7 @@ export default function CalendrierSemaine({
                       href={`/modules/${c.module_id}/controle`}
                       className={`block rounded-[10px] px-4 py-3 no-underline ${
                         c.confirmee
-                          ? "border-2 border-solid border-ink bg-wash"
+                          ? "border-2 border-solid border-encre bg-wash"
                           : "border border-dashed border-slate/60 bg-surface"
                       }`}
                     >
@@ -804,7 +804,7 @@ export default function CalendrierSemaine({
                       <li key={`${p.groupe_id}|${p.module_id}`}>
                         <Link
                           href={`/groupes/${p.groupe_id}/progression`}
-                          className="flex items-baseline justify-between gap-2 rounded-lg border border-border px-2.5 py-1.5 hover:border-ink/50"
+                          className="flex items-baseline justify-between gap-2 rounded-lg border border-border px-2.5 py-1.5 hover:border-encre/50"
                         >
                           <span className="min-w-0 truncate text-sm text-ink">
                             {p.groupeNom}
@@ -836,7 +836,7 @@ export default function CalendrierSemaine({
                         <Link
                           href={`/modules/${c.module_id}/controle`}
                           title={`${c.groupeNom} — ${c.titre ?? c.moduleNom}`}
-                          className="flex max-w-[220px] items-center gap-1.5 rounded-lg border border-dashed border-slate/50 px-2 py-1 hover:border-ink"
+                          className="flex max-w-[220px] items-center gap-1.5 rounded-lg border border-dashed border-slate/50 px-2 py-1 hover:border-encre"
                         >
                           <Badge tone={c.type === "EFM" ? "danger" : "info"}>
                             {c.type}

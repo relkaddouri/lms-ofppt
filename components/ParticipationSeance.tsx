@@ -96,7 +96,7 @@ export default function ParticipationSeance({
         <button
           type="button"
           onClick={onNoter}
-          className="flex min-h-11 items-center rounded-[9px] border border-border-strong bg-surface px-3.5 text-sm font-semibold text-body transition-colors duration-150 ease-out hover:border-ink hover:bg-paper"
+          className="flex min-h-11 items-center rounded-[9px] border border-border-strong bg-surface px-3.5 text-sm font-semibold text-body transition-colors duration-150 ease-out hover:border-encre hover:bg-paper"
         >
           {notes.length === 0
             ? "Noter la participation"
@@ -125,7 +125,7 @@ export default function ParticipationSeance({
                 {gagnant ? (
                   <span
                     aria-hidden
-                    className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full border-2 border-surface bg-[#F4C542] text-ink"
+                    className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full border-2 border-surface bg-[#F4C542] text-encre"
                   >
                     <Crown size={10} aria-hidden />
                   </span>

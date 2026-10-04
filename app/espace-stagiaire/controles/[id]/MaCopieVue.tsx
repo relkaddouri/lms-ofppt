@@ -70,7 +70,7 @@ export default function MaCopieVue({
       </Link>
 
       {/* ── Couverture, avec la note une fois publiée ───────────────────── */}
-      <section className="flex flex-col gap-5 rounded-[14px] bg-ink px-5 py-6 text-white md:flex-row md:items-end md:px-10 md:py-9">
+      <section className="flex flex-col gap-5 rounded-[14px] bg-encre px-5 py-6 text-white md:flex-row md:items-end md:px-10 md:py-9">
         <div className="flex min-w-0 flex-1 flex-col">
           <span aria-hidden className="mb-4 flex items-center gap-1.5">
             {["bg-green", "bg-teal", "bg-coral"].map((c) => (
@@ -184,7 +184,7 @@ export default function MaCopieVue({
                           <span
                             aria-hidden
                             className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-[5px] border-[1.5px] ${
-                              coche ? "border-ink bg-ink text-white" : "border-border-strong bg-surface"
+                              coche ? "border-encre bg-encre text-white" : "border-border-strong bg-surface"
                             }`}
                           >
                             {coche ? <Check className="h-3 w-3" strokeWidth={3} /> : null}

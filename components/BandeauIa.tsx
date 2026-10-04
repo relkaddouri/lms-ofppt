@@ -37,7 +37,7 @@ const VARIANTES: Record<
     texte: "text-body",
     meta: "text-slate-light",
     action:
-      "border-border-strong bg-surface text-ink hover:border-ink hover:bg-paper",
+      "border-border-strong bg-surface text-ink hover:border-encre hover:bg-paper",
   },
   engageant: {
     cadre: "border-tint-alert-strong bg-alert-wash",

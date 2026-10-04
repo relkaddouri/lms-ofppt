@@ -63,7 +63,7 @@ export function Stepper({
                 <span
                   className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-[1.5px] font-mono text-[12.5px] font-semibold ${
                     courante
-                      ? "border-ink bg-ink text-white"
+                      ? "border-encre bg-encre text-white"
                       : faite
                         ? "border-tint-green bg-success-wash text-green-dark"
                         : "border-border-strong bg-surface text-muted"

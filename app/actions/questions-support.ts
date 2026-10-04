@@ -155,6 +155,14 @@ export async function getMesSupports(): Promise<SupportListe[]> {
  * ressemblent toutes, et la photo est déjà là — le trombinoscope du groupe.
  */
 async function nomsDesAuteurs(groupeId: string) {
+  // Une séance sans ligne dans `seance_groupes` — un reste d'import, une
+  // séance détachée — fait arriver ici une chaîne vide. `groupe_id` est un
+  // uuid : Postgres répondrait « invalid input syntax for type uuid: "" » et
+  // la page du support se changerait en page d'erreur. Sans groupe, il n'y a
+  // personne à nommer ; les auteurs s'afficheront comme le formateur, ce que
+  // le repli fait déjà.
+  if (!groupeId) return new Map<string, { nom: string; photo: string | null }>();
+
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("stagiaires")

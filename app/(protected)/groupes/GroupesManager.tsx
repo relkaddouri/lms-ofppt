@@ -198,7 +198,7 @@ export default function GroupesManager({
                 className="flex min-w-0 flex-col gap-[18px] rounded-[14px] border border-border bg-surface p-5 no-underline shadow-repos transition-colors duration-150 ease-out hover:border-border-strong hover:no-underline"
               >
                 <div className="flex min-w-0 items-start gap-3.5">
-                  <span className="flex h-9 shrink-0 items-center justify-center rounded-[9px] bg-ink px-2.5 font-mono text-xs font-semibold text-white">
+                  <span className="flex h-9 shrink-0 items-center justify-center rounded-[9px] bg-encre px-2.5 font-mono text-xs font-semibold text-white">
                     {numeroDe(g.nom)}
                   </span>
                   <div className="flex min-w-0 flex-col gap-1.5">
@@ -314,7 +314,7 @@ export default function GroupesManager({
                 {modulesDeLAnnee.map((m) => (
                   <label
                     key={m.id}
-                    className="flex cursor-pointer items-center gap-3 rounded-lg border border-border px-3 py-2 text-sm hover:border-ink/50"
+                    className="flex cursor-pointer items-center gap-3 rounded-lg border border-border px-3 py-2 text-sm hover:border-encre/50"
                   >
                     <input
                       type="checkbox"

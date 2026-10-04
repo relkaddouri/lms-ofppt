@@ -45,7 +45,7 @@ export default function EcheancesReglementaires({
                     ? "bg-alert-wash hover:bg-coral/15"
                     : presse
                       ? "bg-tint-teal hover:bg-teal/15"
-                      : "border border-border hover:border-ink/50"
+                      : "border border-border hover:border-encre/50"
                 }`}
               >
                 <span className="flex items-baseline justify-between gap-2">

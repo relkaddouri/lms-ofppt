@@ -528,7 +528,7 @@ export default function CorrectionManager({
                         key={m}
                         type="button"
                         onClick={() => modifierActive({ points: m })}
-                        className="rounded-lg border border-border-strong bg-surface px-3 py-2 font-mono text-[13px] font-medium text-body transition-colors duration-150 ease-out hover:border-ink hover:bg-paper max-md:min-h-11 max-md:min-w-11"
+                        className="rounded-lg border border-border-strong bg-surface px-3 py-2 font-mono text-[13px] font-medium text-body transition-colors duration-150 ease-out hover:border-encre hover:bg-paper max-md:min-h-11 max-md:min-w-11"
                       >
                         {m}
                       </button>

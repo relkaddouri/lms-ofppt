@@ -25,6 +25,7 @@ import { AlertesQuestion, ChampDonnees } from "./ChampDonnees";
 import VersionsControle from "./VersionsControle";
 import ListeControles from "./ListeControles";
 import PassationControle from "./PassationControle";
+import SurveillanceManager from "./SurveillanceManager";
 import AnalyseComprehension from "./AnalyseComprehension";
 import Passation from "@/app/espace-stagiaire/controles/[id]/Passation";
 import { Stepper, NavigationEtapes, ETAPES } from "./Stepper";
@@ -272,7 +273,9 @@ export default function ControleManager({
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
-  const [tab, setTab] = useState<"editeur" | "apercu" | "copies" | "analyse">(
+  const [tab, setTab] = useState<
+    "editeur" | "apercu" | "copies" | "analyse" | "surveillance"
+  >(
     "editeur",
   );
   const [avertissements, setAvertissements] = useState<string[]>([]);
@@ -291,6 +294,8 @@ export default function ControleManager({
   // L'ouverture d'un test au groupe (10.5).
   const [ouvertLe, setOuvertLe] = useState<string | null>(null);
   const [fermeLe, setFermeLe] = useState<string | null>(null);
+  // La surveillance des écrans, telle qu'enregistrée (migration 111).
+  const [surveille, setSurveille] = useState(false);
 
   // Une seule clé pour les cartes de nature, recomposée depuis les deux champs
   // que le modèle enregistre.
@@ -455,6 +460,7 @@ export default function ControleManager({
       setStatut(c.statut);
       setOuvertLe(c.ouvert_le);
       setFermeLe(c.ferme_le);
+      setSurveille(c.surveille);
       setReference(appliquer(c));
       setRestaureDe(null);
       setNotice(null);
@@ -495,6 +501,7 @@ export default function ControleManager({
     setBaremeTotal(20);
     setOuvertLe(null);
     setFermeLe(null);
+    setSurveille(false);
     setSeancesRetenues([]);
     setSeancesEnregistrees(null);
     setChargements((n) => n + 1);
@@ -834,12 +841,14 @@ export default function ControleManager({
           modifie={modifie}
           ouvertLe={ouvertLe}
           fermeLe={fermeLe}
+          surveille={surveille}
           onChange={(o, f) => {
             setOuvertLe(o);
             setFermeLe(f);
             router.refresh();
           }}
           onVoirCopies={() => setTab("copies")}
+          onSurveiller={() => setTab("surveillance")}
         />
       ) : null}
 
@@ -963,12 +972,21 @@ export default function ControleManager({
             { valeur: "editeur" as const, libelle: "Éditeur" },
             { valeur: "apercu" as const, libelle: "Aperçu" },
             { valeur: "copies" as const, libelle: "Copies" },
+            { valeur: "surveillance" as const, libelle: "Surveillance" },
             { valeur: "analyse" as const, libelle: "Analyse" },
           ]}
         />
       </div>
 
-      {tab === "analyse" ? (
+      {tab === "surveillance" ? (
+        activeId ? (
+          <SurveillanceManager controleId={activeId} controleTitre={titre} />
+        ) : (
+          <p className="mt-6 rounded-[14px] border border-border bg-surface p-4 text-sm text-slate shadow-repos">
+            Enregistrez d&apos;abord un contrôle pour surveiller sa passation.
+          </p>
+        )
+      ) : tab === "analyse" ? (
         activeId ? (
           <AnalyseComprehension controleId={activeId} />
         ) : (
@@ -1011,6 +1029,10 @@ export default function ControleManager({
                   ferme_le: null,
                   statut,
                   compteTest: false,
+                  // L'aperçu ne se surveille pas : il n'y a ni épreuve en
+                  // cours ni stagiaire derrière l'écran.
+                  surveille: false,
+                  stagiaireId: null,
                   moduleNom,
                   codeOperationnel: moduleCode,
                   note: null,

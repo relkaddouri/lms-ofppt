@@ -17,7 +17,7 @@ export default function Breadcrumb({
             ) : (
               <Link
                 href={item.href}
-                className="text-slate transition-colors hover:text-ink focus:outline-none focus:ring-2 focus:ring-ink"
+                className="text-slate transition-colors hover:text-ink focus:outline-none focus:ring-2 focus:ring-encre"
               >
                 {item.label}
               </Link>

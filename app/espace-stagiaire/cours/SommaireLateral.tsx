@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Check } from "lucide-react";
+import BasculeSommaire from "@/components/BasculeSommaire";
 import type { SommaireModule } from "@/app/actions/cours-stagiaire";
 
 /**
@@ -9,6 +10,11 @@ import type { SommaireModule } from "@/app/actions/cours-stagiaire";
  * saute d'un chapitre à l'autre sans repasser par la liste. Sur téléphone il
  * se replie derrière un résumé — la place va au cours, pas à la table des
  * matières.
+ *
+ * Sur grand écran, il se replie aussi, mais à la demande : deux cent quatre-
+ * vingts pixels de table des matières valent le coup quand on cherche son
+ * chapitre, beaucoup moins quand on lit — surtout depuis qu'on peut grossir le
+ * texte, ce qui rétrécit d'autant la colonne qui reste.
  */
 export default function SommaireLateral({
   module,
@@ -17,6 +23,11 @@ export default function SommaireLateral({
   module: SommaireModule;
   courantId: string;
 }) {
+  // Le rang du chapitre lu dans la suite complète : c'est ce que le rail
+  // affiche quand le panneau est replié — « où j'en suis », en trois
+  // caractères.
+  const tous = module.parties.flatMap((p) => p.chapitres);
+  const rang = tous.findIndex((c) => c.id === courantId) + 1;
   const liste = (
     <ol className="flex flex-col gap-4">
       {module.parties.map((p, i) => (
@@ -44,7 +55,7 @@ export default function SommaireLateral({
                         c.lu
                           ? "border-green bg-green text-white"
                           : courant
-                            ? "border-ink bg-surface"
+                            ? "border-encre bg-surface"
                             : "border-border-strong bg-surface"
                       }`}
                     >
@@ -63,12 +74,20 @@ export default function SommaireLateral({
 
   const entete = (
     <div className="flex flex-col gap-2">
-      <Link
-        href={`/espace-stagiaire/cours/module/${module.id}`}
-        className="text-[14px] font-semibold text-ink no-underline hover:underline"
-      >
-        {module.nom}
-      </Link>
+      {/* Le nom du module et la commande de repli sur la même ligne : dans le
+          flux, elle ne recouvre rien et ne se déplace pas d'un état à
+          l'autre. */}
+      <div className="flex items-start justify-between gap-2">
+        <Link
+          href={`/espace-stagiaire/cours/module/${module.id}`}
+          className="text-[14px] font-semibold text-ink no-underline hover:underline"
+        >
+          {module.nom}
+        </Link>
+        <span className="hidden md:block">
+          <BasculeSommaire variante="entete" />
+        </span>
+      </div>
       <div className="flex items-center gap-2">
         <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-wash-strong">
           <span
@@ -94,9 +113,23 @@ export default function SommaireLateral({
         <div className="mt-3 border-t border-separator pt-3">{liste}</div>
       </details>
 
-      <aside className="sticky top-[84px] hidden max-h-[calc(100dvh-110px)] w-[280px] shrink-0 flex-col gap-3 overflow-y-auto rounded-[14px] border border-border bg-surface px-4 py-4 md:flex">
-        {entete}
-        <div className="border-t border-separator pt-3">{liste}</div>
+      {/* Replié, le sommaire ne disparaît pas : il se réduit à un rail qui
+          dit où l'on en est, et le panneau entier revient au survol — posé
+          par-dessus le cours, sans le décaler. Un sommaire qui s'efface tout
+          à fait oblige à le rouvrir pour la seule question qu'on se pose en
+          lisant : « j'en suis où ? ». */}
+      <aside className="sommaire-repliable sticky top-[84px] hidden w-[280px] shrink-0 md:block">
+        <BasculeSommaire
+          variante="rail"
+          progression={module.progression}
+          rang={rang}
+          total={module.chapitres}
+        />
+
+        <div className="sommaire-panneau flex max-h-[calc(100dvh-110px)] flex-col gap-3 overflow-y-auto rounded-[14px] border border-border bg-surface px-4 py-4">
+          {entete}
+          <div className="border-t border-separator pt-3">{liste}</div>
+        </div>
       </aside>
     </>
   );

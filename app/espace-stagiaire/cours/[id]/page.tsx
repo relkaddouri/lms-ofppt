@@ -12,6 +12,7 @@ import SommaireLateral from "../SommaireLateral";
 import MarquerLu from "./MarquerLu";
 import QuizChapitre from "./QuizChapitre";
 import { getChapitre, getJalons } from "@/app/actions/cours-stagiaire";
+import TailleLecture from "@/components/TailleLecture";
 
 export default async function CoursDetailPage({
   params,
@@ -44,17 +45,19 @@ export default async function CoursDetailPage({
       ) : null}
 
       <div className="min-w-0 flex-1 space-y-6">
-      <Link
-        href={
-          support.moduleId
-            ? `/espace-stagiaire/cours/module/${support.moduleId}`
-            : "/espace-stagiaire/cours"
-        }
-        className="inline-flex min-h-[44px] items-center gap-1.5 text-sm text-slate hover:text-ink"
-      >
-        <ArrowLeft className="h-4 w-4" aria-hidden />
-        {support.moduleNom ?? "Mes cours"}
-      </Link>
+      <div className="flex flex-wrap items-center gap-2">
+        <Link
+          href={
+            support.moduleId
+              ? `/espace-stagiaire/cours/module/${support.moduleId}`
+              : "/espace-stagiaire/cours"
+          }
+          className="inline-flex min-h-[44px] items-center gap-1.5 text-sm text-slate hover:text-ink"
+        >
+          <ArrowLeft className="h-4 w-4" aria-hidden />
+          {support.moduleNom ?? "Mes cours"}
+        </Link>
+      </div>
 
       <article className="rounded-[14px] border border-border bg-surface p-4 md:p-6">
         {chapitre ? (
@@ -74,10 +77,11 @@ export default async function CoursDetailPage({
             .join(" · ")}
         </p>
 
-        {/* Emporter le cours : le stagiaire révise hors ligne, imprime, ou
-            le range avec ses notes. Un support qu'on ne peut que consulter à
-            l'écran n'est pas un support de cours. */}
-        <div className="mt-4">
+        {/* Deux commandes de lecture, côte à côte : régler la taille du
+            texte, et emporter le cours. La taille d'abord — c'est celle qu'on
+            touche avant de commencer à lire, l'autre quand on a fini. */}
+        <div className="mt-4 flex flex-wrap items-center gap-2.5">
+          <TailleLecture />
           <TelechargerDiapos
             support={support.contenu}
             pied={[support.moduleNom, "Support du stagiaire"]
@@ -182,7 +186,7 @@ export default async function CoursDetailPage({
       {bilan ? (
         <Link
           href={`/espace-stagiaire/cours/module/${bilan.moduleId}/bilan/${bilan.rang}`}
-          className="flex items-center gap-3 rounded-[14px] border border-ink bg-ink px-4 py-4 text-white no-underline hover:no-underline md:px-5"
+          className="flex items-center gap-3 rounded-[14px] border border-encre bg-encre px-4 py-4 text-white no-underline hover:no-underline md:px-5"
         >
           <Milestone className="h-5 w-5 shrink-0" aria-hidden />
           <span className="flex min-w-0 flex-col gap-0.5">
@@ -220,7 +224,7 @@ export default async function CoursDetailPage({
             {chapitre.suivant ? (
               <Link
                 href={`/espace-stagiaire/cours/${chapitre.suivant.id}`}
-                className="inline-flex min-h-[44px] max-w-full items-center gap-1.5 rounded-[10px] border border-ink bg-ink px-3.5 text-[14px] font-semibold text-white no-underline hover:no-underline"
+                className="inline-flex min-h-[44px] max-w-full items-center gap-1.5 rounded-[10px] border border-encre bg-encre px-3.5 text-[14px] font-semibold text-white no-underline hover:no-underline"
               >
                 <span className="truncate">Chapitre suivant : {chapitre.suivant.titre}</span>
                 <ArrowRight className="h-4 w-4 shrink-0" aria-hidden />

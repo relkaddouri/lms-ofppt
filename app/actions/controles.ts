@@ -44,6 +44,11 @@ export type Controle = {
   /** Contrôle de test : ouverture au groupe, et sa fin (null : sans limite). */
   ouvert_le: string | null;
   ferme_le: string | null;
+  /**
+   * Les écrans sont surveillés pendant l'épreuve (migration 111) : le sujet
+   * ne s'affiche qu'une fois l'écran entier partagé. Décidé à l'ouverture.
+   */
+  surveille: boolean;
   /** Renseignés par `getControles`, pour présenter la liste sans ouvrir chaque contrôle. */
   nb_questions?: number;
   total_questions?: number;
@@ -51,7 +56,7 @@ export type Controle = {
 
 const COLONNES_CONTROLE =
   "id, groupe_id, module_id, titre, consignes, duree_heures, type, type_efm, " +
-  "date_prevue, date_administration, format, statut, created_at, bareme_total, seance_ids, ouvert_le, ferme_le";
+  "date_prevue, date_administration, format, statut, created_at, bareme_total, seance_ids, ouvert_le, ferme_le, surveille";
 
 export type TypeQuestion = "qcm" | "ouverte" | "exercice";
 export type OptionQcm = { texte: string; correcte: boolean };
@@ -705,7 +710,16 @@ function estOuvert(c: {
 export async function ouvrirControle(
   id: string,
   moduleId: string,
-): Promise<{ ouvert_le: string; ferme_le: string | null }> {
+  /**
+   * Surveiller les écrans pendant l'épreuve (migration 111).
+   *
+   * Le choix se fait à l'ouverture, parce que c'est là qu'il engage : le
+   * stagiaire doit l'apprendre avant de composer, pas le découvrir en cours
+   * de route. Faux par défaut — un contrôle ne devient pas surveillé par
+   * omission.
+   */
+  surveille = false,
+): Promise<{ ouvert_le: string; ferme_le: string | null; surveille: boolean }> {
   const supabase = await createClient();
   const { data: c, error } = await supabase
     .from("controles")
@@ -733,6 +747,7 @@ export async function ouvrirControle(
   const valeurs = {
     ouvert_le: ouvert.toISOString(),
     ferme_le: ferme ? ferme.toISOString() : null,
+    surveille,
   };
   const { error: errMaj } = await supabase
     .from("controles")

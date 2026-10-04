@@ -126,7 +126,7 @@ export default function ParametresLlmForm({
                 aria-pressed={actif}
                 className={`rounded-lg border px-3 py-2.5 text-left transition-colors ${
                   actif
-                    ? "border-ink bg-wash"
+                    ? "border-encre bg-wash"
                     : "border-border hover:border-slate/40"
                 }`}
               >
