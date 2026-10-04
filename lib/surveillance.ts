@@ -23,8 +23,15 @@ export const BUCKET_SURVEILLANCE = "surveillance-controles";
  */
 export const INTERVALLE_CAPTURE_MS = 25_000;
 
-/** Largeur des captures. On surveille des vignettes, pas des documents. */
-export const LARGEUR_CAPTURE = 640;
+/**
+ * Largeur des captures.
+ *
+ * 640 px suffisaient à la vignette mais pas au grand format : agrandie, une
+ * capture de 640 px devient illisible, et c'est justement là qu'on cherche à
+ * lire ce que le stagiaire a sous les yeux. 1280 px reste sous la centaine de
+ * kilo-octets en JPEG, loin de la limite du seau.
+ */
+export const LARGEUR_CAPTURE = 1280;
 
 /** Qualité JPEG : au-delà, on paie des pixels qu'aucun œil ne lira. */
 export const QUALITE_CAPTURE = 0.5;

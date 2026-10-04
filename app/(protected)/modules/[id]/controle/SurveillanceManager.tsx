@@ -6,6 +6,7 @@ import {
   ChevronRight,
   Eraser,
   MonitorOff,
+  RefreshCw,
   ScreenShare,
   X,
 } from "lucide-react";
@@ -57,6 +58,14 @@ const PASTILLES = {
   alerte: "bg-coral",
 } as const;
 
+/** « 14:32:05 » : l'heure de la dernière relecture, à la seconde près. */
+const heure = (ms: number) =>
+  new Date(ms).toLocaleTimeString("fr-FR", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+
 const estTypeConnu = (v: string): v is TypeEvenement =>
   (TYPES_EVENEMENT as readonly string[]).includes(v);
 
@@ -79,6 +88,9 @@ export default function SurveillanceManager({
   // les images : accolé à l'URL signée, il contourne le cache du navigateur
   // sans rien redemander à personne.
   const [tic, setTic] = useState(() => Date.now());
+  // Le grand format se relit plus souvent que la grille : on n'y regarde
+  // qu'une image, et c'est là qu'on veut voir ce qui se passe maintenant.
+  const [ticGrand, setTicGrand] = useState(() => Date.now());
 
   const supabase = createClient();
   const vus = useRef(new Set<string>());
@@ -163,6 +175,17 @@ export default function SurveillanceManager({
     };
   }, []);
 
+  // Une seule image à l'écran, donc on peut la relire toutes les dix
+  // secondes sans peser : seize vignettes au même rythme coûteraient seize
+  // fois plus pour un détail qu'on ne lit pas en vignette.
+  useEffect(() => {
+    if (!agrandi) return;
+    const minuterie = window.setInterval(() => {
+      if (document.visibilityState === "visible") setTicGrand(Date.now());
+    }, 10_000);
+    return () => window.clearInterval(minuterie);
+  }, [agrandi]);
+
   const parEleve = useMemo(() => parStagiaire(evenements), [evenements]);
 
   // Les cartes se rangent par ce qui demande un regard, puis par nom : la
@@ -227,8 +250,10 @@ export default function SurveillanceManager({
     }
   }
 
-  const url = (c: SurveilleListe) =>
-    c.capture ? `${c.capture}${c.capture.includes("?") ? "&" : "?"}t=${tic}` : null;
+  const url = (c: SurveilleListe, instant = tic) =>
+    c.capture
+      ? `${c.capture}${c.capture.includes("?") ? "&" : "?"}t=${instant}`
+      : null;
 
   if (chargement) {
     return (
@@ -271,9 +296,21 @@ export default function SurveillanceManager({
           </span>
           <span className="text-[14px] text-slate-2">
             {cartes.length} stagiaire{cartes.length > 1 ? "s" : ""} · images
-            rafraîchies toutes les 25 secondes
+            relues à {heure(tic)}, et toutes les 25 secondes
           </span>
         </span>
+        <Button
+          variant="secondary"
+          size="sm"
+          icon={RefreshCw}
+          onClick={() => {
+            const maintenant = Date.now();
+            setTic(maintenant);
+            setTicGrand(maintenant);
+          }}
+        >
+          Rafraîchir
+        </Button>
         <Button
           variant="secondary"
           size="sm"
@@ -350,7 +387,7 @@ export default function SurveillanceManager({
           role="dialog"
           aria-modal="true"
           aria-label={`Écran de ${grand.nom}`}
-          className="fixed inset-0 z-50 flex flex-col gap-3 bg-ink/90 p-4 md:p-8"
+          className="fixed inset-0 z-50 flex flex-col gap-3 bg-ink/95 p-3 md:p-5"
         >
           <div className="flex items-center gap-3">
             <Avatar nom={grand.nom} prenom="" photo={grand.photo} taille="sm" />
@@ -392,12 +429,12 @@ export default function SurveillanceManager({
           </div>
 
           <div className="flex min-h-0 flex-1 items-center justify-center">
-            {url(grand) ? (
+            {url(grand, ticGrand) ? (
               /* eslint-disable-next-line @next/next/no-img-element */
               <img
-                src={url(grand)!}
+                src={url(grand, ticGrand)!}
                 alt={`Écran de ${grand.nom}`}
-                className="max-h-full max-w-full rounded-[10px] object-contain"
+                className="h-full w-full rounded-[10px] object-contain"
               />
             ) : (
               <p className="text-[15px] text-white/70">
