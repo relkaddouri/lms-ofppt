@@ -48,6 +48,7 @@ export default function PassationControle({
   fermeLe,
   onChange,
   onVoirCopies,
+  onSurveiller,
   surveille,
 }: {
   controleId: string;
@@ -61,6 +62,8 @@ export default function PassationControle({
   fermeLe: string | null;
   onChange: (ouvertLe: string | null, fermeLe: string | null) => void;
   onVoirCopies: () => void;
+  /** Mène à la mosaïque des écrans, pendant que l'épreuve se passe. */
+  onSurveiller: () => void;
   /** Le contrôle est-il surveillé, tel qu'enregistré (migration 111) ? */
   surveille: boolean;
 }) {
@@ -72,6 +75,15 @@ export default function PassationControle({
   // dernier mot revient à la base : rouvrir un contrôle surveillé reconduit
   // la surveillance, sauf si on la décroche exprès.
   const [surveiller, setSurveiller] = useState(surveille);
+
+  // Le contrôle se charge après le premier rendu, et la valeur initiale d'un
+  // `useState` ne se rejoue pas : sans cette synchronisation, l'interrupteur
+  // restait à l'arrêt devant un contrôle pourtant surveillé — ce qui est
+  // exactement le genre d'écart qui fait ouvrir une épreuve en croyant
+  // l'avoir surveillée. Repéré à l'essai, pas à la relecture.
+  useEffect(() => {
+    setSurveiller(surveille);
+  }, [surveille]);
 
   const ouvert = testOuvert({ ouvert_le: ouvertLe, ferme_le: fermeLe }, maintenant);
 
@@ -165,6 +177,12 @@ export default function PassationControle({
             {etat}
           </span>
         </span>
+
+        {ouvert && surveiller ? (
+          <Button icon={ScreenShare} onClick={onSurveiller}>
+            Surveiller
+          </Button>
+        ) : null}
 
         {ouvert ? (
           <Button

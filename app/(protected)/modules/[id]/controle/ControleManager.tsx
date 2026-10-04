@@ -25,6 +25,7 @@ import { AlertesQuestion, ChampDonnees } from "./ChampDonnees";
 import VersionsControle from "./VersionsControle";
 import ListeControles from "./ListeControles";
 import PassationControle from "./PassationControle";
+import SurveillanceManager from "./SurveillanceManager";
 import AnalyseComprehension from "./AnalyseComprehension";
 import Passation from "@/app/espace-stagiaire/controles/[id]/Passation";
 import { Stepper, NavigationEtapes, ETAPES } from "./Stepper";
@@ -272,7 +273,9 @@ export default function ControleManager({
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
-  const [tab, setTab] = useState<"editeur" | "apercu" | "copies" | "analyse">(
+  const [tab, setTab] = useState<
+    "editeur" | "apercu" | "copies" | "analyse" | "surveillance"
+  >(
     "editeur",
   );
   const [avertissements, setAvertissements] = useState<string[]>([]);
@@ -845,6 +848,7 @@ export default function ControleManager({
             router.refresh();
           }}
           onVoirCopies={() => setTab("copies")}
+          onSurveiller={() => setTab("surveillance")}
         />
       ) : null}
 
@@ -968,12 +972,21 @@ export default function ControleManager({
             { valeur: "editeur" as const, libelle: "Éditeur" },
             { valeur: "apercu" as const, libelle: "Aperçu" },
             { valeur: "copies" as const, libelle: "Copies" },
+            { valeur: "surveillance" as const, libelle: "Surveillance" },
             { valeur: "analyse" as const, libelle: "Analyse" },
           ]}
         />
       </div>
 
-      {tab === "analyse" ? (
+      {tab === "surveillance" ? (
+        activeId ? (
+          <SurveillanceManager controleId={activeId} controleTitre={titre} />
+        ) : (
+          <p className="mt-6 rounded-[14px] border border-border bg-surface p-4 text-sm text-slate shadow-repos">
+            Enregistrez d&apos;abord un contrôle pour surveiller sa passation.
+          </p>
+        )
+      ) : tab === "analyse" ? (
         activeId ? (
           <AnalyseComprehension controleId={activeId} />
         ) : (
