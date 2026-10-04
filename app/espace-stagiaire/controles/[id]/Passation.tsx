@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Button from "@/components/ui/Button";
-import AutoTextarea from "@/components/ui/AutoTextarea";
+import ChampReponse from "@/components/ChampReponse";
 import DonneesQuestion from "@/components/DonneesQuestion";
 import { CorpsRedige } from "@/components/DocumentRedige";
 import Modal, { ConfirmModal } from "@/components/ui/Modal";
@@ -397,31 +397,26 @@ export default function Passation({
                   </div>
                 </fieldset>
               ) : (
-                <div className="mt-5 overflow-hidden rounded-[12px] border border-border-strong bg-paper-alt focus-within:border-encre">
+                <div className="mt-5">
                   <label
                     htmlFor={`reponse-${q.id}`}
-                    className="flex items-center gap-2 border-b border-separator bg-surface px-4 py-2 font-mono text-[11px] uppercase tracking-[0.12em] text-slate-light"
+                    className="mb-1.5 flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.12em] text-slate-light"
                   >
                     <PenLine className="h-3.5 w-3.5" aria-hidden />
                     Votre réponse
-                    <span className="ml-auto normal-case tracking-normal">
-                      {(reponses[q.id] ?? "").trim()
-                        ? `${(reponses[q.id] ?? "").trim().split(/\s+/).length} mots`
-                        : ""}
-                    </span>
                   </label>
-                  <AutoTextarea
+                  <ChampReponse
                     id={`reponse-${q.id}`}
-                    value={reponses[q.id] ?? ""}
+                    valeur={reponses[q.id] ?? ""}
+                    onChange={(v) => ecrire(q.id, v)}
                     minRows={lignesDeReponse(q)}
-                    onChange={(e) => ecrire(q.id, e.target.value)}
+                    disabled={rendue}
                     placeholder={
                       q.type === "exercice"
-                        ? "Rédigez votre réponse ici. Prenez le temps : vous pouvez aller à la ligne, faire des listes (- …) ou des tableaux."
+                        ? "Rédigez votre réponse ici. Pour un tableau, une fiche persona ou une journey map, servez-vous du bouton Gabarits."
                         : "Rédigez votre réponse ici…"
                     }
-                    aria-label={`Réponse à la question ${i + 1}`}
-                    className="!rounded-none !border-0 !bg-transparent px-4 py-3 text-[16px] leading-[1.75] !shadow-none focus:!ring-0 md:text-[15px]"
+                    ariaLabel={`Réponse à la question ${i + 1}`}
                   />
                 </div>
               )}
