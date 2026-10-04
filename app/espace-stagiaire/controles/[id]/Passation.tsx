@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Button from "@/components/ui/Button";
-import ChampReponse from "@/components/ChampReponse";
+import ChampReponseVisuel from "@/components/ChampReponseVisuel";
 import DonneesQuestion from "@/components/DonneesQuestion";
 import { CorpsRedige } from "@/components/DocumentRedige";
 import Modal, { ConfirmModal } from "@/components/ui/Modal";
@@ -405,7 +405,7 @@ export default function Passation({
                     <PenLine className="h-3.5 w-3.5" aria-hidden />
                     Votre réponse
                   </label>
-                  <ChampReponse
+                  <ChampReponseVisuel
                     id={`reponse-${q.id}`}
                     valeur={reponses[q.id] ?? ""}
                     onChange={(v) => ecrire(q.id, v)}

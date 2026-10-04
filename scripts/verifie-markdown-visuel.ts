@@ -1,0 +1,65 @@
+/**
+ * L'aller-retour de la copie du stagiaire ne doit rien perdre.
+ *
+ * Il compose dans une zone visuelle, on enregistre du Markdown, et on le lui
+ * rend quand il reprend sa copie. Une sérialisation qui dérive ne lève aucune
+ * erreur : elle rend un tableau en bouillie, et personne ne s'en aperçoit
+ * avant la correction. D'où ce contrôle, au même titre que les autres.
+ */
+import { versHtml, versMarkdown } from "../lib/markdown-visuel.ts";
+
+// Un DOM minimal : juste ce que `versMarkdown` lit.
+(globalThis as Record<string, unknown>).Node = { TEXT_NODE: 3, ELEMENT_NODE: 1 };
+
+type Faux = { nodeType: number; tagName?: string; textContent?: string; childNodes: Faux[]; children: Faux[]; querySelectorAll?: (s: string) => Faux[] };
+
+function depuisHtml(html: string): Faux {
+  // Analyseur minuscule, suffisant pour le HTML que `versHtml` produit :
+  // des balises simples, sans attributs ni auto-fermeture hormis <br>.
+  const pile: Faux[] = [];
+  const racine: Faux = { nodeType: 1, tagName: "DIV", childNodes: [], children: [] };
+  pile.push(racine);
+  const jetons = html.split(/(<[^>]+>)/).filter((t) => t !== "");
+  for (const j of jetons) {
+    const haut = pile[pile.length - 1]!;
+    if (j.startsWith("</")) { pile.pop(); continue; }
+    if (j.startsWith("<")) {
+      const nom = j.slice(1, -1).toUpperCase();
+      const el: Faux = { nodeType: 1, tagName: nom, childNodes: [], children: [] };
+      haut.childNodes.push(el); haut.children.push(el);
+      if (nom !== "BR") pile.push(el);
+      continue;
+    }
+    const txt = j.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
+    haut.childNodes.push({ nodeType: 3, textContent: txt, childNodes: [], children: [] });
+  }
+  const tousLes = (n: Faux, tag: string, acc: Faux[] = []): Faux[] => {
+    for (const e of n.children) { if (e.tagName === tag) acc.push(e); tousLes(e, tag, acc); }
+    return acc;
+  };
+  const brancher = (n: Faux) => { n.querySelectorAll = (s) => tousLes(n, s.toUpperCase()); n.children.forEach(brancher); };
+  brancher(racine);
+  return racine;
+}
+
+const cas = [
+  "Un **mot gras** et un *mot italique*.",
+  "- un\n- deux",
+  "1. premier\n2. deuxième",
+  "| Étape | Action |\n| --- | --- |\n| 1. | ouvrir |\n| 2. | payer |",
+  "| Pense et ressent | Voit |\n| --- | --- |\n| Elle doute du prix |  |",
+];
+
+let echecs = 0;
+for (const md of cas) {
+  const retour = versMarkdown(depuisHtml(versHtml(md)) as unknown as HTMLElement);
+  const ok = retour === md;
+  if (!ok) echecs += 1;
+  console.log(`${ok ? "✓" : "✗"} ${JSON.stringify(md.slice(0, 44))}`);
+  if (!ok) console.log(`    rendu : ${JSON.stringify(retour)}`);
+}
+if (echecs > 0) {
+  console.error(`\n✗ ${echecs} cas perdent du contenu à l'aller-retour.`);
+  process.exit(1);
+}
+console.log("✓ Markdown visuel : aller-retour fidèle sur tous les cas.");
