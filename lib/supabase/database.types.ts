@@ -331,6 +331,7 @@ export type Database = {
           ouvert_le: string | null
           seance_ids: string[] | null
           statut: string
+          surveille: boolean
           titre: string | null
           type: string
           type_efm: string | null
@@ -352,6 +353,7 @@ export type Database = {
           ouvert_le?: string | null
           seance_ids?: string[] | null
           statut?: string
+          surveille?: boolean
           titre?: string | null
           type?: string
           type_efm?: string | null
@@ -373,6 +375,7 @@ export type Database = {
           ouvert_le?: string | null
           seance_ids?: string[] | null
           statut?: string
+          surveille?: boolean
           titre?: string | null
           type?: string
           type_efm?: string | null
@@ -2328,6 +2331,45 @@ export type Database = {
             columns: ["seance_id"]
             isOneToOne: false
             referencedRelation: "seances"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      surveillance_evenements: {
+        Row: {
+          controle_id: string
+          cree_le: string
+          id: string
+          stagiaire_id: string
+          type: string
+        }
+        Insert: {
+          controle_id: string
+          cree_le?: string
+          id?: string
+          stagiaire_id: string
+          type: string
+        }
+        Update: {
+          controle_id?: string
+          cree_le?: string
+          id?: string
+          stagiaire_id?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "surveillance_evenements_controle_id_fkey"
+            columns: ["controle_id"]
+            isOneToOne: false
+            referencedRelation: "controles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "surveillance_evenements_stagiaire_id_fkey"
+            columns: ["stagiaire_id"]
+            isOneToOne: false
+            referencedRelation: "stagiaires"
             referencedColumns: ["id"]
           },
         ]
