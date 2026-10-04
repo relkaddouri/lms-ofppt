@@ -1,10 +1,11 @@
 "use client";
 
-import { useLayoutEffect, useRef, useState } from "react";
+import { useState } from "react";
 import AutoTextarea from "@/components/ui/AutoTextarea";
 import Button from "@/components/ui/Button";
 import Segments from "@/components/ui/Segments";
 import ReponseMarkdown from "@/components/ReponseMarkdown";
+import { useMiseEnForme } from "@/components/ui/useMiseEnForme";
 import type { Camarade } from "@/app/actions/fil";
 import {
   Bold,
@@ -47,22 +48,9 @@ export default function EditeurReponse({
 }) {
   const [texte, setTexte] = useState("");
   const [vue, setVue] = useState<Vue>("ecrire");
-  const zone = useRef<HTMLTextAreaElement>(null);
-  // La sélection à rétablir après une mise en forme. Appliquée une fois le
-  // nouveau texte rendu, et non dans un `requestAnimationFrame` : React remet
-  // le curseur en fin de champ en réécrivant sa valeur, et une image
-  // d'animation ne vient pas toujours après — jamais dans un onglet en
-  // arrière-plan, où le navigateur les suspend.
-  const selectionAVenir = useRef<[number, number] | null>(null);
-
-  useLayoutEffect(() => {
-    const el = zone.current;
-    const cible = selectionAVenir.current;
-    if (!el || !cible) return;
-    selectionAVenir.current = null;
-    el.focus();
-    el.setSelectionRange(cible[0], cible[1]);
-  }, [texte]);
+  // La mécanique de sélection vit dans un crochet partagé : la copie du
+  // stagiaire s'en sert aussi, et un défaut corrigé ici profite aux deux.
+  const { zone, entourer, prefixer } = useMiseEnForme(texte, setTexte);
 
   const longueur = texte.length;
   const vide = texte.trim() === "";
@@ -75,45 +63,6 @@ export default function EditeurReponse({
   function envoyer() {
     if (vide || tropLong || busy) return;
     onEnvoyer(texte.trim());
-  }
-
-  /**
-   * Entoure la sélection, ou insère le modèle au curseur.
-   *
-   * La sélection est restaurée après coup, sur le texte entouré : on peut
-   * enchaîner gras puis italique sans resélectionner.
-   */
-  function entourer(avant: string, apres: string, modele: string) {
-    const el = zone.current;
-    if (!el) return;
-    const debut = el.selectionStart;
-    const fin = el.selectionEnd;
-    const choisi = texte.slice(debut, fin) || modele;
-    const suite =
-      texte.slice(0, debut) + avant + choisi + apres + texte.slice(fin);
-    selectionAVenir.current = [
-      debut + avant.length,
-      debut + avant.length + choisi.length,
-    ];
-    setTexte(suite);
-  }
-
-  /** Préfixe chaque ligne sélectionnée — listes et citations. */
-  function prefixer(prefixe: (i: number) => string) {
-    const el = zone.current;
-    if (!el) return;
-    // On étend la sélection aux lignes entières : une liste qui commencerait au
-    // milieu d'une phrase ne serait pas une liste.
-    const debut = texte.lastIndexOf("\n", el.selectionStart - 1) + 1;
-    const finLigne = texte.indexOf("\n", el.selectionEnd);
-    const fin = finLigne === -1 ? texte.length : finLigne;
-    const bloc = texte
-      .slice(debut, fin)
-      .split("\n")
-      .map((l, i) => `${prefixe(i)}${l}`)
-      .join("\n");
-    selectionAVenir.current = [debut, debut + bloc.length];
-    setTexte(texte.slice(0, debut) + bloc + texte.slice(fin));
   }
 
   const outils = [
