@@ -1011,6 +1011,10 @@ export default function ControleManager({
                   ferme_le: null,
                   statut,
                   compteTest: false,
+                  // L'aperçu ne se surveille pas : il n'y a ni épreuve en
+                  // cours ni stagiaire derrière l'écran.
+                  surveille: false,
+                  stagiaireId: null,
                   moduleNom,
                   codeOperationnel: moduleCode,
                   note: null,
