@@ -54,6 +54,11 @@ export default function EcranSurveille({
   // bascules rapides entre onglets écrirait dix lignes pour un seul départ.
   const cacheRef = useRef(false);
   const dernierCollageRef = useRef(0);
+  // Un refus ne s'enregistre qu'une fois par demi-minute. Le bouton se
+  // réactive après chaque échec — c'est voulu, un refus n'est pas une
+  // impasse —, mais un stagiaire qui s'acharne ne doit pas remplir le
+  // journal de son formateur de trente lignes identiques.
+  const dernierRefusRef = useRef(0);
 
   const supabase = createClient();
 
@@ -205,7 +210,11 @@ export default function EcranSurveille({
         "Le partage n'a pas été autorisé. Ce contrôle ne peut pas commencer sans lui — réessayez.",
       );
       setDemande(false);
-      void journal("partage_refuse");
+      const maintenant = Date.now();
+      if (maintenant - dernierRefusRef.current >= 30_000) {
+        dernierRefusRef.current = maintenant;
+        void journal("partage_refuse");
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [capturer, journal]);
