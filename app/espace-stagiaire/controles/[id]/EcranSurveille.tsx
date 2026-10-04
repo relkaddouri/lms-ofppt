@@ -30,6 +30,35 @@ import {
 
 type Etape = "accueil" | "en_cours" | "incompatible";
 
+/**
+ * Un battement régulier qui survit à l'arrière-plan.
+ *
+ * Les navigateurs ralentissent les minuteries d'un onglet caché à un tour par
+ * minute — et c'est précisément quand le stagiaire est ailleurs qu'on veut
+ * une image de son écran. Un worker a sa propre boucle, que la mise en
+ * arrière-plan de la page n'étrangle pas de la même façon.
+ *
+ * Si le worker ne peut pas naître — navigateur ancien, politique de sécurité
+ * restrictive —, on retombe sur la minuterie ordinaire : moins régulière en
+ * arrière-plan, mais la surveillance continue plutôt que de s'arrêter.
+ */
+function battre(action: () => void, periode: number): () => void {
+  try {
+    const source = `let t; onmessage = (e) => { clearInterval(t); t = setInterval(() => postMessage(0), e.data); };`;
+    const adresse = URL.createObjectURL(
+      new Blob([source], { type: "text/javascript" }),
+    );
+    const worker = new Worker(adresse);
+    URL.revokeObjectURL(adresse);
+    worker.onmessage = () => action();
+    worker.postMessage(periode);
+    return () => worker.terminate();
+  } catch {
+    const minuterie = window.setInterval(action, periode);
+    return () => window.clearInterval(minuterie);
+  }
+}
+
 export default function EcranSurveille({
   controleId,
   stagiaireId,
@@ -48,7 +77,7 @@ export default function EcranSurveille({
 
   const fluxRef = useRef<MediaStream | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const minuterieRef = useRef<number | null>(null);
+  const arretBattementRef = useRef<(() => void) | null>(null);
   const comptePourRef = useRef<string | null>(null);
   // Le dernier état de visibilité *enregistré* : sans lui, une suite de
   // bascules rapides entre onglets écrirait dix lignes pour un seul départ.
@@ -139,10 +168,8 @@ export default function EcranSurveille({
 
   /** Tout arrêter : le flux, la minuterie, et le reflet qu'on en avait. */
   const arreter = useCallback(() => {
-    if (minuterieRef.current !== null) {
-      window.clearInterval(minuterieRef.current);
-      minuterieRef.current = null;
-    }
+    arretBattementRef.current?.();
+    arretBattementRef.current = null;
     fluxRef.current?.getTracks().forEach((t) => t.stop());
     fluxRef.current = null;
     setPartageActif(false);
@@ -201,7 +228,8 @@ export default function EcranSurveille({
       // Une première capture tout de suite : sans elle, la carte du formateur
       // resterait vide vingt-cinq secondes alors que l'épreuve a commencé.
       void capturer();
-      minuterieRef.current = window.setInterval(() => {
+      arretBattementRef.current?.();
+      arretBattementRef.current = battre(() => {
         void capturer();
       }, INTERVALLE_CAPTURE_MS);
     } catch {
@@ -221,10 +249,8 @@ export default function EcranSurveille({
 
   /** Reprendre après un arrêt : le même geste, sans repasser par l'accueil. */
   const reprendre = useCallback(async () => {
-    if (minuterieRef.current !== null) {
-      window.clearInterval(minuterieRef.current);
-      minuterieRef.current = null;
-    }
+    arretBattementRef.current?.();
+    arretBattementRef.current = null;
     await demarrer();
   }, [demarrer]);
 
