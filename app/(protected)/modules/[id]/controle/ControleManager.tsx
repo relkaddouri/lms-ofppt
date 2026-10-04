@@ -291,6 +291,8 @@ export default function ControleManager({
   // L'ouverture d'un test au groupe (10.5).
   const [ouvertLe, setOuvertLe] = useState<string | null>(null);
   const [fermeLe, setFermeLe] = useState<string | null>(null);
+  // La surveillance des écrans, telle qu'enregistrée (migration 111).
+  const [surveille, setSurveille] = useState(false);
 
   // Une seule clé pour les cartes de nature, recomposée depuis les deux champs
   // que le modèle enregistre.
@@ -455,6 +457,7 @@ export default function ControleManager({
       setStatut(c.statut);
       setOuvertLe(c.ouvert_le);
       setFermeLe(c.ferme_le);
+      setSurveille(c.surveille);
       setReference(appliquer(c));
       setRestaureDe(null);
       setNotice(null);
@@ -495,6 +498,7 @@ export default function ControleManager({
     setBaremeTotal(20);
     setOuvertLe(null);
     setFermeLe(null);
+    setSurveille(false);
     setSeancesRetenues([]);
     setSeancesEnregistrees(null);
     setChargements((n) => n + 1);
@@ -834,6 +838,7 @@ export default function ControleManager({
           modifie={modifie}
           ouvertLe={ouvertLe}
           fermeLe={fermeLe}
+          surveille={surveille}
           onChange={(o, f) => {
             setOuvertLe(o);
             setFermeLe(f);
