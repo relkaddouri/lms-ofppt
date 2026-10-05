@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Button from "@/components/ui/Button";
 import ChampReponseVisuel from "@/components/ChampReponseVisuel";
+import { useBrouillonCopie } from "@/components/useBrouillonCopie";
 import DonneesQuestion from "@/components/DonneesQuestion";
 import { CorpsRedige } from "@/components/DocumentRedige";
 import Modal, { ConfirmModal } from "@/components/ui/Modal";
@@ -206,6 +207,26 @@ export default function Passation({
   const ecrire = (id: string, valeur: string) =>
     setReponses((r) => ({ ...r, [id]: valeur }));
 
+  const brouillon = useBrouillonCopie({
+    controleId: controle.id,
+    stagiaireId: controle.stagiaireId,
+    reponses,
+    actif: !apercu && !rendue,
+  });
+
+  // Ce que le serveur avait gardé, repris si rien n'a été retrouvé sur
+  // l'appareil. On ne l'impose pas par-dessus un travail en cours : le
+  // stagiaire a pu continuer ailleurs, et c'est lui qui tranche.
+  useEffect(() => {
+    if (!brouillon.retrouve || !restauree.current) return;
+    const ecritIci = Object.values(reponsesRef.current).some((v) => v.trim());
+    if (ecritIci) return;
+    setReponses(brouillon.retrouve);
+    brouillon.oublier();
+    toast("Votre copie a été retrouvée telle que vous l'aviez laissée.");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [brouillon.retrouve]);
+
   async function rendre() {
     setBusy(true);
     try {
@@ -227,6 +248,8 @@ export default function Passation({
       } catch {
         // Rien à nettoyer.
       }
+      // Le brouillon n'a plus d'objet : la copie existe.
+      void brouillon.effacer();
       setRendueA(formatHeure(instantEtablissement().heure));
       setModaleRendue(true);
     } catch (e) {
@@ -489,9 +512,19 @@ export default function Passation({
               ? " · aperçu, rien n'est enregistré"
               : rendue
                 ? " · copie rendue"
-                : gardee && repondues > 0
-                ? " · gardée sur cet appareil"
-                : ""}
+                : /*
+                     Ce qui compte pour le stagiaire n'est pas qu'une requête
+                     soit partie, c'est de savoir si son travail survivrait à
+                     une coupure. On nomme donc l'endroit où il est : chez
+                     nous, ou seulement sur son appareil.
+                   */
+                  brouillon.etat === "enregistre"
+                  ? " · enregistré, vous pouvez fermer sans perdre votre travail"
+                  : brouillon.etat === "hors_ligne"
+                    ? " · hors ligne — gardé sur cet appareil, l'envoi reprendra tout seul"
+                    : gardee && repondues > 0
+                      ? " · gardée sur cet appareil"
+                      : ""}
           </p>
           <Button
             icon={Send}
