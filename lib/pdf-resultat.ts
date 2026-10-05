@@ -262,8 +262,12 @@ export function dessinerResultat(
       // le fond était tracé d'après une estimation, et le texte débordait
       // dessous dès qu'un tableau ou un paragraphe n'occupait pas ce qu'elle
       // supposait.
+      // Les respirations d'un document officiel : l'étiquette tient à 6 mm de
+      // son contenu, et 2,2 mm le séparent du bas de son fond. Les valeurs
+      // précédentes — 5,2 et 1,6 — collaient le commentaire du formateur au
+      // bloc au-dessus, au point qu'on ne voyait plus où l'un finissait.
       const hauteur =
-        5.2 + mesurerMarkdown(doc, texte.trim(), LARGEUR - RETRAIT_TEXTE - 4) + 1.6;
+        6 + mesurerMarkdown(doc, texte.trim(), LARGEUR - RETRAIT_TEXTE - 4) + 2.2;
       // L'étiquette ne se sépare pas de sa première ligne.
       if (y + Math.min(hauteur, 12) > BAS) {
         doc.addPage();
@@ -295,7 +299,7 @@ export function dessinerResultat(
       y = dessinerMarkdown(doc, texte.trim(), {
         x: X + RETRAIT_TEXTE,
         largeur: LARGEUR - RETRAIT_TEXTE - 4,
-        y: y + 5.2,
+        y: y + 6,
         place: (hauteur) => {
           if (y + hauteur > BAS) {
             doc.addPage();
@@ -305,11 +309,14 @@ export function dessinerResultat(
           return y;
         },
       });
-      y += 1.6;
+      y += 2.2;
 
       doc.setFillColor(...accent);
       doc.rect(X + RETRAIT, haut - 2.6, 0.9, y - haut + 1.2, "F");
-      y += 1.8;
+      // L'espace entre deux blocs : il sépare « votre réponse » de « réponse
+      // attendue », et celle-ci du commentaire. Trop court, les trois se
+      // lisaient comme un seul pavé.
+      y += 4;
     };
 
     // La réponse attendue porte le seul point de couleur et le seul fond :
@@ -318,7 +325,9 @@ export function dessinerResultat(
     bloc("RÉPONSE ATTENDUE", l.corrige, COULEURS.sarcelle, [233, 242, 247]);
     bloc("COMMENTAIRE DU FORMATEUR", l.commentaire, COULEURS.bordureForte);
 
-    y += 2.5;
+    // Entre deux questions, davantage qu'entre deux blocs d'une même question :
+    // c'est ce qui fait voir, en diagonale, où une question s'achève.
+    y += 5;
   });
 
   if (y + 24 > BAS) {

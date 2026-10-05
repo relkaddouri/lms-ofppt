@@ -176,6 +176,37 @@ for (const md of cas) {
     }
   }
 
+  // Un tableau ne doit pas se poser sur le texte qui le précède. Il se place à
+  // l'ordonnée que `place` lui rend, tandis qu'un paragraphe s'écrit ligne à
+  // ligne : si une respiration n'a pas été transmise à l'appelant, les deux se
+  // retrouvent à la même hauteur et le fond d'en-tête recouvre la phrase.
+  {
+    let dernierTexte = -Infinity;
+    let ecart = Infinity;
+    const guetteur: Record<string, unknown> = { ...faux };
+    guetteur.text = (_t: unknown, _x: number, y: number) => { dernierTexte = Math.max(dernierTexte, y); return guetteur; };
+    guetteur.rect = (_x: number, y: number) => { ecart = Math.min(ecart, y - dernierTexte); return guetteur; };
+
+    let yg = 0;
+    dessinerMarkdown(guetteur as never, [
+      "Un utilisateur consulte la page d'accueil, cherche un trajet et paie.",
+      "**Les motivations et points bloquants correspondants :**",
+      "| Parcours | Points bloquants |",
+      "| --- | --- |",
+      "| 1 | Prix change au paiement |",
+    ].join("\n"), {
+      x: 0, largeur: 150, y: yg,
+      place: (h: number) => { yg += h; return yg; },
+    });
+
+    if (ecart < 0.5) {
+      console.error(
+        `✗ PDF : le tableau se pose à ${ecart.toFixed(2)} mm de la dernière ligne écrite. Il la recouvrirait.`,
+      );
+      echecs += 1;
+    }
+  }
+
   const fautes: string[] = [];
   if (ecrits.some((t) => t.includes("|"))) fautes.push("barres verticales");
   if (ecrits.some((t) => t.includes("**"))) fautes.push("astérisques");
