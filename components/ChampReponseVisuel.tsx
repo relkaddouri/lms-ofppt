@@ -257,8 +257,11 @@ export default function ChampReponseVisuel({
   const mots = vide ? 0 : valeur.trim().split(/\s+/).length;
 
   return (
-    <div className="overflow-hidden rounded-[12px] border border-border-strong bg-surface focus-within:border-ink">
-      <div className="flex flex-wrap items-center gap-0.5 border-b border-separator bg-paper-alt px-2 py-1.5">
+    // Pas d'`overflow-hidden` ici : il rognait le menu des gabarits, qui
+    // déborde du cadre par construction. Les coins se tiennent donc sur les
+    // deux bandes elles-mêmes.
+    <div className="rounded-[12px] border border-border-strong bg-surface focus-within:border-ink">
+      <div className="flex flex-wrap items-center gap-0.5 rounded-t-[11px] border-b border-separator bg-paper-alt px-2 py-1.5">
         {outils.map(({ libelle, Icone, agir }) => (
           <button
             key={libelle}
@@ -298,7 +301,7 @@ export default function ChampReponseVisuel({
           {gabarits ? (
             <div
               role="menu"
-              className="absolute left-0 top-full z-20 mt-1 w-[280px] overflow-hidden rounded-[10px] border border-border bg-surface shadow-eleve"
+              className="absolute left-0 top-full z-20 mt-1 max-h-[min(60vh,340px)] w-[280px] overflow-y-auto overscroll-contain rounded-[10px] border border-border bg-surface shadow-eleve"
             >
               {GABARITS.map((g) => (
                 <button
@@ -387,14 +390,14 @@ export default function ChampReponseVisuel({
             "[&_ol]:my-2 [&_ol]:list-decimal [&_ol]:pl-6",
             "[&_li]:my-1",
             "[&_table]:my-3 [&_table]:w-full [&_table]:border-collapse [&_table]:overflow-hidden [&_table]:rounded-[8px]",
-            "[&_th]:border [&_th]:border-separator [&_th]:bg-ink [&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:text-[13.5px] [&_th]:font-medium [&_th]:text-white",
+            "[&_th]:border [&_th]:border-separator [&_th]:bg-[var(--encre,#2e3b4e)] [&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:text-[13.5px] [&_th]:font-medium [&_th]:text-white",
             "[&_td]:border [&_td]:border-separator [&_td]:px-3 [&_td]:py-2 [&_td]:align-top [&_td]:text-[14.5px]",
             "[&_strong]:font-semibold",
           ].join(" ")}
         />
       </div>
 
-      <p className="border-t border-separator bg-paper-alt px-4 py-1.5 text-right text-[12px] text-slate-light">
+      <p className="rounded-b-[11px] border-t border-separator bg-paper-alt px-4 py-1.5 text-right text-[12px] text-slate-light">
         {mots > 0 ? `${mots} mot${mots > 1 ? "s" : ""}` : " "}
       </p>
     </div>
