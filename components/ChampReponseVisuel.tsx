@@ -14,6 +14,10 @@ import {
 } from "lucide-react";
 import { GABARITS } from "@/lib/gabarits-reponse";
 import { versHtml, versMarkdown } from "@/lib/markdown-visuel";
+import { analyser, versBloc, SCHEMA_VIDE, type Schema } from "@/lib/schema-reponse";
+import { svgDuSchema } from "@/lib/schema-svg";
+import CanevasSchema from "@/components/CanevasSchema";
+import { PenTool } from "lucide-react";
 
 /**
  * La copie du stagiaire, composée à l'écran telle qu'elle sera rendue.
@@ -54,6 +58,10 @@ export default function ChampReponseVisuel({
   const zone = useRef<HTMLDivElement>(null);
   const [gabarits, setGabarits] = useState(false);
   const [dansTableau, setDansTableau] = useState(false);
+  // Le schéma en cours d'édition : son contenu, et la figure du document qu'il
+  // remplacera en sortant. `null` quand le canevas est fermé.
+  const [schemaOuvert, setSchemaOuvert] = useState<Schema | null>(null);
+  const figureVisee = useRef<HTMLElement | null>(null);
   const menu = useRef<HTMLDivElement>(null);
   // Le dernier Markdown que nous avons nous-mêmes produit. Il sert à
   // distinguer une valeur qui revient de l'extérieur — copie reprise, remise
@@ -166,10 +174,11 @@ export default function ChampReponseVisuel({
       noeuds.forEach((n) => el.appendChild(n));
     }
 
-    // Un paragraphe de sortie après un tableau : sans lui, un tableau en fin
-    // de zone enferme le curseur, et le stagiaire ne peut plus écrire après.
+    // Un paragraphe de sortie après un bloc qui n'accueille pas le curseur :
+    // sans lui, un tableau ou un schéma en fin de zone l'y enferme, et le
+    // stagiaire ne peut plus rien écrire en dessous.
     const dernier = el.lastElementChild;
-    if (dernier?.tagName === "TABLE") {
+    if (dernier?.tagName === "TABLE" || dernier?.tagName === "FIGURE") {
       const sortie = document.createElement("p");
       sortie.appendChild(document.createElement("br"));
       el.appendChild(sortie);
@@ -233,6 +242,39 @@ export default function ChampReponseVisuel({
     emettre();
   }
 
+  /** Ouvre le canevas, sur un schéma existant ou sur une page blanche. */
+  function ouvrirCanevas(figure: HTMLElement | null) {
+    figureVisee.current = figure;
+    setSchemaOuvert(
+      (figure?.dataset.schema ? analyser(figure.dataset.schema) : null) ??
+        SCHEMA_VIDE,
+    );
+  }
+
+  /** Repose le schéma dans le document, à la place de celui qu'on éditait. */
+  function fermerCanevas(schema: Schema | null) {
+    const el = zone.current;
+    if (schema && el) {
+      const html = `<figure data-schema="${JSON.stringify(schema).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;")}" contenteditable="false">${svgDuSchema(schema)}</figure>`;
+      const existante = figureVisee.current;
+      if (existante && el.contains(existante)) {
+        const modele = document.createElement("div");
+        modele.innerHTML = html;
+        existante.replaceWith(modele.firstElementChild!);
+      } else {
+        insererHtml(html);
+      }
+      if (el.lastElementChild?.tagName === "FIGURE") {
+        const sortie = document.createElement("p");
+        sortie.appendChild(document.createElement("br"));
+        el.appendChild(sortie);
+      }
+      emettre();
+    }
+    figureVisee.current = null;
+    setSchemaOuvert(null);
+  }
+
   const outils = [
     { libelle: "Gras", Icone: Bold, agir: () => commande("bold") },
     { libelle: "Italique", Icone: Italic, agir: () => commande("italic") },
@@ -250,6 +292,11 @@ export default function ChampReponseVisuel({
       libelle: "Tableau",
       Icone: Table2,
       agir: () => insererHtml(versHtml(GABARITS[0]!.bloc)),
+    },
+    {
+      libelle: "Schéma — user flow, wireframe",
+      Icone: PenTool,
+      agir: () => ouvrirCanevas(null),
     },
   ];
 
@@ -373,6 +420,13 @@ export default function ChampReponseVisuel({
           aria-label={ariaLabel}
           onInput={emettre}
           onBlur={emettre}
+          // Un schéma ne se modifie pas au clavier : on le rouvre là où il a
+          // été fait. Le double-clic est le geste qu'on tente d'instinct sur
+          // une image qu'on veut reprendre.
+          onDoubleClick={(e) => {
+            const figure = (e.target as Element).closest?.("figure[data-schema]");
+            if (figure) ouvrirCanevas(figure as HTMLElement);
+          }}
           // Un collage apporte le balisage du site d'origine — polices,
           // couleurs, tableaux imbriqués — que la sérialisation ne saurait
           // rendre. On ne garde que le texte.
@@ -393,9 +447,27 @@ export default function ChampReponseVisuel({
             "[&_th]:border [&_th]:border-separator [&_th]:bg-[var(--encre,#2e3b4e)] [&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:text-[13.5px] [&_th]:font-medium [&_th]:text-white",
             "[&_td]:border [&_td]:border-separator [&_td]:px-3 [&_td]:py-2 [&_td]:align-top [&_td]:text-[14.5px]",
             "[&_strong]:font-semibold",
+            "[&_figure]:my-3 [&_figure]:cursor-pointer [&_figure]:overflow-hidden [&_figure]:rounded-[10px] [&_figure]:border [&_figure]:border-border [&_figure]:bg-paper-alt",
           ].join(" ")}
         />
       </div>
+
+      {schemaOuvert ? (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Dessiner un schéma"
+          className="fixed inset-0 z-50 flex flex-col bg-ink/60 p-2 md:p-6"
+        >
+          <div className="mx-auto flex h-full w-full max-w-6xl flex-col overflow-hidden rounded-[12px] border border-border bg-surface shadow-eleve">
+            <CanevasSchema
+              depart={schemaOuvert}
+              onValider={(s) => fermerCanevas(s)}
+              onAnnuler={() => fermerCanevas(null)}
+            />
+          </div>
+        </div>
+      ) : null}
 
       <p className="rounded-b-[11px] border-t border-separator bg-paper-alt px-4 py-1.5 text-right text-[12px] text-slate-light">
         {mots > 0 ? `${mots} mot${mots > 1 ? "s" : ""}` : " "}

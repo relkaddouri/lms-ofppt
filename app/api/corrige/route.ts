@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { appelerLlm, chargerConfigLlm, ErreurLlm } from "@/lib/llm";
 import { verifierQuota, QUOTA_GENERATION } from "@/lib/rate-limit";
 import { NextResponse } from "next/server";
+import { pourCorrection } from "@/lib/schema-reponse";
 
 export async function POST(request: Request) {
   const { questionId, reponse } = await request.json().catch(() => ({}));
@@ -44,7 +45,11 @@ export async function POST(request: Request) {
     `Énoncé : ${q.enonce}`,
     `Barème : ${bareme} pts`,
     `Corrigé de référence : ${q.corrige ?? "Non renseigné"}`,
-    `Réponse du stagiaire : ${reponse.trim() || "(vide)"}`,
+    // Un schéma dessiné est du JSON dans la copie : illisible pour un
+    // correcteur, et le modèle configuré n'a pas de vision. On lui donne à la
+    // place la description de ce qui a été construit — les écrans, leurs noms,
+    // leurs enchaînements —, qui est ce qu'un user flow s'évalue.
+    `Réponse du stagiaire : ${pourCorrection(reponse).trim() || "(vide)"}`,
     "",
     "Attribue des points entre 0 et le barème, arrondis au demi-point près.",
     "Si la réponse correspond au corrigé (identique ou très proche), attribue la totalité des points.",
