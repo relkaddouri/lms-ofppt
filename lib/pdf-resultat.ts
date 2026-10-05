@@ -258,61 +258,87 @@ export function dessinerResultat(
       fond?: readonly [number, number, number],
     ) => {
       if (!texte?.trim()) return;
-      // La hauteur se demande au moteur qui dessinera, et non à une formule :
-      // le fond était tracé d'après une estimation, et le texte débordait
-      // dessous dès qu'un tableau ou un paragraphe n'occupait pas ce qu'elle
-      // supposait.
-      // Les respirations d'un document officiel : l'étiquette tient à 6 mm de
-      // son contenu, et 2,2 mm le séparent du bas de son fond. Les valeurs
-      // précédentes — 5,2 et 1,6 — collaient le commentaire du formateur au
-      // bloc au-dessus, au point qu'on ne voyait plus où l'un finissait.
-      const hauteur =
-        6 + mesurerMarkdown(doc, texte.trim(), LARGEUR - RETRAIT_TEXTE - 4) + 2.2;
+
+      /*
+        Les mesures du bloc, nommées plutôt qu'additionnées au fil du code.
+        Les chiffres s'étaient accumulés au point que le fond finissait
+        0,4 mm AU-DESSUS de la dernière ligne : le texte en sortait par le
+        bas, d'un cheveu, sur les réponses attendues les plus longues.
+
+                      ╭───────────────────  haut − MARGE_HAUT
+          MARGE_HAUT  │
+                      │  ÉTIQUETTE          haut + 1
+             ÉCART    │
+                      │  contenu…           haut + ÉCART
+                      │
+          MARGE_BAS   │
+                      ╰───────────────────  bas du fond
+      */
+      const MARGE_HAUT = 2.6;
+      const ECART = 6;
+      const MARGE_BAS = 3;
+
+      const contenu = mesurerMarkdown(
+        doc,
+        texte.trim(),
+        LARGEUR - RETRAIT_TEXTE - 4,
+      );
+      const hauteur = MARGE_HAUT + ECART + contenu + MARGE_BAS;
+
       // L'étiquette ne se sépare pas de sa première ligne.
       if (y + Math.min(hauteur, 12) > BAS) {
         doc.addPage();
         y = HAUT;
       }
       const haut = y;
+
+      /*
+        Le fond et le filet se tracent AVANT le texte, et d'après la hauteur
+        mesurée — jamais d'après l'ordonnée atteinte après coup. Un bloc dont
+        le texte passait sur la page suivante faisait courir son filet depuis
+        l'ordonnée d'arrivée : sur la page des signatures, un trait traversait
+        toute la feuille jusque sous le code de vérification.
+
+        Quand le bloc dépasse la page, l'un et l'autre s'arrêtent en bas de
+        celle-ci. Le texte reprend à la page suivante sans fond ni filet : un
+        second cadre sans son étiquette ne voudrait rien dire.
+      */
+      const visible = Math.min(hauteur, BAS - (haut - MARGE_HAUT));
       if (fond) {
         doc.setFillColor(...fond);
-        // Le fond s'arrête au bas de la page quand le bloc la dépasse : le
-        // texte, lui, reprend sur la suivante, où un second fond n'aurait pas
-        // de sens sans son étiquette.
-        doc.rect(
-          X + RETRAIT,
-          haut - 2.6,
-          LARGEUR - RETRAIT,
-          Math.min(hauteur, BAS - haut + 2.6),
-          "F",
-        );
+        doc.rect(X + RETRAIT, haut - MARGE_HAUT, LARGEUR - RETRAIT, visible, "F");
       }
+      doc.setFillColor(...accent);
+      doc.rect(X + RETRAIT, haut - MARGE_HAUT, 0.9, visible, "F");
+
       police(doc, "mono", 7);
       doc.setTextColor(...accent);
-      doc.text(etiquette, X + RETRAIT_TEXTE, y + 1);
+      doc.text(etiquette, X + RETRAIT_TEXTE, haut + 1);
 
       // Le contenu passe par le moteur Markdown : les stagiaires rendent
       // maintenant des tableaux — fiches persona, user journey maps — et des
       // schémas, que `couler` imprimait en barres verticales et en JSON. Un
       // dossier remis à l'administration ne peut pas montrer la syntaxe
       // d'écriture à la place du travail.
-      y = dessinerMarkdown(doc, texte.trim(), {
+      y = haut + ECART;
+      dessinerMarkdown(doc, texte.trim(), {
         x: X + RETRAIT_TEXTE,
         largeur: LARGEUR - RETRAIT_TEXTE - 4,
-        y: y + 6,
-        place: (hauteur) => {
-          if (y + hauteur > BAS) {
+        y,
+        place: (h) => {
+          if (y + h > BAS) {
             doc.addPage();
             y = HAUT;
           }
-          y += hauteur;
+          y += h;
           return y;
         },
       });
-      y += 2.2;
 
-      doc.setFillColor(...accent);
-      doc.rect(X + RETRAIT, haut - 2.6, 0.9, y - haut + 1.2, "F");
+      // On repart du bas du fond, et non de la dernière ligne : sans quoi le
+      // bloc suivant venait se coller dans la marge basse de celui-ci.
+      y = Math.max(y + MARGE_BAS, haut - MARGE_HAUT + hauteur);
+
       // L'espace entre deux blocs : il sépare « votre réponse » de « réponse
       // attendue », et celle-ci du commentaire. Trop court, les trois se
       // lisaient comme un seul pavé.
