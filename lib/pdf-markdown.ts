@@ -41,6 +41,54 @@ export type CadreMarkdown = {
  * `place` reste à l'appelant : c'est lui qui sait où sont ses marges, quand
  * changer de page et quel en-tête reposer. Ce moteur ne fait que du texte.
  */
+/**
+ * La hauteur que `dessinerMarkdown` occupera, sans rien tracer.
+ *
+ * Mesurer autrement — compter les lignes à la main — se paie toujours : le
+ * fond coloré d'un bloc était tracé d'après une estimation, et le texte
+ * débordait dessous dès que le moteur n'espaçait pas comme la formule le
+ * supposait. Ici c'est le même code qui mesure et qui dessine, donc les deux
+ * ne peuvent pas diverger.
+ *
+ * On neutralise les appels qui peignent, on garde ceux qui mesurent. Les
+ * changements de page sont ignorés : un fond s'arrête au bas de la page de
+ * toute façon, et c'est à l'appelant de décider s'il coupe.
+ */
+export function mesurerMarkdown(
+  doc: jsPDF,
+  markdown: string,
+  largeur: number,
+): number {
+  const MUETS = new Set([
+    "text",
+    "rect",
+    "line",
+    "setFillColor",
+    "setDrawColor",
+    "setLineWidth",
+    "setTextColor",
+  ]);
+  const silencieux = new Proxy(doc, {
+    get(cible, nom: string) {
+      if (MUETS.has(nom)) return () => silencieux;
+      const valeur = Reflect.get(cible, nom) as unknown;
+      return typeof valeur === "function" ? valeur.bind(cible) : valeur;
+    },
+  }) as jsPDF;
+
+  let y = 0;
+  dessinerMarkdown(silencieux, markdown, {
+    x: 0,
+    largeur,
+    y,
+    place: (hauteur) => {
+      y += hauteur;
+      return y;
+    },
+  });
+  return y;
+}
+
 export function dessinerMarkdown(
   doc: jsPDF,
   markdown: string,

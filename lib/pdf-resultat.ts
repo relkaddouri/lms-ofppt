@@ -4,7 +4,7 @@ import { dessinerCartouche, LARGEUR, X } from "@/lib/pdf-cartouche";
 import { COULEURS, installerPolices, police } from "@/lib/pdf-theme";
 import { insecable } from "@/lib/typographie";
 import { dessinerQr, tailleQr } from "@/lib/pdf-qr";
-import { dessinerMarkdown } from "@/lib/pdf-markdown";
+import { dessinerMarkdown, mesurerMarkdown } from "@/lib/pdf-markdown";
 import type {
   Identification,
   LigneResultat,
@@ -258,7 +258,12 @@ export function dessinerResultat(
       fond?: readonly [number, number, number],
     ) => {
       if (!texte?.trim()) return;
-      const hauteur = hauteurBloc(texte);
+      // La hauteur se demande au moteur qui dessinera, et non à une formule :
+      // le fond était tracé d'après une estimation, et le texte débordait
+      // dessous dès qu'un tableau ou un paragraphe n'occupait pas ce qu'elle
+      // supposait.
+      const hauteur =
+        5.2 + mesurerMarkdown(doc, texte.trim(), LARGEUR - RETRAIT_TEXTE - 4) + 1.6;
       // L'étiquette ne se sépare pas de sa première ligne.
       if (y + Math.min(hauteur, 12) > BAS) {
         doc.addPage();
@@ -267,7 +272,16 @@ export function dessinerResultat(
       const haut = y;
       if (fond) {
         doc.setFillColor(...fond);
-        doc.rect(X + RETRAIT, haut - 2.6, LARGEUR - RETRAIT, hauteur, "F");
+        // Le fond s'arrête au bas de la page quand le bloc la dépasse : le
+        // texte, lui, reprend sur la suivante, où un second fond n'aurait pas
+        // de sens sans son étiquette.
+        doc.rect(
+          X + RETRAIT,
+          haut - 2.6,
+          LARGEUR - RETRAIT,
+          Math.min(hauteur, BAS - haut + 2.6),
+          "F",
+        );
       }
       police(doc, "mono", 7);
       doc.setTextColor(...accent);
