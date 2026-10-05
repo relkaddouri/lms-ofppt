@@ -120,6 +120,28 @@ for (const md of cas) {
     place: (h: number) => { y += h; return y; },
   });
 
+  // Le fond coloré d'un bloc est tracé d'après une mesure prise avant le
+  // texte. Si les deux divergent d'un millimètre, le texte déborde sous son
+  // fond — ce qui s'est vu sur un dossier déjà remis.
+  const { mesurerMarkdown } = await import("../lib/pdf-markdown.ts");
+  for (const [nom, md] of [
+    ["paragraphe", "Une méthode de sondage répond à la question Combien, à grande échelle, et dit ce que les utilisateurs déclarent plutôt que ce qu'ils font."],
+    ["tableau", "| Étape | Action |\n| --- | --- |\n| 1 | Ouvrir |"],
+    ["liste", "- un\n- deux"],
+    ["schéma", '```schema\n{"formes":[{"id":"a","type":"bloc","texte":"Accueil","x":0,"y":0,"w":170,"h":66}],"fleches":[],"traits":[]}\n```'],
+  ] as [string, string][]) {
+    const mesure = mesurerMarkdown(faux as never, md, 150);
+    let yd = 0;
+    dessinerMarkdown(faux as never, md, {
+      x: 0, largeur: 150, y: yd,
+      place: (h: number) => { yd += h; return yd; },
+    });
+    if (Math.abs(mesure - yd) > 0.01) {
+      console.error(`✗ PDF : ${nom} — mesuré ${mesure.toFixed(2)} mm, tracé ${yd.toFixed(2)} mm. Le fond déborderait.`);
+      echecs += 1;
+    }
+  }
+
   const fautes: string[] = [];
   if (ecrits.some((t) => t.includes("|"))) fautes.push("barres verticales");
   if (ecrits.some((t) => t.includes("**"))) fautes.push("astérisques");
