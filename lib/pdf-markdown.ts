@@ -260,7 +260,13 @@ export function dessinerMarkdown(
         );
         const lignesMax = Math.max(1, ...parCellule.map((l) => l.length));
         const hauteur = lignesMax * 3.9 + PAD * 2;
-        const haut = cadre.place(hauteur) - 3;
+        // `place` réserve la hauteur et rend le BAS de l'espace obtenu : le
+        // haut de la rangée s'en déduit en retranchant cette hauteur. Un
+        // décalage fixe — j'avais écrit « − 3 » — faisait démarrer chaque
+        // rangée près du bas de son espace, et son cadre mordait d'autant sur
+        // la rangée suivante. C'est ce qui écrivait les lignes les unes sur
+        // les autres.
+        const haut = cadre.place(hauteur) - hauteur;
 
         if (entete) {
           doc.setFillColor(...COULEURS.encre);
@@ -282,7 +288,7 @@ export function dessinerMarkdown(
             doc.text(l, cadre.x + c * largeurCol + PAD, haut + PAD + 2.8 + k * 3.9);
           });
         });
-        y = haut + hauteur + 0.0001;
+        y = haut + hauteur;
       };
 
       y += 1.5;
