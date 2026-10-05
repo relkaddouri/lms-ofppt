@@ -4,6 +4,7 @@ import { dessinerCartouche, LARGEUR, X } from "@/lib/pdf-cartouche";
 import { COULEURS, installerPolices, police } from "@/lib/pdf-theme";
 import { insecable } from "@/lib/typographie";
 import { dessinerQr, tailleQr } from "@/lib/pdf-qr";
+import { dessinerMarkdown } from "@/lib/pdf-markdown";
 import type {
   Identification,
   LigneResultat,
@@ -160,7 +161,15 @@ export function dessinerResultat(
     // il manquait la fin, et c'est précisément ce que l'attestation prétend
     // établir.
 
-    /** Ce qu'un bloc étiqueté occupera, 0 s'il n'a rien à dire. */
+    /**
+     * Ce qu'un bloc étiqueté occupera, 0 s'il n'a rien à dire.
+     *
+     * Une estimation, et non plus une mesure : depuis que les copies portent
+     * des tableaux et des schémas, la hauteur exacte ne se connaît qu'en
+     * dessinant. Elle sert encore à décider si une question tient sur la page
+     * — c'est du confort de lecture — tandis que le moteur Markdown, lui,
+     * change de page de lui-même quand il déborde pour de bon.
+     */
     const hauteurBloc = (texte: string | null | undefined): number => {
       if (!texte?.trim()) return 0;
       police(doc, "corps", 9);
@@ -264,14 +273,24 @@ export function dessinerResultat(
       doc.setTextColor(...accent);
       doc.text(etiquette, X + RETRAIT_TEXTE, y + 1);
 
-      y = couler(
-        texte.trim(),
-        X + RETRAIT_TEXTE,
-        LARGEUR - RETRAIT_TEXTE - 4,
-        y + 5.2,
-        COULEURS.corps,
-        9,
-      );
+      // Le contenu passe par le moteur Markdown : les stagiaires rendent
+      // maintenant des tableaux — fiches persona, user journey maps — et des
+      // schémas, que `couler` imprimait en barres verticales et en JSON. Un
+      // dossier remis à l'administration ne peut pas montrer la syntaxe
+      // d'écriture à la place du travail.
+      y = dessinerMarkdown(doc, texte.trim(), {
+        x: X + RETRAIT_TEXTE,
+        largeur: LARGEUR - RETRAIT_TEXTE - 4,
+        y: y + 5.2,
+        place: (hauteur) => {
+          if (y + hauteur > BAS) {
+            doc.addPage();
+            y = HAUT;
+          }
+          y += hauteur;
+          return y;
+        },
+      });
       y += 1.6;
 
       doc.setFillColor(...accent);

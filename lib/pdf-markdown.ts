@@ -1,6 +1,7 @@
 import type jsPDF from "jspdf";
 import { COULEURS, police } from "@/lib/pdf-theme";
 import { segmenter, type Segment } from "@/lib/markdown";
+import { analyser, decrire } from "@/lib/schema-reponse";
 
 /**
  * Dessine du markdown dans un PDF avec la typographie du produit (PRD §4.4).
@@ -11,11 +12,17 @@ import { segmenter, type Segment } from "@/lib/markdown";
  * mêmes gris, mêmes retraits.
  *
  * Ce que ce moteur couvre : titres, paragraphes, listes à puces et numérotées,
- * citations, filets, code, et le gras, l'italique et le code en ligne. Ce
- * qu'il ne couvre pas, faute de sens sur du papier ou faute de support de
- * jsPDF : les images, les tableaux et les liens cliquables — une URL s'imprime
- * alors en toutes lettres, ce qui est la seule forme utilisable sur papier.
- * La liste est explicite pour que le trou se voie plutôt que de surprendre.
+ * citations, filets, code, tableaux, schémas, et le gras, l'italique et le
+ * code en ligne. Ce qu'il ne couvre pas, faute de sens sur du papier : les
+ * images et les liens cliquables — une URL s'imprime alors en toutes lettres,
+ * ce qui est la seule forme utilisable sur papier. La liste est explicite
+ * pour que le trou se voie plutôt que de surprendre.
+ *
+ * Les tableaux ont longtemps manqué, « faute de support de jsPDF ». jsPDF ne
+ * les connaît pas, en effet, mais il sait tracer des rectangles et poser du
+ * texte — c'est tout ce qu'un tableau demande. Le trou s'est vu le jour où
+ * les stagiaires ont rendu des fiches persona et des user journey maps : le
+ * dossier remis à l'administration imprimait des barres verticales.
  */
 
 export type CadreMarkdown = {
@@ -133,6 +140,107 @@ export function dessinerMarkdown(
       doc.setDrawColor(...COULEURS.bordureForte);
       doc.setLineWidth(0.8);
       doc.line(cadre.x + 1, avant - 3, cadre.x + 1, y + 1);
+      continue;
+    }
+
+    // ── Schéma dessiné ──
+    //
+    // Le JSON n'a rien à faire sur un dossier d'administration. On imprime ce
+    // que le stagiaire a construit, dans les mêmes termes que le correcteur
+    // automatique l'a lu : les écrans, leurs liaisons, ce qui n'est relié à
+    // rien.
+    if (nue === "```schema") {
+      const corps: string[] = [];
+      i += 1;
+      while (i < blocs.length && blocs[i]!.trim() !== "```") {
+        corps.push(blocs[i]!);
+        i += 1;
+      }
+      const lu = analyser(corps.join("\n"));
+      y += 1;
+      police(doc, "mono", 7);
+      doc.setTextColor(...COULEURS.ardoise);
+      y = cadre.place(4);
+      doc.text("SCHÉMA", cadre.x, y);
+      const haut = y;
+      for (const l of decrire(lu ?? { formes: [], fleches: [], traits: [] }).split("\n")) {
+        if (!l.trim()) {
+          y += 1.5;
+          continue;
+        }
+        police(doc, "corps", 9);
+        doc.setTextColor(...COULEURS.corps);
+        for (const d of doc.splitTextToSize(l, cadre.largeur - 5)) {
+          y = cadre.place(4.4);
+          doc.text(d, cadre.x + 5, y);
+        }
+      }
+      doc.setDrawColor(...COULEURS.bordureForte);
+      doc.setLineWidth(0.8);
+      doc.line(cadre.x + 1, haut - 2, cadre.x + 1, y + 1);
+      y += 2.5;
+      continue;
+    }
+
+    // ── Tableau ──
+    //
+    // L'en-tête est reconnu à sa ligne de tirets. Les colonnes se partagent
+    // la largeur à parts égales : calculer leur contenu pour les pondérer
+    // demanderait deux passes, et une fiche persona ou une journey map
+    // s'accommode très bien de colonnes régulières.
+    if (nue.startsWith("|") && /^\|?[\s:|-]*-[\s:|-]*\|?$/.test((blocs[i + 1] ?? "").trim())) {
+      const cellulesDe = (l: string) =>
+        l.trim().replace(/^\|/, "").replace(/\|$/, "").split("|").map((c) => c.trim());
+      const entetes = cellulesDe(nue);
+      i += 2;
+      const corps: string[][] = [];
+      while (i < blocs.length && blocs[i]!.trim().startsWith("|")) {
+        corps.push(cellulesDe(blocs[i]!));
+        i += 1;
+      }
+      i -= 1;
+
+      const colonnes = entetes.length;
+      const largeurCol = cadre.largeur / colonnes;
+      const PAD = 1.6;
+
+      /** Une rangée : hauteur mesurée d'abord, puis tracée d'un bloc. */
+      const rangee = (cellules: string[], entete: boolean) => {
+        police(doc, entete ? "corpsGras" : "corps", 8.5);
+        const parCellule = Array.from({ length: colonnes }, (_, c) =>
+          doc.splitTextToSize(cellules[c] ?? "", largeurCol - PAD * 2) as string[],
+        );
+        const lignesMax = Math.max(1, ...parCellule.map((l) => l.length));
+        const hauteur = lignesMax * 3.9 + PAD * 2;
+        const haut = cadre.place(hauteur) - 3;
+
+        if (entete) {
+          doc.setFillColor(...COULEURS.encre);
+          doc.rect(cadre.x, haut, cadre.largeur, hauteur, "F");
+        }
+        doc.setDrawColor(...COULEURS.separateur);
+        doc.setLineWidth(0.2);
+        for (let c = 0; c <= colonnes; c += 1) {
+          const x = cadre.x + c * largeurCol;
+          doc.line(x, haut, x, haut + hauteur);
+        }
+        doc.line(cadre.x, haut + hauteur, cadre.x + cadre.largeur, haut + hauteur);
+        if (!entete) doc.line(cadre.x, haut, cadre.x + cadre.largeur, haut);
+
+        if (entete) doc.setTextColor(255, 255, 255);
+        else doc.setTextColor(...COULEURS.corps);
+        parCellule.forEach((lignes, c) => {
+          lignes.forEach((l, k) => {
+            doc.text(l, cadre.x + c * largeurCol + PAD, haut + PAD + 2.8 + k * 3.9);
+          });
+        });
+        y = haut + hauteur + 0.0001;
+      };
+
+      y += 1.5;
+      rangee(entetes, true);
+      for (const r of corps) rangee(r, false);
+      y += 3;
       continue;
     }
 
