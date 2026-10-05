@@ -3,14 +3,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Bold,
-  Columns3,
   Italic,
   LayoutTemplate,
   List,
   ListOrdered,
-  Rows3,
   Table2,
-  Trash2,
 } from "lucide-react";
 import { GABARITS } from "@/lib/gabarits-reponse";
 import { versHtml, versMarkdown } from "@/lib/markdown-visuel";
@@ -57,7 +54,15 @@ export default function ChampReponseVisuel({
 }) {
   const zone = useRef<HTMLDivElement>(null);
   const [gabarits, setGabarits] = useState(false);
-  const [dansTableau, setDansTableau] = useState(false);
+  // Où se trouve le curseur dans le tableau. « Dedans » ne suffisait pas :
+  // les suppressions dépendent de la ligne et de la colonne, et surtout il
+  // faut pouvoir dire POURQUOI une suppression est impossible.
+  const [place, setPlace] = useState<{
+    dedans: boolean;
+    entete: boolean;
+    colonnes: number;
+    lignesCorps: number;
+  }>({ dedans: false, entete: false, colonnes: 0, lignesCorps: 0 });
   // Le schéma en cours d'édition : son contenu, et la figure du document qu'il
   // remplacera en sortant. `null` quand le canevas est fermé.
   const [schemaOuvert, setSchemaOuvert] = useState<Schema | null>(null);
@@ -96,9 +101,28 @@ export default function ChampReponseVisuel({
     return depart?.closest("table") ?? null;
   }, []);
 
+  /** La cellule qui contient le curseur, s'il y en a une. */
+  const celluleCourante = useCallback((): HTMLTableCellElement | null => {
+    const selection = document.getSelection();
+    const noeud = selection?.anchorNode ?? null;
+    if (!noeud || !zone.current?.contains(noeud)) return null;
+    const depart =
+      noeud.nodeType === Node.ELEMENT_NODE
+        ? (noeud as Element)
+        : noeud.parentElement;
+    return (depart?.closest("td, th") as HTMLTableCellElement) ?? null;
+  }, []);
+
   const suivreCurseur = useCallback(() => {
-    setDansTableau(Boolean(tableauCourant()));
-  }, [tableauCourant]);
+    const table = tableauCourant();
+    const cellule = celluleCourante();
+    setPlace({
+      dedans: Boolean(table),
+      entete: cellule?.tagName === "TH",
+      colonnes: table?.querySelectorAll("thead th, tr:first-child > *").length ?? 0,
+      lignesCorps: table?.querySelectorAll("tbody tr").length ?? 0,
+    });
+  }, [tableauCourant, celluleCourante]);
 
   useEffect(() => {
     document.addEventListener("selectionchange", suivreCurseur);
@@ -223,6 +247,18 @@ export default function ChampReponseVisuel({
       const c = document.createElement(dansEntete ? "th" : "td");
       c.appendChild(document.createElement("br"));
       tr.appendChild(c);
+    }
+    emettre();
+  }
+
+  function supprimerColonne() {
+    const table = tableauCourant();
+    const cellule = celluleCourante();
+    if (!table || !cellule) return;
+    const rang = Array.from(cellule.parentElement?.children ?? []).indexOf(cellule);
+    if (rang < 0) return;
+    for (const tr of Array.from(table.querySelectorAll("tr"))) {
+      tr.children[rang]?.remove();
     }
     emettre();
   }
@@ -377,26 +413,67 @@ export default function ChampReponseVisuel({
         {/* Les outils de tableau n'apparaissent que le curseur dedans : hors
             d'un tableau ils n'auraient rien à faire, et les montrer grisés
             encombrerait une barre déjà chargée sur téléphone. */}
-        {dansTableau ? (
-          <div className="ml-1 flex items-center gap-0.5 border-l border-separator pl-1.5">
+        {place.dedans ? (
+          <div className="ml-1 flex flex-wrap items-center gap-1 border-l border-separator pl-2">
+            {/*
+              Des libellés, pas des icônes. Quatre pictogrammes de tableau se
+              ressemblent tous, et on ne survole pas une infobulle au doigt :
+              ces boutons étaient là depuis le début sans que personne les
+              trouve.
+            */}
+            <span className="font-mono text-[10.5px] uppercase tracking-[0.1em] text-slate-light">
+              Tableau
+            </span>
             {[
-              { libelle: "Ajouter une ligne", Icone: Rows3, agir: ajouterLigne },
-              { libelle: "Ajouter une colonne", Icone: Columns3, agir: ajouterColonne },
-              { libelle: "Supprimer la ligne", Icone: Trash2, agir: supprimerLigne },
-            ].map(({ libelle, Icone, agir }) => (
+              { libelle: "+ ligne", titre: "Ajouter une ligne", agir: ajouterLigne, empeche: null },
+              {
+                libelle: "+ colonne",
+                titre: "Ajouter une colonne",
+                agir: ajouterColonne,
+                empeche: null,
+              },
+              {
+                libelle: "− ligne",
+                titre: "Supprimer la ligne où est le curseur",
+                agir: supprimerLigne,
+                // Un bouton qui ne fait rien sans rien dire est pire qu'un
+                // bouton absent : on refusait en silence quand le curseur
+                // était dans l'en-tête, qui est le premier endroit où l'on
+                // écrit. Le refus se dit maintenant, à la place.
+                empeche: place.entete
+                  ? "Placez le curseur dans une ligne du tableau, pas dans l'en-tête."
+                  : place.lignesCorps <= 1
+                    ? "C'est la dernière ligne : un tableau en garde au moins une."
+                    : null,
+              },
+              {
+                libelle: "− colonne",
+                titre: "Supprimer la colonne où est le curseur",
+                agir: supprimerColonne,
+                empeche:
+                  place.colonnes <= 1
+                    ? "C'est la dernière colonne : un tableau en garde au moins une."
+                    : null,
+              },
+            ].map(({ libelle, titre, agir, empeche }) => (
               <button
                 key={libelle}
                 type="button"
                 onMouseDown={(e) => {
                   e.preventDefault();
-                  agir();
+                  if (!empeche) agir();
                 }}
-                title={libelle}
-                aria-label={libelle}
+                title={empeche ?? titre}
+                aria-label={titre}
+                aria-disabled={Boolean(empeche)}
                 disabled={disabled}
-                className="flex h-11 w-11 items-center justify-center rounded-[8px] text-slate-2 transition-colors duration-150 ease-out hover:bg-wash hover:text-ink disabled:opacity-60 md:h-8 md:w-8"
+                className={`flex h-11 items-center rounded-[8px] px-2.5 text-[13px] font-semibold transition-colors duration-150 ease-out md:h-8 ${
+                  empeche
+                    ? "cursor-not-allowed text-muted"
+                    : "text-slate-2 hover:bg-wash hover:text-ink"
+                } disabled:opacity-60`}
               >
-                <Icone className="h-4 w-4" aria-hidden />
+                {libelle}
               </button>
             ))}
           </div>
