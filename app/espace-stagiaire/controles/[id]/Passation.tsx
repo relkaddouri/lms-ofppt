@@ -209,17 +209,18 @@ export default function Passation({
    * stable pour lui : la graine vient du contrôle et de sa fiche, de sorte
    * qu'un rechargement ou un autre poste rendent le même ordre.
    *
-   * Le numéro reste celui du sujet, et c'est voulu : « la question 7 » doit
-   * désigner la même chose pour le formateur, pour la copie corrigée et pour
-   * le stagiaire qui lève la main. Seul l'ordre à l'écran change.
+   * Le stagiaire ne voit QUE sa position : sa première question porte le
+   * numéro 1, quel que soit son rang dans le sujet. Lui montrer le numéro
+   * d'origine aurait réduit le mélange à rien — deux voisins n'auraient eu
+   * qu'à se dire « la 7 » pour se retrouver, qui est exactement ce qu'on
+   * cherche à empêcher.
    *
    * L'aperçu du formateur n'est pas mélangé : il relit son sujet tel qu'il
    * l'a composé.
    */
   const aPasser = useMemo(() => {
-    const numerotees = sujet.map((q, i) => ({ q, numero: i + 1 }));
-    if (apercu || !controle.stagiaireId) return numerotees;
-    return melangeStable(numerotees, `${controle.id}:${controle.stagiaireId}`);
+    if (apercu || !controle.stagiaireId) return sujet;
+    return melangeStable(sujet, `${controle.id}:${controle.stagiaireId}`);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sujet, apercu, controle.id, controle.stagiaireId]);
 
@@ -363,12 +364,12 @@ export default function Passation({
         className={`m-0 min-w-0 border-0 p-0 transition-opacity duration-200 ${rendue ? "pointer-events-none select-none opacity-55 grayscale" : ""}`}
       >
       <ol className="flex flex-col gap-6">
-        {aPasser.map(({ q, numero }, i) => {
+        {aPasser.map((q, i) => {
           const repondu = Boolean((reponses[q.id] ?? "").trim());
           return (
             <li
               key={q.id}
-              id={`question-${numero}`}
+              id={`question-${i + 1}`}
               className="scroll-mt-24 rounded-[14px] border border-border bg-surface px-4 py-5 md:px-7 md:py-6"
             >
               <header className="flex items-baseline gap-3 border-b border-border-strong pb-2.5">
@@ -377,7 +378,7 @@ export default function Passation({
                     COULEURS_NUMERO[i % COULEURS_NUMERO.length]
                   }`}
                 >
-                  {numero}
+                  {i + 1}
                 </span>
                 <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-slate-light">
                   {LIBELLE_TYPE[q.type ?? "ouverte"] ?? "Question"}
@@ -461,7 +462,7 @@ export default function Passation({
                         ? "Rédigez votre réponse ici. Pour un tableau, une fiche persona ou une journey map, servez-vous du bouton Gabarits."
                         : "Rédigez votre réponse ici…"
                     }
-                    ariaLabel={`Réponse à la question ${numero}`}
+                    ariaLabel={`Réponse à la question ${i + 1}`}
                   />
                 </div>
               )}
@@ -509,20 +510,20 @@ export default function Passation({
           aria-label="Aller à une question"
           className="flex flex-wrap gap-1.5"
         >
-          {aPasser.map(({ q, numero }) => {
+          {aPasser.map((q, i) => {
             const fait = Boolean((reponses[q.id] ?? "").trim());
             return (
               <a
                 key={q.id}
-                href={`#question-${numero}`}
-                aria-label={`Question ${numero}${fait ? ", répondue" : ""}`}
+                href={`#question-${i + 1}`}
+                aria-label={`Question ${i + 1}${fait ? ", répondue" : ""}`}
                 className={`flex h-8 min-w-8 items-center justify-center rounded-[8px] px-2 font-mono text-[12.5px] font-semibold ${
                   fait
                     ? "bg-encre text-white"
                     : "border border-border text-slate-2 hover:border-border-strong"
                 }`}
               >
-                {numero}
+                {i + 1}
               </a>
             );
           })}
