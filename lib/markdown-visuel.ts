@@ -13,6 +13,9 @@
  * aller-retour fidèle. Tout le reste est ramené à du texte.
  */
 
+import { analyser, versBloc } from "@/lib/schema-reponse";
+import { svgDuSchema } from "@/lib/schema-svg";
+
 /** Ce qu'un attribut ou un texte ne doit jamais pouvoir ouvrir. */
 function echapper(texte: string): string {
   return texte
@@ -63,6 +66,26 @@ export function versHtml(markdown: string): string {
 
     if (ligne.trim() === "") {
       i += 1;
+      continue;
+    }
+
+    // Un schéma dessiné. Il entre dans le document comme un bloc qu'on ne
+    // modifie pas au clavier : son contenu est du JSON, qu'une frappe
+    // malheureuse rendrait illisible. On le rouvre dans son éditeur.
+    if (ligne.trim() === "```schema") {
+      const corps: string[] = [];
+      i += 1;
+      while (i < lignes.length && lignes[i]!.trim() !== "```") {
+        corps.push(lignes[i]!);
+        i += 1;
+      }
+      i += 1;
+      const lu = analyser(corps.join("\n"));
+      if (lu) {
+        sortie.push(
+          `<figure data-schema="${echapper(JSON.stringify(lu)).replace(/"/g, "&quot;")}" contenteditable="false">${svgDuSchema(lu)}</figure>`,
+        );
+      }
       continue;
     }
 
@@ -160,6 +183,12 @@ export function versMarkdown(racine: HTMLElement): string {
 
   for (const enfant of Array.from(racine.children)) {
     const el = enfant as HTMLElement;
+
+    if (el.tagName === "FIGURE" && el.dataset.schema) {
+      const lu = analyser(el.dataset.schema);
+      if (lu) blocs.push(versBloc(lu));
+      continue;
+    }
 
     if (el.tagName === "TABLE") {
       const lignes = Array.from(el.querySelectorAll("tr"));

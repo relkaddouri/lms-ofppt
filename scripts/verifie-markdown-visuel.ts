@@ -11,7 +11,19 @@ import { versHtml, versMarkdown } from "../lib/markdown-visuel.ts";
 // Un DOM minimal : juste ce que `versMarkdown` lit.
 (globalThis as Record<string, unknown>).Node = { TEXT_NODE: 3, ELEMENT_NODE: 1 };
 
-type Faux = { nodeType: number; tagName?: string; textContent?: string; childNodes: Faux[]; children: Faux[]; querySelectorAll?: (s: string) => Faux[] };
+type Faux = {
+  nodeType: number;
+  tagName?: string;
+  textContent?: string;
+  dataset?: Record<string, string>;
+  childNodes: Faux[];
+  children: Faux[];
+  querySelectorAll?: (s: string) => Faux[];
+};
+
+/** Décode ce que `versHtml` a échappé dans un attribut. */
+const desechapper = (t: string) =>
+  t.replace(/&quot;/g, '"').replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
 
 function depuisHtml(html: string): Faux {
   // Analyseur minuscule, suffisant pour le HTML que `versHtml` produit :
@@ -24,8 +36,18 @@ function depuisHtml(html: string): Faux {
     const haut = pile[pile.length - 1]!;
     if (j.startsWith("</")) { pile.pop(); continue; }
     if (j.startsWith("<")) {
-      const nom = j.slice(1, -1).toUpperCase();
-      const el: Faux = { nodeType: 1, tagName: nom, childNodes: [], children: [] };
+      const interieur = j.slice(1, -1);
+      const nom = (interieur.split(/\s/)[0] ?? "").toUpperCase();
+      // Seul `data-schema` compte ici : c'est lui qui porte le dessin, et sa
+      // perte serait invisible autrement — le texte du SVG ferait illusion.
+      const attr = /data-schema="([^"]*)"/.exec(interieur);
+      const el: Faux = {
+        nodeType: 1,
+        tagName: nom,
+        childNodes: [],
+        children: [],
+        dataset: attr ? { schema: desechapper(attr[1]!) } : {},
+      };
       haut.childNodes.push(el); haut.children.push(el);
       if (nom !== "BR") pile.push(el);
       continue;
@@ -48,6 +70,9 @@ const cas = [
   "1. premier\n2. deuxième",
   "| Étape | Action |\n| --- | --- |\n| 1. | ouvrir |\n| 2. | payer |",
   "| Pense et ressent | Voit |\n| --- | --- |\n| Elle doute du prix |  |",
+  // Un schéma dessiné : c'est le cas où une dérive coûterait le plus cher,
+  // puisqu'un JSON abîmé ne se répare pas à la main.
+  '```schema\n{"formes":[{"id":"a","type":"bloc","texte":"Accueil","x":40,"y":30,"w":170,"h":66}],"fleches":[],"traits":[]}\n```',
 ];
 
 let echecs = 0;
