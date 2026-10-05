@@ -142,6 +142,40 @@ for (const md of cas) {
     }
   }
 
+  // Rien de ce qui est tracé ne doit sortir de la hauteur annoncée. Une
+  // rangée de tableau posée trop bas dans son espace mordait sur la suivante,
+  // et les lignes s'écrivaient les unes sur les autres — invisible tant qu'on
+  // ne compare que des hauteurs, puisque les deux concordaient.
+  {
+    const bas: number[] = [];
+    const mouchard: Record<string, unknown> = { ...faux };
+    mouchard.rect = (_x: number, y: number, _l: number, h: number) => { bas.push(y + h); return mouchard; };
+    mouchard.line = (_x1: number, y1: number, _x2: number, y2: number) => { bas.push(Math.max(y1, y2)); return mouchard; };
+    mouchard.text = (_t: unknown, _x: number, y: number) => { bas.push(y); return mouchard; };
+
+    const avecTableau = [
+      "| les points bloquants | les motivations |",
+      "| --- | --- |",
+      "| 'Le formulaire me demande mon adresse à chaque fois, c'est fatigant.' | 'Je gagne du temps en réservant depuis mon téléphone.' |",
+      "| 'Quand le paiement échoue, je ne sais pas pourquoi.' | 'Pouvoir payer avec ma carte est pratique.' |",
+      "",
+      "**Une solution technique pour chaque point bloquant**",
+    ].join("\n");
+
+    let yb = 0;
+    const total = dessinerMarkdown(mouchard as never, avecTableau, {
+      x: 0, largeur: 150, y: yb,
+      place: (h: number) => { yb += h; return yb; },
+    });
+    const plusBas = Math.max(...bas);
+    if (plusBas > total + 0.01) {
+      console.error(
+        `✗ PDF : un tracé descend à ${plusBas.toFixed(2)} mm pour une hauteur annoncée de ${total.toFixed(2)} mm. Les blocs se chevaucheraient.`,
+      );
+      echecs += 1;
+    }
+  }
+
   const fautes: string[] = [];
   if (ecrits.some((t) => t.includes("|"))) fautes.push("barres verticales");
   if (ecrits.some((t) => t.includes("**"))) fautes.push("astérisques");
