@@ -40,6 +40,13 @@ export type CadreMarkdown = {
  *
  * `place` reste à l'appelant : c'est lui qui sait où sont ses marges, quand
  * changer de page et quel en-tête reposer. Ce moteur ne fait que du texte.
+ *
+ * TOUTE avancée verticale passe par `place`, y compris les respirations entre
+ * blocs. Un `y += 2` local paraît anodin ; il ne l'est pas. L'appelant tient
+ * sa propre ordonnée, et ces millimètres ne lui parvenaient pas : les deux
+ * positions dérivaient, de sorte qu'un bloc posé d'après `place` — un tableau,
+ * qui se dessine à une ordonnée calculée et non ligne à ligne — venait
+ * recouvrir le paragraphe qui le précédait.
  */
 /**
  * La hauteur que `dessinerMarkdown` occupera, sans rien tracer.
@@ -148,7 +155,7 @@ export function dessinerMarkdown(
     const nue = ligne.trim();
 
     if (!nue) {
-      y += 2;
+      y = cadre.place(2);
       continue;
     }
 
@@ -158,7 +165,7 @@ export function dessinerMarkdown(
       doc.setDrawColor(...COULEURS.separateur);
       doc.setLineWidth(0.3);
       doc.line(cadre.x, y - 1.5, cadre.x + cadre.largeur, y - 1.5);
-      y += 1;
+      y = cadre.place(1);
       continue;
     }
 
@@ -167,7 +174,7 @@ export function dessinerMarkdown(
     if (titre) {
       const niveau = titre[1]!.length;
       const taille = niveau === 1 ? 12.5 : niveau === 2 ? 11 : 10;
-      y += 3;
+      y = cadre.place(3);
       const segments = segmenter(titre[2]!);
       const nu = segments.map((s) => s.texte).join("");
       police(doc, "titre", taille);
@@ -176,7 +183,7 @@ export function dessinerMarkdown(
         y = cadre.place(taille * 0.55);
         doc.text(l, cadre.x, y);
       }
-      y += 1.5;
+      y = cadre.place(1.5);
       continue;
     }
 
@@ -205,7 +212,7 @@ export function dessinerMarkdown(
         i += 1;
       }
       const lu = analyser(corps.join("\n"));
-      y += 1;
+      y = cadre.place(1);
       police(doc, "mono", 7);
       doc.setTextColor(...COULEURS.ardoise);
       y = cadre.place(4);
@@ -213,7 +220,7 @@ export function dessinerMarkdown(
       const haut = y;
       for (const l of decrire(lu ?? { formes: [], fleches: [], traits: [] }).split("\n")) {
         if (!l.trim()) {
-          y += 1.5;
+          y = cadre.place(1.5);
           continue;
         }
         police(doc, "corps", 9);
@@ -226,7 +233,7 @@ export function dessinerMarkdown(
       doc.setDrawColor(...COULEURS.bordureForte);
       doc.setLineWidth(0.8);
       doc.line(cadre.x + 1, haut - 2, cadre.x + 1, y + 1);
-      y += 2.5;
+      y = cadre.place(2.5);
       continue;
     }
 
@@ -291,10 +298,10 @@ export function dessinerMarkdown(
         y = haut + hauteur;
       };
 
-      y += 1.5;
+      y = cadre.place(1.5);
       rangee(entetes, true);
       for (const r of corps) rangee(r, false);
-      y += 3;
+      y = cadre.place(3);
       continue;
     }
 
@@ -314,7 +321,7 @@ export function dessinerMarkdown(
 
     // ── Paragraphe ──
     ecrireSegments(segmenter(nue), 9.5, 0, COULEURS.corps, 4.6);
-    y += 1;
+    y = cadre.place(1);
   }
 
   return y;
