@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Button from "@/components/ui/Button";
 import ChampReponseVisuel from "@/components/ChampReponseVisuel";
 import { useBrouillonCopie } from "@/components/useBrouillonCopie";
+import { melangeStable } from "@/lib/melange";
 import DonneesQuestion from "@/components/DonneesQuestion";
 import { CorpsRedige } from "@/components/DocumentRedige";
 import Modal, { ConfirmModal } from "@/components/ui/Modal";
@@ -201,6 +202,27 @@ export default function Passation({
     }
   }, [cle, reponses]);
 
+  /**
+   * L'ordre dans lequel CE stagiaire voit les questions.
+   *
+   * Mélangé pour qu'un voisin ne puisse pas se repérer sur son écran, et
+   * stable pour lui : la graine vient du contrôle et de sa fiche, de sorte
+   * qu'un rechargement ou un autre poste rendent le même ordre.
+   *
+   * Le numéro reste celui du sujet, et c'est voulu : « la question 7 » doit
+   * désigner la même chose pour le formateur, pour la copie corrigée et pour
+   * le stagiaire qui lève la main. Seul l'ordre à l'écran change.
+   *
+   * L'aperçu du formateur n'est pas mélangé : il relit son sujet tel qu'il
+   * l'a composé.
+   */
+  const aPasser = useMemo(() => {
+    const numerotees = sujet.map((q, i) => ({ q, numero: i + 1 }));
+    if (apercu || !controle.stagiaireId) return numerotees;
+    return melangeStable(numerotees, `${controle.id}:${controle.stagiaireId}`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sujet, apercu, controle.id, controle.stagiaireId]);
+
   const repondues = sujet.filter((q) => (reponses[q.id] ?? "").trim()).length;
   const total = sujet.reduce((t, q) => t + (Number(q.bareme) || 0), 0);
 
@@ -341,12 +363,12 @@ export default function Passation({
         className={`m-0 min-w-0 border-0 p-0 transition-opacity duration-200 ${rendue ? "pointer-events-none select-none opacity-55 grayscale" : ""}`}
       >
       <ol className="flex flex-col gap-6">
-        {sujet.map((q, i) => {
+        {aPasser.map(({ q, numero }, i) => {
           const repondu = Boolean((reponses[q.id] ?? "").trim());
           return (
             <li
               key={q.id}
-              id={`question-${i + 1}`}
+              id={`question-${numero}`}
               className="scroll-mt-24 rounded-[14px] border border-border bg-surface px-4 py-5 md:px-7 md:py-6"
             >
               <header className="flex items-baseline gap-3 border-b border-border-strong pb-2.5">
@@ -355,7 +377,7 @@ export default function Passation({
                     COULEURS_NUMERO[i % COULEURS_NUMERO.length]
                   }`}
                 >
-                  {i + 1}
+                  {numero}
                 </span>
                 <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-slate-light">
                   {LIBELLE_TYPE[q.type ?? "ouverte"] ?? "Question"}
@@ -439,7 +461,7 @@ export default function Passation({
                         ? "Rédigez votre réponse ici. Pour un tableau, une fiche persona ou une journey map, servez-vous du bouton Gabarits."
                         : "Rédigez votre réponse ici…"
                     }
-                    ariaLabel={`Réponse à la question ${i + 1}`}
+                    ariaLabel={`Réponse à la question ${numero}`}
                   />
                 </div>
               )}
@@ -487,20 +509,20 @@ export default function Passation({
           aria-label="Aller à une question"
           className="flex flex-wrap gap-1.5"
         >
-          {sujet.map((q, i) => {
+          {aPasser.map(({ q, numero }) => {
             const fait = Boolean((reponses[q.id] ?? "").trim());
             return (
               <a
                 key={q.id}
-                href={`#question-${i + 1}`}
-                aria-label={`Question ${i + 1}${fait ? ", répondue" : ""}`}
+                href={`#question-${numero}`}
+                aria-label={`Question ${numero}${fait ? ", répondue" : ""}`}
                 className={`flex h-8 min-w-8 items-center justify-center rounded-[8px] px-2 font-mono text-[12.5px] font-semibold ${
                   fait
                     ? "bg-encre text-white"
                     : "border border-border text-slate-2 hover:border-border-strong"
                 }`}
               >
-                {i + 1}
+                {numero}
               </a>
             );
           })}
