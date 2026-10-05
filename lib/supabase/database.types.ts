@@ -158,6 +158,42 @@ export type Database = {
         }
         Relationships: []
       }
+      brouillons_copie: {
+        Row: {
+          controle_id: string
+          maj_le: string
+          reponses: Json
+          stagiaire_id: string
+        }
+        Insert: {
+          controle_id: string
+          maj_le?: string
+          reponses?: Json
+          stagiaire_id: string
+        }
+        Update: {
+          controle_id?: string
+          maj_le?: string
+          reponses?: Json
+          stagiaire_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brouillons_copie_controle_id_fkey"
+            columns: ["controle_id"]
+            isOneToOne: false
+            referencedRelation: "controles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "brouillons_copie_stagiaire_id_fkey"
+            columns: ["stagiaire_id"]
+            isOneToOne: false
+            referencedRelation: "stagiaires"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       classements_controle: {
         Row: {
           annonce_id: string
