@@ -7,8 +7,9 @@
     "build": "next build",
     "start": "next start",
     "verifie:actions": "node scripts/verifie-actions.mjs",
-    "verifie": "node scripts/verifie-actions.mjs && node scripts/verifie-stage.mjs && tsc --noEmit",
-    "verifie:stage": "node scripts/verifie-stage.mjs"
+    "verifie": "node scripts/verifie-actions.mjs && node scripts/verifie-stage.mjs && npm run verifie:markdown && tsc --noEmit",
+    "verifie:stage": "node scripts/verifie-stage.mjs",
+    "verifie:markdown": "node --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/verifie-markdown-visuel.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.121.0",
