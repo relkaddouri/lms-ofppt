@@ -83,6 +83,57 @@ for (const md of cas) {
   console.log(`${ok ? "✓" : "✗"} ${JSON.stringify(md.slice(0, 44))}`);
   if (!ok) console.log(`    rendu : ${JSON.stringify(retour)}`);
 }
+// ── Le dossier remis à l'administration ────────────────────────────────────
+//
+// La copie part aussi en PDF. Le moteur d'impression a longtemps ignoré les
+// tableaux, et les stagiaires en rendent désormais : le dossier imprimait des
+// barres verticales à la place du travail. On vérifie donc qu'il n'en reste
+// aucune, ni d'astérisque, ni de JSON de schéma.
+{
+  const { dessinerMarkdown } = await import("../lib/pdf-markdown.ts");
+  const ecrits: string[] = [];
+  const faux: Record<string, unknown> = {};
+  for (const m of ["setFillColor","setDrawColor","setLineWidth","setTextColor","setFont","setFontSize","rect","line"]) faux[m] = () => faux;
+  faux.text = (t: unknown) => { ecrits.push(String(t)); return faux; };
+  faux.getFontList = () => ({});
+  faux.getTextWidth = (t: string) => String(t).length * 1.9;
+  faux.splitTextToSize = (t: string, l: number) => {
+    const parLigne = Math.max(8, Math.floor(l / 1.9));
+    const mots = String(t).split(/\s+/).filter(Boolean);
+    if (!mots.length) return [""];
+    const out: string[] = []; let c = "";
+    for (const mo of mots) { const e = c ? `${c} ${mo}` : mo; if (e.length <= parLigne) c = e; else { out.push(c); c = mo; } }
+    if (c) out.push(c); return out;
+  };
+
+  const copie = [
+    "| Étape | Action |", "| --- | --- |", "| 1 | Ouvrir |", "",
+    "Un mot de **conclusion**.", "",
+    "```schema",
+    '{"formes":[{"id":"a","type":"bloc","texte":"Accueil","x":0,"y":0,"w":170,"h":66}],"fleches":[],"traits":[]}',
+    "```",
+  ].join("\n");
+
+  let y = 10;
+  dessinerMarkdown(faux as never, copie, {
+    x: 20, largeur: 170, y,
+    place: (h: number) => { y += h; return y; },
+  });
+
+  const fautes: string[] = [];
+  if (ecrits.some((t) => t.includes("|"))) fautes.push("barres verticales");
+  if (ecrits.some((t) => t.includes("**"))) fautes.push("astérisques");
+  if (ecrits.some((t) => t.includes('{"formes"'))) fautes.push("JSON de schéma");
+  if (!ecrits.includes("Étape")) fautes.push("en-tête de tableau manquant");
+
+  if (fautes.length) {
+    console.error(`✗ PDF : le dossier imprimerait encore ${fautes.join(", ")}.`);
+    echecs += 1;
+  } else {
+    console.log("✓ PDF : tableaux et schémas rendus, aucune syntaxe imprimée.");
+  }
+}
+
 if (echecs > 0) {
   console.error(`\n✗ ${echecs} cas perdent du contenu à l'aller-retour.`);
   process.exit(1);
