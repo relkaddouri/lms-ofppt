@@ -164,37 +164,38 @@ export function dessinerResultat(
     /**
      * Ce qu'un bloc étiqueté occupera, 0 s'il n'a rien à dire.
      *
-     * Une estimation, et non plus une mesure : depuis que les copies portent
-     * des tableaux et des schémas, la hauteur exacte ne se connaît qu'en
-     * dessinant. Elle sert encore à décider si une question tient sur la page
-     * — c'est du confort de lecture — tandis que le moteur Markdown, lui,
-     * change de page de lui-même quand il déborde pour de bon.
+     * Mesuré par le moteur qui dessinera, comme le fond du bloc. L'ancienne
+     * formule comptait les lignes du Markdown brut : pour un tableau, elle
+     * additionnait les barres verticales et les tirets, et annonçait deux à
+     * trois fois la hauteur réelle. Une question se croyait alors trop haute
+     * pour la page et partait à la suivante, laissant les deux tiers d'une
+     * feuille blancs.
      */
     const hauteurBloc = (texte: string | null | undefined): number => {
       if (!texte?.trim()) return 0;
-      police(doc, "corps", 9);
-      const n: number = doc.splitTextToSize(
-        insecable(texte.trim()),
-        LARGEUR - RETRAIT_TEXTE - 4,
-      ).length;
-      return 4.2 + n * 4.4 + 3.4;
+      return (
+        2.6 +
+        6 +
+        mesurerMarkdown(doc, texte.trim(), LARGEUR - RETRAIT_TEXTE - 4) +
+        3 +
+        4
+      );
     };
 
-    // Une question passe d'un bloc sur la page suivante plutôt que d'être
-    // coupée en deux : c'est ainsi qu'un commentaire se retrouvait seul en
-    // tête de page, détaché de la question qu'il commente — et donc manqué par
-    // celui qui relit avant de signer. Une question plus haute qu'une page
-    // entière reste coupée, faute de mieux, et ses blocs se répartissent.
-    const hauteurQuestion =
-      enonce.length * INTERLIGNE +
-      1.6 +
-      hauteurBloc(l.reponse) +
-      hauteurBloc(l.corrige) +
-      hauteurBloc(l.commentaire);
+    /*
+      Quand couper une page.
 
-    const coupe =
-      (y + hauteurQuestion > BAS && hauteurQuestion <= BAS - HAUT) ||
-      y + enonce.length * INTERLIGNE + 12 > BAS;
+      On ne déplace plus une question entière faute de place : sur un dossier
+      d'une trentaine de pages, cela laissait des demi-feuilles blanches à
+      chaque question longue, et le papier compte.
+
+      Ce qu'on protège, c'est l'orphelin : un énoncé seul en bas de page, dont
+      la réponse commence à la suivante. On exige donc que l'énoncé tienne
+      avec le début de son premier bloc — étiquette et premières lignes. Au-
+      delà, les blocs se répartissent, chacun gardant son étiquette avec lui.
+    */
+    const DEBUT_UTILE = 24;
+    const coupe = y + enonce.length * INTERLIGNE + DEBUT_UTILE > BAS;
     if (coupe) {
       doc.addPage();
       y = HAUT;
@@ -321,6 +322,7 @@ export function dessinerResultat(
       // dossier remis à l'administration ne peut pas montrer la syntaxe
       // d'écriture à la place du travail.
       y = haut + ECART;
+      const pagesAvant = doc.getNumberOfPages();
       dessinerMarkdown(doc, texte.trim(), {
         x: X + RETRAIT_TEXTE,
         largeur: LARGEUR - RETRAIT_TEXTE - 4,
@@ -335,9 +337,20 @@ export function dessinerResultat(
         },
       });
 
-      // On repart du bas du fond, et non de la dernière ligne : sans quoi le
-      // bloc suivant venait se coller dans la marge basse de celui-ci.
-      y = Math.max(y + MARGE_BAS, haut - MARGE_HAUT + hauteur);
+      /*
+        On repart du bas du fond plutôt que de la dernière ligne : sans quoi le
+        bloc suivant venait se loger dans la marge basse de celui-ci.
+
+        Mais seulement si le contenu est resté sur la même page. S'il a changé
+        de page, `haut` appartient à la feuille précédente et le bas du fond
+        calculé à partir de lui tombe loin sous celle-ci : le bloc suivant se
+        croyait alors en bas de page et sautait à la suivante, abandonnant les
+        deux tiers d'une feuille.
+      */
+      y =
+        doc.getNumberOfPages() === pagesAvant
+          ? Math.max(y + MARGE_BAS, haut - MARGE_HAUT + hauteur)
+          : y + MARGE_BAS;
 
       // L'espace entre deux blocs : il sépare « votre réponse » de « réponse
       // attendue », et celle-ci du commentaire. Trop court, les trois se
