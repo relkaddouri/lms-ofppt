@@ -15,6 +15,7 @@ import {
 import DonneesQuestion from "@/components/DonneesQuestion";
 import { CorpsRedige } from "@/components/DocumentRedige";
 import RecommencerTest from "./RecommencerTest";
+import { corrigeStructure } from "@/lib/corrige";
 
 const COULEURS_NUMERO = ["text-coral", "text-teal", "text-green", "text-ink"];
 
@@ -231,7 +232,7 @@ export default function MaCopieVue({
                       </p>
                       <div className="px-4 py-3">
                         {d.corrige?.trim() ? (
-                          <CorpsRedige texte={d.corrige} />
+                          <CorpsRedige texte={corrigeStructure(d.corrige)} />
                         ) : (
                           <p className="text-[14px] italic text-slate">
                             Le formateur n&apos;a pas rédigé de réponse type pour cette question.

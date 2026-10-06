@@ -5,6 +5,7 @@ import { COULEURS, installerPolices, police } from "@/lib/pdf-theme";
 import { insecable } from "@/lib/typographie";
 import { dessinerQr, tailleQr } from "@/lib/pdf-qr";
 import { dessinerMarkdown, mesurerMarkdown } from "@/lib/pdf-markdown";
+import { corrigeStructure } from "@/lib/corrige";
 import type {
   Identification,
   LigneResultat,
@@ -365,7 +366,15 @@ export function dessinerResultat(
     // La réponse attendue porte le seul point de couleur et le seul fond :
     // c'est ce qu'on cherche en premier quand on conteste un point.
     bloc("VOTRE RÉPONSE", l.reponse, COULEURS.ardoiseClaire);
-    bloc("RÉPONSE ATTENDUE", l.corrige, COULEURS.sarcelle, [233, 242, 247]);
+    // Mise en forme à l'affichage, pas en base : le texte du formateur
+    // reste le sien, mot pour mot. Les corrigés déjà écrits énumèrent dans
+    // le fil de la phrase, et c'est illisible sur une pièce qu'on dépose.
+    bloc(
+      "RÉPONSE ATTENDUE",
+      l.corrige ? corrigeStructure(l.corrige) : l.corrige,
+      COULEURS.sarcelle,
+      [233, 242, 247],
+    );
     bloc("COMMENTAIRE DU FORMATEUR", l.commentaire, COULEURS.bordureForte);
 
     // Entre deux questions, davantage qu'entre deux blocs d'une même question :
