@@ -96,6 +96,8 @@ export type LignePassation = {
   stagiaire_id: string | null;
   note: number | null;
   publie_le: string | null;
+  /** Le moment où le stagiaire a rendu sa copie. */
+  submitted_at: string | null;
 };
 
 export type LigneStagiaire = {
@@ -257,6 +259,30 @@ export function evaluations(
 
   // ── Planification des contrôles continus ────────────────────────────────
 
+  /** Le dernier des jours d'un contrôle, pour un champ donné des passations. */
+  const dernierJour = (
+    controleId: string,
+    champ: "publie_le" | "submitted_at",
+  ): string | null => {
+    const jours = passations
+      .filter((p) => p.controle_id === controleId && p[champ])
+      .map((p) => p[champ]!.slice(0, 10));
+    // Le dernier fait foi : c'est le jour où le groupe entier a rendu, ou reçu
+    // sa note.
+    return jours.length > 0 ? (jours.sort().at(-1) ?? null) : null;
+  };
+
+  /**
+   * La date de réalisation d'un contrôle : celle où les copies sont rendues.
+   *
+   * C'est en général le jour de l'administration, et la base le sait aussi —
+   * mais une épreuve donnée à emporter, ou reprise le lendemain par un
+   * stagiaire absent, se réalise le jour du rendu. La date d'administration
+   * reste le repli quand aucune copie n'a été remise par la plateforme.
+   */
+  const dateDeRealisation = (c: LigneControle): string | null =>
+    dernierJour(c.id, "submitted_at") ?? c.date_administration;
+
   const controlesContinus: PlanificationCC[] = couples
     .filter((c) => c.cc.length > 0)
     .map((c) => ({
@@ -264,21 +290,10 @@ export function evaluations(
       filiere: c.filiere,
       groupe: c.groupe,
       prevues: c.cc.map((x) => x.date_prevue),
-      realisees: c.cc.map((x) => x.date_administration),
+      realisees: c.cc.map(dateDeRealisation),
     }));
 
   // ── Planification des examens de fin de module ──────────────────────────
-
-  /** Le jour où les notes d'un contrôle ont été publiées, s'il y en a un. */
-  const publieLe = (controleId: string): string | null => {
-    const jours = passations
-      .filter((p) => p.controle_id === controleId && p.publie_le)
-      .map((p) => p.publie_le!);
-    if (jours.length === 0) return null;
-    // La dernière publication fait foi : c'est le jour où le groupe entier a
-    // reçu sa note.
-    return jours.sort().at(-1) ?? null;
-  };
 
   const examens: PlanificationEFM[] = couples
     .filter((c) => c.efm !== null)
@@ -288,8 +303,8 @@ export function evaluations(
       groupe: c.groupe,
       dateValidation: c.efm!.date_envoi_propositions,
       datePrevue: c.efm!.date_prevue,
-      dateEffective: c.efm!.date_administration,
-      dateRestitution: publieLe(c.efm!.id)?.slice(0, 10) ?? null,
+      dateEffective: dateDeRealisation(c.efm!),
+      dateRestitution: dernierJour(c.efm!.id, "publie_le"),
     }));
 
   // ── Les notes ───────────────────────────────────────────────────────────

@@ -783,15 +783,30 @@ const essaiControles: LigneControle[] = [
   },
 ];
 
+const rendu = (
+  controle: string,
+  stagiaire: string,
+  note: number,
+  options: { rendu?: string; publie?: string } = {},
+): LignePassation => ({
+  controle_id: controle,
+  stagiaire_id: stagiaire,
+  note,
+  publie_le: options.publie ?? null,
+  submitted_at: options.rendu ?? null,
+});
+
 const essaiPassations: LignePassation[] = [
-  { controle_id: "cc1", stagiaire_id: "s1", note: 14, publie_le: null },
-  { controle_id: "cc2", stagiaire_id: "s1", note: 16, publie_le: null },
+  // Rendu le lendemain de l'administration : c'est le rendu qui fait la date
+  // de réalisation.
+  rendu("cc1", "s1", 14, { rendu: "2025-11-18T11:00:00Z" }),
+  rendu("cc1", "s2", 12, { rendu: "2025-11-19T09:00:00Z" }),
+  rendu("cc2", "s1", 16),
   // 27 sur quarante : le cahier doit écrire 13,5.
-  { controle_id: "efm", stagiaire_id: "s1", note: 27, publie_le: "2026-02-02T10:00:00Z" },
-  { controle_id: "cc1", stagiaire_id: "s2", note: 12, publie_le: null },
+  rendu("efm", "s1", 27, { publie: "2026-02-02T10:00:00Z", rendu: "2026-01-27T12:00:00Z" }),
   // Publiée plus tard : c'est cette date que porte la restitution.
-  { controle_id: "efm", stagiaire_id: "s2", note: 20, publie_le: "2026-02-05T10:00:00Z" },
-  { controle_id: "test", stagiaire_id: "s1", note: 10, publie_le: null },
+  rendu("efm", "s2", 20, { publie: "2026-02-05T10:00:00Z", rendu: "2026-01-27T12:00:00Z" }),
+  rendu("test", "s1", 10),
 ];
 
 const essaiStagiaires: LigneStagiaire[] = [
@@ -825,6 +840,19 @@ verifie("Un module qui n'a qu'un essai n'ouvre pas de tableau de notes",
   evalEssai.notes.length === 1 &&
     evalEssai.notes.every((n) => !n.module.startsWith("M204")),
   evalEssai.notes.map((n) => n.module).join(" / "));
+/*
+  La date de réalisation est celle du rendu des copies, et non celle de
+  l'administration : une épreuve reprise le lendemain par un absent se réalise
+  le jour du rendu. Sans aucun rendu, la date d'administration reste le repli —
+  c'est le cas de CC2, qui n'a qu'une copie sans horodatage.
+*/
+verifie("La date de réalisation est celle du rendu des copies",
+  evalEssai.controlesContinus[0]?.realisees[0] === "2025-11-19",
+  evalEssai.controlesContinus[0]?.realisees.join(","));
+verifie("Sans rendu horodaté, la date d'administration fait le repli",
+  evalEssai.controlesContinus[0]?.realisees[1] === null,
+  String(evalEssai.controlesContinus[0]?.realisees[1]));
+
 verifie("L'EFM porte sa date de validation et sa date effective",
   evalEssai.examens[0]?.dateValidation === "2026-01-05" &&
     evalEssai.examens[0]?.dateEffective === "2026-01-27",

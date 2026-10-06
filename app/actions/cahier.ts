@@ -192,7 +192,7 @@ export async function getCahierDonnees(): Promise<CahierDonnees> {
   if (lignesControles.length > 0) {
     const { data, error } = await supabase
       .from("passations_controle")
-      .select("controle_id, stagiaire_id, note, publie_le")
+      .select("controle_id, stagiaire_id, note, publie_le, submitted_at")
       .in(
         "controle_id",
         lignesControles.map((c) => c.id),
