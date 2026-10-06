@@ -375,12 +375,29 @@ export function dessinerSujet(
       hauteurReponse +
       10;
 
-    // Une question ne se coupe jamais entre deux pages. Si elle ne tient pas
-    // dans ce qui reste, elle part entière sur la suivante ; si elle ne tient
-    // pas même sur une page vierge — un exercice très long —, c'est sa place
-    // de composition qui se resserre, jamais l'énoncé qui se sépare de ses
-    // lignes.
-    if (y + hauteurTotale > BAS && y > HAUT + 1) y = suivante();
+    /*
+      Une question ne se coupe jamais entre deux pages : l'énoncé ne se sépare
+      pas de ses lignes de composition.
+
+      Mais on ne change de page qu'en dernier recours. L'ancienne règle
+      déplaçait la question dès qu'elle ne tenait plus dans l'espace restant,
+      alors que sa place de composition, elle, est compressible — c'est ce que
+      fait déjà le calcul d'excédent, quelques lignes plus bas, mais seulement
+      après le saut. Un sujet de sept pages laissait ainsi 535 mm de vide,
+      soit deux pages entières, mesurées sur un tirage réel.
+
+      On regarde donc d'abord si la question tient une fois sa place de
+      composition ramenée à son minimum — trois lignes, ou un cadre de 40 mm.
+      Si oui, elle reste ; l'excédent se résorbe plus bas. Sinon seulement,
+      elle part entière sur la page suivante.
+    */
+    const minimumReponse = corrige
+      ? 0
+      : place.cadre > 0
+        ? 40 + 3
+        : 3 * INTERLIGNE_REPONSE;
+    const hauteurMinimale = hauteurTotale - hauteurReponse + minimumReponse;
+    if (y + hauteurMinimale > BAS && y > HAUT + 1) y = suivante();
     const disponible = BAS - y;
     const excedent = Math.max(0, hauteurTotale - disponible);
     let lignesReponse = place.lignes;
