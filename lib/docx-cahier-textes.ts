@@ -1,20 +1,21 @@
 /**
  * Le texte du cahier du formateur, mot pour mot.
  *
- * Ces pages ne viennent pas de la plateforme : ce sont les procédures de
- * l'OFPPT, identiques d'un formateur à l'autre et d'une année à l'autre. Elles
- * sont donc écrites ici une fois, et non recopiées à la main dans Word à
- * chaque édition.
+ * Ces pages ne viennent pas de la plateforme : ce sont les procédures et les
+ * annexes de l'OFPPT, identiques d'un formateur à l'autre et d'une année à
+ * l'autre. Elles sont donc écrites ici une fois, et non recopiées à la main dans
+ * Word à chaque édition.
  *
- * Extrait du cahier officiel sans rien reformuler. Seuls les espaces doubles
- * de la saisie d'origine ont été ramenés à un : les mots sont inchangés.
+ * Extrait du cahier officiel sans rien reformuler. Seuls les espaces doubles de
+ * la saisie d'origine ont été ramenés à un, et les tirets qui ouvraient certains
+ * paragraphes sont devenus des puces : les mots sont inchangés.
  *
  * `genre` dit comment le paragraphe se présente, pas ce qu'il dit — c'est
  * l'assembleur qui choisit la police et l'espacement (`docx-charte.ts`).
  */
 
 export type BlocTexte = {
-  genre: "titre1" | "titre2" | "paragraphe" | "puce";
+  genre: "titre1" | "titre2" | "titre3" | "paragraphe" | "puce";
   texte: string;
 };
 
@@ -84,4 +85,52 @@ export const PROCEDURES: BlocTexte[] = [
   { genre: "puce", texte: "Les stagiaires doivent être informés au préalable de la date et du lieu des EFM;" },
   { genre: "puce", texte: "Les copies corrigées et les notes des stagiaires sont restituées à la Direction pédagogique, au plus tard 10 jours après l'administration de l'EFM;" },
   { genre: "puce", texte: "Les résultats des EFM sont portés par affichage à la connaissance des stagiaires au plus tard 15 jours après leur administration." },
+];
+
+/**
+ * Les missions du formateur, citées du statut de l'OFPPT.
+ *
+ * Première annexe du cahier. C'est une citation : les guillemets doubles de
+ * l'original — « << » et « >> » — sont conservés tels quels.
+ */
+export const MISSIONS_FORMATEUR: BlocTexte[] = [
+  { genre: "paragraphe", texte: "Le statut de l'OFPPT stipule que :" },
+  { genre: "paragraphe", texte: "<< Pour le personnel formateur, la charge horaire hebdomadaire, pour chaque niveau, est fixée à :" },
+  { genre: "puce", texte: "36 Heures de face à face pédagogique pour les niveaux qualification et spécialisation ;" },
+  { genre: "puce", texte: "26 Heures de face à face pédagogique pour les niveaux technicien et technicien spécialisé." },
+  { genre: "paragraphe", texte: "La différence entre l’horaire administratif et l’horaire pédagogique sus-indiqué, sera consacrée aux activités technico-pédagogiques telles que mentionnées ci-après." },
+  { genre: "paragraphe", texte: "La charge horaire du personnel formateur englobe les heures de formation initiale et/ou continue ainsi que les activités à caractère technico-pédagogique." },
+  { genre: "paragraphe", texte: "Il est entendu par activités à caractère technico-pédagogique notamment celles ayant trait à :" },
+  { genre: "puce", texte: "la prospection et l’aide à l’insertion des lauréats ;" },
+  { genre: "puce", texte: "le suivi des stagiaires en stages pratiques en entreprises ;" },
+  { genre: "puce", texte: "l’apprentissage, la formation alternée et les stages d’immersion;" },
+  { genre: "puce", texte: "l’élaboration des programmes;" },
+  { genre: "puce", texte: "la recherche appliquée ;" },
+  { genre: "puce", texte: "les activités de l’établissement ayant trait aux travaux des organes pédagogiques tels que le Groupe d’Appui Technique et Pédagogique (GATP) et le Conseil de Gestion et de Coordination Pédagogique (CGCP);" },
+  { genre: "puce", texte: "la maintenance des équipements;" },
+  { genre: "puce", texte: "l’élaboration des épreuves relatives aux examens partiels, de passage et de fin de formation ainsi qu’aux concours d’entrée des stagiaires et au concours général de la formation professionnelle;" },
+  { genre: "puce", texte: "la participation aux travaux des commissions techniques à l’échelon local, régional et central ;" },
+  { genre: "puce", texte: "la participation à l’élaboration des épreuves relatives aux concours et examens de promotion interne. >>" },
+];
+
+/** Ce qu'est une fiche préparation, seconde annexe du cahier. */
+export const FICHE_PREPARATION: BlocTexte[] = [
+  { genre: "paragraphe", texte: "La fiche préparation constitue un guide pour que le formateur puisse bien mener l'apprentissage des stagiaires pendant la séance de formation. Elle comprend la structure du contenu de la leçon organisé sous forme d’accroches pour la mémoire. Elle ne doit en aucun cas comprendre des détails du cours. C’est un schéma de la leçon, il est composé des mots clés, d’idées clés, d’exemples, d’éléments importants à ne pas oublier." },
+  { genre: "paragraphe", texte: "Elle comprend trois parties : l’introduction, le développement et la conclusion." },
+  { genre: "titre3", texte: "A- L’introduction comprend :" },
+  { genre: "puce", texte: "Le rappel :" },
+  { genre: "paragraphe", texte: "Le rappel permet de faire référence à des prérequis, il permet également de rapprocher des notions nouvelles de connaissances déjà acquises." },
+  { genre: "paragraphe", texte: "Le rappel se fait généralement en fonction d’un thème qui est en rapport direct avec le thème du jour." },
+  { genre: "puce", texte: "La motivation :" },
+  { genre: "paragraphe", texte: "Elle a pour but de créer un centre d’intérêt chez les apprenants et d’attirer l’attention des stagiaires et les inciter à suivre et à participer à la formation. La motivation aboutit à l’annonce du thème de la leçon et à l’annonce de l’objectif du cours." },
+  { genre: "puce", texte: "Le plan du cours :" },
+  { genre: "paragraphe", texte: "La dernière partie de l’introduction comprend le plan du cours que le formateur énonce dans un premier temps puis qu’il écrit au tableau ou présente sur transparent." },
+  { genre: "titre3", texte: "B- Le développement du cours :" },
+  { genre: "puce", texte: "Pour un cours théorique, le développement comprend les différentes parties annoncées dans le plan." },
+  { genre: "puce", texte: "Pour un cours pratique, le développement comprend obligatoirement trois phases : la phase d’observation et de découverte du mode opératoire, la phase de démonstration exécutée par le formateur et la phase d’application réalisée par chaque stagiaire." },
+  { genre: "titre3", texte: "C- La conclusion :" },
+  { genre: "paragraphe", texte: "La conclusion comprend trois parties :" },
+  { genre: "puce", texte: "La synthèse du cours sous forme de résumé récapitulatif;" },
+  { genre: "puce", texte: "L’évaluation qui vise le contrôle de l’atteinte de l’objectif sous forme d’exercices écrits ou pratiques;" },
+  { genre: "puce", texte: "L’annonce du thème de la leçon : le formateur annonce le thème de la leçon ou des leçons suivantes qui sont en relation avec le thème du jour." },
 ];

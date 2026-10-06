@@ -41,15 +41,14 @@ import {
   cellule,
   chargerPolices,
   colonnes,
-  paragraphe,
-  puce,
   titre1,
-  titre2,
   UTILE_DEBOUT,
 } from "@/lib/docx-charte";
 import { PROCEDURES } from "@/lib/docx-cahier-textes";
 import { partieI } from "@/lib/docx-cahier-partie1";
 import { partieII } from "@/lib/docx-cahier-partie2";
+import { annexesModeles, annexesTextes } from "@/lib/docx-cahier-annexes";
+import { rendreBlocs } from "@/lib/docx-blocs";
 import type { CahierDonnees } from "@/app/actions/cahier";
 import type { Etablissement } from "@/app/actions/etablissement";
 
@@ -214,18 +213,6 @@ function ficheIdentite(e: Etablissement): Table {
   });
 }
 
-// ── Les procédures ────────────────────────────────────────────────────────
-
-/** Le texte officiel, rendu selon le genre de chaque paragraphe. */
-function procedures(): Paragraph[] {
-  return PROCEDURES.map((b) => {
-    if (b.genre === "titre1") return titre1(b.texte);
-    if (b.genre === "titre2") return titre2(b.texte);
-    if (b.genre === "puce") return puce(b.texte);
-    return paragraphe(b.texte);
-  });
-}
-
 // ── L'assemblage ──────────────────────────────────────────────────────────
 
 /** Le pied de page : le numéro, et de quoi savoir d'où sort le document. */
@@ -352,7 +339,7 @@ export async function cahierDuFormateur(
       ficheIdentite(e),
       new Paragraph({ children: [new PageBreak()] }),
       titrePage("Procédures d'utilisation du Cahier du formateur"),
-      ...procedures(),
+      ...rendreBlocs(PROCEDURES),
       new Paragraph({ children: [new PageBreak()] }),
       ...pageSeparatrice("Planification et suivi de la formation"),
     ],
@@ -386,12 +373,40 @@ export async function cahierDuFormateur(
     ],
   };
 
+  /*
+    Les annexes : les deux textes debout, les deux formulaires vierges couchés.
+    Le cahier officiel les porte pour que le formateur ait ses modèles sous la
+    main, et la plateforme n'a rien à y remplir.
+  */
+  const annonceAnnexes: ISectionOptions = {
+    properties: { page: PAGE_DEBOUT },
+    footers: { default: pied },
+    children: [
+      ...pageSeparatrice("Annexes"),
+      new Paragraph({ children: [new PageBreak()] }),
+      ...annexesTextes(),
+    ],
+  };
+
+  const modeles: ISectionOptions = {
+    properties: { page: PAGE_COUCHEE },
+    footers: { default: pied },
+    children: annexesModeles(),
+  };
+
   const doc = new Document({
     creator: e.nomFormateur ?? "Pédago",
     title: "Cahier du formateur",
     description: `Cahier du formateur — ${e.anneeScolaire ?? ""}`.trim(),
     fonts: await chargerPolices(),
-    sections: [liminaires, premierePartie, annonceII, secondePartie],
+    sections: [
+      liminaires,
+      premierePartie,
+      annonceII,
+      secondePartie,
+      annonceAnnexes,
+      modeles,
+    ],
   });
 
   return Packer.toBlob(doc);

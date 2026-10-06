@@ -34,7 +34,11 @@ import {
   type LigneGroupe,
   type LigneSeance,
 } from "@/lib/logigramme";
-import { PROCEDURES } from "@/lib/docx-cahier-textes";
+import {
+  FICHE_PREPARATION,
+  MISSIONS_FORMATEUR,
+  PROCEDURES,
+} from "@/lib/docx-cahier-textes";
 
 /*
   Le générateur tourne dans le navigateur : il va chercher les polices par
@@ -426,12 +430,8 @@ function grille(tbl: string): string[][] {
   );
 }
 
-verifie("Quatre sections : les titres debout, les tableaux couchés",
-  (p.xml.match(/<w:sectPr/g) ?? []).length === 4,
-  `${(p.xml.match(/<w:sectPr/g) ?? []).length} sections`);
-verifie("Deux sections couchées",
-  (p.xml.match(/w:orient="landscape"/g) ?? []).length === 2,
-  `${(p.xml.match(/w:orient="landscape"/g) ?? []).length} couchées`);
+verifie("Les tableaux de la partie I sont dans une section couchée",
+  p.xml.includes('w:orient="landscape"'));
 verifie("Une section couchée", p.xml.includes('w:orient="landscape"'));
 
 verifie("Titre de la partie", p.texte.includes("I- Planification et suivi de la formation"));
@@ -923,6 +923,85 @@ verifie("Et laisse la case libre quand il n'y a pas encore de moyenne",
   (apprecTbl[2] ?? [])[1] === "FAHMI Khadija" && (apprecTbl[2] ?? [])[2] === "",
   (apprecTbl[2] ?? []).join("|"));
 
+// ── Les annexes ─────────────────────────────────────────────────────────
+
+verifie("La page des annexes", p.texte.includes("Annexes"));
+for (const titre of [
+  "Missions du formateur",
+  "La fiche préparation",
+  "Modèle de fiche préparation",
+  "Modèle de logigramme de la filière",
+]) {
+  verifie(`Annexes : « ${titre} »`, p.texte.includes(titre));
+}
+
+// Les deux textes officiels, mot pour mot comme les procédures.
+for (const [nom, blocs] of [
+  ["Missions du formateur", MISSIONS_FORMATEUR],
+  ["La fiche préparation", FICHE_PREPARATION],
+] as [string, typeof PROCEDURES][]) {
+  const absents = blocs.filter((b) => !p.texte.includes(b.texte));
+  verifie(`${nom} : les ${blocs.length} paragraphes sont là`, absents.length === 0,
+    absents.map((a) => a.texte.slice(0, 40)).join(" / "));
+}
+verifie("La citation du statut garde ses guillemets d'origine",
+  p.texte.includes("<< Pour le personnel formateur") && p.texte.includes(">>"));
+
+// Le modèle de fiche préparation : le bloc d'identité, puis les trois temps.
+for (const champ of [
+  "Durée de la séance :",
+  "Date de la séance :",
+  "Groupe :",
+  "1ère année",
+  "2ème année",
+  "Filière :",
+  "Module :",
+  "Objectifs de la séance :",
+]) {
+  verifie(`Modèle de fiche : « ${champ} »`, p.texte.includes(champ));
+}
+for (const rubrique of [
+  "Rappel",
+  "Eléments de motivation",
+  "Plan de la Séance",
+  "Stratégies pédagogiques",
+  "Synthèse",
+  "Evaluation",
+  "Prochaine séance",
+]) {
+  verifie(`Modèle de fiche : rubrique « ${rubrique} »`, p.texte.includes(rubrique));
+}
+
+const intro =
+  tableaux.map(grille).find((g) => g[0]?.includes("Introduction")) ?? [];
+verifie("L'introduction a trois colonnes : durée, zone d'écriture, rubrique",
+  intro[1]?.length === 3 && intro[1]?.[0] === "" && intro[1]?.[2] === "Rappel",
+  (intro[1] ?? []).join("|"));
+
+// Le modèle de logigramme : seize modules, et des lignes à numéroter.
+const modele =
+  tableaux
+    .map(grille)
+    .find((g) => g[0]?.[0] === "N° Modules" && g[0]?.length === 18) ?? [];
+verifie("Le modèle de logigramme porte seize colonnes de module",
+  (modele[0] ?? []).join("|") ===
+    "N° Modules|1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16|Total",
+  (modele[0] ?? []).join("|"));
+verifie("Ses deux premières lignes sont la masse horaire et les semaines",
+  modele[1]?.[0] === "Masse horaire" && modele[2]?.[0] === "Semaines",
+  `${modele[1]?.[0]} / ${modele[2]?.[0]}`);
+verifie("Il laisse vingt-quatre semaines à numéroter",
+  modele.length === 3 + 24, `${modele.length} lignes`);
+verifie("Et ses cases sont vides",
+  (modele[5] ?? []).every((c) => c === ""), (modele[5] ?? []).join("|"));
+
+// Six sections : chaque page de titre debout, chaque série de tableaux couchée.
+verifie("Six sections", (p.xml.match(/<w:sectPr/g) ?? []).length === 6,
+  `${(p.xml.match(/<w:sectPr/g) ?? []).length} sections`);
+verifie("Trois sections couchées",
+  (p.xml.match(/w:orient="landscape"/g) ?? []).length === 3,
+  `${(p.xml.match(/w:orient="landscape"/g) ?? []).length} couchées`);
+
 // Le compte vide : le cahier sort, et ses cases portent un tiret.
 const q = await ouvrir(vide, neuf);
 verifie("Un compte vide produit tout de même un cahier", q.xml.length > 2000);
@@ -931,8 +1010,15 @@ verifie("Un compte vide n'écrit pas « null »", !q.texte.includes("null"));
 const lignesVide = ((/<w:tbl>[\s\S]*?<\/w:tbl>/.exec(q.xml)?.[0] ?? "").match(/<w:tr[\s>]/g) ?? []).length;
 
 verifie("Fiche d'identité : dix lignes même à vide", lignesVide === 10, `${lignesVide} lignes`);
-verifie("Sans groupe, le logigramme ne laisse pas de tableau vide",
-  !q.texte.includes("N° Modules"));
+/*
+  Le modèle de logigramme en annexe porte aussi « N° Modules » : on vérifie donc
+  que celui de la section C n'est pas là, et non l'absence du mot.
+*/
+verifie("Sans groupe, la section C ne laisse pas de logigramme",
+  !q.texte.includes("Logigramme — "));
+verifie("Les annexes paraissent même sur un compte neuf",
+  q.texte.includes("Missions du formateur") &&
+    q.texte.includes("Modèle de logigramme de la filière"));
 verifie("Sans contrôle, la planification le dit",
   q.texte.includes("Aucun contrôle continu enregistré") &&
     q.texte.includes("Aucun examen de fin de module enregistré"));
@@ -949,7 +1035,7 @@ verifie("Nom de fichier d'un compte vide", nomFichierCahier(vide) === "Cahier-du
 
 console.log(
   fautes === 0
-    ? "\n✓ Cahier du formateur : liminaires, partie I et partie II conformes au document officiel."
+    ? "\n✓ Cahier du formateur : liminaires, parties I et II, annexes conformes au document officiel."
     : `\n✗ ${fautes} contrôle(s) en échec.`,
 );
 if (fautes) process.exit(1);
