@@ -47,6 +47,7 @@ export default function GroupesManager({
     nom: "",
     annee: "1",
     specialite_id: "",
+    option_formation: "",
   });
   const [selectedModules, setSelectedModules] = useState<string[]>([]);
 
@@ -64,10 +65,11 @@ export default function GroupesManager({
         nom: form.nom,
         annee: Number(form.annee) || null,
         specialite_id: form.specialite_id || null,
+        option_formation: form.option_formation || null,
         module_ids: selectedModules,
       });
       setOpen(false);
-      setForm({ nom: "", annee: "1", specialite_id: "" });
+      setForm({ nom: "", annee: "1", specialite_id: "", option_formation: "" });
       setSelectedModules([]);
       toast("Groupe créé");
       router.refresh();
@@ -257,7 +259,12 @@ export default function GroupesManager({
               id="annee"
               value={form.annee}
               onChange={(e) => {
-                setForm({ ...form, annee: e.target.value, specialite_id: "" });
+                setForm({
+                  ...form,
+                  annee: e.target.value,
+                  specialite_id: "",
+                  option_formation: "",
+                });
                 // Un module coché puis rendu invisible par le changement
                 // d'année serait assigné sans que rien ne le montre.
                 setSelectedModules([]);
@@ -297,6 +304,21 @@ export default function GroupesManager({
                 ))}
               </select>
             </label>
+          ) : null}
+
+          {/* L'option entre dans le nom de la filière sur les documents
+              officiels : « Digital Design - Option UX designer ». Sans elle,
+              ils écrivent « Spécialisation », qui reste vrai. */}
+          {form.annee === "2" ? (
+            <Input
+              label="Option de formation"
+              value={form.option_formation}
+              onChange={(e) =>
+                setForm({ ...form, option_formation: e.target.value })
+              }
+              placeholder="UX designer"
+              hint="Telle qu'elle doit paraître sur le cahier du formateur, après « Option »."
+            />
           ) : null}
 
           <div>

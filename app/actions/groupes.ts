@@ -147,6 +147,8 @@ export async function createGroupe(input: {
   nom: string;
   annee?: number | null;
   specialite_id?: string | null;
+  /** L'option de 2ᵉ année, qui entre dans le nom de la filière (migration 115). */
+  option_formation?: string | null;
   module_ids?: string[];
 }) {
   const supabase = await createClient();
@@ -161,6 +163,10 @@ export async function createGroupe(input: {
       // Une 2ᵉ année est forcément rattachée à une spécialité : la base le
       // vérifie (`groupes_specialite_si_annee2`), le formulaire le demande.
       specialite_id: input.annee === 2 ? (input.specialite_id ?? null) : null,
+      // Comme la spécialité : une première année n'a pas d'option, et en
+      // garder une d'un changement d'année nommerait la filière de travers.
+      option_formation:
+        input.annee === 2 ? (input.option_formation?.trim() || null) : null,
       // Sans ce champ, la politique d'écriture refuse la ligne : elle exige
       // `formateur_id = auth.uid()`. C'est ce qui bloquait toute création.
       formateur_id: user.id,

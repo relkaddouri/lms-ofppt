@@ -25,6 +25,10 @@ import {
  * Les cinq champs suivants ne servent qu'au tableau de service, dont le format
  * officiel impose un bloc d'en-tête que rien dans le schéma ne détermine
  * (PRD §4.13bis).
+ *
+ * Les neuf derniers ne servent qu'au cahier du formateur : sa couverture et sa
+ * fiche d'identité les demandent. Ils se recopiaient à la main dans Word à
+ * chaque édition ; saisis ici une fois, ils resservent chaque année.
  */
 
 const CHAMPS_ENTETE = [
@@ -43,6 +47,110 @@ const CHAMPS_ENTETE = [
     aide: "Abrégé comme sur le document : TS, T, S.",
   },
 ] as const;
+
+/**
+ * La fiche d'identité du cahier du formateur.
+ *
+ * Les dates passent par un champ `date` du navigateur : il rend toujours
+ * AAAA-MM-JJ, soit exactement ce que la colonne attend, et il évite au
+ * formateur de se demander si le mois vient avant le jour.
+ */
+const CHAMPS_IDENTITE = [
+  {
+    cle: "directionRegionale",
+    libelle: "Direction régionale",
+    type: "text",
+    exemple: "SOUSS MASSA",
+    aide: "Première ligne de la couverture du cahier.",
+  },
+  {
+    cle: "dateRecrutement",
+    libelle: "Date de recrutement",
+    type: "date",
+    exemple: null,
+    aide: null,
+  },
+  {
+    cle: "grade",
+    libelle: "Grade",
+    type: "text",
+    exemple: "Cadre",
+    aide: null,
+  },
+  {
+    cle: "echelon",
+    libelle: "Échelon",
+    type: "text",
+    exemple: "01",
+    aide: "Tel qu'il s'écrit sur votre situation, avec son zéro s'il en a un.",
+  },
+  {
+    cle: "diplome",
+    libelle: "Diplôme",
+    type: "text",
+    exemple: "Licence en informatique",
+    aide: "Le plus élevé, tel qu'il doit paraître sur le cahier.",
+  },
+  {
+    cle: "specialiteOrigine",
+    libelle: "Spécialité d'origine",
+    type: "text",
+    exemple: "Développement informatique",
+    aide: "La vôtre, qui n'est pas toujours celle où vous enseignez.",
+  },
+  {
+    cle: "specialiteAffectation",
+    libelle: "Spécialité d'affectation",
+    type: "text",
+    exemple: "Design UX/UI",
+    aide: "Celle de la filière que vous prenez en charge.",
+  },
+  {
+    cle: "dateAffectation",
+    libelle: "Date d'affectation",
+    type: "date",
+    exemple: null,
+    aide: null,
+  },
+  {
+    cle: "dateDernierBilan",
+    libelle: "Date du dernier bilan de compétence",
+    type: "date",
+    exemple: null,
+    aide: "Laissez vide s'il n'y en a pas eu : le cahier porte alors un tiret.",
+  },
+] as const;
+
+/*
+  Les valeurs de départ, écrites une fois.
+
+  Le bouton « Annuler » les redemande, et une seconde liste recopiée à la main
+  aurait oublié un champ au premier ajout.
+*/
+function enteteInitial(i: Etablissement) {
+  return {
+    nomFormateur: i.nomFormateur ?? "",
+    matricule: i.matricule ?? "",
+    codeSecteur: i.codeSecteur ?? "",
+    niveauFormation: i.niveauFormation ?? "",
+    anneeScolaire: i.anneeScolaire ?? "",
+  };
+}
+
+function identiteInitiale(i: Etablissement) {
+  return {
+    directionRegionale: i.directionRegionale ?? "",
+    dateRecrutement: i.dateRecrutement ?? "",
+    grade: i.grade ?? "",
+    echelon: i.echelon ?? "",
+    diplome: i.diplome ?? "",
+    specialiteOrigine: i.specialiteOrigine ?? "",
+    specialiteAffectation: i.specialiteAffectation ?? "",
+    dateAffectation: i.dateAffectation ?? "",
+    dateDernierBilan: i.dateDernierBilan ?? "",
+  };
+}
+
 export default function ParametresEtablissementForm({
   initial,
 }: {
@@ -52,13 +160,8 @@ export default function ParametresEtablissementForm({
   const [enCours, startTransition] = useTransition();
   const [nom, setNom] = useState(initial.nom ?? "");
   const [logo, setLogo] = useState<string | null>(initial.logo);
-  const [entete, setEntete] = useState({
-    nomFormateur: initial.nomFormateur ?? "",
-    matricule: initial.matricule ?? "",
-    codeSecteur: initial.codeSecteur ?? "",
-    niveauFormation: initial.niveauFormation ?? "",
-    anneeScolaire: initial.anneeScolaire ?? "",
-  });
+  const [entete, setEntete] = useState(() => enteteInitial(initial));
+  const [identite, setIdentite] = useState(() => identiteInitiale(initial));
   const fichierRef = useRef<HTMLInputElement>(null);
 
   function choisirLogo(fichier: File | undefined) {
@@ -88,6 +191,15 @@ export default function ParametresEtablissementForm({
           codeSecteur: entete.codeSecteur.trim() || null,
           niveauFormation: entete.niveauFormation.trim() || null,
           anneeScolaire: entete.anneeScolaire.trim() || null,
+          directionRegionale: identite.directionRegionale.trim() || null,
+          dateRecrutement: identite.dateRecrutement || null,
+          grade: identite.grade.trim() || null,
+          echelon: identite.echelon.trim() || null,
+          diplome: identite.diplome.trim() || null,
+          specialiteOrigine: identite.specialiteOrigine.trim() || null,
+          specialiteAffectation: identite.specialiteAffectation.trim() || null,
+          dateAffectation: identite.dateAffectation || null,
+          dateDernierBilan: identite.dateDernierBilan || null,
         });
         toast("Établissement enregistré.");
       } catch (e) {
@@ -216,19 +328,42 @@ export default function ParametresEtablissementForm({
         </div>
       </Card>
 
+      <Card className="flex flex-col gap-5">
+        <div className="flex flex-col gap-1">
+          <h2 className="font-display text-[17px] font-semibold text-ink">
+            Fiche d&apos;identité du cahier du formateur
+          </h2>
+          <span className="text-[13.5px] text-slate-light">
+            Les lignes que le cahier demande en plus. Toutes facultatives : ce
+            qui reste vide sort en case vide.
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          {CHAMPS_IDENTITE.map((c) => (
+            <Input
+              key={c.cle}
+              type={c.type}
+              label={c.libelle}
+              value={identite[c.cle]}
+              onChange={(e) =>
+                setIdentite((v) => ({ ...v, [c.cle]: e.target.value }))
+              }
+              placeholder={c.exemple ?? undefined}
+              hint={c.aide ?? undefined}
+            />
+          ))}
+        </div>
+      </Card>
+
       <div className="flex justify-end gap-2.5">
         <Button
           variant="secondary"
           onClick={() => {
             setNom(initial.nom ?? "");
             setLogo(initial.logo);
-            setEntete({
-              nomFormateur: initial.nomFormateur ?? "",
-              matricule: initial.matricule ?? "",
-              codeSecteur: initial.codeSecteur ?? "",
-              niveauFormation: initial.niveauFormation ?? "",
-              anneeScolaire: initial.anneeScolaire ?? "",
-            });
+            setEntete(enteteInitial(initial));
+            setIdentite(identiteInitiale(initial));
           }}
           disabled={enCours}
         >

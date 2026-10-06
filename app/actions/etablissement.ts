@@ -28,6 +28,29 @@ export type Etablissement = {
   niveauFormation: string | null;
   /** Format AAAA/AAAA. */
   anneeScolaire: string | null;
+  /** Par exemple « SOUSS MASSA ». Première ligne de la couverture du cahier. */
+  directionRegionale: string | null;
+
+  /*
+    Les huit lignes que le cahier du formateur demande en plus (migration 113).
+    Elles se recopiaient à la main dans Word à chaque édition du classeur.
+    Toutes facultatives : le cahier sort avec des cases vides plutôt que de
+    refuser de s'éditer.
+  */
+  /** Format AAAA-MM-JJ, comme le rend la base. */
+  dateRecrutement: string | null;
+  /** « Cadre », « Technicien spécialisé »… La nomenclature change, d'où le texte libre. */
+  grade: string | null;
+  /** Texte et non nombre : certains échelons s'écrivent « 01 », avec leur zéro. */
+  echelon: string | null;
+  diplome: string | null;
+  /** Celle du formateur, qui n'est pas toujours celle où il enseigne. */
+  specialiteOrigine: string | null;
+  /** Celle de la filière prise en charge. */
+  specialiteAffectation: string | null;
+  dateAffectation: string | null;
+  /** Souvent vide : le cahier porte alors un tiret. */
+  dateDernierBilan: string | null;
 };
 
 export async function getEtablissement(): Promise<Etablissement> {
@@ -35,7 +58,7 @@ export async function getEtablissement(): Promise<Etablissement> {
   const { data, error } = await supabase
     .from("parametres_formateur")
     .select(
-      "etablissement, logo_etablissement, nom_formateur, matricule, code_secteur, niveau_formation, annee_scolaire",
+      "etablissement, logo_etablissement, nom_formateur, matricule, code_secteur, niveau_formation, annee_scolaire, direction_regionale, date_recrutement, grade, echelon, diplome, specialite_origine, specialite_affectation, date_affectation, date_dernier_bilan",
     )
     .maybeSingle();
 
@@ -49,15 +72,40 @@ export async function getEtablissement(): Promise<Etablissement> {
     codeSecteur: data?.code_secteur?.trim() || null,
     niveauFormation: data?.niveau_formation?.trim() || null,
     anneeScolaire: data?.annee_scolaire?.trim() || null,
+    directionRegionale: data?.direction_regionale?.trim() || null,
+    dateRecrutement: data?.date_recrutement ?? null,
+    grade: data?.grade?.trim() || null,
+    echelon: data?.echelon?.trim() || null,
+    diplome: data?.diplome?.trim() || null,
+    specialiteOrigine: data?.specialite_origine?.trim() || null,
+    specialiteAffectation: data?.specialite_affectation?.trim() || null,
+    dateAffectation: data?.date_affectation ?? null,
+    dateDernierBilan: data?.date_dernier_bilan ?? null,
   };
 }
 
 export async function saveEtablissement(input: Etablissement): Promise<void> {
   const texte = (v: string | null) => v?.trim() || null;
+  /** Une date non saisie part nulle : la colonne est de type date. */
+  const date = (v: string | null) => {
+    const t = v?.trim();
+    if (!t) return null;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(t)) {
+      throw new Error("Une date s'écrit au format AAAA-MM-JJ.");
+    }
+    return t;
+  };
 
   const nom = texte(input.nom);
   if (nom && nom.length > 160) {
     throw new Error("Le nom de l'établissement ne peut pas dépasser 160 caractères.");
+  }
+
+  // Plus long que les champs courts : un intitulé de diplôme tient rarement en
+  // quatre-vingts caractères.
+  const diplome = texte(input.diplome);
+  if (diplome && diplome.length > 160) {
+    throw new Error("Le diplôme ne peut pas dépasser 160 caractères.");
   }
 
   const courts: [string | null, string][] = [
@@ -65,6 +113,11 @@ export async function saveEtablissement(input: Etablissement): Promise<void> {
     [texte(input.matricule), "Le matricule"],
     [texte(input.codeSecteur), "Le code secteur"],
     [texte(input.niveauFormation), "Le niveau de formation"],
+    [texte(input.directionRegionale), "La direction régionale"],
+    [texte(input.grade), "Le grade"],
+    [texte(input.echelon), "L'échelon"],
+    [texte(input.specialiteOrigine), "La spécialité d'origine"],
+    [texte(input.specialiteAffectation), "La spécialité d'affectation"],
   ];
   for (const [valeur, libelle] of courts) {
     if (valeur && valeur.length > 80) {
@@ -104,6 +157,18 @@ export async function saveEtablissement(input: Etablissement): Promise<void> {
       code_secteur: texte(input.codeSecteur),
       niveau_formation: texte(input.niveauFormation),
       annee_scolaire: anneeScolaire,
+      direction_regionale: texte(input.directionRegionale),
+      // Une date vide s'enregistre nulle et non chaîne vide : la colonne est
+      // de type date, et Postgres refuse « » — c'est l'erreur qui a fait
+      // tomber des écrans en production sur les identifiants.
+      date_recrutement: date(input.dateRecrutement),
+      grade: texte(input.grade),
+      echelon: texte(input.echelon),
+      diplome,
+      specialite_origine: texte(input.specialiteOrigine),
+      specialite_affectation: texte(input.specialiteAffectation),
+      date_affectation: date(input.dateAffectation),
+      date_dernier_bilan: date(input.dateDernierBilan),
       updated_at: new Date().toISOString(),
     },
     { onConflict: "formateur_id" },

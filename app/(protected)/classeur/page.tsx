@@ -1,10 +1,17 @@
 import { getGroupesClasseur } from "@/app/actions/classeur";
+import { getEtablissement } from "@/app/actions/etablissement";
 import ClasseurExport from "./ClasseurExport";
+import CahierExport from "./CahierExport";
 
 export const metadata = { title: "Classeur pédagogique" };
 
 export default async function ClasseurPage() {
-  const groupes = await getGroupesClasseur();
+  // Deux lectures sur une page qu'on ouvre pour éditer un document, pas pour
+  // la consulter : elles partent ensemble plutôt que l'une après l'autre.
+  const [groupes, etablissement] = await Promise.all([
+    getGroupesClasseur(),
+    getEtablissement(),
+  ]);
 
   return (
     // Cette page ne portait aucune marge : son titre touchait le bord de
@@ -15,10 +22,20 @@ export default async function ClasseurPage() {
           Classeur pédagogique
         </h1>
         <p className="text-[15px] text-slate-2">
-          Le document que vous remettez : vos fiches de préparation reliées en
-          un seul PDF, dans la forme attendue du cahier du formateur. Par
-          défaut tous les groupes et tous les modules, sur la période de votre
-          choix.
+          Les deux documents que vous remettez : le cahier du formateur, et vos
+          fiches de préparation reliées.
+        </p>
+      </div>
+
+      <CahierExport etablissement={etablissement} />
+
+      <div className="flex flex-col gap-1.5">
+        <h2 className="font-display text-[19px] font-semibold text-ink">
+          Fiches de préparation reliées
+        </h2>
+        <p className="text-[15px] text-slate-2">
+          Vos fiches en un seul PDF. Par défaut tous les groupes et tous les
+          modules, sur la période de votre choix.
         </p>
       </div>
 

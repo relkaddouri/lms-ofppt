@@ -1,0 +1,379 @@
+"use server";
+
+import { createClient } from "@/lib/supabase/server";
+import { libelleFiliere } from "@/lib/filiere";
+import { libelleModule } from "@/lib/modules";
+import { getPortee } from "@/app/actions/annees";
+import { getMotifs, type MotifHebdomadaire } from "@/app/actions/motifs";
+import { suivisParGroupe, type SuiviModule } from "@/lib/suivi-modules";
+
+export type { FicheOfficielle } from "@/lib/fiche-officielle";
+import {
+  evaluations,
+  type CahierPartieII,
+  type LigneControle,
+  type LignePassation,
+  type LigneStagiaire,
+} from "@/lib/cahier-evaluations";
+import {
+  heures,
+  logigrammes,
+  type LigneAffectation,
+  type LigneGroupe,
+  type LigneSeance,
+  type Logigramme,
+} from "@/lib/logigramme";
+
+/**
+ * Ce que la plateforme sait remplir dans le cahier du formateur.
+ *
+ * Le cahier officiel se recopiait à la main : les groupes pris en charge, les
+ * modules avec leur masse horaire et leurs dates, puis séance par séance la
+ * prévision et la réalisation. Tout cela est déjà en base — c'est le même
+ * travail saisi deux fois.
+ *
+ * Une seule lecture par édition du document, et le document s'édite quelques
+ * fois par an : les requêtes peuvent être larges, elles ne sont pas répétées.
+ * Elles restent bornées, et ne ramènent que des colonnes qui figurent sur le
+ * papier.
+ */
+
+/** Une ligne du tableau « Filières et groupes pris en charge ». */
+export type GroupePrisEnCharge = {
+  filiere: string;
+  annee: number | null;
+  nom: string;
+  /** Somme des masses horaires allouées à ce groupe, tous modules confondus. */
+  masseHoraireAnnuelle: number | null;
+  /** L'effectif d'aujourd'hui : la base ne garde pas l'historique mensuel. */
+  effectif: number;
+};
+
+/** Une ligne du tableau « Modules pris en charge ». */
+export type ModulePrisEnCharge = {
+  intitule: string;
+  filiere: string;
+  groupe: string;
+  masseHoraire: number | null;
+  /** Première et dernière séance datées, faute de dates saisies à la main. */
+  dateDebut: string | null;
+  dateFin: string | null;
+};
+
+/** Une ligne du tableau « Prévision / Réalisation » d'un module. */
+export type {
+  Logigramme,
+  LogigrammeModule,
+  LogigrammeSemaine,
+} from "@/lib/logigramme";
+export type {
+  SeanceSuivi,
+  SuiviModule,
+} from "@/lib/suivi-modules";
+export type {
+  CahierPartieII,
+  NoteStagiaire,
+  NotesModule,
+  PlanificationCC,
+  PlanificationEFM,
+} from "@/lib/cahier-evaluations";
+
+export type CahierPartieI = {
+  groupes: GroupePrisEnCharge[];
+  modules: ModulePrisEnCharge[];
+  suivis: SuiviModule[];
+  logigrammes: Logigramme[];
+  /*
+    Les rythmes hebdomadaires de l'année, du plus récent au plus ancien. Un
+    motif n'est pas figé sur l'année : quand il change, le cahier doit montrer
+    lequel s'appliquait et quand, d'où la période portée par chacun.
+  */
+  motifs: MotifHebdomadaire[];
+};
+
+/** Tout ce que le cahier tire de la base, en une lecture. */
+export type CahierDonnees = {
+  partieI: CahierPartieI;
+  partieII: CahierPartieII;
+};
+
+/*
+  Bornes des lectures. Larges, parce qu'une année de formation fait quelques
+  centaines de séances et que tronquer donnerait un cahier faux sans le dire ;
+  bornes tout de même, pour qu'une base en désordre ne fasse pas tomber la page.
+*/
+const MAX_SEANCES = 2000;
+const MAX_ABSENCES = 4000;
+const MAX_STAGIAIRES = 1000;
+const MAX_CONTROLES = 500;
+const MAX_FICHES = 1500;
+const MAX_PASSATIONS = 8000;
+
+const VIDE: CahierDonnees = {
+  partieI: { groupes: [], modules: [], suivis: [], logigrammes: [], motifs: [] },
+  partieII: { controlesContinus: [], examens: [], notes: [] },
+};
+
+export async function getCahierDonnees(): Promise<CahierDonnees> {
+  const supabase = await createClient();
+  const { groupeIds } = await getPortee();
+  if (groupeIds.length === 0) return VIDE;
+
+  const [groupes, affectations, stagiaires, seances, controles, motifs] =
+    await Promise.all([
+    supabase
+      .from("groupes")
+      .select("id, nom, annee, option_formation, specialites(nom)")
+      .in("id", groupeIds)
+      .order("nom"),
+    supabase
+      .from("groupe_modules")
+      .select(
+        "groupe_id, module_id, masse_horaire_allouee, presentiel_s1, fad_s1, presentiel_s2, fad_s2, modules(nom, competences(code_operationnel, enonce_competence, cycle, rang_cycle))",
+      )
+      .in("groupe_id", groupeIds),
+    /*
+      Les stagiaires portent deux rôles dans le cahier : ils comptent dans les
+      effectifs, et ils nomment les lignes du tableau des notes. D'où le nom et
+      le numéro d'inscription, qui figurent sur le papier.
+    */
+    supabase
+      .from("stagiaires")
+      .select("id, groupe_id, cef, cne, nom, prenom")
+      .in("groupe_id", groupeIds)
+      .eq("est_test", false)
+      .limit(MAX_STAGIAIRES),
+    supabase
+      .from("seances")
+      .select(
+        "id, contenu_source_id, module_id, date, statut, duree_prevue, duree_realisee, objectif_operationnel, contenu_realise, a_prevoir_prochaine_seance, seance_groupes!inner(groupe_id)",
+      )
+      .in("seance_groupes.groupe_id", groupeIds)
+      .not("date", "is", null)
+      .order("date")
+      .limit(MAX_SEANCES),
+    /*
+      Les contrôles de test restent dehors : ils servent à essayer la
+      plateforme, et le filtre est posé ici plutôt qu'en mémoire pour ne pas
+      faire voyager ce qu'on jette.
+    */
+    supabase
+      .from("controles")
+      .select(
+        "id, groupe_id, module_id, type, date_prevue, date_administration, date_envoi_propositions, bareme_total, duree_heures",
+      )
+      .in("groupe_id", groupeIds)
+      .in("type", ["CC", "EFM"])
+      .limit(MAX_CONTROLES),
+    // L'emploi du temps se lit déjà ailleurs, et de la bonne façon : on
+    // reprend cette lecture plutôt que d'en écrire une seconde qui divergerait.
+    getMotifs(),
+  ]);
+
+  for (const r of [groupes, affectations, stagiaires, seances, controles]) {
+    if (r.error) throw new Error(r.error.message);
+  }
+
+  const lignesControles = (controles.data ?? []) as unknown as LigneControle[];
+
+  /*
+    Les copies ne se lisent qu'une fois les contrôles connus : leur nombre borne
+    la requête, et sans contrôle il n'y a rien à demander.
+  */
+  let lignesPassations: LignePassation[] = [];
+  if (lignesControles.length > 0) {
+    const { data, error } = await supabase
+      .from("passations_controle")
+      .select("controle_id, stagiaire_id, note, publie_le, submitted_at")
+      .in(
+        "controle_id",
+        lignesControles.map((c) => c.id),
+      )
+      .limit(MAX_PASSATIONS);
+    if (error) throw new Error(error.message);
+    lignesPassations = (data ?? []) as unknown as LignePassation[];
+  }
+
+  const lignesGroupes = (groupes.data ?? []) as unknown as LigneGroupe[];
+  const nomDuGroupe = new Map(lignesGroupes.map((g) => [g.id, g.nom]));
+
+  const lignesStagiaires = (stagiaires.data ?? []) as unknown as LigneStagiaire[];
+
+  const effectifs = new Map<string, number>();
+  for (const e of lignesStagiaires) {
+    if (!e.groupe_id) continue;
+    effectifs.set(e.groupe_id, (effectifs.get(e.groupe_id) ?? 0) + 1);
+  }
+
+  const lignesAffectations = (affectations.data ?? []) as unknown as LigneAffectation[];
+
+  const lignesSeances = (seances.data ?? []) as unknown as LigneSeance[];
+
+  // ── Les absents, séance par séance ──────────────────────────────────────
+
+  const absentsParSeance = new Map<string, string[]>();
+  if (lignesSeances.length > 0) {
+    const { data: absences, error } = await supabase
+      .from("presences")
+      .select("seance_id, stagiaires(nom, prenom)")
+      .in(
+        "seance_id",
+        lignesSeances.map((s) => s.id),
+      )
+      .eq("present", false)
+      .limit(MAX_ABSENCES);
+    if (error) throw new Error(error.message);
+
+    for (const a of (absences ?? []) as unknown as {
+      seance_id: string;
+      stagiaires: { nom: string; prenom: string } | null;
+    }[]) {
+      if (!a.stagiaires) continue;
+      const qui = `${a.stagiaires.nom} ${a.stagiaires.prenom}`.trim();
+      const deja = absentsParSeance.get(a.seance_id);
+      if (deja) deja.push(qui);
+      else absentsParSeance.set(a.seance_id, [qui]);
+    }
+  }
+
+  // ── Les fiches de préparation ───────────────────────────────────────────
+
+  /*
+    Une séance miroir tire sa fiche de sa source (§4.3bis) : indexer sur le seul
+    identifiant de séance laisserait le groupe miroir sans aucune page.
+  */
+  const sourceDe = new Map(
+    lignesSeances.map((s) => [s.id, s.contenu_source_id ?? s.id]),
+  );
+
+  const ficheDeLaSeance = new Map<string, string>();
+  if (sourceDe.size > 0) {
+    const { data, error } = await supabase
+      .from("fiches_preparation")
+      .select("seance_id, contenu, version")
+      .in("seance_id", [...new Set(sourceDe.values())])
+      .order("version", { ascending: false })
+      .limit(MAX_FICHES);
+    if (error) throw new Error(error.message);
+
+    // La version la plus haute fait foi : c'est celle que le formateur a relue
+    // en dernier.
+    const parSource = new Map<string, string>();
+    for (const f of (data ?? []) as { seance_id: string; contenu: string | null }[]) {
+      if (!f.contenu) continue;
+      if (!parSource.has(f.seance_id)) parSource.set(f.seance_id, f.contenu);
+    }
+    for (const [id, source] of sourceDe) {
+      const contenu = parSource.get(source);
+      if (contenu) ficheDeLaSeance.set(id, contenu);
+    }
+  }
+
+  // ── Filières et groupes pris en charge ──────────────────────────────────
+
+  const masseParGroupe = new Map<string, number>();
+  for (const a of lignesAffectations) {
+    const h = heures(a.masse_horaire_allouee);
+    if (h === null) continue;
+    masseParGroupe.set(a.groupe_id, (masseParGroupe.get(a.groupe_id) ?? 0) + h);
+  }
+
+  const prisEnCharge: GroupePrisEnCharge[] = lignesGroupes.map((g) => ({
+    filiere: libelleFiliere(g.specialites?.nom, g.annee, g.option_formation),
+    annee: g.annee,
+    nom: g.nom,
+    masseHoraireAnnuelle: masseParGroupe.get(g.id) ?? null,
+    effectif: effectifs.get(g.id) ?? 0,
+  }));
+
+  // ── Modules pris en charge ──────────────────────────────────────────────
+
+  /*
+    Les dates de début et de fin ne sont pas saisies : ce sont la première et
+    la dernière séance datées du module dans ce groupe. C'est ce que le
+    formateur recopiait, et la base le sait déjà.
+  */
+  const bornes = new Map<string, { debut: string; fin: string }>();
+  for (const s of lignesSeances) {
+    if (!s.date) continue;
+    for (const lien of s.seance_groupes) {
+      const cle = `${lien.groupe_id}|${s.module_id}`;
+      const b = bornes.get(cle);
+      if (!b) bornes.set(cle, { debut: s.date, fin: s.date });
+      else {
+        if (s.date < b.debut) b.debut = s.date;
+        if (s.date > b.fin) b.fin = s.date;
+      }
+    }
+  }
+
+  const filiereDuGroupe = new Map(
+    lignesGroupes.map((g) => [
+      g.id,
+      libelleFiliere(g.specialites?.nom, g.annee, g.option_formation),
+    ]),
+  );
+  const anneeDuGroupe = new Map(lignesGroupes.map((g) => [g.id, g.annee]));
+
+  /*
+    La masse horaire d'un module pour un groupe est celle du tableau de service :
+    présentiel et distance, croisés avec le semestre. C'est ce que le formateur
+    fait signer à la Direction, et c'est déjà calculé — `masse_horaire_allouee`
+    ne sert que de repli, quand les quatre colonnes n'ont pas été saisies.
+
+    Les quatre comptent, même la part à distance mutualisée : le groupe reçoit
+    ces heures. C'est la charge du formateur qui ne les compte qu'une fois
+    (§4.1bis), et le cahier décrit le groupe, pas la charge.
+  */
+  const masseDuTableauDeService = (a: LigneAffectation): number | null => {
+    const quatre = [a.presentiel_s1, a.fad_s1, a.presentiel_s2, a.fad_s2]
+      .map(heures)
+      .filter((h): h is number => h !== null);
+    const total = quatre.reduce((t, h) => t + h, 0);
+    return total > 0 ? total : heures(a.masse_horaire_allouee);
+  };
+
+  const modulesPrisEnCharge: ModulePrisEnCharge[] = lignesAffectations
+    .map((a) => {
+      const b = bornes.get(`${a.groupe_id}|${a.module_id}`);
+      return {
+        intitule: libelleModule(
+          a.modules?.competences?.code_operationnel,
+          a.modules?.nom,
+        ),
+        filiere: filiereDuGroupe.get(a.groupe_id) ?? "—",
+        groupe: nomDuGroupe.get(a.groupe_id) ?? "—",
+        masseHoraire: masseDuTableauDeService(a),
+        dateDebut: b?.debut ?? null,
+        dateFin: b?.fin ?? null,
+      };
+    })
+    .sort(
+      (x, y) =>
+        x.intitule.localeCompare(y.intitule, "fr") ||
+        x.groupe.localeCompare(y.groupe, "fr"),
+    );
+
+  return {
+    partieI: {
+      groupes: prisEnCharge,
+      modules: modulesPrisEnCharge,
+      suivis: suivisParGroupe(lignesGroupes, lignesAffectations, lignesSeances, {
+        masse: masseDuTableauDeService,
+        effectifs,
+        absents: absentsParSeance,
+        fiches: ficheDeLaSeance,
+      }),
+      logigrammes: logigrammes(lignesGroupes, lignesAffectations, lignesSeances),
+      motifs,
+    },
+    partieII: evaluations(
+      lignesGroupes,
+      lignesAffectations,
+      lignesControles,
+      lignesPassations,
+      lignesStagiaires,
+      lignesSeances,
+    ),
+  };
+}
