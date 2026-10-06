@@ -39,6 +39,8 @@ import {
   MISSIONS_FORMATEUR,
   PROCEDURES,
 } from "@/lib/docx-cahier-textes";
+import { enCanevasOfficiel } from "@/lib/fiche-officielle";
+import { lireFiche } from "@/lib/fiche";
 
 /*
   Le générateur tourne dans le navigateur : il va chercher les polices par
@@ -159,6 +161,68 @@ const partie1: CahierPartieI = {
       masseHoraire: 100,
       objectif: "Organiser les données utilisateurs recueillies en enquête.",
       effectif: 40,
+      /*
+        Une fiche enregistrée au format des quatre phases, relue par le même
+        code que l'écran et rangée dans le canevas officiel. C'est le passage
+        d'un découpage à l'autre qui est en jeu, pas la mise en page.
+      */
+      fiches: [
+        enCanevasOfficiel(
+          lireFiche(
+            JSON.stringify({
+              nature: "cours pratique",
+              objectifs: "Trier les verbatim par thème",
+              methodeActive: "Travail en îlots",
+              modalite: "Synchrone présentiel",
+              phases: [
+                {
+                  cle: "mise_en_situation",
+                  methode: "Question ouverte",
+                  minutes: 30,
+                  instructions: ["Projeter trois verbatim contradictoires"],
+                  questions: ["Lequel croyez-vous ?"],
+                  points: [],
+                },
+                {
+                  cle: "activite",
+                  methode: "Îlots de quatre",
+                  minutes: 150,
+                  instructions: ["Distribuer les cartes", "Laisser chercher"],
+                  questions: [],
+                  points: ["Qui regroupe par mot plutôt que par besoin"],
+                },
+                {
+                  cle: "structuration",
+                  methode: "",
+                  minutes: 75,
+                  instructions: ["Nommer les familles au tableau"],
+                  questions: [],
+                  points: ["Besoin n'est pas solution"],
+                },
+                {
+                  cle: "reinvestissement",
+                  methode: "",
+                  minutes: 45,
+                  instructions: ["Trier dix verbatim nouveaux"],
+                  questions: [],
+                  points: [],
+                },
+              ],
+            }),
+            300,
+          ),
+          {
+            date: "2025-10-13",
+            dureeMinutes: 300,
+            groupe: "DES101",
+            filiere: "Digital Design - Option UX designer",
+            annee: 2,
+            module: "M202 — Organiser les données utilisateurs",
+            rappel: "Relire les personas produits en M201",
+            aPrevoir: "Apporter les grilles d'entretien",
+          },
+        ),
+      ],
       seances: [
         {
           numero: 1,
@@ -1016,6 +1080,78 @@ verifie("Cinq colonnes de contrôle continu, même avec deux contrôles",
   evalEssai.notes[0]?.colonnesCC === 5, String(evalEssai.notes[0]?.colonnesCC));
 verifie("Sans contrôle, il n'y a pas de tableau de notes",
   evaluations(groupeEssai, [], [], [], essaiStagiaires, []).notes.length === 0);
+
+// ── Les fiches de préparation ───────────────────────────────────────────
+
+/*
+  La plateforme écrit les fiches en quatre phases ; le cahier officiel attend
+  trois temps découpés en rubriques imposées. Chaque rubrique doit recevoir ce
+  qu'une phase contient déjà — rien de plus, rien de reformulé.
+*/
+const laFiche = partie1.suivis[0]!.fiches[0]!;
+verifie("Le rappel vient de ce que la séance précédente demandait",
+  laFiche.introduction[0]?.lignes.join("") === "Relire les personas produits en M201",
+  laFiche.introduction[0]?.lignes.join(" / "));
+verifie("Les éléments de motivation viennent de la mise en situation",
+  laFiche.introduction[1]?.lignes.join(" / ") ===
+    "Projeter trois verbatim contradictoires / Lequel croyez-vous ?",
+  laFiche.introduction[1]?.lignes.join(" / "));
+verifie("La mise en situation garde ses minutes",
+  laFiche.introduction[1]?.minutes === 30, String(laFiche.introduction[1]?.minutes));
+verifie("Le plan de la séance énumère les quatre phases et leurs minutes",
+  laFiche.introduction[2]?.lignes.length === 4 &&
+    laFiche.introduction[2]?.lignes[0]?.endsWith("30 min") === true,
+  laFiche.introduction[2]?.lignes.join(" / "));
+verifie("Le développement réunit l'activité et la structuration",
+  laFiche.developpement.length === 2 &&
+    laFiche.developpement[0]?.minutes === 150 &&
+    laFiche.developpement[1]?.minutes === 75,
+  laFiche.developpement.map((r) => `${r.libelle}:${r.minutes}`).join(" | "));
+verifie("Les stratégies pédagogiques portent les méthodes et la modalité",
+  laFiche.strategies.some((x) => x.includes("Îlots de quatre")) &&
+    laFiche.strategies.includes("Synchrone présentiel"),
+  laFiche.strategies.join(" | "));
+verifie("La synthèse reprend les notions nommées en structuration",
+  laFiche.conclusion[0]?.lignes.join("") === "Besoin n'est pas solution",
+  laFiche.conclusion[0]?.lignes.join(" / "));
+verifie("L'évaluation vient du réinvestissement",
+  laFiche.conclusion[1]?.lignes.join("") === "Trier dix verbatim nouveaux",
+  laFiche.conclusion[1]?.lignes.join(" / "));
+verifie("La prochaine séance porte ce qu'il faut préparer",
+  laFiche.conclusion[2]?.lignes.join("") === "Apporter les grilles d'entretien",
+  laFiche.conclusion[2]?.lignes.join(" / "));
+verifie("Une rubrique sans source reste vide plutôt que d'être inventée",
+  enCanevasOfficiel(lireFiche(null, 120), {
+    date: null, dureeMinutes: 120, groupe: "X", filiere: "Y", annee: 1,
+    module: "Z", rappel: null, aPrevoir: null,
+  }).introduction[0]?.lignes.length === 0);
+
+// Et son dessin, dans le canevas officiel.
+verifie("Les fiches du module paraissent derrière son suivi",
+  p.texte.includes("Fiches de préparation — M202 — Organiser les données utilisateurs"));
+verifie("Chaque fiche porte son identité",
+  p.texte.includes("Durée de la séance : 5 heures") &&
+    p.texte.includes("Date de la séance : 13/10/2025") &&
+    p.texte.includes("Groupe : DES101") &&
+    p.texte.includes("Module : M202 — Organiser les données utilisateurs"));
+verifie("L'année de la séance est cochée",
+  p.texte.includes("2ème année"), "");
+const ficheIntro = tableaux
+  .map(grille)
+  .find((g) => g[0]?.includes("Introduction") && g.some((l) => l[2] === "Rappel")) ?? [];
+verifie("L'introduction porte ses trois rubriques",
+  ficheIntro.slice(1).map((l) => l[2]).join("|") ===
+    "Rappel|Eléments de motivation|Plan de la Séance",
+  ficheIntro.slice(1).map((l) => l[2]).join("|"));
+verifie("Et la durée de la rubrique dans sa colonne",
+  ficheIntro[2]?.[0] === "30 min", (ficheIntro[2] ?? []).join("|"));
+const ficheConclu = tableaux
+  .map(grille)
+  .find((g) => g[0]?.includes("Conclusion") && g.some((l) => l[2] === "Synthèse")) ?? [];
+verifie("La conclusion porte ses trois rubriques",
+  ficheConclu.slice(1).map((l) => l[2]).join("|") ===
+    "Synthèse|Evaluation|Prochaine séance",
+  ficheConclu.slice(1).map((l) => l[2]).join("|"));
 
 // ── Partie II ───────────────────────────────────────────────────────────
 

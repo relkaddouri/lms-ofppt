@@ -5,6 +5,10 @@ import { libelleFiliere } from "@/lib/filiere";
 import { libelleModule } from "@/lib/modules";
 import { getPortee } from "@/app/actions/annees";
 import { getMotifs, type MotifHebdomadaire } from "@/app/actions/motifs";
+import { lireFiche } from "@/lib/fiche";
+import { enCanevasOfficiel, type FicheOfficielle } from "@/lib/fiche-officielle";
+
+export type { FicheOfficielle } from "@/lib/fiche-officielle";
 import {
   evaluations,
   type CahierPartieII,
@@ -74,6 +78,12 @@ export type SeanceSuivi = {
 
 /** Un module et son suivi séance par séance. */
 export type SuiviModule = {
+  /*
+    Les fiches de préparation des séances réalisées, dans l'ordre. Le cahier
+    officiel les relie derrière le suivi du module : c'est la pièce que la
+    Direction lit pour juger la préparation, et elle est obligatoire.
+  */
+  fiches: FicheOfficielle[];
   module: string;
   filiere: string;
   /** Les groupes qui suivent ce module, réunis comme sur le document officiel. */
@@ -126,6 +136,7 @@ const MAX_SEANCES = 2000;
 const MAX_ABSENCES = 4000;
 const MAX_STAGIAIRES = 1000;
 const MAX_CONTROLES = 500;
+const MAX_FICHES = 1500;
 const MAX_PASSATIONS = 8000;
 
 const VIDE: CahierDonnees = {
@@ -252,6 +263,39 @@ export async function getCahierDonnees(): Promise<CahierDonnees> {
       const deja = absentsParSeance.get(a.seance_id);
       if (deja) deja.push(qui);
       else absentsParSeance.set(a.seance_id, [qui]);
+    }
+  }
+
+  // ── Les fiches de préparation ───────────────────────────────────────────
+
+  /*
+    Une séance miroir tire sa fiche de sa source (§4.3bis) : indexer sur le seul
+    identifiant de séance laisserait le groupe miroir sans aucune page.
+  */
+  const sourceDe = new Map(
+    lignesSeances.map((s) => [s.id, s.contenu_source_id ?? s.id]),
+  );
+
+  const ficheDeLaSeance = new Map<string, string>();
+  if (sourceDe.size > 0) {
+    const { data, error } = await supabase
+      .from("fiches_preparation")
+      .select("seance_id, contenu, version")
+      .in("seance_id", [...new Set(sourceDe.values())])
+      .order("version", { ascending: false })
+      .limit(MAX_FICHES);
+    if (error) throw new Error(error.message);
+
+    // La version la plus haute fait foi : c'est celle que le formateur a relue
+    // en dernier.
+    const parSource = new Map<string, string>();
+    for (const f of (data ?? []) as { seance_id: string; contenu: string | null }[]) {
+      if (!f.contenu) continue;
+      if (!parSource.has(f.seance_id)) parSource.set(f.seance_id, f.contenu);
+    }
+    for (const [id, source] of sourceDe) {
+      const contenu = parSource.get(source);
+      if (contenu) ficheDeLaSeance.set(id, contenu);
     }
   }
 
@@ -384,6 +428,20 @@ export async function getCahierDonnees(): Promise<CahierDonnees> {
     return total;
   };
 
+  /** Une durée en heures, telle que la fiche la compte : en minutes. */
+  const minutes = (h: number | null): number | null => {
+    const v = heures(h);
+    return v === null ? null : Math.round(v * 60);
+  };
+
+  /** Le libellé de filière du premier groupe d'un module. */
+  const filiereDuModule = (b: { groupes: Set<string> }): string =>
+    [...b.groupes]
+      .map((n) => lignesGroupes.find((x) => x.nom === n))
+      .filter((g) => g !== undefined)
+      .map((g) => libelleFiliere(g.specialites?.nom, g.annee, g.option_formation))
+      .at(0) ?? "—";
+
   const suivis: SuiviModule[] = [...parModule.values()]
     .map((b) => {
       let cumul = 0;
@@ -408,16 +466,46 @@ export async function getCahierDonnees(): Promise<CahierDonnees> {
         };
       });
 
+      /*
+        Les fiches des séances réalisées, dans l'ordre. Seulement celles-là :
+        une fiche de séance à venir n'a pas sa place dans un document qui rend
+        compte de ce qui a été fait.
+
+        Le rappel d'une fiche est ce que la séance précédente demandait de
+        préparer — c'est précisément ce sur quoi celle-ci revient.
+      */
+      const faites = [...b.seances.values()].filter((s) => s.contenu_realise);
+      const fiches: FicheOfficielle[] = [];
+      faites.forEach((s, i) => {
+        const contenu = ficheDeLaSeance.get(s.id);
+        if (!contenu) return;
+        const groupeDeLaSeance = lignesGroupes.find((g) =>
+          s.seance_groupes.some((l) => l.groupe_id === g.id),
+        );
+        fiches.push(
+          enCanevasOfficiel(lireFiche(contenu, minutes(s.duree_prevue)), {
+            date: s.date,
+            dureeMinutes: minutes(s.duree_prevue),
+            // Le groupe à qui la séance a été donnée ; à défaut, tous ceux du
+            // module, réunis comme en tête du tableau de suivi.
+            groupe:
+              groupeDeLaSeance?.nom ??
+              [...b.groupes].sort((x, y) => x.localeCompare(y, "fr")).join(" et "),
+            filiere: filiereDuModule(b),
+            annee: groupeDeLaSeance?.annee ?? null,
+            module: b.module,
+            rappel: faites[i - 1]?.a_prevoir_prochaine_seance ?? null,
+            aPrevoir: s.a_prevoir_prochaine_seance,
+          }),
+        );
+      });
+
       return {
+        fiches,
         module: b.module,
         // Le libellé du premier groupe du module : tous suivent la même filière
         // et la même année, sans quoi ils ne partageraient pas ses séances.
-        filiere:
-          [...b.groupes]
-            .map((n) => lignesGroupes.find((x) => x.nom === n))
-            .filter((g) => g !== undefined)
-            .map((g) => libelleFiliere(g.specialites?.nom, g.annee, g.option_formation))
-            .at(0) ?? "—",
+        filiere: filiereDuModule(b),
         groupes: [...b.groupes].sort((x, y) => x.localeCompare(y, "fr")).join(" et "),
         annees: [...b.annees].sort(),
         masseHoraire: b.masse || null,

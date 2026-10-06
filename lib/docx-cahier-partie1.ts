@@ -14,11 +14,14 @@
  * matières lisible, et non trois cents lignes de tableaux.
  */
 
-import { Paragraph, Table, TableCell, TableRow } from "docx";
+import { Paragraph, Table, TableCell, TableRow, TextRun, VerticalAlign } from "docx";
 import {
   BORDURES_TABLEAU,
   COULEURS,
+  MARGES_CELLULE,
   PLEINE_LARGEUR,
+  POLICES,
+  TAILLES,
   UTILE_COUCHEE,
   cellule,
   celluleEntete,
@@ -29,7 +32,13 @@ import {
   titre2,
   titre3,
 } from "@/lib/docx-charte";
-import type { CahierPartieI, Logigramme, SuiviModule } from "@/app/actions/cahier";
+import type {
+  CahierPartieI,
+  FicheOfficielle,
+  Logigramme,
+  SuiviModule,
+} from "@/app/actions/cahier";
+import type { Rubrique } from "@/lib/fiche-officielle";
 import type { MotifHebdomadaire } from "@/app/actions/motifs";
 import { JOURS } from "@/lib/motifs";
 import { CRENEAUX_JOUR } from "@/lib/creneaux";
@@ -526,6 +535,133 @@ function suiviSeances(m: SuiviModule): Table {
   });
 }
 
+// ── Les fiches de préparation d'un module ────────────────────────────────
+
+/*
+  Le canevas officiel, repris du modèle en annexe : six colonnes pour le bloc
+  d'identité, trois pour chacun des trois temps — la durée, la zone de contenu,
+  et la rubrique à droite. C'est la forme du document officiel, et une fiche
+  reliée au cahier doit s'y superposer.
+*/
+const TEMPS_FICHE = [0.9, 8, 1.9];
+
+/** Un paragraphe par ligne, dans une seule cellule. */
+function lignes(contenu: string[]): TableCell {
+  if (contenu.length === 0) return cellule("", { vide: true });
+  return new TableCell({
+    verticalAlign: VerticalAlign.TOP,
+    margins: MARGES_CELLULE,
+    children: contenu.map(
+      (l) =>
+        new Paragraph({
+          spacing: { before: 20, after: 20 },
+          children: [
+            new TextRun({
+              text: l,
+              font: POLICES.corps,
+              size: TAILLES.tableau,
+              color: COULEURS.corps,
+            }),
+          ],
+        }),
+    ),
+  });
+}
+
+/** Un des trois temps : ses rubriques, une par ligne. */
+function tempsDeLaFiche(titre: string, rubriques: Rubrique[]): Table {
+  return tableau({
+    width: PLEINE_LARGEUR,
+    borders: BORDURES_TABLEAU,
+    columnWidths: colonnes(UTILE_COUCHEE, TEMPS_FICHE),
+    rows: [
+      new TableRow({
+        tableHeader: true,
+        children: [celluleEntete("Durée"), celluleEntete(titre, { colonnes: 2 })],
+      }),
+      ...rubriques.map((r) =>
+        ligne([
+          cellule(r.minutes !== null ? `${r.minutes} min` : "", {
+            centre: true,
+          }),
+          lignes(r.lignes),
+          cellule(r.libelle, { gras: true }),
+        ]),
+      ),
+    ],
+  });
+}
+
+/** Une fiche de préparation, dans le canevas officiel. */
+function uneFiche(f: FicheOfficielle, numero: number): Bloc[] {
+  const duree =
+    f.dureeMinutes !== null
+      ? `${nbHeures(Math.round((f.dureeMinutes / 60) * 100) / 100)} heures`
+      : "";
+
+  const identite = tableau({
+    width: PLEINE_LARGEUR,
+    borders: BORDURES_TABLEAU,
+    columnWidths: colonnes(UTILE_COUCHEE, [2.4, 0.3, 1.3, 0.3, 1.3, 5.2]),
+    rows: [
+      ligne([
+        cellule(`Durée de la séance : ${duree}`, { colonnes: 5, gras: true }),
+        cellule(`Date de la séance : ${jour(f.date)}`, { gras: true }),
+      ]),
+      ligne([
+        cellule(`Groupe : ${f.groupe}`, { gras: true }),
+        cellule(f.annee === 2 ? "X" : "", { centre: true }),
+        cellule("2ème année", { centre: true }),
+        cellule(f.annee === 1 ? "X" : "", { centre: true }),
+        cellule("1ère année", { centre: true }),
+        cellule(`Filière : ${f.filiere}`, { gras: true }),
+      ]),
+      ligne([cellule(`Module : ${f.module}`, { colonnes: 6, gras: true })]),
+      ligne([
+        cellule(`Objectifs de la séance : ${f.objectifs}`, { colonnes: 6 }),
+      ]),
+    ],
+  });
+
+  const developpement = tableau({
+    width: PLEINE_LARGEUR,
+    borders: BORDURES_TABLEAU,
+    columnWidths: colonnes(UTILE_COUCHEE, TEMPS_FICHE),
+    rows: [
+      new TableRow({
+        tableHeader: true,
+        children: [
+          celluleEntete("Durée"),
+          celluleEntete("Développement"),
+          celluleEntete("Stratégies pédagogiques"),
+        ],
+      }),
+      ...f.developpement.map((r, i) =>
+        ligne([
+          cellule(r.minutes !== null ? `${r.minutes} min` : "", { centre: true }),
+          lignes([r.libelle, ...r.lignes]),
+          // Les stratégies ne se découpent pas par rubrique : elles tiennent
+          // dans la première case, à côté de tout le développement.
+          i === 0 ? lignes(f.strategies) : cellule(""),
+        ]),
+      ),
+    ],
+  });
+
+  return [
+    titre3(`Fiche de préparation n° ${numero} — ${jour(f.date)}`, {
+      nouvellePage: true,
+    }),
+    identite,
+    new Paragraph({ spacing: { after: 120 }, children: [] }),
+    tempsDeLaFiche("Introduction", f.introduction),
+    new Paragraph({ spacing: { after: 120 }, children: [] }),
+    developpement,
+    new Paragraph({ spacing: { after: 120 }, children: [] }),
+    tempsDeLaFiche("Conclusion", f.conclusion),
+  ];
+}
+
 // ── L'assemblage de la partie ────────────────────────────────────────────
 
 /**
@@ -592,6 +728,20 @@ export function partieI(
       suiviSeances(m),
       emargement(),
     );
+    /*
+      Les fiches du module suivent son tableau de suivi, et non toutes ensemble
+      à la fin : c'est ainsi que le cahier officiel se relie, et c'est ce qui
+      permet de juger la préparation d'un module d'un seul coup.
+    */
+    if (m.fiches.length > 0) {
+      blocs.push(
+        titre3(`Fiches de préparation — ${m.module}`, { nouvellePage: true }),
+        paragraphe(
+          `Les ${m.fiches.length} séance${m.fiches.length > 1 ? "s" : ""} réalisée${m.fiches.length > 1 ? "s" : ""} de ce module, dans le canevas officiel.`,
+        ),
+      );
+      m.fiches.forEach((f, n) => blocs.push(...uneFiche(f, n + 1)));
+    }
   });
 
   return blocs;
