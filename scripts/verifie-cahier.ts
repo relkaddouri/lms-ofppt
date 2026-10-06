@@ -187,6 +187,62 @@ const partie1: CahierPartieI = {
       ],
     },
   ],
+  /*
+    Deux motifs : celui en cours et le précédent, qui porte sa date de fin. Le
+    créneau alterné du mercredi vérifie que le rythme est écrit dans la case —
+    un document affiché au mur ne doit pas laisser croire qu'il revient chaque
+    semaine.
+  */
+  motifs: [
+    {
+      id: "m2",
+      libelle: "Second semestre",
+      date_debut: "2026-01-05",
+      date_fin: null,
+      courant: true,
+      creneaux: [
+        {
+          id: "c1",
+          jour_semaine: 1,
+          heure_debut: "08:30",
+          heure_fin: "11:00",
+          groupe_id: "g1",
+          groupeNom: "DES101",
+          recurrence: "hebdomadaire",
+          premiere_date: null,
+        },
+        {
+          id: "c2",
+          jour_semaine: 3,
+          heure_debut: "13:30",
+          heure_fin: "16:00",
+          groupe_id: "g2",
+          groupeNom: "DES102",
+          recurrence: "une_semaine_sur_deux",
+          premiere_date: "2026-01-07",
+        },
+      ],
+    },
+    {
+      id: "m1",
+      libelle: "Premier semestre",
+      date_debut: "2025-09-15",
+      date_fin: "2025-12-19",
+      courant: false,
+      creneaux: [
+        {
+          id: "c3",
+          jour_semaine: 2,
+          heure_debut: "08:30",
+          heure_fin: "13:30",
+          groupe_id: "g1",
+          groupeNom: "DES101",
+          recurrence: "hebdomadaire",
+          premiere_date: null,
+        },
+      ],
+    },
+  ],
   logigrammes: [
     {
       filiere: "Digital Design",
@@ -218,6 +274,7 @@ const partie1Vide: CahierPartieI = {
   modules: [],
   suivis: [],
   logigrammes: [],
+  motifs: [],
 };
 
 /*
@@ -525,9 +582,36 @@ verifie("Le total annuel affecté est la somme des masses horaires",
   piedModules[0] === "Total annuel affecté" && piedModules[1] === String(totalAttendu),
   piedModules.join("|"));
 
-// Les deux cadres à coller existent et portent leur consigne.
-verifie("Cadre de l'emploi du temps",
-  p.texte.includes("Coller ici votre emploi du temps émargé par le Directeur pédagogique"));
+// L'emploi du temps : un motif par période, avec sa grille.
+verifie("Chaque motif porte sa période de validité",
+  p.texte.includes("Second semestre — à partir du 05/01/2026") &&
+    p.texte.includes("Premier semestre — du 15/09/2025 au 19/12/2025"),
+  "");
+const edt = tableaux.map(grille).find((g) => g[0]?.[0] === "Horaire") ?? [];
+verifie("La grille porte les six jours",
+  (edt[0] ?? []).join("|") === "Horaire|Lundi|Mardi|Mercredi|Jeudi|Vendredi|Samedi",
+  (edt[0] ?? []).join("|"));
+verifie("Les quatre tranches horaires",
+  edt.length === 5 && edt[1]?.[0] === "08:30 – 11:00" && edt[4]?.[0] === "16:00 – 18:30",
+  edt.map((l) => l[0]).join("|"));
+verifie("Un groupe tombe dans la case de son jour et de son heure",
+  edt[1]?.[1] === "DES101" && edt[1]?.[2] === "",
+  (edt[1] ?? []).join("|"));
+verifie("Un créneau alterné dit son rythme",
+  edt[3]?.[3]?.startsWith("DES102 (") === true, (edt[3] ?? []).join("|"));
+/*
+  Un créneau de cinq heures couvre deux tranches : il paraît dans les deux,
+  comme à l'écran. Tronqué, il laisserait croire à une demi-journée libre.
+*/
+const edtAncien = tableaux
+  .map(grille)
+  .filter((g) => g[0]?.[0] === "Horaire")
+  .at(1) ?? [];
+verifie("Un créneau long occupe toutes les tranches qu'il recouvre",
+  edtAncien[1]?.[2] === "DES101" && edtAncien[2]?.[2] === "DES101",
+  `${edtAncien[1]?.[2]} / ${edtAncien[2]?.[2]}`);
+verifie("Le cadre vide de l'emploi du temps a disparu",
+  !p.texte.includes("Coller ici votre emploi du temps"));
 
 // Le suivi du module : l'en-tête, puis une ligne par séance.
 verifie("En-tête du module : masse horaire et nombre de séances",
@@ -1139,6 +1223,8 @@ verifie("Fiche d'identité : dix lignes même à vide", lignesVide === 10, `${li
   Le modèle de logigramme en annexe porte aussi « N° Modules » : on vérifie donc
   que celui de la section C n'est pas là, et non l'absence du mot.
 */
+verifie("Sans motif, le cadre à coller revient",
+  q.texte.includes("Coller ici votre emploi du temps émargé par le Directeur pédagogique"));
 verifie("Sans groupe, la section C ne laisse pas de logigramme",
   !q.texte.includes("Logigramme — "));
 verifie("Les annexes paraissent même sur un compte neuf",

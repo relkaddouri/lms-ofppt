@@ -30,6 +30,10 @@ import {
   titre3,
 } from "@/lib/docx-charte";
 import type { CahierPartieI, Logigramme, SuiviModule } from "@/app/actions/cahier";
+import type { MotifHebdomadaire } from "@/app/actions/motifs";
+import { JOURS } from "@/lib/motifs";
+import { CRENEAUX_JOUR } from "@/lib/creneaux";
+import { libelleRecurrence } from "@/lib/recurrence";
 
 /** Une pièce du document : un titre, un paragraphe ou un tableau. */
 type Bloc = Paragraph | Table;
@@ -220,6 +224,76 @@ function cadreAColler(consigne: string, hauteurMm: number): Table {
       }),
     ],
   });
+}
+
+// ── B : L'emploi du temps ────────────────────────────────────────────────
+
+/**
+ * Un motif hebdomadaire, dessiné comme à l'écran : les jours en colonnes, les
+ * créneaux en lignes, le groupe dans la case.
+ *
+ * Le cahier officiel réserve une page où coller l'emploi du temps émargé. La
+ * plateforme le connaît — c'est lui qui a placé toutes les séances — et le
+ * dessine donc, avec sa période de validité : un rythme change en cours
+ * d'année, et il faut pouvoir dire lequel s'appliquait quand.
+ */
+function unMotif(m: MotifHebdomadaire): Bloc[] {
+  const periode = m.date_fin
+    ? `du ${jour(m.date_debut)} au ${jour(m.date_fin)}`
+    : `à partir du ${jour(m.date_debut)}`;
+
+  const entete = new TableRow({
+    tableHeader: true,
+    children: [
+      celluleEntete("Horaire"),
+      ...JOURS.map((j) => celluleEntete(j.long)),
+    ],
+  });
+
+  const lignes = CRENEAUX_JOUR.map((c, i) => {
+    const cellules = JOURS.map((j) => {
+      /*
+        Les créneaux du jour qui touchent cette tranche horaire. Un créneau de
+        trois heures en recouvre deux : il paraît dans les deux cases, comme à
+        l'écran, plutôt que d'être tronqué.
+      */
+      const ici = m.creneaux.filter(
+        (x) =>
+          x.jour_semaine === j.valeur &&
+          x.heure_debut < c.fin &&
+          x.heure_fin > c.debut,
+      );
+      const texte = ici
+        .map((x) => {
+          const rythme = libelleRecurrence(x);
+          return rythme ? `${x.groupeNom} (${rythme})` : x.groupeNom;
+        })
+        .join(" · ");
+      return cellule(texte, { centre: true, alterne: i % 2 === 1 });
+    });
+
+    return ligne([
+      cellule(`${c.debut} – ${c.fin}`, {
+        centre: true,
+        gras: true,
+        fond: COULEURS.lavis,
+      }),
+      ...cellules,
+    ]);
+  });
+
+  return [
+    titre3(`${m.libelle?.trim() || "Rythme hebdomadaire"} — ${periode}`, {
+      nouvellePage: true,
+    }),
+    tableau({
+      width: PLEINE_LARGEUR,
+      borders: BORDURES_TABLEAU,
+      columnWidths: colonnes(UTILE_COUCHEE, [1.4, ...JOURS.map(() => 1.6)]),
+      rows: [entete, ...lignes],
+    }),
+    emargement(),
+  ];
 }
 
 // ── C : Le logigramme de la filière ──────────────────────────────────────
@@ -475,11 +549,20 @@ export function partieI(
     ...modulesPrisEnCharge(data),
 
     titre2("B- Emploi du temps du formateur", { nouvellePage: true }),
-    cadreAColler(
-      "Coller ici votre emploi du temps émargé par le Directeur pédagogique",
-      150,
-    ),
-    emargement(),
+    ...(data.motifs.length > 0
+      ? [
+          paragraphe(
+            "Le rythme hebdomadaire qui place les séances. Un motif par période de validité, du plus récent au plus ancien.",
+          ),
+          ...data.motifs.flatMap(unMotif),
+        ]
+      : [
+          cadreAColler(
+            "Coller ici votre emploi du temps émargé par le Directeur pédagogique",
+            150,
+          ),
+          emargement(),
+        ]),
 
     titre2("C- Logigramme de la filière", { nouvellePage: true }),
     paragraphe(

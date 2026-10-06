@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { libelleFiliere } from "@/lib/filiere";
 import { libelleModule } from "@/lib/modules";
 import { getPortee } from "@/app/actions/annees";
+import { getMotifs, type MotifHebdomadaire } from "@/app/actions/motifs";
 import {
   evaluations,
   type CahierPartieII,
@@ -102,6 +103,12 @@ export type CahierPartieI = {
   modules: ModulePrisEnCharge[];
   suivis: SuiviModule[];
   logigrammes: Logigramme[];
+  /*
+    Les rythmes hebdomadaires de l'année, du plus récent au plus ancien. Un
+    motif n'est pas figé sur l'année : quand il change, le cahier doit montrer
+    lequel s'appliquait et quand, d'où la période portée par chacun.
+  */
+  motifs: MotifHebdomadaire[];
 };
 
 /** Tout ce que le cahier tire de la base, en une lecture. */
@@ -122,7 +129,7 @@ const MAX_CONTROLES = 500;
 const MAX_PASSATIONS = 8000;
 
 const VIDE: CahierDonnees = {
-  partieI: { groupes: [], modules: [], suivis: [], logigrammes: [] },
+  partieI: { groupes: [], modules: [], suivis: [], logigrammes: [], motifs: [] },
   partieII: { controlesContinus: [], examens: [], notes: [] },
 };
 
@@ -131,7 +138,8 @@ export async function getCahierDonnees(): Promise<CahierDonnees> {
   const { groupeIds } = await getPortee();
   if (groupeIds.length === 0) return VIDE;
 
-  const [groupes, affectations, stagiaires, seances, controles] = await Promise.all([
+  const [groupes, affectations, stagiaires, seances, controles, motifs] =
+    await Promise.all([
     supabase
       .from("groupes")
       .select("id, nom, annee, option_formation, specialites(nom)")
@@ -176,6 +184,9 @@ export async function getCahierDonnees(): Promise<CahierDonnees> {
       .in("groupe_id", groupeIds)
       .in("type", ["CC", "EFM"])
       .limit(MAX_CONTROLES),
+    // L'emploi du temps se lit déjà ailleurs, et de la bonne façon : on
+    // reprend cette lecture plutôt que d'en écrire une seconde qui divergerait.
+    getMotifs(),
   ]);
 
   for (const r of [groupes, affectations, stagiaires, seances, controles]) {
@@ -426,6 +437,7 @@ export async function getCahierDonnees(): Promise<CahierDonnees> {
       modules: modulesPrisEnCharge,
       suivis,
       logigrammes: logigrammes(lignesGroupes, lignesAffectations, lignesSeances),
+      motifs,
     },
     partieII: evaluations(
       lignesGroupes,
