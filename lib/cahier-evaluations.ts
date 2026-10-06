@@ -50,6 +50,10 @@ export type NoteStagiaire = {
   moyenneCC: number | null;
   /** La note d'EFM, ramenée sur vingt : elle se barème sur quarante. */
   efm: number | null;
+  /** 40 % des contrôles continus et 60 % de l'EFM. Rien si l'un manque. */
+  moyenneModule: number | null;
+  /** L'appréciation qui va avec la moyenne du module. Vide s'il n'y en a pas. */
+  appreciation: string;
 };
 
 /** Un module, ses heures et les notes de son groupe. */
@@ -108,6 +112,58 @@ export type LigneStagiaire = {
   mieux vaut un tableau plus large qu'un contrôle qui disparaît du dossier.
 */
 const COLONNES_CC_OFFICIELLES = 5;
+
+/*
+  La moyenne d'un module : 40 % des contrôles continus, 60 % de l'examen de fin
+  de module. Les deux poids sont nommés parce qu'ils viennent d'une règle de la
+  Direction et non d'un calcul : le jour où elle change, elle change ici.
+*/
+const POIDS_CC = 0.4;
+const POIDS_EFM = 0.6;
+
+/**
+ * La moyenne d'un module.
+ *
+ * Rien si l'une des deux parts manque. Un module dont l'EFM n'a pas encore eu
+ * lieu n'a pas de moyenne, et une moyenne calculée sur la seule part des
+ * contrôles continus serait lue comme définitive.
+ */
+export function moyenneModule(
+  moyenneCC: number | null,
+  efm: number | null,
+): number | null {
+  if (moyenneCC === null || efm === null) return null;
+  return Math.round((moyenneCC * POIDS_CC + efm * POIDS_EFM) * 100) / 100;
+}
+
+/*
+  Les sept crans d'appréciation, du plus haut au plus bas, chacun avec le seuil
+  qu'il faut atteindre.
+
+  Les cinq premiers sont ceux de l'usage. Les deux derniers manquaient : une note
+  sous dix ne valide pas le module, et laisser la case vide aurait fait croire à
+  un oubli de saisie plutôt qu'à un échec.
+*/
+const APPRECIATIONS: [number, string][] = [
+  [18, "Excellent"],
+  [16, "Très bien"],
+  [14, "Bien"],
+  [12, "Assez bien"],
+  [10, "Passable"],
+  [5, "Insuffisant"],
+  [0, "Très insuffisant"],
+];
+
+/**
+ * L'appréciation qui accompagne une note sur vingt.
+ *
+ * Sans note, pas d'appréciation : la case reste vide, et c'est le formateur qui
+ * l'écrira quand la note existera.
+ */
+export function appreciation(note: number | null): string {
+  if (note === null) return "";
+  return APPRECIATIONS.find(([seuil]) => note >= seuil)?.[1] ?? "";
+}
 
 /** Une note ramenée sur vingt et arrondie au centième, ou rien. */
 function sur20(note: number | null, type: string, bareme: number | null): number | null {
@@ -284,14 +340,19 @@ export function evaluations(
           return sur20(p?.note ?? null, x.type, x.bareme_total);
         });
         const pEfm = c.efm ? notePar.get(`${c.efm.id}|${e.id}`) : undefined;
+        const moyCC = moyenne(cc);
+        const noteEfm = c.efm
+          ? sur20(pEfm?.note ?? null, c.efm.type, c.efm.bareme_total)
+          : null;
+        const moyModule = moyenneModule(moyCC, noteEfm);
         return {
           numeroInscription: e.cef?.trim() || e.cne?.trim() || "",
           nom: `${e.nom} ${e.prenom}`.trim(),
           cc,
-          moyenneCC: moyenne(cc),
-          efm: c.efm
-            ? sur20(pEfm?.note ?? null, c.efm.type, c.efm.bareme_total)
-            : null,
+          moyenneCC: moyCC,
+          efm: noteEfm,
+          moyenneModule: moyModule,
+          appreciation: appreciation(moyModule),
         };
       }),
     };

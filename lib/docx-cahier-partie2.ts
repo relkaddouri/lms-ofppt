@@ -293,14 +293,14 @@ function tableauNotes(m: NotesModule): Table {
       ),
       cellule(note(e.moyenneCC), { centre: true, alterne: pair }),
       cellule(note(e.efm), { centre: true, alterne: pair }),
-      /*
-        La moyenne du module et l'appréciation restent à remplir. La pondération
-        entre contrôles continus et EFM est une règle de la Direction, et la
-        plateforme ne la connaît pas : un chiffre inventé dans un document
-        officiel vaut moins qu'une case vide.
-      */
-      cellule("", { alterne: pair }),
-      cellule("", { alterne: pair }),
+      // 40 % des contrôles continus, 60 % de l'EFM. Vide tant que l'EFM n'a
+      // pas eu lieu : un module sans examen n'a pas de moyenne.
+      cellule(note(e.moyenneModule), {
+        centre: true,
+        gras: true,
+        alterne: pair,
+      }),
+      cellule(e.appreciation, { centre: true, alterne: pair }),
     ]);
   });
 
@@ -325,9 +325,9 @@ function tableauNotes(m: NotesModule): Table {
 /**
  * La fiche d'appréciation d'un module.
  *
- * Elle ne porte que des noms : l'appréciation s'écrit à la main, module par
- * module, et c'est ce que la Direction lit en premier. Les lignes sont donc
- * aérées pour qu'on puisse y écrire une phrase.
+ * L'appréciation vient de la moyenne du module, selon les sept crans de l'usage.
+ * Les lignes restent aérées : c'est ce que la Direction lit en premier, et le
+ * formateur y ajoute souvent une phrase à la main.
  */
 function ficheAppreciation(m: NotesModule): Bloc[] {
   const entete = new TableRow({
@@ -343,7 +343,7 @@ function ficheAppreciation(m: NotesModule): Bloc[] {
     ligne([
       cellule(e.numeroInscription, { centre: true, alterne: i % 2 === 1 }),
       cellule(e.nom, { alterne: i % 2 === 1 }),
-      cellule("", { vide: true, alterne: i % 2 === 1 }),
+      cellule(e.appreciation, { vide: true, alterne: i % 2 === 1 }),
     ]),
   );
 

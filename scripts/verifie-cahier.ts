@@ -20,7 +20,9 @@ import type {
   CahierPartieII,
 } from "@/app/actions/cahier";
 import {
+  appreciation,
   evaluations,
+  moyenneModule,
   type LigneControle,
   type LignePassation,
   type LigneStagiaire,
@@ -258,6 +260,9 @@ const partie2: CahierPartieII = {
           cc: [14, 16],
           moyenneCC: 15,
           efm: 13.5,
+          // 0,4 × 15 + 0,6 × 13,5 = 14,1
+          moyenneModule: 14.1,
+          appreciation: "Bien",
         },
         {
           numeroInscription: "17980002",
@@ -265,6 +270,9 @@ const partie2: CahierPartieII = {
           cc: [12, null],
           moyenneCC: 12,
           efm: null,
+          // Sans EFM, pas de moyenne de module, donc pas d'appréciation.
+          moyenneModule: null,
+          appreciation: "",
         },
         {
           numeroInscription: "17980003",
@@ -272,6 +280,8 @@ const partie2: CahierPartieII = {
           cc: [null, null],
           moyenneCC: null,
           efm: null,
+          moyenneModule: null,
+          appreciation: "",
         },
       ],
     },
@@ -769,6 +779,51 @@ const noteKhadijaCalc = evalEssai.notes[0]?.stagiaires[1];
 verifie("Une note manquante ne compte pas dans la moyenne",
   noteKhadijaCalc?.cc.join(",") === "12," && noteKhadijaCalc?.moyenneCC === 12,
   `${noteKhadijaCalc?.cc.join(",")} → ${noteKhadijaCalc?.moyenneCC}`);
+/*
+  La pondération vient de la Direction : 40 % des contrôles continus, 60 % de
+  l'examen. Les deux premiers cas sont calculés à la main pour que le contrôle ne
+  se contente pas de répéter le code.
+*/
+for (const [moyCC, efm, attendu] of [
+  [15, 13.5, 14.1],
+  [9, 12, 10.8],
+  [20, 20, 20],
+] as [number, number, number][]) {
+  verifie(`Moyenne du module : 40 % de ${moyCC} et 60 % de ${efm} font ${attendu}`,
+    moyenneModule(moyCC, efm) === attendu, String(moyenneModule(moyCC, efm)));
+}
+verifie("Sans EFM, le module n'a pas de moyenne", moyenneModule(15, null) === null);
+verifie("Sans contrôle continu non plus", moyenneModule(null, 13) === null);
+
+/*
+  Les sept crans, pris à leur seuil exact et juste en dessous : c'est là qu'une
+  comparaison mal posée se voit.
+*/
+for (const [note, attendu] of [
+  [20, "Excellent"],
+  [18, "Excellent"],
+  [17.99, "Très bien"],
+  [16, "Très bien"],
+  [15.99, "Bien"],
+  [14, "Bien"],
+  [13.99, "Assez bien"],
+  [12, "Assez bien"],
+  [11.99, "Passable"],
+  [10, "Passable"],
+  [9.99, "Insuffisant"],
+  [5, "Insuffisant"],
+  [4.99, "Très insuffisant"],
+  [0, "Très insuffisant"],
+] as [number, string][]) {
+  verifie(`Appréciation de ${note} : ${attendu}`, appreciation(note) === attendu,
+    appreciation(note));
+}
+verifie("Sans note, pas d'appréciation", appreciation(null) === "");
+
+verifie("Le calcul porte la moyenne du module et son appréciation",
+  noteSalmaCalc?.moyenneModule === 14.1 && noteSalmaCalc?.appreciation === "Bien",
+  `${noteSalmaCalc?.moyenneModule} → ${noteSalmaCalc?.appreciation}`);
+
 verifie("Les heures réalisées du module se somment",
   evalEssai.notes[0]?.masseHoraireRealisee === 7.5,
   String(evalEssai.notes[0]?.masseHoraireRealisee));
@@ -843,14 +898,16 @@ verifie("Les notes et la moyenne du premier stagiaire",
 verifie("Les colonnes CC non utilisées restent vides",
   noteSalma[4] === "" && noteSalma[5] === "" && noteSalma[6] === "",
   noteSalma.join("|"));
-verifie("La moyenne du module et l'appréciation restent à remplir à la main",
-  noteSalma[9] === "" && noteSalma[10] === "", noteSalma.join("|"));
+verifie("La moyenne du module et son appréciation sont écrites",
+  noteSalma[9] === "14,1" && noteSalma[10] === "Bien", noteSalma.join("|"));
 const noteKhadija = notesTbl[3] ?? [];
 verifie("Une note manquante ne fausse pas la moyenne",
   noteKhadija[3] === "" && noteKhadija[7] === "12", noteKhadija.join("|"));
 const noteImane = notesTbl[4] ?? [];
 verifie("Un stagiaire sans note n'a pas de moyenne",
   noteImane[7] === "" && noteImane[8] === "", noteImane.join("|"));
+verifie("Sans EFM, la moyenne du module et l'appréciation restent vides",
+  noteKhadija[9] === "" && noteKhadija[10] === "", noteKhadija.join("|"));
 
 // La fiche d'appréciation : les noms, et de la place pour écrire.
 const apprecTbl =
@@ -859,9 +916,12 @@ verifie("La fiche d'appréciation porte trois colonnes",
   (apprecTbl[0] ?? []).join("|") ===
     "N° d'Ins|Nom et prénom des stagiaires|Appréciation",
   (apprecTbl[0] ?? []).join("|"));
-verifie("Elle liste les stagiaires et laisse la colonne libre",
-  (apprecTbl[1] ?? [])[1] === "BENNANI Salma" && (apprecTbl[1] ?? [])[2] === "",
+verifie("Elle porte l'appréciation tirée de la moyenne du module",
+  (apprecTbl[1] ?? [])[1] === "BENNANI Salma" && (apprecTbl[1] ?? [])[2] === "Bien",
   (apprecTbl[1] ?? []).join("|"));
+verifie("Et laisse la case libre quand il n'y a pas encore de moyenne",
+  (apprecTbl[2] ?? [])[1] === "FAHMI Khadija" && (apprecTbl[2] ?? [])[2] === "",
+  (apprecTbl[2] ?? []).join("|"));
 
 // Le compte vide : le cahier sort, et ses cases portent un tiret.
 const q = await ouvrir(vide, neuf);
