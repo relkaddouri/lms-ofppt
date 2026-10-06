@@ -365,7 +365,10 @@ export function dessinerResultat(
 
     // La réponse attendue porte le seul point de couleur et le seul fond :
     // c'est ce qu'on cherche en premier quand on conteste un point.
-    bloc("VOTRE RÉPONSE", l.reponse, COULEURS.ardoiseClaire);
+    // L'étiquette prend la couleur de son filet. Elle doit donc rester une
+    // couleur de TEXTE : « commentaire du formateur » portait jusqu'ici une
+    // couleur de bordure, à 1,53:1 sur blanc — invisible une fois imprimée.
+    bloc("VOTRE RÉPONSE", l.reponse, COULEURS.ardoise);
     // Mise en forme à l'affichage, pas en base : le texte du formateur
     // reste le sien, mot pour mot. Les corrigés déjà écrits énumèrent dans
     // le fil de la phrase, et c'est illisible sur une pièce qu'on dépose.
@@ -375,7 +378,7 @@ export function dessinerResultat(
       COULEURS.sarcelle,
       [233, 242, 247],
     );
-    bloc("COMMENTAIRE DU FORMATEUR", l.commentaire, COULEURS.bordureForte);
+    bloc("COMMENTAIRE DU FORMATEUR", l.commentaire, COULEURS.ardoise);
 
     // Entre deux questions, davantage qu'entre deux blocs d'une même question :
     // c'est ce qui fait voir, en diagonale, où une question s'achève.
