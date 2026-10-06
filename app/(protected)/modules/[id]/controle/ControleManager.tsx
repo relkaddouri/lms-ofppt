@@ -212,8 +212,11 @@ const FORMATS: readonly Choix<FormatControle>[] = [
     meta: "Salle informatique",
   },
   {
+    // La valeur enregistrée reste « mixte » : c'est celle que portent les
+    // contrôles déjà créés, et la renommer demanderait une migration pour un
+    // gain nul. Seul le mot change, et c'est celui de l'OFPPT.
     cle: "mixte",
-    label: "Mixte",
+    label: "Synthèse",
     detail: "Partie écrite puis mise en œuvre sur machine.",
     meta: "Salle informatique",
   },

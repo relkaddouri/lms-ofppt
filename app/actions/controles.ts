@@ -1148,10 +1148,12 @@ async function enteteControle(
       : "EFML"
     : `${test ? "TEST" : "CC"}${rang > 0 ? rang : ""}`;
 
+  // « Synthèse » est le terme de l'OFPPT pour une épreuve qui mêle l'écrit et
+  // la mise en œuvre. La clé reste « mixte », qui est la valeur enregistrée.
   const FORMES: Record<string, string> = {
     theorique: "Théorique",
     pratique: "Pratique",
-    mixte: "Mixte",
+    mixte: "Synthèse",
   };
 
   const identification: Identification = {
