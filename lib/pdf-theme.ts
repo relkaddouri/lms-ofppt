@@ -29,14 +29,31 @@ export const COULEURS = {
   encreFoncee: rvb("#25303F"),
   /** Texte courant — jamais l'encre, qui est réservée aux titres (§1). */
   corps: rvb("#3F4E62"),
-  ardoise: rvb("#6B7A8D"),
-  ardoiseClaire: rvb("#8C99A8"),
-  muet: rvb("#A9B4C0"),
+  /*
+    Les gris ont été assombris pour l'impression.
+    Mesurés sur blanc, les anciens tombaient sous le seuil de lisibilité d'un
+    petit texte — 4,5:1 : ardoise 4,38, ardoiseClaire 2,90, muet 2,10. À
+    l'écran cela passait encore ; sorti d'une imprimante laser, le gris clair
+    se délave et une étiquette disparaît. Le dossier part à l'administration,
+    il se lit sur papier.
+
+    Les valeurs retenues gardent la teinte bleu-ardoise de la maison et
+    passent le seuil, y compris sur le fond bleu du bloc « réponse attendue ».
+  */
+  ardoise: rvb("#5B6A7C"),
+  ardoiseClaire: rvb("#667485"),
+  muet: rvb("#687584"),
   /** Sarcelle : information, liens, accents non alarmants. */
-  sarcelle: rvb("#2E7D9E"),
-  vert: rvb("#3C8C5C"),
+  sarcelle: rvb("#226A89"),
+  /*
+    Les deux couleurs de signal passent le même seuil, pour la même raison :
+    4,12 et 3,68 sur blanc avant correction. Un vert pâle et un corail vif
+    paraissent nets à l'écran et se délavent au tirage ; ce sont pourtant eux
+    qui portent l'information qu'on cherche du regard.
+  */
+  vert: rvb("#368050"),
   /** Corail : l'alerte, et rien d'autre — au plus un usage par document. */
-  corail: rvb("#E2574C"),
+  corail: rvb("#D04438"),
   blanc: rvb("#FFFFFF"),
   papier: rvb("#F6F7F9"),
   papierAlt: rvb("#FAFBFC"),
