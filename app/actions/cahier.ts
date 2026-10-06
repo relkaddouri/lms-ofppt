@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { libelleFiliere } from "@/lib/filiere";
 import { libelleModule } from "@/lib/modules";
 import { getPortee } from "@/app/actions/annees";
 import {
@@ -133,7 +134,7 @@ export async function getCahierDonnees(): Promise<CahierDonnees> {
   const [groupes, affectations, stagiaires, seances, controles] = await Promise.all([
     supabase
       .from("groupes")
-      .select("id, nom, annee, specialites(nom)")
+      .select("id, nom, annee, option_formation, specialites(nom)")
       .in("id", groupeIds)
       .order("nom"),
     supabase
@@ -253,7 +254,7 @@ export async function getCahierDonnees(): Promise<CahierDonnees> {
   }
 
   const prisEnCharge: GroupePrisEnCharge[] = lignesGroupes.map((g) => ({
-    filiere: g.specialites?.nom ?? "—",
+    filiere: libelleFiliere(g.specialites?.nom, g.annee, g.option_formation),
     annee: g.annee,
     nom: g.nom,
     masseHoraireAnnuelle: masseParGroupe.get(g.id) ?? null,
@@ -282,7 +283,10 @@ export async function getCahierDonnees(): Promise<CahierDonnees> {
   }
 
   const filiereDuGroupe = new Map(
-    lignesGroupes.map((g) => [g.id, g.specialites?.nom ?? "—"]),
+    lignesGroupes.map((g) => [
+      g.id,
+      libelleFiliere(g.specialites?.nom, g.annee, g.option_formation),
+    ]),
   );
   const anneeDuGroupe = new Map(lignesGroupes.map((g) => [g.id, g.annee]));
 
@@ -395,12 +399,14 @@ export async function getCahierDonnees(): Promise<CahierDonnees> {
 
       return {
         module: b.module,
-        filiere: [...b.groupes]
-          .map((n) => {
-            const g = lignesGroupes.find((x) => x.nom === n);
-            return g?.specialites?.nom ?? null;
-          })
-          .find((f): f is string => f !== null) ?? "—",
+        // Le libellé du premier groupe du module : tous suivent la même filière
+        // et la même année, sans quoi ils ne partageraient pas ses séances.
+        filiere:
+          [...b.groupes]
+            .map((n) => lignesGroupes.find((x) => x.nom === n))
+            .filter((g) => g !== undefined)
+            .map((g) => libelleFiliere(g.specialites?.nom, g.annee, g.option_formation))
+            .at(0) ?? "—",
         groupes: [...b.groupes].sort((x, y) => x.localeCompare(y, "fr")).join(" et "),
         annees: [...b.annees].sort(),
         masseHoraire: b.masse || null,

@@ -13,6 +13,7 @@
  */
 
 import { baremeAttendu, noteSur20 } from "@/lib/controles";
+import { libelleFiliere } from "@/lib/filiere";
 import { libelleModule } from "@/lib/modules";
 import { heures, type LigneAffectation, type LigneGroupe, type LigneSeance } from "@/lib/logigramme";
 
@@ -241,7 +242,7 @@ export function evaluations(
         moduleId,
         groupeId,
         module: nomDuModule(moduleId),
-        filiere: g?.specialites?.nom ?? "—",
+        filiere: libelleFiliere(g?.specialites?.nom, g?.annee, g?.option_formation),
         groupe: g?.nom ?? "—",
         annee: g?.annee ?? null,
         cc: liste.filter((c) => c.type === "CC"),

@@ -583,7 +583,13 @@ for (const [jour, attendu] of [
 verifie("Une date illisible ne rend pas de semaine", semaineIso("13/09/2021") === null);
 
 const groupeEssai: LigneGroupe[] = [
-  { id: "g1", nom: "DES101", annee: 2, specialites: { nom: "Digital Design" } },
+  {
+    id: "g1",
+    nom: "DES101",
+    annee: 2,
+    option_formation: "UX designer",
+    specialites: { nom: "Digital Design" },
+  },
 ];
 
 const affecte = (
@@ -639,6 +645,24 @@ const dessine = logigrammes(
 )[0];
 
 verifie("Un logigramme par groupe", dessine !== undefined);
+/*
+  Le cahier ne nomme pas la filière toute seule : il nomme le cycle. Une
+  deuxième année sans option écrit « Spécialisation », qui reste vrai.
+*/
+verifie("La filière d'une deuxième année porte son option",
+  dessine?.filiere === "Digital Design - Option UX designer", dessine?.filiere);
+verifie("Celle d'une première année porte le tronc commun",
+  logigrammes(
+    [{ ...groupeEssai[0]!, annee: 1, option_formation: null }],
+    [affecte("m102", "M102", "tronc_commun", 2, 55)],
+    [programme("2025-10-13", "m102", 5)],
+  )[0]?.filiere === "Digital Design - Tronc Commun");
+verifie("Une deuxième année sans option écrit « Spécialisation »",
+  logigrammes(
+    [{ ...groupeEssai[0]!, option_formation: null }],
+    [affecte("m102", "M102", "specialisation", 2, 55)],
+    [programme("2025-10-13", "m102", 5)],
+  )[0]?.filiere === "Digital Design - Spécialisation");
 verifie("Les colonnes suivent le rang du programme, pas l'ordre des affectations",
   dessine?.modules.map((m) => m.code).join(",") === "M102,M204",
   dessine?.modules.map((m) => m.code).join(","));

@@ -8,6 +8,8 @@
  * être mise en échec sans base de données.
  */
 
+import { libelleFiliere } from "@/lib/filiere";
+
 /*
   Les formes que rendent les requêtes. Déclarées ici parce que la lecture et
   le logigramme les partagent : Supabase ne type pas les jointures imbriquées,
@@ -17,6 +19,8 @@ export type LigneGroupe = {
   id: string;
   nom: string;
   annee: number | null;
+  /** L'option de deuxième année, qui entre dans le nom de la filière. */
+  option_formation: string | null;
   specialites: { nom: string } | null;
 };
 
@@ -240,7 +244,7 @@ export function logigrammes(
       }
 
       return {
-        filiere: g.specialites?.nom ?? "—",
+        filiere: libelleFiliere(g.specialites?.nom, g.annee, g.option_formation),
         groupe: g.nom,
         modules: colonnes.map((c, i) => ({
           numero: c.rang ?? i + 1,

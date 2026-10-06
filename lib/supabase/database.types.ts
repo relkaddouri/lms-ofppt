@@ -1011,6 +1011,7 @@ export type Database = {
           formateur_id: string | null
           id: string
           nom: string
+          option_formation: string | null
           specialite_id: string | null
         }
         Insert: {
@@ -1020,6 +1021,7 @@ export type Database = {
           formateur_id?: string | null
           id?: string
           nom: string
+          option_formation?: string | null
           specialite_id?: string | null
         }
         Update: {
@@ -1029,6 +1031,7 @@ export type Database = {
           formateur_id?: string | null
           id?: string
           nom?: string
+          option_formation?: string | null
           specialite_id?: string | null
         }
         Relationships: [
