@@ -89,6 +89,8 @@ export type LigneControle = {
   date_administration: string | null;
   date_envoi_propositions: string | null;
   bareme_total: number | null;
+  /** La durée de l'épreuve : elle compte dans la masse horaire réalisée. */
+  duree_heures: number | null;
 };
 
 export type LignePassation = {
@@ -309,18 +311,38 @@ export function evaluations(
 
   // ── Les notes ───────────────────────────────────────────────────────────
 
-  /** Les heures réellement faites dans un module, pour un groupe. */
+  /**
+   * Les heures réellement faites dans un module, pour un groupe.
+   *
+   * Les séances cochées « fait », avec leurs heures corrigées ou, à défaut,
+   * celles prévues — la règle de l'écran de progression. Et les épreuves déjà
+   * administrées : un contrôle continu de deux heures occupe deux heures de
+   * formation, et le cahier les compte.
+   */
   const realisees = (moduleId: string, groupeId: string): number | null => {
     let total = 0;
     let vu = false;
+
     for (const s of seances) {
       if (s.module_id !== moduleId) continue;
+      if (s.statut !== "fait") continue;
       if (!s.seance_groupes.some((l) => l.groupe_id === groupeId)) continue;
-      const h = heures(s.duree_realisee);
+      const h = heures(s.duree_realisee) ?? heures(s.duree_prevue);
       if (h === null) continue;
       total += h;
       vu = true;
     }
+
+    for (const c of retenus) {
+      if (c.module_id !== moduleId || c.groupe_id !== groupeId) continue;
+      // Une épreuve non encore passée ne compte pas : elle n'a pas eu lieu.
+      if (dateDeRealisation(c) === null) continue;
+      const h = heures(c.duree_heures);
+      if (h === null) continue;
+      total += h;
+      vu = true;
+    }
+
     return vu ? total : null;
   };
 

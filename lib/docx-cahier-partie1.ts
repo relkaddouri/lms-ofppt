@@ -436,7 +436,7 @@ function unLogigramme(
 
 /** L'en-tête d'un module : ce que le formateur recopiait en tête de tableau. */
 function enteteModule(m: SuiviModule): Table {
-  const anneeCochee = (n: number) => (m.annees.includes(n) ? "Oui" : "");
+  const anneeCochee = (n: number) => (m.annee === n ? "Oui" : "");
 
   return tableau({
     width: PLEINE_LARGEUR,
@@ -457,7 +457,7 @@ function enteteModule(m: SuiviModule): Table {
       ligne([
         cellule(`1ère année : ${anneeCochee(1)}`, { colonnes: 2 }),
         cellule(`2ème année : ${anneeCochee(2)}`, { colonnes: 2 }),
-        cellule(`Groupe : ${m.groupes || "—"}`),
+        cellule(`Groupe : ${m.groupe}`),
         cellule(`Nombre de stagiaire : ${m.effectif}`),
       ]),
       ligne([
@@ -748,7 +748,7 @@ export function partieI(
 
   data.suivis.forEach((m, i) => {
     blocs.push(
-      titre3(m.module, { nouvellePage: i > 0 }),
+      titre3(`${m.module} — ${m.groupe}`, { nouvellePage: i > 0 }),
       enteteModule(m),
       suiviSeances(m),
       emargement(),
@@ -760,7 +760,9 @@ export function partieI(
     */
     if (m.fiches.length > 0) {
       blocs.push(
-        titre3(`Fiches de préparation — ${m.module}`, { nouvellePage: true }),
+        titre3(`Fiches de préparation — ${m.module} — ${m.groupe}`, {
+          nouvellePage: true,
+        }),
         paragraphe(
           `Les ${m.fiches.length} séance${m.fiches.length > 1 ? "s" : ""} réalisée${m.fiches.length > 1 ? "s" : ""} de ce module, dans le canevas officiel.`,
         ),

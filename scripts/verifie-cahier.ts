@@ -40,6 +40,7 @@ import {
   PROCEDURES,
 } from "@/lib/docx-cahier-textes";
 import { enCanevasOfficiel } from "@/lib/fiche-officielle";
+import { suivisParGroupe } from "@/lib/suivi-modules";
 import { lireFiche } from "@/lib/fiche";
 
 /*
@@ -156,8 +157,8 @@ const partie1: CahierPartieI = {
     {
       module: "M202 — Organiser les données utilisateurs",
       filiere: "Digital Design",
-      groupes: "DES101 et DES102",
-      annees: [2],
+      groupe: "DES101",
+      annee: 2,
       masseHoraire: 100,
       objectif: "Organiser les données utilisateurs recueillies en enquête.",
       effectif: 40,
@@ -464,7 +465,6 @@ const p = await ouvrir(complet);
 
 // La couverture, telle que l'officiel l'ordonne.
 for (const ligne of [
-  "Royaume du Maroc",
   "DOCUMENT OFFICIEL",
   "Cahier du formateur",
   "Partenaire en compétences",
@@ -482,6 +482,9 @@ for (const ligne of [
 // Les deux logos du bandeau : celui de l'établissement et celui de l'OFPPT.
 // Le second porte déjà le nom de l'Office en arabe et en français — inutile
 // de le réécrire sous lui.
+verifie("La couverture ne réécrit pas ce que le logo porte déjà",
+  !p.texte.includes("Royaume du Maroc") &&
+    !p.texte.includes("Office de la Formation Professionnelle"));
 verifie("Le logo de l'OFPPT voyage avec le cahier",
   Object.keys(p.zip.files).some((f) => f.startsWith("word/media/")),
   Object.keys(p.zip.files).filter((f) => f.startsWith("word/media/")).join(", "));
@@ -691,8 +694,8 @@ verifie("Le cadre vide de l'emploi du temps a disparu",
 verifie("En-tête du module : masse horaire et nombre de séances",
   p.texte.includes("Masse horaire du module : 100 heures") &&
     p.texte.includes("Nombre de séances : 2"));
-verifie("En-tête du module : les deux groupes réunis",
-  p.texte.includes("Groupe : DES101 et DES102"));
+verifie("En-tête du module : son groupe",
+  p.texte.includes("Groupe : DES101"));
 verifie("En-tête du module : l'année cochée",
   p.texte.includes("2ème année : Oui") && p.texte.includes("1ère année : "));
 verifie("En-tête du module : l'objectif",
@@ -760,6 +763,10 @@ const affecte = (
   groupe_id: "g1",
   module_id: moduleId,
   masse_horaire_allouee: masse,
+  presentiel_s1: null,
+  fad_s1: null,
+  presentiel_s2: null,
+  fad_s2: null,
   modules: {
     nom: code,
     competences: {
@@ -776,6 +783,7 @@ const programme = (jour: string, moduleId: string, duree: number): LigneSeance =
   contenu_source_id: null,
   module_id: moduleId,
   date: jour,
+  statut: "a_faire",
   duree_prevue: duree,
   duree_realisee: null,
   objectif_operationnel: null,
@@ -908,6 +916,7 @@ const essaiControles: LigneControle[] = [
     date_administration: null,
     date_envoi_propositions: null,
     bareme_total: null,
+    duree_heures: 2,
   },
   {
     id: "cc1",
@@ -918,6 +927,7 @@ const essaiControles: LigneControle[] = [
     date_administration: "2025-11-18",
     date_envoi_propositions: null,
     bareme_total: null,
+    duree_heures: 2,
   },
   {
     id: "efm",
@@ -928,6 +938,7 @@ const essaiControles: LigneControle[] = [
     date_administration: "2026-01-27",
     date_envoi_propositions: "2026-01-05",
     bareme_total: null,
+    duree_heures: 2,
   },
   // Un contrôle d'essai sur le même module : il ne doit pas prendre de colonne.
   {
@@ -939,6 +950,7 @@ const essaiControles: LigneControle[] = [
     date_administration: "2025-10-01",
     date_envoi_propositions: null,
     bareme_total: 10,
+    duree_heures: 1,
   },
   /*
     Et un module qui n'a QUE un essai. C'est le cas qui compte : sans l'écarter
@@ -954,6 +966,7 @@ const essaiControles: LigneControle[] = [
     date_administration: "2025-10-02",
     date_envoi_propositions: null,
     bareme_total: 10,
+    duree_heures: 1,
   },
 ];
 
@@ -999,8 +1012,12 @@ const evalEssai = evaluations(
   essaiPassations,
   essaiStagiaires,
   [
-    { ...programme("2025-11-17", "m202", 5), duree_realisee: 5 },
-    { ...programme("2025-11-24", "m202", 5), duree_realisee: 2.5 },
+    // Cochée et corrigée : cinq heures.
+    { ...programme("2025-11-17", "m202", 5), statut: "fait", duree_realisee: 5 },
+    // Cochée sans correction : les heures prévues font foi.
+    { ...programme("2025-11-24", "m202", 5), statut: "fait", duree_realisee: null },
+    // Pas encore faite : elle ne compte pas.
+    { ...programme("2025-12-01", "m202", 5) },
   ],
 );
 
@@ -1096,9 +1113,24 @@ verifie("Le calcul porte la moyenne du module et son appréciation",
   noteSalmaCalc?.moyenneModule === 14.1 && noteSalmaCalc?.appreciation === "Bien",
   `${noteSalmaCalc?.moyenneModule} → ${noteSalmaCalc?.appreciation}`);
 
-verifie("Les heures réalisées du module se somment",
-  evalEssai.notes[0]?.masseHoraireRealisee === 7.5,
+/*
+  Les heures réalisées : les séances cochées — corrigées ou, à défaut, prévues —
+  plus les épreuves déjà administrées. Deux séances de cinq heures font dix, le
+  contrôle continu passé et l'examen en ajoutent deux chacun, et ni la séance à
+  venir ni le second contrôle, jamais administré, ne comptent.
+*/
+verifie("Les heures réalisées somment séances cochées et épreuves passées",
+  evalEssai.notes[0]?.masseHoraireRealisee === 14,
   String(evalEssai.notes[0]?.masseHoraireRealisee));
+verifie("Une séance non cochée ne compte pas dans les heures réalisées",
+  evaluations(
+    groupeEssai,
+    [affecte("m202", "M202", "specialisation", 2, 55)],
+    [],
+    [],
+    essaiStagiaires,
+    [{ ...programme("2025-11-17", "m202", 5) }],
+  ).notes.length === 0);
 verifie("La masse horaire prévue vient de l'affectation",
   evalEssai.notes[0]?.masseHorairePrevue === 55,
   String(evalEssai.notes[0]?.masseHorairePrevue));
@@ -1106,6 +1138,93 @@ verifie("Cinq colonnes de contrôle continu, même avec deux contrôles",
   evalEssai.notes[0]?.colonnesCC === 5, String(evalEssai.notes[0]?.colonnesCC));
 verifie("Sans contrôle, il n'y a pas de tableau de notes",
   evaluations(groupeEssai, [], [], [], essaiStagiaires, []).notes.length === 0);
+
+// ── Le suivi, module par module et groupe par groupe ────────────────────
+
+/*
+  Ce qui compte comme réalisé, et le cumul qui en découle. C'est exactement ce
+  qui était faux : le cahier lisait `duree_realisee`, que le formateur ne
+  corrige presque jamais, et montrait deux colonnes vides là où la progression
+  montrait un module avancé.
+*/
+const faite = (jour: string, duree: number, corrigee: number | null) => ({
+  ...programme(jour, "m202", duree),
+  statut: "fait",
+  duree_realisee: corrigee,
+});
+
+const suiviEssai = suivisParGroupe(
+  groupeEssai,
+  [affecte("m202", "M202", "specialisation", 2, 100)],
+  [
+    faite("2025-10-13", 5, null),
+    faite("2025-10-20", 5, 4),
+    programme("2025-10-27", "m202", 2.5),
+  ],
+  {
+    masse: (a) => a.masse_horaire_allouee,
+    effectifs: new Map([["g1", 21]]),
+    absents: new Map(),
+    fiches: new Map(),
+  },
+)[0];
+
+verifie("Un suivi par module et par groupe",
+  suiviEssai?.groupe === "DES101" && suiviEssai?.module.startsWith("M202"),
+  `${suiviEssai?.module} / ${suiviEssai?.groupe}`);
+verifie("Une séance cochée sans correction compte ses heures prévues",
+  suiviEssai?.seances[0]?.dureeRealisee === 5,
+  String(suiviEssai?.seances[0]?.dureeRealisee));
+verifie("Une séance corrigée compte les heures corrigées",
+  suiviEssai?.seances[1]?.dureeRealisee === 4,
+  String(suiviEssai?.seances[1]?.dureeRealisee));
+verifie("Le cumul additionne les séances faites, dans l'ordre",
+  suiviEssai?.seances[0]?.cumul === 5 && suiviEssai?.seances[1]?.cumul === 9,
+  suiviEssai?.seances.map((s) => s.cumul).join(" / "));
+verifie("Une séance à venir n'a ni réalisé ni cumul",
+  suiviEssai?.seances[2]?.dureeRealisee === null &&
+    suiviEssai?.seances[2]?.cumul === null,
+  JSON.stringify(suiviEssai?.seances[2]));
+verifie("Une séance cochée porte sa date de réalisation",
+  suiviEssai?.seances[0]?.dateRealisee === "2025-10-13" &&
+    suiviEssai?.seances[2]?.dateRealisee === null,
+  String(suiviEssai?.seances[2]?.dateRealisee));
+verifie("Le suivi porte l'effectif et la filière de son groupe",
+  suiviEssai?.effectif === 21 &&
+    suiviEssai?.filiere === "Digital Design - Option UX designer",
+  `${suiviEssai?.effectif} / ${suiviEssai?.filiere}`);
+
+/*
+  Deux groupes sur le même module donnent deux suivis, chacun avec ses séances.
+  Un seul tableau les mélangeait, et le formateur en fait signer un par groupe.
+*/
+const deuxGroupes = suivisParGroupe(
+  [
+    groupeEssai[0]!,
+    { ...groupeEssai[0]!, id: "g2", nom: "DES102" },
+  ],
+  [
+    affecte("m202", "M202", "specialisation", 2, 100),
+    { ...affecte("m202", "M202", "specialisation", 2, 80), groupe_id: "g2" },
+  ],
+  [
+    faite("2025-10-13", 5, null),
+    { ...faite("2025-10-14", 5, null), id: "m202-g2", seance_groupes: [{ groupe_id: "g2" }] },
+  ],
+  {
+    masse: (a) => a.masse_horaire_allouee,
+    effectifs: new Map([["g1", 21], ["g2", 19]]),
+    absents: new Map(),
+    fiches: new Map(),
+  },
+);
+verifie("Un module donné à deux groupes produit deux suivis",
+  deuxGroupes.length === 2 &&
+    deuxGroupes.map((x) => x.groupe).join(",") === "DES101,DES102",
+  deuxGroupes.map((x) => `${x.groupe}:${x.seances.length}`).join(" | "));
+verifie("Chaque suivi ne porte que les séances de son groupe",
+  deuxGroupes.every((x) => x.seances.length === 1),
+  deuxGroupes.map((x) => `${x.groupe}:${x.seances.length}`).join(" | "));
 
 // ── Les fiches de préparation ───────────────────────────────────────────
 
@@ -1303,7 +1422,6 @@ for (const titre of [
   */
   "Modules pris en charge",
   "B- Emploi du temps du formateur",
-  "A- Planification et suivi de la réalisation des contrôles continus (CC)",
   "D- Fiche d'appréciation des stagiaires par module",
   "Modèle de fiche préparation",
 ]) {
@@ -1325,6 +1443,7 @@ for (const titre of [
   "Second semestre",
   "Logigramme — DES101",
   "Fiche de préparation n° 1",
+  "A- Planification et suivi de la réalisation des contrôles continus (CC)",
 ]) {
   const i = p.xml.indexOf(titre);
   const avant = i >= 0 ? p.xml.slice(Math.max(0, i - 600), i) : "";

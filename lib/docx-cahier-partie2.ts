@@ -78,9 +78,12 @@ const LIGNES_LIBRES = 2;
 // ── A : Les contrôles continus ────────────────────────────────────────────
 
 function planificationCC(lignes: PlanificationCC[]): Bloc[] {
+  /*
+    Pas de saut : ce titre suit celui de la partie, et en casser un de plus
+    laissait « II- Planification et suivi des évaluations » seul sur une page.
+  */
   const titre = titre2(
     "A- Planification et suivi de la réalisation des contrôles continus (CC)",
-    { nouvellePage: true },
   );
   if (lignes.length === 0) {
     return [

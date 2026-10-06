@@ -28,6 +28,11 @@ export type LigneAffectation = {
   groupe_id: string;
   module_id: string;
   masse_horaire_allouee: number | null;
+  /** Les quatre colonnes du tableau de service (PRD §4.13bis). */
+  presentiel_s1: number | null;
+  fad_s1: number | null;
+  presentiel_s2: number | null;
+  fad_s2: number | null;
   modules: {
     nom: string;
     competences: {
@@ -44,6 +49,8 @@ export type LigneSeance = {
   contenu_source_id: string | null;
   module_id: string;
   date: string | null;
+  /** « fait » quand le formateur l'a cochée à l'écran de progression. */
+  statut: string;
   duree_prevue: number | null;
   duree_realisee: number | null;
   objectif_operationnel: string | null;

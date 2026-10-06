@@ -185,7 +185,7 @@ async function logoEtablissement(e: Etablissement): Promise<Paragraph[]> {
   if (!e.logo) return [];
   try {
     const { octets, type } = decoderLogo(e.logo);
-    const transformation = await mesurerLogo(e.logo, 150);
+    const transformation = await mesurerLogo(e.logo, 190);
     return [
       new Paragraph({
         children: [new ImageRun({ data: octets, transformation, type })],
@@ -201,9 +201,9 @@ async function logoEtablissement(e: Etablissement): Promise<Paragraph[]> {
 /**
  * Le bandeau du centre : l'établissement à gauche, l'OFPPT à droite.
  *
- * Les deux logos voisinent comme sur les documents de l'Office, et « Royaume du
- * Maroc » les surmonte : le logo de l'OFPPT porte déjà le nom de l'Office en
- * arabe et en français, inutile de le réécrire sous lui.
+ * Les deux logos seuls. Le logo de l'OFPPT porte déjà le nom de l'Office en
+ * arabe et en français ; « Royaume du Maroc » au-dessus n'ajoutait rien que la
+ * couverture ne dise pas.
  *
  * Un tableau sans filets sert de gouttière — Word n'a pas d'autre moyen de poser
  * deux choses côte à côte sans qu'elles se poussent.
@@ -211,16 +211,10 @@ async function logoEtablissement(e: Etablissement): Promise<Paragraph[]> {
 async function bandeau(e: Etablissement): Promise<(Paragraph | Table)[]> {
   const [gauche, droite] = await Promise.all([
     logoEtablissement(e),
-    logoOfppt(210),
+    logoOfppt(260),
   ]);
 
   return [
-    ligne("Royaume du Maroc", {
-      aDroite: true,
-      police: POLICES.corps,
-      couleur: COULEURS.ardoise,
-      apres: 120,
-    }),
     tableau({
       width: PLEINE_LARGEUR,
       borders: SANS_FILETS,
@@ -334,7 +328,13 @@ async function couverture(e: Etablissement): Promise<(Paragraph | Table)[]> {
     ]),
     new Paragraph({ spacing: { after: 640 }, children: [] }),
     renseignements(e),
-    new Paragraph({ spacing: { after: 1400 }, children: [] }),
+    /*
+      Le creux qui pousse la signature en bas de page. Word ne sait pas caler un
+      bloc sur le bas d'une page : il faut lui mesurer l'espace. En vingtièmes
+      de point, à peu près cent dix millimètres — ce qui reste sous les
+      renseignements sur une A4.
+    */
+    new Paragraph({ spacing: { after: 6200 }, children: [] }),
     signature(e),
   ];
 }

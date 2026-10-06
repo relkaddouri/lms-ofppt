@@ -5,8 +5,7 @@ import { libelleFiliere } from "@/lib/filiere";
 import { libelleModule } from "@/lib/modules";
 import { getPortee } from "@/app/actions/annees";
 import { getMotifs, type MotifHebdomadaire } from "@/app/actions/motifs";
-import { lireFiche } from "@/lib/fiche";
-import { enCanevasOfficiel, type FicheOfficielle } from "@/lib/fiche-officielle";
+import { suivisParGroupe, type SuiviModule } from "@/lib/suivi-modules";
 
 export type { FicheOfficielle } from "@/lib/fiche-officielle";
 import {
@@ -62,44 +61,15 @@ export type ModulePrisEnCharge = {
 };
 
 /** Une ligne du tableau « Prévision / Réalisation » d'un module. */
-export type SeanceSuivi = {
-  numero: number;
-  datePrevue: string | null;
-  objectif: string | null;
-  dureePrevue: number | null;
-  dateRealisee: string | null;
-  contenuRealise: string | null;
-  dureeRealisee: number | null;
-  /** Cumul des heures réalisées depuis le début du module. */
-  cumul: number | null;
-  absents: string[];
-  aPrevoir: string | null;
-};
-
-/** Un module et son suivi séance par séance. */
-export type SuiviModule = {
-  /*
-    Les fiches de préparation des séances réalisées, dans l'ordre. Le cahier
-    officiel les relie derrière le suivi du module : c'est la pièce que la
-    Direction lit pour juger la préparation, et elle est obligatoire.
-  */
-  fiches: FicheOfficielle[];
-  module: string;
-  filiere: string;
-  /** Les groupes qui suivent ce module, réunis comme sur le document officiel. */
-  groupes: string;
-  annees: number[];
-  masseHoraire: number | null;
-  objectif: string | null;
-  effectif: number;
-  seances: SeanceSuivi[];
-};
-
 export type {
   Logigramme,
   LogigrammeModule,
   LogigrammeSemaine,
 } from "@/lib/logigramme";
+export type {
+  SeanceSuivi,
+  SuiviModule,
+} from "@/lib/suivi-modules";
 export type {
   CahierPartieII,
   NoteStagiaire,
@@ -159,7 +129,7 @@ export async function getCahierDonnees(): Promise<CahierDonnees> {
     supabase
       .from("groupe_modules")
       .select(
-        "groupe_id, module_id, masse_horaire_allouee, modules(nom, competences(code_operationnel, enonce_competence, cycle, rang_cycle))",
+        "groupe_id, module_id, masse_horaire_allouee, presentiel_s1, fad_s1, presentiel_s2, fad_s2, modules(nom, competences(code_operationnel, enonce_competence, cycle, rang_cycle))",
       )
       .in("groupe_id", groupeIds),
     /*
@@ -176,7 +146,7 @@ export async function getCahierDonnees(): Promise<CahierDonnees> {
     supabase
       .from("seances")
       .select(
-        "id, contenu_source_id, module_id, date, duree_prevue, duree_realisee, objectif_operationnel, contenu_realise, a_prevoir_prochaine_seance, seance_groupes!inner(groupe_id)",
+        "id, contenu_source_id, module_id, date, statut, duree_prevue, duree_realisee, objectif_operationnel, contenu_realise, a_prevoir_prochaine_seance, seance_groupes!inner(groupe_id)",
       )
       .in("seance_groupes.groupe_id", groupeIds)
       .not("date", "is", null)
@@ -190,7 +160,7 @@ export async function getCahierDonnees(): Promise<CahierDonnees> {
     supabase
       .from("controles")
       .select(
-        "id, groupe_id, module_id, type, date_prevue, date_administration, date_envoi_propositions, bareme_total",
+        "id, groupe_id, module_id, type, date_prevue, date_administration, date_envoi_propositions, bareme_total, duree_heures",
       )
       .in("groupe_id", groupeIds)
       .in("type", ["CC", "EFM"])
@@ -345,6 +315,24 @@ export async function getCahierDonnees(): Promise<CahierDonnees> {
   );
   const anneeDuGroupe = new Map(lignesGroupes.map((g) => [g.id, g.annee]));
 
+  /*
+    La masse horaire d'un module pour un groupe est celle du tableau de service :
+    présentiel et distance, croisés avec le semestre. C'est ce que le formateur
+    fait signer à la Direction, et c'est déjà calculé — `masse_horaire_allouee`
+    ne sert que de repli, quand les quatre colonnes n'ont pas été saisies.
+
+    Les quatre comptent, même la part à distance mutualisée : le groupe reçoit
+    ces heures. C'est la charge du formateur qui ne les compte qu'une fois
+    (§4.1bis), et le cahier décrit le groupe, pas la charge.
+  */
+  const masseDuTableauDeService = (a: LigneAffectation): number | null => {
+    const quatre = [a.presentiel_s1, a.fad_s1, a.presentiel_s2, a.fad_s2]
+      .map(heures)
+      .filter((h): h is number => h !== null);
+    const total = quatre.reduce((t, h) => t + h, 0);
+    return total > 0 ? total : heures(a.masse_horaire_allouee);
+  };
+
   const modulesPrisEnCharge: ModulePrisEnCharge[] = lignesAffectations
     .map((a) => {
       const b = bornes.get(`${a.groupe_id}|${a.module_id}`);
@@ -355,7 +343,7 @@ export async function getCahierDonnees(): Promise<CahierDonnees> {
         ),
         filiere: filiereDuGroupe.get(a.groupe_id) ?? "—",
         groupe: nomDuGroupe.get(a.groupe_id) ?? "—",
-        masseHoraire: heures(a.masse_horaire_allouee),
+        masseHoraire: masseDuTableauDeService(a),
         dateDebut: b?.debut ?? null,
         dateFin: b?.fin ?? null,
       };
@@ -366,164 +354,16 @@ export async function getCahierDonnees(): Promise<CahierDonnees> {
         x.groupe.localeCompare(y.groupe, "fr"),
     );
 
-  // ── Planification et suivi, module par module ───────────────────────────
-
-  /*
-    Une séance miroir et sa source sont la même séance de formation, donnée à
-    deux groupes (§4.3bis). Le cahier officiel l'inscrit une fois, et nomme les
-    deux groupes en tête du tableau : on regroupe donc sur la source.
-  */
-  type Brouillon = {
-    module: string;
-    objectif: string | null;
-    groupes: Set<string>;
-    annees: Set<number>;
-    masse: number;
-    seances: Map<string, LigneSeance>;
-  };
-  const parModule = new Map<string, Brouillon>();
-
-  const brouillon = (moduleId: string): Brouillon => {
-    const deja = parModule.get(moduleId);
-    if (deja) return deja;
-    const a = lignesAffectations.find((x) => x.module_id === moduleId);
-    const neuf: Brouillon = {
-      module: libelleModule(
-        a?.modules?.competences?.code_operationnel,
-        a?.modules?.nom,
-      ),
-      objectif: a?.modules?.competences?.enonce_competence ?? null,
-      groupes: new Set(),
-      annees: new Set(),
-      masse: 0,
-      seances: new Map(),
-    };
-    parModule.set(moduleId, neuf);
-    return neuf;
-  };
-
-  for (const a of lignesAffectations) {
-    const b = brouillon(a.module_id);
-    const nom = nomDuGroupe.get(a.groupe_id);
-    if (nom) b.groupes.add(nom);
-    const annee = anneeDuGroupe.get(a.groupe_id);
-    if (annee) b.annees.add(annee);
-    const h = heures(a.masse_horaire_allouee);
-    if (h !== null) b.masse += h;
-  }
-
-  for (const s of lignesSeances) {
-    const b = brouillon(s.module_id);
-    const cle = s.contenu_source_id ?? s.id;
-    // La première rencontrée fait foi : la liste est triée par date, donc
-    // c'est la séance d'origine et non son miroir reprogrammé.
-    if (!b.seances.has(cle)) b.seances.set(cle, s);
-  }
-
-  const effectifDesGroupes = (noms: Set<string>): number => {
-    let total = 0;
-    for (const g of lignesGroupes) {
-      if (noms.has(g.nom)) total += effectifs.get(g.id) ?? 0;
-    }
-    return total;
-  };
-
-  /** Une durée en heures, telle que la fiche la compte : en minutes. */
-  const minutes = (h: number | null): number | null => {
-    const v = heures(h);
-    return v === null ? null : Math.round(v * 60);
-  };
-
-  /** Le libellé de filière du premier groupe d'un module. */
-  const filiereDuModule = (b: { groupes: Set<string> }): string =>
-    [...b.groupes]
-      .map((n) => lignesGroupes.find((x) => x.nom === n))
-      .filter((g) => g !== undefined)
-      .map((g) => libelleFiliere(g.specialites?.nom, g.annee, g.option_formation))
-      .at(0) ?? "—";
-
-  const suivis: SuiviModule[] = [...parModule.values()]
-    .map((b) => {
-      let cumul = 0;
-      const seancesSuivi: SeanceSuivi[] = [...b.seances.values()].map((s, i) => {
-        const realisee = heures(s.duree_realisee);
-        // Le cumul ne compte que ce qui a été fait : une séance à venir ne
-        // gonfle pas le total réalisé.
-        if (realisee !== null) cumul += realisee;
-        return {
-          numero: i + 1,
-          datePrevue: s.date,
-          objectif: s.objectif_operationnel,
-          dureePrevue: heures(s.duree_prevue),
-          // La base ne garde pas de date de réalisation distincte : une séance
-          // dont le contenu réalisé est saisi a eu lieu à sa date.
-          dateRealisee: s.contenu_realise ? s.date : null,
-          contenuRealise: s.contenu_realise,
-          dureeRealisee: realisee,
-          cumul: realisee !== null ? cumul : null,
-          absents: absentsParSeance.get(s.id) ?? [],
-          aPrevoir: s.a_prevoir_prochaine_seance,
-        };
-      });
-
-      /*
-        Les fiches des séances réalisées, dans l'ordre. Seulement celles-là :
-        une fiche de séance à venir n'a pas sa place dans un document qui rend
-        compte de ce qui a été fait.
-
-        Le rappel d'une fiche est ce que la séance précédente demandait de
-        préparer — c'est précisément ce sur quoi celle-ci revient.
-      */
-      const faites = [...b.seances.values()].filter((s) => s.contenu_realise);
-      const fiches: FicheOfficielle[] = [];
-      faites.forEach((s, i) => {
-        const contenu = ficheDeLaSeance.get(s.id);
-        if (!contenu) return;
-        const groupeDeLaSeance = lignesGroupes.find((g) =>
-          s.seance_groupes.some((l) => l.groupe_id === g.id),
-        );
-        fiches.push(
-          enCanevasOfficiel(lireFiche(contenu, minutes(s.duree_prevue)), {
-            date: s.date,
-            dureeMinutes: minutes(s.duree_prevue),
-            // Le groupe à qui la séance a été donnée ; à défaut, tous ceux du
-            // module, réunis comme en tête du tableau de suivi.
-            groupe:
-              groupeDeLaSeance?.nom ??
-              [...b.groupes].sort((x, y) => x.localeCompare(y, "fr")).join(" et "),
-            filiere: filiereDuModule(b),
-            annee: groupeDeLaSeance?.annee ?? null,
-            module: b.module,
-            rappel: faites[i - 1]?.a_prevoir_prochaine_seance ?? null,
-            aPrevoir: s.a_prevoir_prochaine_seance,
-          }),
-        );
-      });
-
-      return {
-        fiches,
-        module: b.module,
-        // Le libellé du premier groupe du module : tous suivent la même filière
-        // et la même année, sans quoi ils ne partageraient pas ses séances.
-        filiere: filiereDuModule(b),
-        groupes: [...b.groupes].sort((x, y) => x.localeCompare(y, "fr")).join(" et "),
-        annees: [...b.annees].sort(),
-        masseHoraire: b.masse || null,
-        objectif: b.objectif,
-        effectif: effectifDesGroupes(b.groupes),
-        seances: seancesSuivi,
-      };
-    })
-    // Un module sans aucune séance datée n'a rien à suivre : il figure déjà au
-    // tableau des modules pris en charge.
-    .filter((m) => m.seances.length > 0)
-    .sort((x, y) => x.module.localeCompare(y.module, "fr"));
-
   return {
     partieI: {
       groupes: prisEnCharge,
       modules: modulesPrisEnCharge,
-      suivis,
+      suivis: suivisParGroupe(lignesGroupes, lignesAffectations, lignesSeances, {
+        masse: masseDuTableauDeService,
+        effectifs,
+        absents: absentsParSeance,
+        fiches: ficheDeLaSeance,
+      }),
       logigrammes: logigrammes(lignesGroupes, lignesAffectations, lignesSeances),
       motifs,
     },
