@@ -334,7 +334,7 @@ async function couverture(e: Etablissement): Promise<(Paragraph | Table)[]> {
       de point, à peu près cent dix millimètres — ce qui reste sous les
       renseignements sur une A4.
     */
-    new Paragraph({ spacing: { after: 6200 }, children: [] }),
+    new Paragraph({ spacing: { after: 5400 }, children: [] }),
     signature(e),
   ];
 }
