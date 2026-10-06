@@ -25,6 +25,7 @@ import {
   colonnes,
   emargement,
   paragraphe,
+  tableau,
   titre2,
   titre3,
 } from "@/lib/docx-charte";
@@ -128,7 +129,7 @@ function filieresEtGroupes(data: CahierPartieI, aujourdhui: Date): Bloc[] {
 
   return [
     titre3("Filières et groupes pris en charge"),
-    new Table({
+    tableau({
       width: PLEINE_LARGEUR,
       borders: BORDURES_TABLEAU,
       columnWidths: colonnes(UTILE_COUCHEE, [
@@ -186,7 +187,7 @@ function modulesPrisEnCharge(data: CahierPartieI): Bloc[] {
 
   return [
     titre3("Modules pris en charge"),
-    new Table({
+    tableau({
       width: PLEINE_LARGEUR,
       borders: BORDURES_TABLEAU,
       columnWidths: colonnes(UTILE_COUCHEE, [0.8, 6, 2.4, 1.4, 1.4, 1.6, 1.6]),
@@ -206,7 +207,7 @@ function modulesPrisEnCharge(data: CahierPartieI): Bloc[] {
  * colle. La plateforme n'a pas à les refabriquer.
  */
 function cadreAColler(consigne: string, hauteurMm: number): Table {
-  return new Table({
+  return tableau({
     width: PLEINE_LARGEUR,
     borders: BORDURES_TABLEAU,
     rows: [
@@ -237,7 +238,7 @@ function cadreAColler(consigne: string, hauteurMm: number): Table {
 function unLogigramme(l: Logigramme, anneeScolaire: string | null): Bloc[] {
   const n = l.modules.length;
 
-  const identite = new Table({
+  const identite = tableau({
     width: PLEINE_LARGEUR,
     borders: BORDURES_TABLEAU,
     columnWidths: colonnes(UTILE_COUCHEE, [2, 1, 1]),
@@ -328,7 +329,7 @@ function unLogigramme(l: Logigramme, anneeScolaire: string | null): Bloc[] {
   return [
     titre3(`Logigramme — ${l.groupe}`),
     identite,
-    new Table({
+    tableau({
       width: PLEINE_LARGEUR,
       borders: BORDURES_TABLEAU,
       // La colonne des semaines plus large que les modules, qui ne portent
@@ -346,7 +347,7 @@ function unLogigramme(l: Logigramme, anneeScolaire: string | null): Bloc[] {
 function enteteModule(m: SuiviModule): Table {
   const anneeCochee = (n: number) => (m.annees.includes(n) ? "Oui" : "");
 
-  return new Table({
+  return tableau({
     width: PLEINE_LARGEUR,
     borders: BORDURES_TABLEAU,
     columnWidths: colonnes(UTILE_COUCHEE, [2, 2, 2, 2, 2, 2]),
@@ -443,7 +444,7 @@ function suiviSeances(m: SuiviModule): Table {
     }
   });
 
-  return new Table({
+  return tableau({
     width: PLEINE_LARGEUR,
     borders: BORDURES_TABLEAU,
     columnWidths: colonnes(UTILE_COUCHEE, [0.7, 1.5, 4, 1, 1.5, 5, 1, 1, 2.3]),

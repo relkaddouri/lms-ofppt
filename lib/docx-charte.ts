@@ -18,13 +18,17 @@ import {
   BorderStyle,
   Paragraph,
   ShadingType,
+  Table,
   TableCell,
+  TableLayoutType,
+  TableRow,
   TextRun,
   VerticalAlign,
   WidthType,
   convertMillimetersToTwip,
   type IBorderOptions,
   type ISectionPropertiesOptions,
+  type ITableOptions,
 } from "docx";
 
 // ── Palette ───────────────────────────────────────────────────────────────
@@ -45,6 +49,13 @@ export const COULEURS = {
   ardoise: "5B6A7C",
   muet: "687584",
   sarcelle: "226A89",
+  /*
+    Les deux autres couleurs de la marque. Elles ne portent pas d'information
+    dans un cahier — elles ne paraissent qu'en pastilles, qui signent le
+    document comme la page de garde du dossier.
+  */
+  vert: "368050",
+  corail: "D04438",
   blanc: "FFFFFF",
   papier: "F6F7F9",
   lavis: "EFF2F5",
@@ -179,9 +190,17 @@ export const PAGE_DEBOUT: ISectionPropertiesOptions["page"] = {
   margin: marges,
 };
 
-/** A4 couché : les tableaux de suivi, trop larges pour la page debout. */
+/*
+  A4 couché : les tableaux de suivi, trop larges pour la page debout.
+
+  Les dimensions restent celles du portrait. `docx` échange lui-même largeur et
+  hauteur quand l'orientation est « landscape » : les lui donner déjà échangées
+  les remettait à l'endroit, et les sections sortaient avec le drapeau paysage
+  mais la page debout. Les tableaux de quatorze colonnes étaient alors tassés
+  dans 186 mm au lieu de 273, et débordaient.
+*/
 export const PAGE_COUCHEE: ISectionPropertiesOptions["page"] = {
-  size: { width: A4_LONG, height: A4_COURT, orientation: "landscape" },
+  size: { width: A4_COURT, height: A4_LONG, orientation: "landscape" },
   margin: marges,
 };
 
@@ -423,3 +442,193 @@ export const PLEINE_LARGEUR = {
   size: 100,
   type: WidthType.PERCENTAGE,
 } as const;
+
+/**
+ * Un tableau, dont les largeurs de colonnes sont celles qu'on a demandées.
+ *
+ * Word ajuste par défaut un tableau à son contenu : les `columnWidths` ne sont
+ * alors qu'une suggestion, et une cellule courte rétrécit sa colonne. Le panneau
+ * de la couverture n'occupait ainsi que la moitié de la page, et les tableaux de
+ * quatorze colonnes se tassaient à gauche.
+ *
+ * `FIXED` rend aux largeurs calculées leur autorité. Tous les tableaux du cahier
+ * passent par ici, pour qu'aucun ne l'oublie.
+ */
+export function tableau(options: ITableOptions): Table {
+  return new Table({ layout: TableLayoutType.FIXED, ...options });
+}
+
+// ── Les blocs de composition, repris de la page de garde du dossier ───────
+
+/*
+  Le dossier d'épreuve a une page de garde qui se lit à un mètre, debout devant
+  une armoire : un aplat d'encre, trois pastilles de couleur, un sur-titre en
+  capitales étroites, puis le titre en blanc. Le cahier du formateur part au même
+  endroit et doit se reconnaître de la même façon.
+
+  Word ne sait pas dessiner : un aplat se fait avec un tableau d'une seule
+  cellule, sans filets. C'est le seul détour, et il est écrit ici une fois.
+*/
+
+/** Les filets d'une cellule qui n'en a pas. */
+export const BORDURES_SANS = {
+  top: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+  bottom: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+  left: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+  right: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+} as const;
+
+/** Un tableau sans aucun filet : il ne sert qu'à poser un fond ou une grille. */
+export const SANS_FILETS = {
+  top: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+  bottom: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+  left: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+  right: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+  insideHorizontal: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+  insideVertical: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+} as const;
+
+/**
+ * Un sur-titre : petites capitales espacées, en monospace.
+ *
+ * Il nomme la nature du bloc sans lui voler l'attention — « DOCUMENT OFFICIEL »
+ * au-dessus d'un titre, « FILIÈRE » au-dessus d'une valeur.
+ */
+export function surTitre(
+  texte: string,
+  options: { couleur?: string; centre?: boolean } = {},
+): Paragraph {
+  return new Paragraph({
+    alignment: options.centre ? AlignmentType.CENTER : AlignmentType.LEFT,
+    spacing: { after: 60 },
+    children: [
+      new TextRun({
+        text: texte.toLocaleUpperCase("fr"),
+        font: POLICES.mono,
+        size: TAILLES.petit,
+        // Un douzième de point entre les lettres : sans cet air, des capitales
+        // de huit points se lisent comme un bloc.
+        characterSpacing: 24,
+        color: options.couleur ?? COULEURS.ardoise,
+      }),
+    ],
+  });
+}
+
+/** Les trois pastilles de la marque, toujours dans cet ordre. */
+export function pastilles(): Paragraph {
+  return new Paragraph({
+    spacing: { after: 160 },
+    children: [COULEURS.vert, COULEURS.sarcelle, COULEURS.corail].map(
+      (c) =>
+        new TextRun({
+          text: "●  ",
+          font: POLICES.corps,
+          size: TAILLES.corps,
+          color: c,
+        }),
+    ),
+  });
+}
+
+/**
+ * L'aplat d'encre qui annonce un document ou une partie.
+ *
+ * Le seul aplat de la page : c'est ce qui la fait reconnaître de loin dans une
+ * pile de chemises, et en mettre un second lui retirerait ce rôle.
+ */
+export function panneau(
+  largeur: number,
+  contenu: Paragraph[],
+  options: { fond?: string } = {},
+): Table {
+  return tableau({
+    width: PLEINE_LARGEUR,
+    borders: SANS_FILETS,
+    columnWidths: [largeur],
+    rows: [
+      new TableRow({
+        children: [
+          new TableCell({
+            shading: {
+              type: ShadingType.CLEAR,
+              fill: options.fond ?? COULEURS.encre,
+              color: "auto",
+            },
+            borders: BORDURES_SANS,
+            margins: {
+              top: convertMillimetersToTwip(9),
+              bottom: convertMillimetersToTwip(9),
+              left: convertMillimetersToTwip(9),
+              right: convertMillimetersToTwip(9),
+            },
+            children: contenu,
+          }),
+        ],
+      }),
+    ],
+  });
+}
+
+/** Le titre d'un panneau : en blanc sur l'encre, et rien d'autre à côté. */
+export function titrePanneau(
+  texte: string,
+  taille: number = TAILLES.couverture,
+): Paragraph {
+  return new Paragraph({
+    spacing: { after: 100 },
+    children: [
+      new TextRun({
+        text: texte,
+        font: POLICES.titre,
+        size: taille,
+        color: COULEURS.blanc,
+      }),
+    ],
+  });
+}
+
+/** La ligne qui suit un titre de panneau : plus petite, plus pâle. */
+export function sousTitrePanneau(texte: string): Paragraph {
+  return new Paragraph({
+    children: [
+      new TextRun({
+        text: texte,
+        font: POLICES.corps,
+        size: TAILLES.titre3,
+        color: COULEURS.bordureForte,
+      }),
+    ],
+  });
+}
+
+/**
+ * Une paire étiquette / valeur, comme la page de garde du dossier les range.
+ *
+ * L'étiquette en capitales étroites au-dessus, la valeur en dessous : on lit la
+ * colonne des valeurs d'un trait, sans que les étiquettes s'y mêlent.
+ */
+export function etiquetteValeur(etiquette: string, valeur: string): TableCell {
+  return new TableCell({
+    borders: BORDURES_SANS,
+    margins: {
+      top: convertMillimetersToTwip(2),
+      bottom: convertMillimetersToTwip(2),
+      left: 0,
+      right: convertMillimetersToTwip(4),
+    },
+    children: [
+      surTitre(etiquette),
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: valeur || "—",
+            font: POLICES.corps,
+            size: TAILLES.titre3,
+            color: COULEURS.encre,
+          }),
+        ],
+      }),
+    ],
+  });
+}

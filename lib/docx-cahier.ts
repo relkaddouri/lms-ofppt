@@ -18,6 +18,7 @@
 
 import {
   AlignmentType,
+  BorderStyle,
   Document,
   Footer,
   ImageRun,
@@ -26,22 +27,33 @@ import {
   PageNumber,
   Paragraph,
   Table,
+  TableCell,
   TableRow,
   TextRun,
+  convertMillimetersToTwip,
   type ISectionOptions,
 } from "docx";
 import {
+  BORDURES_SANS,
   BORDURES_TABLEAU,
   COULEURS,
   PAGE_COUCHEE,
   PAGE_DEBOUT,
   PLEINE_LARGEUR,
   POLICES,
+  SANS_FILETS,
   TAILLES,
   cellule,
   chargerPolices,
+  tableau,
   colonnes,
+  etiquetteValeur,
+  panneau,
+  pastilles,
+  sousTitrePanneau,
+  surTitre,
   titre1,
+  titrePanneau,
   UTILE_DEBOUT,
 } from "@/lib/docx-charte";
 import { PROCEDURES } from "@/lib/docx-cahier-textes";
@@ -54,26 +66,16 @@ import type { Etablissement } from "@/app/actions/etablissement";
 
 // ── La couverture ─────────────────────────────────────────────────────────
 
-/** Une ligne centrée de la couverture, dans la police et le corps demandés. */
-function ligneCouverture(
-  texte: string,
-  options: { taille?: number; couleur?: string; apres?: number } = {},
-): Paragraph {
-  return new Paragraph({
-    alignment: AlignmentType.CENTER,
-    spacing: { after: options.apres ?? 160 },
-    children: [
-      new TextRun({
-        text: texte,
-        // Pas de `bold` : la fonte embarquée est déjà la 600, et Word
-        // l'épaissirait une seconde fois par-dessus.
-        font: POLICES.titre,
-        size: options.taille ?? TAILLES.corps,
-        color: options.couleur ?? COULEURS.encre,
-      }),
-    ],
-  });
-}
+/*
+  La page de garde du dossier d'épreuve se lit à un mètre, debout devant une
+  armoire : un bandeau de centre, un aplat d'encre qui annonce la pièce, puis les
+  renseignements rangés en étiquettes et valeurs. Le cahier du formateur part au
+  même endroit, et il doit se reconnaître de la même façon.
+
+  Ce qui change : le cahier reste un document de l'OFPPT, et sa couverture porte
+  « Royaume du Maroc » et le nom de l'Office. Ces deux lignes gardent leur place,
+  dans le bandeau, au-dessus du panneau.
+*/
 
 /**
  * Mesure une image pour lui donner sa place sans la déformer.
@@ -112,59 +114,203 @@ function decoderLogo(dataUrl: string): { octets: Uint8Array; type: "png" | "jpg"
   };
 }
 
-async function couverture(e: Etablissement): Promise<Paragraph[]> {
-  const blocs: Paragraph[] = [
-    new Paragraph({ spacing: { after: 600 }, children: [] }),
-    ligneCouverture("Royaume du Maroc", { taille: TAILLES.titre3 }),
-    ligneCouverture(
-      "Office de la Formation Professionnelle et de la Promotion du Travail",
-      { taille: TAILLES.titre3, couleur: COULEURS.ardoise, apres: 480 },
-    ),
-  ];
+/** Une ligne de texte, dans la police et la couleur demandées. */
+function ligne(
+  texte: string,
+  options: {
+    taille?: number;
+    couleur?: string;
+    aDroite?: boolean;
+    police?: string;
+    apres?: number;
+  } = {},
+): Paragraph {
+  return new Paragraph({
+    alignment: options.aDroite ? AlignmentType.RIGHT : AlignmentType.LEFT,
+    spacing: { after: options.apres ?? 100 },
+    children: [
+      new TextRun({
+        text: texte,
+        font: options.police ?? POLICES.titre,
+        size: options.taille ?? TAILLES.corps,
+        color: options.couleur ?? COULEURS.encre,
+      }),
+    ],
+  });
+}
 
-  // Un logo absent ou illisible ne doit pas empêcher le cahier de sortir :
-  // le formateur le collera lui-même, ce qui est toujours mieux que rien.
+/** Une cellule de mise en page : sans filets, et sans creux superflu. */
+function caseNue(contenu: Paragraph[], haut = 0): TableCell {
+  return new TableCell({
+    borders: BORDURES_SANS,
+    margins: {
+      top: convertMillimetersToTwip(haut),
+      bottom: 0,
+      left: 0,
+      right: 0,
+    },
+    children: contenu.length > 0 ? contenu : [new Paragraph({ children: [] })],
+  });
+}
+
+/**
+ * Le bandeau du centre : le logo à gauche, l'État et l'Office à droite.
+ *
+ * Un tableau sans filets sert de gouttière — Word n'a pas d'autre moyen de poser
+ * deux choses côte à côte sans qu'elles se poussent.
+ */
+async function bandeau(e: Etablissement): Promise<Table> {
+  const logo: Paragraph[] = [];
   if (e.logo) {
     try {
       const { octets, type } = decoderLogo(e.logo);
-      const transformation = await mesurerLogo(e.logo, 200);
-      blocs.push(
+      const transformation = await mesurerLogo(e.logo, 150);
+      logo.push(
         new Paragraph({
-          alignment: AlignmentType.CENTER,
-          spacing: { after: 480 },
           children: [new ImageRun({ data: octets, transformation, type })],
         }),
       );
     } catch {
-      blocs.push(new Paragraph({ spacing: { after: 480 }, children: [] }));
+      // Un logo illisible n'empêche pas le cahier de sortir : le formateur le
+      // collera lui-même, ce qui vaut mieux que pas de cahier du tout.
     }
   }
 
-  blocs.push(
-    ligneCouverture("CAHIER DU FORMATEUR", {
-      taille: TAILLES.couverture,
-      apres: 240,
-    }),
-    ligneCouverture("Partenaire en compétences", {
-      taille: TAILLES.titre3,
-      couleur: COULEURS.sarcelle,
-      apres: 800,
-    }),
-    ligneCouverture(`Direction Régionale : ${e.directionRegionale ?? ""}`, {
-      taille: TAILLES.titre3,
-      couleur: COULEURS.corps,
-    }),
-    ligneCouverture(`Établissement : ${e.nom ?? ""}`, {
-      taille: TAILLES.titre3,
-      couleur: COULEURS.corps,
-    }),
-    ligneCouverture(`Année de formation : ${e.anneeScolaire ?? ""}`, {
-      taille: TAILLES.titre3,
-      couleur: COULEURS.corps,
-    }),
-  );
+  return tableau({
+    width: PLEINE_LARGEUR,
+    borders: SANS_FILETS,
+    columnWidths: colonnes(UTILE_DEBOUT, [1, 1.4]),
+    rows: [
+      new TableRow({
+        children: [
+          caseNue(logo),
+          caseNue([
+            ligne("Royaume du Maroc", {
+              aDroite: true,
+              police: POLICES.corps,
+              couleur: COULEURS.ardoise,
+              apres: 40,
+            }),
+            ligne(
+              "Office de la Formation Professionnelle et de la Promotion du Travail",
+              {
+                aDroite: true,
+                police: POLICES.corps,
+                taille: TAILLES.petit,
+                couleur: COULEURS.ardoise,
+                apres: 0,
+              },
+            ),
+          ]),
+        ],
+      }),
+    ],
+  });
+}
 
-  return blocs;
+/** Les quatre renseignements de la couverture, rangés en deux colonnes. */
+function renseignements(e: Etablissement): Table {
+  return tableau({
+    width: PLEINE_LARGEUR,
+    borders: SANS_FILETS,
+    columnWidths: colonnes(UTILE_DEBOUT, [1, 1]),
+    rows: [
+      new TableRow({
+        children: [
+          etiquetteValeur("Direction régionale", e.directionRegionale ?? ""),
+          etiquetteValeur("Année de formation", e.anneeScolaire ?? ""),
+        ],
+      }),
+      new TableRow({
+        children: [
+          etiquetteValeur("Établissement", e.nom ?? ""),
+          etiquetteValeur("Formateur", e.nomFormateur ?? ""),
+        ],
+      }),
+    ],
+  });
+}
+
+/**
+ * Le cadre de signature, en bas de la couverture.
+ *
+ * Celle du formateur seule : c'est lui qui remet le cahier. Rien n'est prévu
+ * pour un visa de la Direction, qui n'a pas été demandé — un cadre vide sur un
+ * document officiel finit toujours par être rempli de travers.
+ */
+function signature(e: Etablissement): Table {
+  const qui = [e.nomFormateur, e.matricule ? `mat. ${e.matricule}` : null]
+    .filter(Boolean)
+    .join(" · ");
+
+  return tableau({
+    width: PLEINE_LARGEUR,
+    borders: SANS_FILETS,
+    columnWidths: colonnes(UTILE_DEBOUT, [1.2, 1]),
+    rows: [
+      new TableRow({
+        children: [
+          caseNue([]),
+          new TableCell({
+            borders: {
+              ...BORDURES_SANS,
+              top: {
+                style: BorderStyle.SINGLE,
+                size: 4,
+                color: COULEURS.bordureForte,
+              },
+            },
+            margins: {
+              top: convertMillimetersToTwip(2),
+              bottom: 0,
+              left: 0,
+              right: 0,
+            },
+            children: [
+              surTitre("Le formateur"),
+              ligne(qui || "—", {
+                police: POLICES.corps,
+                couleur: COULEURS.corps,
+                apres: 0,
+              }),
+            ],
+          }),
+        ],
+      }),
+    ],
+  });
+}
+
+async function couverture(e: Etablissement): Promise<(Paragraph | Table)[]> {
+  return [
+    await bandeau(e),
+    new Paragraph({ spacing: { after: 700 }, children: [] }),
+    /*
+      Le seul aplat de la page. C'est ce qui la fait reconnaître de loin dans une
+      pile de chemises, et en poser un second lui retirerait ce rôle.
+    */
+    panneau(UTILE_DEBOUT, [
+      pastilles(),
+      new Paragraph({
+        spacing: { after: 120 },
+        children: [
+          new TextRun({
+            text: "DOCUMENT OFFICIEL",
+            font: POLICES.mono,
+            size: TAILLES.petit,
+            characterSpacing: 24,
+            color: COULEURS.bordureForte,
+          }),
+        ],
+      }),
+      titrePanneau("Cahier du formateur"),
+      sousTitrePanneau("Partenaire en compétences"),
+    ]),
+    new Paragraph({ spacing: { after: 640 }, children: [] }),
+    renseignements(e),
+    new Paragraph({ spacing: { after: 1400 }, children: [] }),
+    signature(e),
+  ];
 }
 
 // ── La fiche d'identité ───────────────────────────────────────────────────
@@ -197,7 +343,7 @@ function ficheIdentite(e: Etablissement): Table {
     ["Date du dernier bilan de compétence", enDateCourte(e.dateDernierBilan)],
   ];
 
-  return new Table({
+  return tableau({
     width: PLEINE_LARGEUR,
     borders: BORDURES_TABLEAU,
     columnWidths: colonnes(UTILE_DEBOUT, [4, 6]),
@@ -241,64 +387,59 @@ function piedDePage(e: Etablissement): Footer {
   });
 }
 
-/** Un titre de page intérieure, celui que porte la fiche d'identité. */
-function titrePage(texte: string): Paragraph {
-  return new Paragraph({
-    alignment: AlignmentType.CENTER,
-    spacing: { before: 240, after: 360 },
-    children: [
-      new TextRun({
-        text: texte,
-        font: POLICES.titre,
-        size: TAILLES.titreDocument,
-        color: COULEURS.encre,
-      }),
-    ],
-  });
-}
-
 /**
  * La page qui annonce une partie.
  *
- * Le cahier officiel en pose une avant chaque partie : le titre, puis la
- * signature OFPPT. Elle sert de repère quand le cahier est relié et qu'on le
- * feuillette pour trouver le suivi d'un module.
+ * Même aplat que la couverture, en plus bas sur la page : le cahier relié se
+ * feuillette, et ces pages sont les onglets qu'on cherche du pouce.
  */
-function pageSeparatrice(texte: string): Paragraph[] {
+function pageSeparatrice(texte: string, rang: string): (Paragraph | Table)[] {
   return [
-    new Paragraph({ spacing: { after: 2400 }, children: [] }),
+    new Paragraph({ spacing: { after: 2600 }, children: [] }),
+    panneau(UTILE_DEBOUT, [
+      pastilles(),
+      new Paragraph({
+        spacing: { after: 120 },
+        children: [
+          new TextRun({
+            text: rang,
+            font: POLICES.mono,
+            size: TAILLES.petit,
+            characterSpacing: 24,
+            color: COULEURS.bordureForte,
+          }),
+        ],
+      }),
+      titrePanneau(texte, TAILLES.titreDocument),
+    ]),
+  ];
+}
+
+/**
+ * Le titre d'une page intérieure.
+ *
+ * Pas d'aplat ici : le panneau est réservé aux pages qui annoncent. Un sur-titre
+ * et un filet suffisent à poser le début d'une page.
+ */
+function titrePage(sur: string, texte: string): Paragraph[] {
+  return [
+    surTitre(sur, { couleur: COULEURS.sarcelle }),
     new Paragraph({
-      alignment: AlignmentType.CENTER,
-      spacing: { after: 400 },
+      spacing: { after: 300 },
+      border: {
+        bottom: {
+          style: BorderStyle.SINGLE,
+          size: 12,
+          color: COULEURS.encre,
+          space: 6,
+        },
+      },
       children: [
         new TextRun({
           text: texte,
           font: POLICES.titre,
           size: TAILLES.titreDocument,
           color: COULEURS.encre,
-        }),
-      ],
-    }),
-    new Paragraph({
-      alignment: AlignmentType.CENTER,
-      spacing: { after: 80 },
-      children: [
-        new TextRun({
-          text: "OFPPT",
-          font: POLICES.titre,
-          size: TAILLES.titre1,
-          color: COULEURS.sarcelle,
-        }),
-      ],
-    }),
-    new Paragraph({
-      alignment: AlignmentType.CENTER,
-      children: [
-        new TextRun({
-          text: "Partenaire en compétences",
-          font: POLICES.corps,
-          size: TAILLES.titre3,
-          color: COULEURS.ardoise,
         }),
       ],
     }),
@@ -335,13 +476,13 @@ export async function cahierDuFormateur(
     children: [
       ...(await couverture(e)),
       new Paragraph({ children: [new PageBreak()] }),
-      titrePage("CAHIER DU FORMATEUR"),
+      ...titrePage("Fiche d'identité", "Cahier du formateur"),
       ficheIdentite(e),
       new Paragraph({ children: [new PageBreak()] }),
-      titrePage("Procédures d'utilisation du Cahier du formateur"),
+      ...titrePage("Mode d'emploi", "Procédures d'utilisation"),
       ...rendreBlocs(PROCEDURES),
       new Paragraph({ children: [new PageBreak()] }),
-      ...pageSeparatrice("Planification et suivi de la formation"),
+      ...pageSeparatrice("Planification et suivi de la formation", "Première partie"),
     ],
   };
 
@@ -361,7 +502,10 @@ export async function cahierDuFormateur(
   const annonceII: ISectionOptions = {
     properties: { page: PAGE_DEBOUT },
     footers: { default: pied },
-    children: pageSeparatrice("Planification et suivi des évaluations"),
+    children: pageSeparatrice(
+      "Planification et suivi des évaluations",
+      "Deuxième partie",
+    ),
   };
 
   const secondePartie: ISectionOptions = {
@@ -382,7 +526,7 @@ export async function cahierDuFormateur(
     properties: { page: PAGE_DEBOUT },
     footers: { default: pied },
     children: [
-      ...pageSeparatrice("Annexes"),
+      ...pageSeparatrice("Annexes", "Modèles et références"),
       new Paragraph({ children: [new PageBreak()] }),
       ...annexesTextes(),
     ],

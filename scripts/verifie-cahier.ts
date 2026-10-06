@@ -345,19 +345,39 @@ const p = await ouvrir(complet);
 for (const ligne of [
   "Royaume du Maroc",
   "Office de la Formation Professionnelle et de la Promotion du Travail",
-  "CAHIER DU FORMATEUR",
+  "DOCUMENT OFFICIEL",
+  "Cahier du formateur",
   "Partenaire en compétences",
-  "Direction Régionale : SOUSS MASSA",
-  "Établissement : CMC Souss Massa",
-  "Année de formation : 2025/2026",
+  "DIRECTION RÉGIONALE",
+  "SOUSS MASSA",
+  "ÉTABLISSEMENT",
+  "CMC Souss Massa",
+  "ANNÉE DE FORMATION",
+  "2025/2026",
+  "LE FORMATEUR",
+  "EL KADDOURI Rachid · mat. 17980",
 ]) {
   verifie(`Couverture : « ${ligne} »`, p.texte.includes(ligne));
 }
+/*
+  Les trois pastilles signent chaque page annoncée : la couverture et les trois
+  pages de partie. Le vert ne paraît nulle part ailleurs — il n'est pas une
+  couleur d'information dans ce document — donc le compter les compte.
+*/
+const signees = (p.xml.match(/<w:color w:val="368050"\/>/g) ?? []).length;
+verifie("Quatre pages annoncées, chacune signée de ses pastilles", signees === 4,
+  `${signees} trouvées`);
 
-// La fiche d'identité : dix lignes, deux colonnes, pas une de moins. Elle ouvre
-// le document, donc c'est le premier tableau.
+/*
+  La fiche d'identité : dix lignes, deux colonnes, pas une de moins.
+
+  Repérée par sa première ligne et non par son rang. Elle ouvrait le document
+  jusqu'à ce que la couverture reçoive ses propres tableaux de mise en page, et
+  un index figé a alors mesuré le mauvais tableau.
+*/
 const tableaux = [...p.xml.matchAll(/<w:tbl>[\s\S]*?<\/w:tbl>/g)].map((m) => m[0]);
-const identite = tableaux[0] ?? "";
+const identite =
+  tableaux.find((t) => grille(t)[0]?.[0] === "Nom et Prénom") ?? "";
 const lignesIdentite = (identite.match(/<w:tr[\s>]/g) ?? []).length;
 verifie("Fiche d'identité : dix lignes", lignesIdentite === 10, `${lignesIdentite} lignes`);
 const premiereLigne = /<w:tr[\s>][\s\S]*?<\/w:tr>/.exec(identite)?.[0] ?? "";
@@ -430,8 +450,34 @@ function grille(tbl: string): string[][] {
   );
 }
 
-verifie("Les tableaux de la partie I sont dans une section couchée",
-  p.xml.includes('w:orient="landscape"'));
+/*
+  Une section couchée doit l'être pour de bon : le drapeau `landscape` ne suffit
+  pas, Word lit les dimensions. Elles sortaient à l'endroit — `docx` échange
+  lui-même largeur et hauteur, et les lui donner déjà échangées les remettait
+  comme avant — si bien que les tableaux de quatorze colonnes étaient tassés
+  dans 186 mm au lieu de 273.
+*/
+const pages = [...p.xml.matchAll(/<w:pgSz w:w="(\d+)" w:h="(\d+)"(?: w:orient="(\w+)")?\/>/g)]
+  .map((m) => ({ l: Number(m[1]), h: Number(m[2]), sens: m[3] ?? "portrait" }));
+verifie("Chaque page couchée est plus large que haute",
+  pages.filter((x) => x.sens === "landscape").every((x) => x.l > x.h),
+  pages.map((x) => `${x.sens} ${x.l}×${x.h}`).join(" | "));
+verifie("Chaque page debout est plus haute que large",
+  pages.filter((x) => x.sens === "portrait").every((x) => x.h > x.l),
+  pages.map((x) => `${x.sens} ${x.l}×${x.h}`).join(" | "));
+verifie("Trois sections couchées pour les tableaux",
+  pages.filter((x) => x.sens === "landscape").length === 3,
+  `${pages.filter((x) => x.sens === "landscape").length}`);
+
+/*
+  Et les largeurs de colonnes doivent faire autorité : sans `tblLayout fixed`,
+  Word ajuste au contenu et le panneau de la couverture n'occupait que la moitié
+  de la page.
+*/
+const tables = (p.xml.match(/<w:tbl>/g) ?? []).length;
+const figees = (p.xml.match(/<w:tblLayout w:type="fixed"\/>/g) ?? []).length;
+verifie("Tous les tableaux ont une mise en table figée", tables === figees,
+  `${figees} figés sur ${tables}`);
 verifie("Une section couchée", p.xml.includes('w:orient="landscape"'));
 
 verifie("Titre de la partie", p.texte.includes("I- Planification et suivi de la formation"));
@@ -998,16 +1044,17 @@ verifie("Et ses cases sont vides",
 // Six sections : chaque page de titre debout, chaque série de tableaux couchée.
 verifie("Six sections", (p.xml.match(/<w:sectPr/g) ?? []).length === 6,
   `${(p.xml.match(/<w:sectPr/g) ?? []).length} sections`);
-verifie("Trois sections couchées",
-  (p.xml.match(/w:orient="landscape"/g) ?? []).length === 3,
-  `${(p.xml.match(/w:orient="landscape"/g) ?? []).length} couchées`);
 
 // Le compte vide : le cahier sort, et ses cases portent un tiret.
 const q = await ouvrir(vide, neuf);
 verifie("Un compte vide produit tout de même un cahier", q.xml.length > 2000);
 verifie("Une ligne non renseignée porte un tiret", q.texte.includes("-"));
 verifie("Un compte vide n'écrit pas « null »", !q.texte.includes("null"));
-const lignesVide = ((/<w:tbl>[\s\S]*?<\/w:tbl>/.exec(q.xml)?.[0] ?? "").match(/<w:tr[\s>]/g) ?? []).length;
+const identiteVide =
+  [...q.xml.matchAll(/<w:tbl>[\s\S]*?<\/w:tbl>/g)]
+    .map((m) => m[0])
+    .find((t) => grille(t)[0]?.[0] === "Nom et Prénom") ?? "";
+const lignesVide = (identiteVide.match(/<w:tr[\s>]/g) ?? []).length;
 
 verifie("Fiche d'identité : dix lignes même à vide", lignesVide === 10, `${lignesVide} lignes`);
 /*

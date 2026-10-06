@@ -20,6 +20,7 @@ import {
   colonnes,
   emargement,
   paragraphe,
+  tableau,
   titre2,
   titre3,
 } from "@/lib/docx-charte";
@@ -132,7 +133,7 @@ function planificationCC(lignes: PlanificationCC[]): Bloc[] {
 
   return [
     titre,
-    new Table({
+    tableau({
       width: PLEINE_LARGEUR,
       borders: BORDURES_TABLEAU,
       columnWidths: colonnes(UTILE_COUCHEE, [
@@ -216,7 +217,7 @@ function planificationEFM(lignes: PlanificationEFM[]): Bloc[] {
 
   return [
     titre,
-    new Table({
+    tableau({
       width: PLEINE_LARGEUR,
       borders: BORDURES_TABLEAU,
       columnWidths: colonnes(UTILE_COUCHEE, [
@@ -233,7 +234,7 @@ function planificationEFM(lignes: PlanificationEFM[]): Bloc[] {
 /** L'en-tête d'un tableau de notes : le module, ses heures, son groupe. */
 function enteteNotes(m: NotesModule): Table {
   const annee = (n: number) => (m.annee === n ? "Oui" : "");
-  return new Table({
+  return tableau({
     width: PLEINE_LARGEUR,
     borders: BORDURES_TABLEAU,
     columnWidths: colonnes(UTILE_COUCHEE, [2, 2, 2, 2, 2, 2]),
@@ -304,7 +305,7 @@ function tableauNotes(m: NotesModule): Table {
     ]);
   });
 
-  return new Table({
+  return tableau({
     width: PLEINE_LARGEUR,
     borders: BORDURES_TABLEAU,
     columnWidths: colonnes(UTILE_COUCHEE, [
@@ -349,7 +350,7 @@ function ficheAppreciation(m: NotesModule): Bloc[] {
 
   return [
     titre3(`${m.module} — ${m.groupe}`),
-    new Table({
+    tableau({
       width: PLEINE_LARGEUR,
       borders: BORDURES_TABLEAU,
       columnWidths: colonnes(UTILE_COUCHEE, [1.2, 4, 7]),

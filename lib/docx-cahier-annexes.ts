@@ -19,6 +19,7 @@ import {
   cellule,
   celluleEntete,
   colonnes,
+  tableau,
   titre2,
 } from "@/lib/docx-charte";
 import { rendreBlocs } from "@/lib/docx-blocs";
@@ -56,7 +57,7 @@ const TEMPS = [0.9, 8, 1.9];
 
 /** Un des trois temps de la séance : introduction, développement, conclusion. */
 function tempsDeSeance(titre: string, rubriques: string[]): Table {
-  return new Table({
+  return tableau({
     width: PLEINE_LARGEUR,
     borders: BORDURES_TABLEAU,
     columnWidths: colonnes(UTILE_COUCHEE, TEMPS),
@@ -76,7 +77,7 @@ function tempsDeSeance(titre: string, rubriques: string[]): Table {
 }
 
 function modeleFichePreparation(): Bloc[] {
-  const identite = new Table({
+  const identite = tableau({
     width: PLEINE_LARGEUR,
     borders: BORDURES_TABLEAU,
     columnWidths: colonnes(UTILE_COUCHEE, [2.4, 0.3, 1.3, 0.3, 1.3, 5.2]),
@@ -112,7 +113,7 @@ function modeleFichePreparation(): Bloc[] {
     new Paragraph({ spacing: { after: 160 }, children: [] }),
     // Le développement n'a pas de rubriques imposées : une seule ligne, haute,
     // et la colonne de droite accueille les stratégies pédagogiques.
-    new Table({
+    tableau({
       width: PLEINE_LARGEUR,
       borders: BORDURES_TABLEAU,
       columnWidths: colonnes(UTILE_COUCHEE, TEMPS),
@@ -156,7 +157,7 @@ function modeleLogigramme(): Bloc[] {
 
   return [
     titre2("Modèle de logigramme de la filière"),
-    new Table({
+    tableau({
       width: PLEINE_LARGEUR,
       borders: BORDURES_TABLEAU,
       columnWidths: colonnes(UTILE_COUCHEE, [2, 1, 1]),
@@ -169,7 +170,7 @@ function modeleLogigramme(): Bloc[] {
       ],
     }),
     new Paragraph({ spacing: { after: 120 }, children: [] }),
-    new Table({
+    tableau({
       width: PLEINE_LARGEUR,
       borders: BORDURES_TABLEAU,
       columnWidths: colonnes(UTILE_COUCHEE, [
