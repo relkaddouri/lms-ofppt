@@ -77,7 +77,9 @@ const CONSIGNES_FORMAT = {
     ],
   },
   mixte: {
-    libelle: "théorique et pratique",
+    // Le nom de l'OFPPT, puis sa définition : le modèle a besoin des deux —
+    // « synthèse » seul ne lui dit pas ce qu'il doit écrire.
+    libelle: "de synthèse, c'est-à-dire théorique et pratique",
     types: ["qcm", "ouverte", "exercice"] as const,
     consigne: [
       "Ce contrôle est THÉORIQUE ET PRATIQUE : il combine les deux. Emploie",
