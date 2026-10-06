@@ -1298,6 +1298,7 @@ export type Database = {
           date_dernier_bilan: string | null
           date_recrutement: string | null
           diplome: string | null
+          direction_regionale: string | null
           echelon: string | null
           etablissement: string | null
           formateur_id: string
@@ -1327,6 +1328,7 @@ export type Database = {
           date_dernier_bilan?: string | null
           date_recrutement?: string | null
           diplome?: string | null
+          direction_regionale?: string | null
           echelon?: string | null
           etablissement?: string | null
           formateur_id?: string
@@ -1356,6 +1358,7 @@ export type Database = {
           date_dernier_bilan?: string | null
           date_recrutement?: string | null
           diplome?: string | null
+          direction_regionale?: string | null
           echelon?: string | null
           etablissement?: string | null
           formateur_id?: string

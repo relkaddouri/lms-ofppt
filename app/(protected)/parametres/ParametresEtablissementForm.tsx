@@ -26,9 +26,9 @@ import {
  * officiel impose un bloc d'en-tête que rien dans le schéma ne détermine
  * (PRD §4.13bis).
  *
- * Les huit derniers ne servent qu'au cahier du formateur, dont la fiche
- * d'identité les demande. Ils se recopiaient à la main dans Word à chaque
- * édition ; saisis ici une fois, ils resservent chaque année.
+ * Les neuf derniers ne servent qu'au cahier du formateur : sa couverture et sa
+ * fiche d'identité les demandent. Ils se recopiaient à la main dans Word à
+ * chaque édition ; saisis ici une fois, ils resservent chaque année.
  */
 
 const CHAMPS_ENTETE = [
@@ -56,6 +56,13 @@ const CHAMPS_ENTETE = [
  * formateur de se demander si le mois vient avant le jour.
  */
 const CHAMPS_IDENTITE = [
+  {
+    cle: "directionRegionale",
+    libelle: "Direction régionale",
+    type: "text",
+    exemple: "SOUSS MASSA",
+    aide: "Première ligne de la couverture du cahier.",
+  },
   {
     cle: "dateRecrutement",
     libelle: "Date de recrutement",
@@ -132,6 +139,7 @@ function enteteInitial(i: Etablissement) {
 
 function identiteInitiale(i: Etablissement) {
   return {
+    directionRegionale: i.directionRegionale ?? "",
     dateRecrutement: i.dateRecrutement ?? "",
     grade: i.grade ?? "",
     echelon: i.echelon ?? "",
@@ -183,6 +191,7 @@ export default function ParametresEtablissementForm({
           codeSecteur: entete.codeSecteur.trim() || null,
           niveauFormation: entete.niveauFormation.trim() || null,
           anneeScolaire: entete.anneeScolaire.trim() || null,
+          directionRegionale: identite.directionRegionale.trim() || null,
           dateRecrutement: identite.dateRecrutement || null,
           grade: identite.grade.trim() || null,
           echelon: identite.echelon.trim() || null,

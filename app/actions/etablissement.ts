@@ -28,6 +28,8 @@ export type Etablissement = {
   niveauFormation: string | null;
   /** Format AAAA/AAAA. */
   anneeScolaire: string | null;
+  /** Par exemple « SOUSS MASSA ». Première ligne de la couverture du cahier. */
+  directionRegionale: string | null;
 
   /*
     Les huit lignes que le cahier du formateur demande en plus (migration 113).
@@ -56,7 +58,7 @@ export async function getEtablissement(): Promise<Etablissement> {
   const { data, error } = await supabase
     .from("parametres_formateur")
     .select(
-      "etablissement, logo_etablissement, nom_formateur, matricule, code_secteur, niveau_formation, annee_scolaire, date_recrutement, grade, echelon, diplome, specialite_origine, specialite_affectation, date_affectation, date_dernier_bilan",
+      "etablissement, logo_etablissement, nom_formateur, matricule, code_secteur, niveau_formation, annee_scolaire, direction_regionale, date_recrutement, grade, echelon, diplome, specialite_origine, specialite_affectation, date_affectation, date_dernier_bilan",
     )
     .maybeSingle();
 
@@ -70,6 +72,7 @@ export async function getEtablissement(): Promise<Etablissement> {
     codeSecteur: data?.code_secteur?.trim() || null,
     niveauFormation: data?.niveau_formation?.trim() || null,
     anneeScolaire: data?.annee_scolaire?.trim() || null,
+    directionRegionale: data?.direction_regionale?.trim() || null,
     dateRecrutement: data?.date_recrutement ?? null,
     grade: data?.grade?.trim() || null,
     echelon: data?.echelon?.trim() || null,
@@ -110,6 +113,7 @@ export async function saveEtablissement(input: Etablissement): Promise<void> {
     [texte(input.matricule), "Le matricule"],
     [texte(input.codeSecteur), "Le code secteur"],
     [texte(input.niveauFormation), "Le niveau de formation"],
+    [texte(input.directionRegionale), "La direction régionale"],
     [texte(input.grade), "Le grade"],
     [texte(input.echelon), "L'échelon"],
     [texte(input.specialiteOrigine), "La spécialité d'origine"],
@@ -153,6 +157,7 @@ export async function saveEtablissement(input: Etablissement): Promise<void> {
       code_secteur: texte(input.codeSecteur),
       niveau_formation: texte(input.niveauFormation),
       annee_scolaire: anneeScolaire,
+      direction_regionale: texte(input.directionRegionale),
       // Une date vide s'enregistre nulle et non chaîne vide : la colonne est
       // de type date, et Postgres refuse « » — c'est l'erreur qui a fait
       // tomber des écrans en production sur les identifiants.
