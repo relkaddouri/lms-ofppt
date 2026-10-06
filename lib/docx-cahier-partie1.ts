@@ -141,7 +141,11 @@ function filieresEtGroupes(data: CahierPartieI, aujourdhui: Date): Bloc[] {
   );
 
   return [
-    titre3("Filières et groupes pris en charge", { nouvellePage: true }),
+    /*
+      Pas de saut ici : ce tableau suit le titre de la partie et celui de la
+      section. En casser un de plus laissait les deux titres seuls sur une page.
+    */
+    titre3("Filières et groupes pris en charge"),
     tableau({
       width: PLEINE_LARGEUR,
       borders: BORDURES_TABLEAU,
@@ -246,7 +250,7 @@ function cadreAColler(consigne: string, hauteurMm: number): Table {
  * dessine donc, avec sa période de validité : un rythme change en cours
  * d'année, et il faut pouvoir dire lequel s'appliquait quand.
  */
-function unMotif(m: MotifHebdomadaire): Bloc[] {
+function unMotif(m: MotifHebdomadaire, nouvellePage: boolean): Bloc[] {
   const periode = m.date_fin
     ? `du ${jour(m.date_debut)} au ${jour(m.date_fin)}`
     : `à partir du ${jour(m.date_debut)}`;
@@ -293,7 +297,7 @@ function unMotif(m: MotifHebdomadaire): Bloc[] {
 
   return [
     titre3(`${m.libelle?.trim() || "Rythme hebdomadaire"} — ${periode}`, {
-      nouvellePage: true,
+      nouvellePage,
     }),
     tableau({
       width: PLEINE_LARGEUR,
@@ -318,7 +322,11 @@ function unMotif(m: MotifHebdomadaire): Bloc[] {
  * Les colonnes portent le rang du module dans le programme, de 1 à seize, et
  * une ligne de codes juste en dessous : « N° Modules » seul ne se lit pas.
  */
-function unLogigramme(l: Logigramme, anneeScolaire: string | null): Bloc[] {
+function unLogigramme(
+  l: Logigramme,
+  anneeScolaire: string | null,
+  nouvellePage: boolean,
+): Bloc[] {
   const n = l.modules.length;
 
   const identite = tableau({
@@ -336,7 +344,7 @@ function unLogigramme(l: Logigramme, anneeScolaire: string | null): Bloc[] {
 
   if (l.semaines.length === 0) {
     return [
-      titre3(`Logigramme — ${l.groupe}`, { nouvellePage: true }),
+      titre3(`Logigramme — ${l.groupe}`, { nouvellePage }),
       identite,
       paragraphe(
         "Aucune séance programmée pour ce groupe : le logigramme se dessinera dès que l'emploi du temps sera saisi.",
@@ -410,7 +418,7 @@ function unLogigramme(l: Logigramme, anneeScolaire: string | null): Bloc[] {
   );
 
   return [
-    titre3(`Logigramme — ${l.groupe}`, { nouvellePage: true }),
+    titre3(`Logigramme — ${l.groupe}`, { nouvellePage }),
     identite,
     tableau({
       width: PLEINE_LARGEUR,
@@ -601,7 +609,11 @@ function tempsDeLaFiche(titre: string, rubriques: Rubrique[]): Table {
 }
 
 /** Une fiche de préparation, dans le canevas officiel. */
-function uneFiche(f: FicheOfficielle, numero: number): Bloc[] {
+function uneFiche(
+  f: FicheOfficielle,
+  numero: number,
+  nouvellePage: boolean,
+): Bloc[] {
   const duree =
     f.dureeMinutes !== null
       ? `${nbHeures(Math.round((f.dureeMinutes / 60) * 100) / 100)} heures`
@@ -663,7 +675,7 @@ function uneFiche(f: FicheOfficielle, numero: number): Bloc[] {
 
   return [
     titre3(`Fiche de préparation n° ${numero} — ${jour(f.date)}`, {
-      nouvellePage: true,
+      nouvellePage,
     }),
     identite,
     new Paragraph({ spacing: { after: 120 }, children: [] }),
@@ -703,7 +715,7 @@ export function partieI(
           paragraphe(
             "Le rythme hebdomadaire qui place les séances. Un motif par période de validité, du plus récent au plus ancien.",
           ),
-          ...data.motifs.flatMap(unMotif),
+          ...data.motifs.flatMap((m, i) => unMotif(m, i > 0)),
         ]
       : [
           cadreAColler(
@@ -717,7 +729,7 @@ export function partieI(
     paragraphe(
       "Établi d'après les séances programmées : les modules en colonnes, à leur rang dans le programme, et les semaines en lignes. Si la filière dispose déjà d'un logigramme validé, il remplace celui-ci.",
     ),
-    ...data.logigrammes.flatMap((l) => unLogigramme(l, anneeScolaire)),
+    ...data.logigrammes.flatMap((l, i) => unLogigramme(l, anneeScolaire, i > 0)),
 
     titre2("D- Planification et suivi de la réalisation des modules de formation", {
       nouvellePage: true,
@@ -753,7 +765,7 @@ export function partieI(
           `Les ${m.fiches.length} séance${m.fiches.length > 1 ? "s" : ""} réalisée${m.fiches.length > 1 ? "s" : ""} de ce module, dans le canevas officiel.`,
         ),
       );
-      m.fiches.forEach((f, n) => blocs.push(...uneFiche(f, n + 1)));
+      m.fiches.forEach((f, n) => blocs.push(...uneFiche(f, n + 1, n > 0)));
     }
   });
 

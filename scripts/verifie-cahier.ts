@@ -50,7 +50,7 @@ import { lireFiche } from "@/lib/fiche";
 const vraiFetch = globalThis.fetch;
 globalThis.fetch = (async (entree: RequestInfo | URL, init?: RequestInit) => {
   const url = String(entree);
-  if (url.startsWith("/polices/")) {
+  if (url.startsWith("/polices/") || url.startsWith("/marque/")) {
     const octets = readFileSync(`public${url}`);
     return new Response(
       new Uint8Array(octets.buffer, octets.byteOffset, octets.byteLength),
@@ -465,7 +465,6 @@ const p = await ouvrir(complet);
 // La couverture, telle que l'officiel l'ordonne.
 for (const ligne of [
   "Royaume du Maroc",
-  "Office de la Formation Professionnelle et de la Promotion du Travail",
   "DOCUMENT OFFICIEL",
   "Cahier du formateur",
   "Partenaire en compétences",
@@ -480,6 +479,13 @@ for (const ligne of [
 ]) {
   verifie(`Couverture : « ${ligne} »`, p.texte.includes(ligne));
 }
+// Les deux logos du bandeau : celui de l'établissement et celui de l'OFPPT.
+// Le second porte déjà le nom de l'Office en arabe et en français — inutile
+// de le réécrire sous lui.
+verifie("Le logo de l'OFPPT voyage avec le cahier",
+  Object.keys(p.zip.files).some((f) => f.startsWith("word/media/")),
+  Object.keys(p.zip.files).filter((f) => f.startsWith("word/media/")).join(", "));
+
 /*
   Les trois pastilles signent chaque page annoncée : la couverture et les trois
   pages de partie. Le vert ne paraît nulle part ailleurs — il n'est pas une
@@ -603,7 +609,11 @@ verifie("Une section couchée", p.xml.includes('w:orient="landscape"'));
 
 verifie("Titre de la partie", p.texte.includes("I- Planification et suivi de la formation"));
 for (const titre of [
-  "Filières et groupes pris en charge",
+  /*
+    « Filières et groupes pris en charge » n'y figure pas : il suit le titre de
+    la partie et celui de la section, et en casser un de plus laissait les deux
+    titres seuls sur une page. C'est le vide que le document montrait.
+  */
   "Modules pris en charge",
   "Emploi du temps du formateur",
   "Logigramme de la filière",
@@ -805,12 +815,28 @@ verifie("Celle d'une première année porte le tronc commun",
     [affecte("m102", "M102", "tronc_commun", 2, 55)],
     [programme("2025-10-13", "m102", 5)],
   )[0]?.filiere === "Digital Design - Tronc Commun");
-verifie("Une deuxième année sans option écrit « Spécialisation »",
+/*
+  Sans option déclarée, la spécialité seule : lui ajouter « - Spécialisation »
+  donnait « Digital Design - Option UX Design - Spécialisation » quand son nom
+  portait déjà l'option.
+*/
+verifie("Une deuxième année sans option garde la spécialité seule",
   logigrammes(
     [{ ...groupeEssai[0]!, option_formation: null }],
     [affecte("m102", "M102", "specialisation", 2, 55)],
     [programme("2025-10-13", "m102", 5)],
-  )[0]?.filiere === "Digital Design - Spécialisation");
+  )[0]?.filiere === "Digital Design");
+/*
+  Une première année n'est pas tenue d'avoir une spécialité : la base ne
+  l'exige qu'en deuxième. « — - Tronc Commun » se lisait comme une donnée
+  manquante.
+*/
+verifie("Une première année sans spécialité écrit « Tronc Commun » tout court",
+  logigrammes(
+    [{ ...groupeEssai[0]!, annee: 1, option_formation: null, specialites: null }],
+    [affecte("m102", "M102", "tronc_commun", 2, 55)],
+    [programme("2025-10-13", "m102", 5)],
+  )[0]?.filiere === "Tronc Commun");
 verifie("Les colonnes suivent le rang du programme, pas l'ordre des affectations",
   dessine?.modules.map((m) => m.code).join(",") === "M102,M204",
   dessine?.modules.map((m) => m.code).join(","));
@@ -1270,7 +1296,11 @@ const sauts = (p.xml.match(/<w:pageBreakBefore\/>/g) ?? []).length;
 verifie("Chaque section et chaque module ouvre sa page", sauts >= 10,
   `${sauts} sauts`);
 for (const titre of [
-  "Filières et groupes pris en charge",
+  /*
+    « Filières et groupes pris en charge » n'y figure pas : il suit le titre de
+    la partie et celui de la section, et en casser un de plus laissait les deux
+    titres seuls sur une page. C'est le vide que le document montrait.
+  */
   "Modules pris en charge",
   "B- Emploi du temps du formateur",
   "A- Planification et suivi de la réalisation des contrôles continus (CC)",
@@ -1284,6 +1314,23 @@ for (const titre of [
     : p.xml.indexOf(titre);
   const avant = p.xml.slice(Math.max(0, i - 1000), i);
   verifie(`« ${titre} » ouvre sa page`, avant.includes("<w:pageBreakBefore/>"));
+}
+
+/*
+  Et le premier bloc d'une section ne casse pas la page : sinon son titre reste
+  seul. On le vérifie aux quatre endroits où cela se produisait.
+*/
+for (const titre of [
+  "Filières et groupes pris en charge",
+  "Second semestre",
+  "Logigramme — DES101",
+  "Fiche de préparation n° 1",
+]) {
+  const i = p.xml.indexOf(titre);
+  const avant = i >= 0 ? p.xml.slice(Math.max(0, i - 600), i) : "";
+  verifie(`« ${titre} » suit son titre de section sans casser la page`,
+    i >= 0 && !avant.includes("<w:pageBreakBefore/>"),
+    i < 0 ? "titre absent" : "");
 }
 
 // ── Les annexes ─────────────────────────────────────────────────────────

@@ -153,59 +153,85 @@ function caseNue(contenu: Paragraph[], haut = 0): TableCell {
   });
 }
 
+/** Le logo de l'OFPPT, livré avec l'application. */
+async function logoOfppt(largeur: number): Promise<Paragraph[]> {
+  try {
+    const rep = await fetch("/marque/ofppt.png");
+    if (!rep.ok) throw new Error("logo introuvable");
+    const octets = new Uint8Array(await rep.arrayBuffer());
+    // Ses proportions sont connues : il est livré avec l'application.
+    const hauteur = Math.round((largeur * 145) / 512);
+    return [
+      new Paragraph({
+        alignment: AlignmentType.RIGHT,
+        children: [
+          new ImageRun({
+            data: octets,
+            transformation: { width: largeur, height: hauteur },
+            type: "png",
+          }),
+        ],
+      }),
+    ];
+  } catch {
+    // Hors ligne ou fichier absent : la couverture sort sans lui plutôt que
+    // de ne pas sortir.
+    return [];
+  }
+}
+
+/** Le logo de l'établissement, déposé par le formateur dans Paramètres. */
+async function logoEtablissement(e: Etablissement): Promise<Paragraph[]> {
+  if (!e.logo) return [];
+  try {
+    const { octets, type } = decoderLogo(e.logo);
+    const transformation = await mesurerLogo(e.logo, 150);
+    return [
+      new Paragraph({
+        children: [new ImageRun({ data: octets, transformation, type })],
+      }),
+    ];
+  } catch {
+    // Un logo illisible n'empêche pas le cahier de sortir : le formateur le
+    // collera lui-même, ce qui vaut mieux que pas de cahier du tout.
+    return [];
+  }
+}
+
 /**
- * Le bandeau du centre : le logo à gauche, l'État et l'Office à droite.
+ * Le bandeau du centre : l'établissement à gauche, l'OFPPT à droite.
+ *
+ * Les deux logos voisinent comme sur les documents de l'Office, et « Royaume du
+ * Maroc » les surmonte : le logo de l'OFPPT porte déjà le nom de l'Office en
+ * arabe et en français, inutile de le réécrire sous lui.
  *
  * Un tableau sans filets sert de gouttière — Word n'a pas d'autre moyen de poser
  * deux choses côte à côte sans qu'elles se poussent.
  */
-async function bandeau(e: Etablissement): Promise<Table> {
-  const logo: Paragraph[] = [];
-  if (e.logo) {
-    try {
-      const { octets, type } = decoderLogo(e.logo);
-      const transformation = await mesurerLogo(e.logo, 150);
-      logo.push(
-        new Paragraph({
-          children: [new ImageRun({ data: octets, transformation, type })],
-        }),
-      );
-    } catch {
-      // Un logo illisible n'empêche pas le cahier de sortir : le formateur le
-      // collera lui-même, ce qui vaut mieux que pas de cahier du tout.
-    }
-  }
+async function bandeau(e: Etablissement): Promise<(Paragraph | Table)[]> {
+  const [gauche, droite] = await Promise.all([
+    logoEtablissement(e),
+    logoOfppt(210),
+  ]);
 
-  return tableau({
-    width: PLEINE_LARGEUR,
-    borders: SANS_FILETS,
-    columnWidths: colonnes(UTILE_DEBOUT, [1, 1.4]),
-    rows: [
-      new TableRow({
-        children: [
-          caseNue(logo),
-          caseNue([
-            ligne("Royaume du Maroc", {
-              aDroite: true,
-              police: POLICES.corps,
-              couleur: COULEURS.ardoise,
-              apres: 40,
-            }),
-            ligne(
-              "Office de la Formation Professionnelle et de la Promotion du Travail",
-              {
-                aDroite: true,
-                police: POLICES.corps,
-                taille: TAILLES.petit,
-                couleur: COULEURS.ardoise,
-                apres: 0,
-              },
-            ),
-          ]),
-        ],
-      }),
-    ],
-  });
+  return [
+    ligne("Royaume du Maroc", {
+      aDroite: true,
+      police: POLICES.corps,
+      couleur: COULEURS.ardoise,
+      apres: 120,
+    }),
+    tableau({
+      width: PLEINE_LARGEUR,
+      borders: SANS_FILETS,
+      columnWidths: colonnes(UTILE_DEBOUT, [1, 1.2]),
+      rows: [
+        new TableRow({
+          children: [caseNue(gauche), caseNue(droite)],
+        }),
+      ],
+    }),
+  ];
 }
 
 /** Les quatre renseignements de la couverture, rangés en deux colonnes. */
@@ -283,7 +309,7 @@ function signature(e: Etablissement): Table {
 
 async function couverture(e: Etablissement): Promise<(Paragraph | Table)[]> {
   return [
-    await bandeau(e),
+    ...(await bandeau(e)),
     new Paragraph({ spacing: { after: 700 }, children: [] }),
     /*
       Le seul aplat de la page. C'est ce qui la fait reconnaître de loin dans une
