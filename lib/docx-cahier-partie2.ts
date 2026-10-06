@@ -80,6 +80,7 @@ const LIGNES_LIBRES = 2;
 function planificationCC(lignes: PlanificationCC[]): Bloc[] {
   const titre = titre2(
     "A- Planification et suivi de la réalisation des contrôles continus (CC)",
+    { nouvellePage: true },
   );
   if (lignes.length === 0) {
     return [
@@ -154,6 +155,7 @@ function planificationCC(lignes: PlanificationCC[]): Bloc[] {
 function planificationEFM(lignes: PlanificationEFM[]): Bloc[] {
   const titre = titre2(
     "B- Planification et suivi de la réalisation des examens de fin de modules (EFM)",
+    { nouvellePage: true },
   );
   if (lignes.length === 0) {
     return [
@@ -330,7 +332,7 @@ function tableauNotes(m: NotesModule): Table {
  * Les lignes restent aérées : c'est ce que la Direction lit en premier, et le
  * formateur y ajoute souvent une phrase à la main.
  */
-function ficheAppreciation(m: NotesModule): Bloc[] {
+function ficheAppreciation(m: NotesModule, nouvellePage: boolean): Bloc[] {
   const entete = new TableRow({
     tableHeader: true,
     children: [
@@ -349,7 +351,7 @@ function ficheAppreciation(m: NotesModule): Bloc[] {
   );
 
   return [
-    titre3(`${m.module} — ${m.groupe}`),
+    titre3(`${m.module} — ${m.groupe}`, { nouvellePage }),
     tableau({
       width: PLEINE_LARGEUR,
       borders: BORDURES_TABLEAU,
@@ -367,7 +369,9 @@ export function partieII(data: CahierPartieII): Bloc[] {
   const blocs: Bloc[] = [
     ...planificationCC(data.controlesContinus),
     ...planificationEFM(data.examens),
-    titre2("C- Notes des contrôles continus et de l'examen de fin de module"),
+    titre2("C- Notes des contrôles continus et de l'examen de fin de module", {
+      nouvellePage: true,
+    }),
   ];
 
   if (data.notes.length === 0) {
@@ -380,19 +384,23 @@ export function partieII(data: CahierPartieII): Bloc[] {
     return blocs;
   }
 
-  for (const m of data.notes) {
+  // Chaque module sur sa page : le premier suit son titre de section, qui vient
+  // d'en ouvrir une.
+  data.notes.forEach((m, i) => {
     blocs.push(
-      titre3(`${m.module} — ${m.groupe}`),
+      titre3(`${m.module} — ${m.groupe}`, { nouvellePage: i > 0 }),
       enteteNotes(m),
       tableauNotes(m),
       emargement(),
     );
-  }
+  });
 
-  blocs.push(titre2("D- Fiche d'appréciation des stagiaires par module"));
-  for (const m of data.notes) {
-    blocs.push(...ficheAppreciation(m));
-  }
+  blocs.push(
+    titre2("D- Fiche d'appréciation des stagiaires par module", {
+      nouvellePage: true,
+    }),
+  );
+  data.notes.forEach((m, i) => blocs.push(...ficheAppreciation(m, i > 0)));
 
   return blocs;
 }

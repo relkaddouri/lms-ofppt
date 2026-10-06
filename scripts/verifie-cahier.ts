@@ -969,6 +969,32 @@ verifie("Et laisse la case libre quand il n'y a pas encore de moyenne",
   (apprecTbl[2] ?? [])[1] === "FAHMI Khadija" && (apprecTbl[2] ?? [])[2] === "",
   (apprecTbl[2] ?? []).join("|"));
 
+/*
+  Chaque tableau du cahier officiel occupe sa page : on le feuillette pour
+  trouver un module, et deux tableaux sur la même page obligent à lire pour
+  savoir où l'on est. Le saut est porté par le titre, et non par un paragraphe
+  vide qui laisserait une ligne blanche en tête de page.
+*/
+const sauts = (p.xml.match(/<w:pageBreakBefore\/>/g) ?? []).length;
+verifie("Chaque section et chaque module ouvre sa page", sauts >= 10,
+  `${sauts} sauts`);
+for (const titre of [
+  "Filières et groupes pris en charge",
+  "Modules pris en charge",
+  "B- Emploi du temps du formateur",
+  "A- Planification et suivi de la réalisation des contrôles continus (CC)",
+  "D- Fiche d'appréciation des stagiaires par module",
+  "Modèle de fiche préparation",
+]) {
+  // Le titre et son saut sont dans le même paragraphe : on cherche l'un à
+  // moins de mille caractères de l'autre, sans quoi le saut est ailleurs.
+  const i = p.xml.indexOf(titre.replace(/'/g, "&#39;")) >= 0
+    ? p.xml.indexOf(titre.replace(/'/g, "&#39;"))
+    : p.xml.indexOf(titre);
+  const avant = p.xml.slice(Math.max(0, i - 1000), i);
+  verifie(`« ${titre} » ouvre sa page`, avant.includes("<w:pageBreakBefore/>"));
+}
+
 // ── Les annexes ─────────────────────────────────────────────────────────
 
 verifie("La page des annexes", p.texte.includes("Annexes"));

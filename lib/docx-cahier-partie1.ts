@@ -128,7 +128,7 @@ function filieresEtGroupes(data: CahierPartieI, aujourdhui: Date): Bloc[] {
   );
 
   return [
-    titre3("Filières et groupes pris en charge"),
+    titre3("Filières et groupes pris en charge", { nouvellePage: true }),
     tableau({
       width: PLEINE_LARGEUR,
       borders: BORDURES_TABLEAU,
@@ -186,7 +186,7 @@ function modulesPrisEnCharge(data: CahierPartieI): Bloc[] {
   ]);
 
   return [
-    titre3("Modules pris en charge"),
+    titre3("Modules pris en charge", { nouvellePage: true }),
     tableau({
       width: PLEINE_LARGEUR,
       borders: BORDURES_TABLEAU,
@@ -253,7 +253,7 @@ function unLogigramme(l: Logigramme, anneeScolaire: string | null): Bloc[] {
 
   if (l.semaines.length === 0) {
     return [
-      titre3(`Logigramme — ${l.groupe}`),
+      titre3(`Logigramme — ${l.groupe}`, { nouvellePage: true }),
       identite,
       paragraphe(
         "Aucune séance programmée pour ce groupe : le logigramme se dessinera dès que l'emploi du temps sera saisi.",
@@ -327,7 +327,7 @@ function unLogigramme(l: Logigramme, anneeScolaire: string | null): Bloc[] {
   );
 
   return [
-    titre3(`Logigramme — ${l.groupe}`),
+    titre3(`Logigramme — ${l.groupe}`, { nouvellePage: true }),
     identite,
     tableau({
       width: PLEINE_LARGEUR,
@@ -474,20 +474,22 @@ export function partieI(
     ...filieresEtGroupes(data, aujourdhui),
     ...modulesPrisEnCharge(data),
 
-    titre2("B- Emploi du temps du formateur"),
+    titre2("B- Emploi du temps du formateur", { nouvellePage: true }),
     cadreAColler(
       "Coller ici votre emploi du temps émargé par le Directeur pédagogique",
       150,
     ),
     emargement(),
 
-    titre2("C- Logigramme de la filière"),
+    titre2("C- Logigramme de la filière", { nouvellePage: true }),
     paragraphe(
       "Établi d'après les séances programmées : les modules en colonnes, à leur rang dans le programme, et les semaines en lignes. Si la filière dispose déjà d'un logigramme validé, il remplace celui-ci.",
     ),
     ...data.logigrammes.flatMap((l) => unLogigramme(l, anneeScolaire)),
 
-    titre2("D- Planification et suivi de la réalisation des modules de formation"),
+    titre2("D- Planification et suivi de la réalisation des modules de formation", {
+      nouvellePage: true,
+    }),
   ];
 
   if (data.suivis.length === 0) {
@@ -500,9 +502,14 @@ export function partieI(
     return blocs;
   }
 
-  for (const m of data.suivis) {
-    blocs.push(titre3(m.module), enteteModule(m), suiviSeances(m), emargement());
-  }
+  data.suivis.forEach((m, i) => {
+    blocs.push(
+      titre3(m.module, { nouvellePage: i > 0 }),
+      enteteModule(m),
+      suiviSeances(m),
+      emargement(),
+    );
+  });
 
   return blocs;
 }

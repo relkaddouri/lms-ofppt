@@ -102,7 +102,7 @@ function modeleFichePreparation(): Bloc[] {
   });
 
   return [
-    titre2("Modèle de fiche préparation"),
+    titre2("Modèle de fiche préparation", { nouvellePage: true }),
     identite,
     new Paragraph({ spacing: { after: 160 }, children: [] }),
     tempsDeSeance("Introduction", [
@@ -156,7 +156,7 @@ function modeleLogigramme(): Bloc[] {
   const vides = (n: number) => Array.from({ length: n }, () => aRemplir());
 
   return [
-    titre2("Modèle de logigramme de la filière"),
+    titre2("Modèle de logigramme de la filière", { nouvellePage: true }),
     tableau({
       width: PLEINE_LARGEUR,
       borders: BORDURES_TABLEAU,
@@ -217,7 +217,7 @@ export function annexesTextes(): Bloc[] {
   return [
     titre2("Missions du formateur"),
     ...rendreBlocs(MISSIONS_FORMATEUR),
-    titre2("La fiche préparation"),
+    titre2("La fiche préparation", { nouvellePage: true }),
     ...rendreBlocs(FICHE_PREPARATION),
   ];
 }

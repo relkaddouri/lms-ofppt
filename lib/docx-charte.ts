@@ -228,6 +228,17 @@ export const TAILLES = {
   petit: 16,
 } as const;
 
+/*
+  Où commence un titre.
+
+  Le cahier officiel donne une page entière à chaque tableau : on le feuillette
+  pour trouver un module, et deux tableaux sur la même page obligent à lire pour
+  savoir où l'on est. `pageBreakBefore` fait porter le saut par le titre
+  lui-même, plutôt que par un paragraphe vide qui laisserait une ligne blanche en
+  tête de page.
+*/
+type PlaceTitre = { nouvellePage?: boolean };
+
 /** Un titre de niveau un : « I- Planification et suivi de la formation ». */
 export function titre1(texte: string): Paragraph {
   return new Paragraph({
@@ -245,10 +256,11 @@ export function titre1(texte: string): Paragraph {
 }
 
 /** Un titre de niveau deux : « A- Prise en charge des groupes ». */
-export function titre2(texte: string): Paragraph {
+export function titre2(texte: string, options: PlaceTitre = {}): Paragraph {
   return new Paragraph({
     spacing: { before: 280, after: 120 },
     keepNext: true,
+    pageBreakBefore: options.nouvellePage,
     children: [
       new TextRun({
         text: texte,
@@ -261,10 +273,11 @@ export function titre2(texte: string): Paragraph {
 }
 
 /** Un titre de tableau ou de rubrique, posé juste au-dessus de ce qu'il nomme. */
-export function titre3(texte: string): Paragraph {
+export function titre3(texte: string, options: PlaceTitre = {}): Paragraph {
   return new Paragraph({
     spacing: { before: 240, after: 100 },
     keepNext: true,
+    pageBreakBefore: options.nouvellePage,
     children: [
       new TextRun({
         text: texte,
