@@ -121,7 +121,17 @@ export function enCanevasOfficiel(
       },
       {
         libelle: definitionPhase("structuration").titre,
-        lignes: contenu(structuration),
+        /*
+          Sans ses points : ce sont les notions à nommer, et la conclusion les
+          reprend en synthèse. Les laisser ici les faisait paraître deux fois
+          sur la même fiche.
+        */
+        lignes: [
+          ...(structuration?.instructions ?? []),
+          ...(structuration?.questions ?? []),
+        ]
+          .map((l) => l.trim())
+          .filter(Boolean),
         minutes: minutes(structuration),
       },
     ],

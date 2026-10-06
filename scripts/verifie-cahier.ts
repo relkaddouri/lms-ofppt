@@ -1114,6 +1114,18 @@ verifie("Les stratégies pédagogiques portent les méthodes et la modalité",
 verifie("La synthèse reprend les notions nommées en structuration",
   laFiche.conclusion[0]?.lignes.join("") === "Besoin n'est pas solution",
   laFiche.conclusion[0]?.lignes.join(" / "));
+/*
+  Les notions nommées en structuration appartiennent à la synthèse : les laisser
+  aussi dans le développement les faisait paraître deux fois sur la même fiche.
+*/
+verifie("Une notion de structuration ne paraît qu'une fois",
+  laFiche.developpement[1]?.lignes.includes("Besoin n'est pas solution") === false &&
+    laFiche.conclusion[0]?.lignes.includes("Besoin n'est pas solution") === true,
+  `développement : ${laFiche.developpement[1]?.lignes.join(" / ")}`);
+verifie("Le développement garde les consignes de la structuration",
+  laFiche.developpement[1]?.lignes.join("") === "Nommer les familles au tableau",
+  laFiche.developpement[1]?.lignes.join(" / "));
+
 verifie("L'évaluation vient du réinvestissement",
   laFiche.conclusion[1]?.lignes.join("") === "Trier dix verbatim nouveaux",
   laFiche.conclusion[1]?.lignes.join(" / "));
@@ -1134,8 +1146,15 @@ verifie("Chaque fiche porte son identité",
     p.texte.includes("Date de la séance : 13/10/2025") &&
     p.texte.includes("Groupe : DES101") &&
     p.texte.includes("Module : M202 — Organiser les données utilisateurs"));
-verifie("L'année de la séance est cochée",
-  p.texte.includes("2ème année"), "");
+/*
+  La croix suit son libellé. Posée avant, elle se lisait comme si elle portait
+  sur le groupe.
+*/
+const ficheIdentiteDocx =
+  tableaux.map(grille).find((g) => g[1]?.[1] === "2ème année") ?? [];
+verifie("La croix de l'année suit son libellé",
+  ficheIdentiteDocx[1]?.[2] === "X" && ficheIdentiteDocx[1]?.[4] === "",
+  (ficheIdentiteDocx[1] ?? []).join("|"));
 const ficheIntro = tableaux
   .map(grille)
   .find((g) => g[0]?.includes("Introduction") && g.some((l) => l[2] === "Rappel")) ?? [];

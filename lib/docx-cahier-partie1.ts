@@ -545,26 +545,34 @@ function suiviSeances(m: SuiviModule): Table {
 */
 const TEMPS_FICHE = [0.9, 8, 1.9];
 
-/** Un paragraphe par ligne, dans une seule cellule. */
-function lignes(contenu: string[]): TableCell {
-  if (contenu.length === 0) return cellule("", { vide: true });
+/**
+ * Un paragraphe par ligne, dans une seule cellule.
+ *
+ * `titre` ouvre la cellule en semi-gras : dans le développement, le nom de la
+ * phase se confondait avec les consignes qui le suivent.
+ */
+function lignes(contenu: string[], titre?: string): TableCell {
+  const ecrire = (texte: string, fort: boolean) =>
+    new Paragraph({
+      spacing: { before: 20, after: 20 },
+      children: [
+        new TextRun({
+          text: texte,
+          font: fort ? POLICES.corpsGras : POLICES.corps,
+          size: TAILLES.tableau,
+          color: fort ? COULEURS.encre : COULEURS.corps,
+        }),
+      ],
+    });
+
+  if (contenu.length === 0 && !titre) return cellule("", { vide: true });
   return new TableCell({
     verticalAlign: VerticalAlign.TOP,
     margins: MARGES_CELLULE,
-    children: contenu.map(
-      (l) =>
-        new Paragraph({
-          spacing: { before: 20, after: 20 },
-          children: [
-            new TextRun({
-              text: l,
-              font: POLICES.corps,
-              size: TAILLES.tableau,
-              color: COULEURS.corps,
-            }),
-          ],
-        }),
-    ),
+    children: [
+      ...(titre ? [ecrire(titre, true)] : []),
+      ...contenu.map((l) => ecrire(l, false)),
+    ],
   });
 }
 
@@ -602,18 +610,23 @@ function uneFiche(f: FicheOfficielle, numero: number): Bloc[] {
   const identite = tableau({
     width: PLEINE_LARGEUR,
     borders: BORDURES_TABLEAU,
-    columnWidths: colonnes(UTILE_COUCHEE, [2.4, 0.3, 1.3, 0.3, 1.3, 5.2]),
+    columnWidths: colonnes(UTILE_COUCHEE, [2.4, 1.3, 0.4, 1.3, 0.4, 5.2]),
     rows: [
       ligne([
         cellule(`Durée de la séance : ${duree}`, { colonnes: 5, gras: true }),
         cellule(`Date de la séance : ${jour(f.date)}`, { gras: true }),
       ]),
+      /*
+        La case à cocher suit son libellé, et ne le précède pas : posée avant,
+        la croix de la deuxième année se lisait comme si elle portait sur le
+        groupe.
+      */
       ligne([
         cellule(`Groupe : ${f.groupe}`, { gras: true }),
-        cellule(f.annee === 2 ? "X" : "", { centre: true }),
         cellule("2ème année", { centre: true }),
-        cellule(f.annee === 1 ? "X" : "", { centre: true }),
+        cellule(f.annee === 2 ? "X" : "", { centre: true }),
         cellule("1ère année", { centre: true }),
+        cellule(f.annee === 1 ? "X" : "", { centre: true }),
         cellule(`Filière : ${f.filiere}`, { gras: true }),
       ]),
       ligne([cellule(`Module : ${f.module}`, { colonnes: 6, gras: true })]),
@@ -639,7 +652,7 @@ function uneFiche(f: FicheOfficielle, numero: number): Bloc[] {
       ...f.developpement.map((r, i) =>
         ligne([
           cellule(r.minutes !== null ? `${r.minutes} min` : "", { centre: true }),
-          lignes([r.libelle, ...r.lignes]),
+          lignes(r.lignes, r.libelle),
           // Les stratégies ne se découpent pas par rubrique : elles tiennent
           // dans la première case, à côté de tout le développement.
           i === 0 ? lignes(f.strategies) : cellule(""),
