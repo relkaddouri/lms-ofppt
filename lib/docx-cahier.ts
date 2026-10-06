@@ -33,6 +33,7 @@ import {
 import {
   BORDURES_TABLEAU,
   COULEURS,
+  PAGE_COUCHEE,
   PAGE_DEBOUT,
   PLEINE_LARGEUR,
   POLICES,
@@ -47,6 +48,8 @@ import {
   UTILE_DEBOUT,
 } from "@/lib/docx-charte";
 import { PROCEDURES } from "@/lib/docx-cahier-textes";
+import { partieI } from "@/lib/docx-cahier-partie1";
+import type { CahierPartieI } from "@/app/actions/cahier";
 import type { Etablissement } from "@/app/actions/etablissement";
 
 // ── La couverture ─────────────────────────────────────────────────────────
@@ -267,16 +270,80 @@ function titrePage(texte: string): Paragraph {
 }
 
 /**
+ * La page qui annonce une partie.
+ *
+ * Le cahier officiel en pose une avant chaque partie : le titre, puis la
+ * signature OFPPT. Elle sert de repère quand le cahier est relié et qu'on le
+ * feuillette pour trouver le suivi d'un module.
+ */
+function pageSeparatrice(texte: string): Paragraph[] {
+  return [
+    new Paragraph({ spacing: { after: 2400 }, children: [] }),
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 400 },
+      children: [
+        new TextRun({
+          text: texte,
+          font: POLICES.titre,
+          size: TAILLES.titreDocument,
+          color: COULEURS.encre,
+        }),
+      ],
+    }),
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 80 },
+      children: [
+        new TextRun({
+          text: "OFPPT",
+          font: POLICES.titre,
+          size: TAILLES.titre1,
+          color: COULEURS.sarcelle,
+        }),
+      ],
+    }),
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      children: [
+        new TextRun({
+          text: "Partenaire en compétences",
+          font: POLICES.corps,
+          size: TAILLES.titre3,
+          color: COULEURS.ardoise,
+        }),
+      ],
+    }),
+  ];
+}
+
+/**
  * Produit le cahier et le rend prêt à être téléchargé.
  *
  * Rend un `Blob` plutôt que de déclencher le téléchargement : c'est à l'écran
  * de décider quoi faire du fichier, et une fonction qui rend une valeur se
  * teste.
  */
-export async function cahierDuFormateur(e: Etablissement): Promise<Blob> {
-  const section: ISectionOptions = {
+export async function cahierDuFormateur(
+  e: Etablissement,
+  data: CahierPartieI,
+  /*
+    Le jour de l'édition. Il décide dans quelle colonne de mois tombe
+    l'effectif ; passé en argument plutôt que lu de l'horloge, pour que le
+    document soit reproductible et que le contrôle puisse l'épingler.
+  */
+  aujourdhui = new Date(),
+): Promise<Blob> {
+  const pied = piedDePage(e);
+
+  /*
+    Deux sections, parce que deux orientations. Les textes se lisent sur une
+    page debout ; les tableaux de suivi font neuf à quatorze colonnes et ne
+    tiennent que couchés.
+  */
+  const liminaires: ISectionOptions = {
     properties: { page: PAGE_DEBOUT },
-    footers: { default: piedDePage(e) },
+    footers: { default: pied },
     children: [
       ...(await couverture(e)),
       new Paragraph({ children: [new PageBreak()] }),
@@ -285,6 +352,17 @@ export async function cahierDuFormateur(e: Etablissement): Promise<Blob> {
       new Paragraph({ children: [new PageBreak()] }),
       titrePage("Procédures d'utilisation du Cahier du formateur"),
       ...procedures(),
+      new Paragraph({ children: [new PageBreak()] }),
+      ...pageSeparatrice("Planification et suivi de la formation"),
+    ],
+  };
+
+  const premierePartie: ISectionOptions = {
+    properties: { page: PAGE_COUCHEE },
+    footers: { default: pied },
+    children: [
+      titre1("I- Planification et suivi de la formation"),
+      ...partieI(data, aujourdhui),
     ],
   };
 
@@ -293,7 +371,7 @@ export async function cahierDuFormateur(e: Etablissement): Promise<Blob> {
     title: "Cahier du formateur",
     description: `Cahier du formateur — ${e.anneeScolaire ?? ""}`.trim(),
     fonts: await chargerPolices(),
-    sections: [section],
+    sections: [liminaires, premierePartie],
   });
 
   return Packer.toBlob(doc);

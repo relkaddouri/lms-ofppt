@@ -5,6 +5,7 @@ import { useState } from "react";
 import { FileText } from "lucide-react";
 import Button from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
+import { getCahierPartieI } from "@/app/actions/cahier";
 import type { Etablissement } from "@/app/actions/etablissement";
 
 /**
@@ -40,10 +41,16 @@ export default function CahierExport({
   async function telecharger() {
     setEnCours(true);
     try {
-      const { cahierDuFormateur, nomFichierCahier } = await import(
-        "@/lib/docx-cahier"
-      );
-      const fichier = await cahierDuFormateur(etablissement);
+      /*
+        La bibliothèque et les données partent ensemble : l'une pèse, l'autre
+        attend la base, et les enchaîner doublerait l'attente avant que le
+        fichier descende.
+      */
+      const [{ cahierDuFormateur, nomFichierCahier }, data] = await Promise.all([
+        import("@/lib/docx-cahier"),
+        getCahierPartieI(),
+      ]);
+      const fichier = await cahierDuFormateur(etablissement, data);
       const lien = document.createElement("a");
       lien.href = URL.createObjectURL(fichier);
       lien.download = nomFichierCahier(etablissement);
@@ -71,9 +78,9 @@ export default function CahierExport({
             Cahier du formateur
           </h2>
           <p className="text-[13.5px] text-slate-light">
-            La couverture, votre fiche d&apos;identité et les procédures de
-            l&apos;OFPPT, dans un fichier Word que vous complétez et faites
-            émarger.
+            La couverture, votre fiche d&apos;identité, les procédures de
+            l&apos;OFPPT et le suivi de vos modules séance par séance, dans un
+            fichier Word que vous complétez et faites émarger.
             {manquants.length ? (
               <>
                 {" "}
