@@ -4,6 +4,13 @@ import { createClient } from "@/lib/supabase/server";
 import { libelleModule } from "@/lib/modules";
 import { getPortee } from "@/app/actions/annees";
 import {
+  evaluations,
+  type CahierPartieII,
+  type LigneControle,
+  type LignePassation,
+  type LigneStagiaire,
+} from "@/lib/cahier-evaluations";
+import {
   heures,
   logigrammes,
   type LigneAffectation,
@@ -81,12 +88,25 @@ export type {
   LogigrammeModule,
   LogigrammeSemaine,
 } from "@/lib/logigramme";
+export type {
+  CahierPartieII,
+  NoteStagiaire,
+  NotesModule,
+  PlanificationCC,
+  PlanificationEFM,
+} from "@/lib/cahier-evaluations";
 
 export type CahierPartieI = {
   groupes: GroupePrisEnCharge[];
   modules: ModulePrisEnCharge[];
   suivis: SuiviModule[];
   logigrammes: Logigramme[];
+};
+
+/** Tout ce que le cahier tire de la base, en une lecture. */
+export type CahierDonnees = {
+  partieI: CahierPartieI;
+  partieII: CahierPartieII;
 };
 
 /*
@@ -97,15 +117,20 @@ export type CahierPartieI = {
 const MAX_SEANCES = 2000;
 const MAX_ABSENCES = 4000;
 const MAX_STAGIAIRES = 1000;
+const MAX_CONTROLES = 500;
+const MAX_PASSATIONS = 8000;
 
-export async function getCahierPartieI(): Promise<CahierPartieI> {
+const VIDE: CahierDonnees = {
+  partieI: { groupes: [], modules: [], suivis: [], logigrammes: [] },
+  partieII: { controlesContinus: [], examens: [], notes: [] },
+};
+
+export async function getCahierDonnees(): Promise<CahierDonnees> {
   const supabase = await createClient();
   const { groupeIds } = await getPortee();
-  if (groupeIds.length === 0) {
-    return { groupes: [], modules: [], suivis: [], logigrammes: [] };
-  }
+  if (groupeIds.length === 0) return VIDE;
 
-  const [groupes, affectations, stagiaires, seances] = await Promise.all([
+  const [groupes, affectations, stagiaires, seances, controles] = await Promise.all([
     supabase
       .from("groupes")
       .select("id, nom, annee, specialites(nom)")
@@ -118,13 +143,13 @@ export async function getCahierPartieI(): Promise<CahierPartieI> {
       )
       .in("groupe_id", groupeIds),
     /*
-      Un seul identifiant de groupe par stagiaire : de quoi compter les
-      effectifs sans ramener les fiches. Les comptes par groupe ne s'obtiennent
-      pas en une requête `count`, qui ne rend qu'un total.
+      Les stagiaires portent deux rôles dans le cahier : ils comptent dans les
+      effectifs, et ils nomment les lignes du tableau des notes. D'où le nom et
+      le numéro d'inscription, qui figurent sur le papier.
     */
     supabase
       .from("stagiaires")
-      .select("groupe_id")
+      .select("id, groupe_id, cef, cne, nom, prenom")
       .in("groupe_id", groupeIds)
       .eq("est_test", false)
       .limit(MAX_STAGIAIRES),
@@ -137,19 +162,54 @@ export async function getCahierPartieI(): Promise<CahierPartieI> {
       .not("date", "is", null)
       .order("date")
       .limit(MAX_SEANCES),
+    /*
+      Les contrôles de test restent dehors : ils servent à essayer la
+      plateforme, et le filtre est posé ici plutôt qu'en mémoire pour ne pas
+      faire voyager ce qu'on jette.
+    */
+    supabase
+      .from("controles")
+      .select(
+        "id, groupe_id, module_id, type, date_prevue, date_administration, date_envoi_propositions, bareme_total",
+      )
+      .in("groupe_id", groupeIds)
+      .in("type", ["CC", "EFM"])
+      .limit(MAX_CONTROLES),
   ]);
 
-  for (const r of [groupes, affectations, stagiaires, seances]) {
+  for (const r of [groupes, affectations, stagiaires, seances, controles]) {
     if (r.error) throw new Error(r.error.message);
+  }
+
+  const lignesControles = (controles.data ?? []) as unknown as LigneControle[];
+
+  /*
+    Les copies ne se lisent qu'une fois les contrôles connus : leur nombre borne
+    la requête, et sans contrôle il n'y a rien à demander.
+  */
+  let lignesPassations: LignePassation[] = [];
+  if (lignesControles.length > 0) {
+    const { data, error } = await supabase
+      .from("passations_controle")
+      .select("controle_id, stagiaire_id, note, publie_le")
+      .in(
+        "controle_id",
+        lignesControles.map((c) => c.id),
+      )
+      .limit(MAX_PASSATIONS);
+    if (error) throw new Error(error.message);
+    lignesPassations = (data ?? []) as unknown as LignePassation[];
   }
 
   const lignesGroupes = (groupes.data ?? []) as unknown as LigneGroupe[];
   const nomDuGroupe = new Map(lignesGroupes.map((g) => [g.id, g.nom]));
 
+  const lignesStagiaires = (stagiaires.data ?? []) as unknown as LigneStagiaire[];
+
   const effectifs = new Map<string, number>();
-  for (const s of (stagiaires.data ?? []) as { groupe_id: string | null }[]) {
-    if (!s.groupe_id) continue;
-    effectifs.set(s.groupe_id, (effectifs.get(s.groupe_id) ?? 0) + 1);
+  for (const e of lignesStagiaires) {
+    if (!e.groupe_id) continue;
+    effectifs.set(e.groupe_id, (effectifs.get(e.groupe_id) ?? 0) + 1);
   }
 
   const lignesAffectations = (affectations.data ?? []) as unknown as LigneAffectation[];
@@ -355,9 +415,19 @@ export async function getCahierPartieI(): Promise<CahierPartieI> {
     .sort((x, y) => x.module.localeCompare(y.module, "fr"));
 
   return {
-    groupes: prisEnCharge,
-    modules: modulesPrisEnCharge,
-    suivis,
-    logigrammes: logigrammes(lignesGroupes, lignesAffectations, lignesSeances),
+    partieI: {
+      groupes: prisEnCharge,
+      modules: modulesPrisEnCharge,
+      suivis,
+      logigrammes: logigrammes(lignesGroupes, lignesAffectations, lignesSeances),
+    },
+    partieII: evaluations(
+      lignesGroupes,
+      lignesAffectations,
+      lignesControles,
+      lignesPassations,
+      lignesStagiaires,
+      lignesSeances,
+    ),
   };
 }

@@ -5,7 +5,7 @@ import { useState } from "react";
 import { FileText } from "lucide-react";
 import Button from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
-import { getCahierPartieI } from "@/app/actions/cahier";
+import { getCahierDonnees } from "@/app/actions/cahier";
 import type { Etablissement } from "@/app/actions/etablissement";
 
 /**
@@ -48,7 +48,7 @@ export default function CahierExport({
       */
       const [{ cahierDuFormateur, nomFichierCahier }, data] = await Promise.all([
         import("@/lib/docx-cahier"),
-        getCahierPartieI(),
+        getCahierDonnees(),
       ]);
       const fichier = await cahierDuFormateur(etablissement, data);
       const lien = document.createElement("a");
@@ -78,9 +78,10 @@ export default function CahierExport({
             Cahier du formateur
           </h2>
           <p className="text-[13.5px] text-slate-light">
-            La couverture, votre fiche d&apos;identité, les procédures de
-            l&apos;OFPPT et le suivi de vos modules séance par séance, dans un
-            fichier Word que vous complétez et faites émarger.
+            Le cahier entier : couverture, fiche d&apos;identité, procédures,
+            suivi de vos modules séance par séance, logigramme, planification
+            des contrôles et notes de vos stagiaires. Un fichier Word que vous
+            complétez et faites émarger.
             {manquants.length ? (
               <>
                 {" "}

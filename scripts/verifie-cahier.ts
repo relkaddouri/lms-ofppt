@@ -14,7 +14,17 @@
 import { readFileSync } from "node:fs";
 import JSZip from "jszip";
 import type { Etablissement } from "@/app/actions/etablissement";
-import type { CahierPartieI } from "@/app/actions/cahier";
+import type {
+  CahierDonnees,
+  CahierPartieI,
+  CahierPartieII,
+} from "@/app/actions/cahier";
+import {
+  evaluations,
+  type LigneControle,
+  type LignePassation,
+  type LigneStagiaire,
+} from "@/lib/cahier-evaluations";
 import {
   logigrammes,
   semaineIso,
@@ -204,13 +214,87 @@ const partie1Vide: CahierPartieI = {
   logigrammes: [],
 };
 
+/*
+  La partie II réduite. Deux contrôles continus et un EFM sur un module, et
+  trois stagiaires : l'un noté partout, l'un absent au second contrôle, l'un
+  sans aucune note. C'est ce qu'il faut pour voir si une case vide reste vide et
+  si la moyenne ne compte que les notes connues.
+*/
+const partie2: CahierPartieII = {
+  controlesContinus: [
+    {
+      module: "M202 — Organiser les données utilisateurs",
+      filiere: "Digital Design",
+      groupe: "DES101",
+      prevues: ["2025-11-17", "2026-01-12"],
+      realisees: ["2025-11-17", null],
+    },
+  ],
+  examens: [
+    {
+      module: "M202 — Organiser les données utilisateurs",
+      filiere: "Digital Design",
+      groupe: "DES101",
+      dateValidation: "2026-01-05",
+      datePrevue: "2026-01-26",
+      dateEffective: null,
+      dateRestitution: null,
+    },
+  ],
+  notes: [
+    {
+      module: "M202 — Organiser les données utilisateurs",
+      filiere: "Digital Design",
+      groupe: "DES101",
+      annee: 2,
+      masseHorairePrevue: 55,
+      masseHoraireRealisee: 42.5,
+      effectif: 3,
+      colonnesCC: 5,
+      stagiaires: [
+        {
+          numeroInscription: "17980001",
+          nom: "BENNANI Salma",
+          cc: [14, 16],
+          moyenneCC: 15,
+          efm: 13.5,
+        },
+        {
+          numeroInscription: "17980002",
+          nom: "FAHMI Khadija",
+          cc: [12, null],
+          moyenneCC: 12,
+          efm: null,
+        },
+        {
+          numeroInscription: "17980003",
+          nom: "OUAZZANI Imane",
+          cc: [null, null],
+          moyenneCC: null,
+          efm: null,
+        },
+      ],
+    },
+  ],
+};
+
+/** Un compte neuf : aucune évaluation. */
+const partie2Vide: CahierPartieII = {
+  controlesContinus: [],
+  examens: [],
+  notes: [],
+};
+
 // ── Outils de lecture du paquet ───────────────────────────────────────────
 
 type Paquet = { zip: JSZip; xml: string; texte: string };
 
+const complete: CahierDonnees = { partieI: partie1, partieII: partie2 };
+const neuf: CahierDonnees = { partieI: partie1Vide, partieII: partie2Vide };
+
 async function ouvrir(
   e: Etablissement,
-  data: CahierPartieI = partie1,
+  data: CahierDonnees = complete,
   aujourdhui = new Date("2025-10-20T09:00:00Z"),
 ): Promise<Paquet> {
   const blob = await cahierDuFormateur(e, data, aujourdhui);
@@ -332,9 +416,12 @@ function grille(tbl: string): string[][] {
   );
 }
 
-verifie("Deux sections : textes debout, tableaux couchés",
-  (p.xml.match(/<w:sectPr/g) ?? []).length === 2,
+verifie("Quatre sections : les titres debout, les tableaux couchés",
+  (p.xml.match(/<w:sectPr/g) ?? []).length === 4,
   `${(p.xml.match(/<w:sectPr/g) ?? []).length} sections`);
+verifie("Deux sections couchées",
+  (p.xml.match(/w:orient="landscape"/g) ?? []).length === 2,
+  `${(p.xml.match(/w:orient="landscape"/g) ?? []).length} couchées`);
 verifie("Une section couchée", p.xml.includes('w:orient="landscape"'));
 
 verifie("Titre de la partie", p.texte.includes("I- Planification et suivi de la formation"));
@@ -549,8 +636,235 @@ verifie("Les demi-heures du logigramme s'écrivent à la française",
 verifie("Le cadre vide du logigramme a disparu",
   !p.texte.includes("Coller ici le logigramme"));
 
+// ── Les évaluations, d'abord sans base de données ────────────────────────
+
+/*
+  Un module, deux contrôles continus et un EFM, deux stagiaires. Les contrôles
+  sont déclarés dans le désordre pour voir si les colonnes se remettent dans
+  l'ordre des dates, et l'EFM est barémé sur quarante comme l'exige le §4.7 :
+  c'est la mise à l'échelle qui est en jeu.
+*/
+const essaiControles: LigneControle[] = [
+  {
+    id: "cc2",
+    groupe_id: "g1",
+    module_id: "m202",
+    type: "CC",
+    date_prevue: "2026-01-12",
+    date_administration: null,
+    date_envoi_propositions: null,
+    bareme_total: null,
+  },
+  {
+    id: "cc1",
+    groupe_id: "g1",
+    module_id: "m202",
+    type: "CC",
+    date_prevue: "2025-11-17",
+    date_administration: "2025-11-18",
+    date_envoi_propositions: null,
+    bareme_total: null,
+  },
+  {
+    id: "efm",
+    groupe_id: "g1",
+    module_id: "m202",
+    type: "EFM",
+    date_prevue: "2026-01-26",
+    date_administration: "2026-01-27",
+    date_envoi_propositions: "2026-01-05",
+    bareme_total: null,
+  },
+  // Un contrôle d'essai sur le même module : il ne doit pas prendre de colonne.
+  {
+    id: "test",
+    groupe_id: "g1",
+    module_id: "m202",
+    type: "TEST",
+    date_prevue: "2025-10-01",
+    date_administration: "2025-10-01",
+    date_envoi_propositions: null,
+    bareme_total: 10,
+  },
+  /*
+    Et un module qui n'a QUE un essai. C'est le cas qui compte : sans l'écarter
+    dès le regroupement, il ouvrirait un tableau de notes sans aucune note, et
+    une page du dossier porterait un module jamais évalué.
+  */
+  {
+    id: "test204",
+    groupe_id: "g1",
+    module_id: "m204",
+    type: "TEST",
+    date_prevue: "2025-10-02",
+    date_administration: "2025-10-02",
+    date_envoi_propositions: null,
+    bareme_total: 10,
+  },
+];
+
+const essaiPassations: LignePassation[] = [
+  { controle_id: "cc1", stagiaire_id: "s1", note: 14, publie_le: null },
+  { controle_id: "cc2", stagiaire_id: "s1", note: 16, publie_le: null },
+  // 27 sur quarante : le cahier doit écrire 13,5.
+  { controle_id: "efm", stagiaire_id: "s1", note: 27, publie_le: "2026-02-02T10:00:00Z" },
+  { controle_id: "cc1", stagiaire_id: "s2", note: 12, publie_le: null },
+  // Publiée plus tard : c'est cette date que porte la restitution.
+  { controle_id: "efm", stagiaire_id: "s2", note: 20, publie_le: "2026-02-05T10:00:00Z" },
+  { controle_id: "test", stagiaire_id: "s1", note: 10, publie_le: null },
+];
+
+const essaiStagiaires: LigneStagiaire[] = [
+  // Déclarés à l'envers de l'alphabet, pour voir s'ils sont remis en ordre.
+  { id: "s2", groupe_id: "g1", cef: "17980002", cne: null, nom: "FAHMI", prenom: "Khadija" },
+  { id: "s1", groupe_id: "g1", cef: null, cne: "CNE001", nom: "BENNANI", prenom: "Salma" },
+];
+
+const evalEssai = evaluations(
+  groupeEssai,
+  [
+    affecte("m202", "M202", "specialisation", 2, 55),
+    affecte("m204", "M204", "specialisation", 4, 80),
+  ],
+  essaiControles,
+  essaiPassations,
+  essaiStagiaires,
+  [
+    { ...programme("2025-11-17", "m202", 5), duree_realisee: 5 },
+    { ...programme("2025-11-24", "m202", 5), duree_realisee: 2.5 },
+  ],
+);
+
+verifie("Les contrôles continus se rangent par date : CC1 est le premier passé",
+  evalEssai.controlesContinus[0]?.prevues.join(",") === "2025-11-17,2026-01-12",
+  evalEssai.controlesContinus[0]?.prevues.join(","));
+verifie("Un contrôle d'essai ne prend pas de colonne",
+  evalEssai.controlesContinus[0]?.prevues.length === 2,
+  `${evalEssai.controlesContinus[0]?.prevues.length} colonnes`);
+verifie("Un module qui n'a qu'un essai n'ouvre pas de tableau de notes",
+  evalEssai.notes.length === 1 &&
+    evalEssai.notes.every((n) => !n.module.startsWith("M204")),
+  evalEssai.notes.map((n) => n.module).join(" / "));
+verifie("L'EFM porte sa date de validation et sa date effective",
+  evalEssai.examens[0]?.dateValidation === "2026-01-05" &&
+    evalEssai.examens[0]?.dateEffective === "2026-01-27",
+  JSON.stringify(evalEssai.examens[0]));
+verifie("La restitution retient la dernière publication",
+  evalEssai.examens[0]?.dateRestitution === "2026-02-05",
+  evalEssai.examens[0]?.dateRestitution ?? "aucune");
+
+const noteSalmaCalc = evalEssai.notes[0]?.stagiaires[0];
+verifie("Les stagiaires sont remis dans l'ordre alphabétique",
+  noteSalmaCalc?.nom === "BENNANI Salma", noteSalmaCalc?.nom);
+verifie("Le numéro d'inscription tombe sur le CNE quand le CEF manque",
+  noteSalmaCalc?.numeroInscription === "CNE001", noteSalmaCalc?.numeroInscription);
+verifie("Une note de contrôle continu reste sur vingt",
+  noteSalmaCalc?.cc.join(",") === "14,16", noteSalmaCalc?.cc.join(","));
+verifie("Une note d'EFM barémée sur quarante est ramenée sur vingt",
+  noteSalmaCalc?.efm === 13.5, String(noteSalmaCalc?.efm));
+verifie("La moyenne des contrôles continus", noteSalmaCalc?.moyenneCC === 15,
+  String(noteSalmaCalc?.moyenneCC));
+
+const noteKhadijaCalc = evalEssai.notes[0]?.stagiaires[1];
+verifie("Une note manquante ne compte pas dans la moyenne",
+  noteKhadijaCalc?.cc.join(",") === "12," && noteKhadijaCalc?.moyenneCC === 12,
+  `${noteKhadijaCalc?.cc.join(",")} → ${noteKhadijaCalc?.moyenneCC}`);
+verifie("Les heures réalisées du module se somment",
+  evalEssai.notes[0]?.masseHoraireRealisee === 7.5,
+  String(evalEssai.notes[0]?.masseHoraireRealisee));
+verifie("La masse horaire prévue vient de l'affectation",
+  evalEssai.notes[0]?.masseHorairePrevue === 55,
+  String(evalEssai.notes[0]?.masseHorairePrevue));
+verifie("Cinq colonnes de contrôle continu, même avec deux contrôles",
+  evalEssai.notes[0]?.colonnesCC === 5, String(evalEssai.notes[0]?.colonnesCC));
+verifie("Sans contrôle, il n'y a pas de tableau de notes",
+  evaluations(groupeEssai, [], [], [], essaiStagiaires, []).notes.length === 0);
+
+// ── Partie II ───────────────────────────────────────────────────────────
+
+verifie("Titre de la partie II",
+  p.texte.includes("II- Planification et suivi des évaluations"));
+for (const titre of [
+  "Planification et suivi de la réalisation des contrôles continus (CC)",
+  "Planification et suivi de la réalisation des examens de fin de modules (EFM)",
+  "Notes des contrôles continus et de l'examen de fin de module",
+  "Fiche d'appréciation des stagiaires par module",
+]) {
+  verifie(`Partie II : « ${titre} »`, p.texte.includes(titre));
+}
+
+// Les contrôles continus : cinq colonnes même avec deux contrôles, en double —
+// prévision et réalisation.
+/*
+  Les quatre premières cellules de la deuxième ligne d'en-tête sont les
+  continuations de fusion verticale de « N° », « Modules », « Filière » et
+  « Groupe » : Word les écrit vides, et on les passe.
+*/
+const ccTbl =
+  tableaux.map(grille).find((g) => g[0]?.includes("Date prévisionnelle")) ?? [];
+verifie("Cinq colonnes CC en prévision et cinq en réalisation",
+  (ccTbl[1] ?? []).slice(4).join("|") === "CC1|CC2|CC3|CC4|CC5|CC1|CC2|CC3|CC4|CC5",
+  (ccTbl[1] ?? []).join("|"));
+const ligneCC = ccTbl[2] ?? [];
+verifie("La date prévue et la date réalisée tombent dans la bonne colonne",
+  ligneCC[4] === "17/11/2025" && ligneCC[5] === "12/01/2026" && ligneCC[9] === "17/11/2025",
+  ligneCC.join("|"));
+verifie("Un contrôle non encore passé laisse sa date de réalisation vide",
+  ligneCC[10] === "", ligneCC.join("|"));
+
+// Les examens : trois lignes d'en-tête, et la colonne d'émargement vide.
+const efmTbl =
+  tableaux.map(grille).find((g) => g[0]?.includes("Prévision des EFM")) ?? [];
+verifie("L'en-tête des EFM tient sur trois lignes",
+  (efmTbl[2] ?? []).slice(-2).join("|") ===
+    "Date|Émargement du Directeur pédagogique",
+  (efmTbl[2] ?? []).join("|"));
+const ligneEFM = efmTbl[3] ?? [];
+verifie("Les dates de l'EFM sont à leur place",
+  ligneEFM[4] === "05/01/2026" && ligneEFM[5] === "26/01/2026" && ligneEFM[6] === "",
+  ligneEFM.join("|"));
+
+// Les notes : l'en-tête du module, puis une ligne par stagiaire.
+verifie("L'en-tête des notes porte les deux masses horaires",
+  p.texte.includes("Masse horaire prévue pour ce module : 55") &&
+    p.texte.includes("Masse horaire réalisée : 42,5"));
+
+const notesTbl = tableaux.map(grille).find((g) => g[0]?.[0] === "N° d'Ins") ?? [];
+verifie("Les colonnes des notes suivent le document officiel",
+  (notesTbl[0] ?? []).join("|") ===
+    "N° d'Ins|Nom et prénom des stagiaires|Notes des contrôles continus|Moy CC|Note EFM|Moy module|Appréciation",
+  (notesTbl[0] ?? []).join("|"));
+verifie("Une ligne par stagiaire", notesTbl.length === 2 + 3, `${notesTbl.length} lignes`);
+const noteSalma = notesTbl[2] ?? [];
+verifie("Les notes et la moyenne du premier stagiaire",
+  noteSalma[2] === "14" && noteSalma[3] === "16" && noteSalma[7] === "15" &&
+    noteSalma[8] === "13,5",
+  noteSalma.join("|"));
+verifie("Les colonnes CC non utilisées restent vides",
+  noteSalma[4] === "" && noteSalma[5] === "" && noteSalma[6] === "",
+  noteSalma.join("|"));
+verifie("La moyenne du module et l'appréciation restent à remplir à la main",
+  noteSalma[9] === "" && noteSalma[10] === "", noteSalma.join("|"));
+const noteKhadija = notesTbl[3] ?? [];
+verifie("Une note manquante ne fausse pas la moyenne",
+  noteKhadija[3] === "" && noteKhadija[7] === "12", noteKhadija.join("|"));
+const noteImane = notesTbl[4] ?? [];
+verifie("Un stagiaire sans note n'a pas de moyenne",
+  noteImane[7] === "" && noteImane[8] === "", noteImane.join("|"));
+
+// La fiche d'appréciation : les noms, et de la place pour écrire.
+const apprecTbl =
+  tableaux.map(grille).find((g) => g[0]?.[2] === "Appréciation" && g[0].length === 3) ?? [];
+verifie("La fiche d'appréciation porte trois colonnes",
+  (apprecTbl[0] ?? []).join("|") ===
+    "N° d'Ins|Nom et prénom des stagiaires|Appréciation",
+  (apprecTbl[0] ?? []).join("|"));
+verifie("Elle liste les stagiaires et laisse la colonne libre",
+  (apprecTbl[1] ?? [])[1] === "BENNANI Salma" && (apprecTbl[1] ?? [])[2] === "",
+  (apprecTbl[1] ?? []).join("|"));
+
 // Le compte vide : le cahier sort, et ses cases portent un tiret.
-const q = await ouvrir(vide, partie1Vide);
+const q = await ouvrir(vide, neuf);
 verifie("Un compte vide produit tout de même un cahier", q.xml.length > 2000);
 verifie("Une ligne non renseignée porte un tiret", q.texte.includes("-"));
 verifie("Un compte vide n'écrit pas « null »", !q.texte.includes("null"));
@@ -559,6 +873,11 @@ const lignesVide = ((/<w:tbl>[\s\S]*?<\/w:tbl>/.exec(q.xml)?.[0] ?? "").match(/<
 verifie("Fiche d'identité : dix lignes même à vide", lignesVide === 10, `${lignesVide} lignes`);
 verifie("Sans groupe, le logigramme ne laisse pas de tableau vide",
   !q.texte.includes("N° Modules"));
+verifie("Sans contrôle, la planification le dit",
+  q.texte.includes("Aucun contrôle continu enregistré") &&
+    q.texte.includes("Aucun examen de fin de module enregistré"));
+verifie("Sans évaluation, les tableaux de notes ne paraissent pas",
+  q.texte.includes("Aucune évaluation enregistrée") && !q.texte.includes("Moy CC"));
 verifie("Sans séance, le suivi le dit au lieu de laisser un vide",
   q.texte.includes("Aucune séance datée sur cette année de formation"));
 
@@ -570,7 +889,7 @@ verifie("Nom de fichier d'un compte vide", nomFichierCahier(vide) === "Cahier-du
 
 console.log(
   fautes === 0
-    ? "\n✓ Cahier du formateur : liminaires et partie I conformes au document officiel."
+    ? "\n✓ Cahier du formateur : liminaires, partie I et partie II conformes au document officiel."
     : `\n✗ ${fautes} contrôle(s) en échec.`,
 );
 if (fautes) process.exit(1);

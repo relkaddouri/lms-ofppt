@@ -49,7 +49,8 @@ import {
 } from "@/lib/docx-charte";
 import { PROCEDURES } from "@/lib/docx-cahier-textes";
 import { partieI } from "@/lib/docx-cahier-partie1";
-import type { CahierPartieI } from "@/app/actions/cahier";
+import { partieII } from "@/lib/docx-cahier-partie2";
+import type { CahierDonnees } from "@/app/actions/cahier";
 import type { Etablissement } from "@/app/actions/etablissement";
 
 // ── La couverture ─────────────────────────────────────────────────────────
@@ -326,7 +327,7 @@ function pageSeparatrice(texte: string): Paragraph[] {
  */
 export async function cahierDuFormateur(
   e: Etablissement,
-  data: CahierPartieI,
+  data: CahierDonnees,
   /*
     Le jour de l'édition. Il décide dans quelle colonne de mois tombe
     l'effectif ; passé en argument plutôt que lu de l'horloge, pour que le
@@ -362,7 +363,26 @@ export async function cahierDuFormateur(
     footers: { default: pied },
     children: [
       titre1("I- Planification et suivi de la formation"),
-      ...partieI(data, e.anneeScolaire, aujourdhui),
+      ...partieI(data.partieI, e.anneeScolaire, aujourdhui),
+    ],
+  };
+
+  /*
+    La page qui annonce la partie II revient debout : c'est une page de titre, et
+    elle se lit comme la première. Les tableaux qui suivent repassent couchés.
+  */
+  const annonceII: ISectionOptions = {
+    properties: { page: PAGE_DEBOUT },
+    footers: { default: pied },
+    children: pageSeparatrice("Planification et suivi des évaluations"),
+  };
+
+  const secondePartie: ISectionOptions = {
+    properties: { page: PAGE_COUCHEE },
+    footers: { default: pied },
+    children: [
+      titre1("II- Planification et suivi des évaluations"),
+      ...partieII(data.partieII),
     ],
   };
 
@@ -371,7 +391,7 @@ export async function cahierDuFormateur(
     title: "Cahier du formateur",
     description: `Cahier du formateur — ${e.anneeScolaire ?? ""}`.trim(),
     fonts: await chargerPolices(),
-    sections: [liminaires, premierePartie],
+    sections: [liminaires, premierePartie, annonceII, secondePartie],
   });
 
   return Packer.toBlob(doc);

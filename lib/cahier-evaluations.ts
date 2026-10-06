@@ -1,0 +1,301 @@
+/**
+ * Partie II du cahier du formateur : les évaluations.
+ *
+ * La planification des contrôles continus et des examens de fin de module, puis
+ * les notes de chaque stagiaire. Tout est en base — le formateur recopiait les
+ * dates et les notes à la main dans Word, pour quarante stagiaires et cinq
+ * modules.
+ *
+ * Séparé de `app/actions/cahier.ts` pour la même raison que le logigramme : un
+ * module « use server » ne peut exporter que des fonctions async, et ces calculs
+ * — moyennes, mise à l'échelle sur vingt, répartition dans les colonnes CC — se
+ * vérifient sans base de données.
+ */
+
+import { baremeAttendu, noteSur20 } from "@/lib/controles";
+import { libelleModule } from "@/lib/modules";
+import { heures, type LigneAffectation, type LigneGroupe, type LigneSeance } from "@/lib/logigramme";
+
+/** Une ligne du tableau de planification des contrôles continus. */
+export type PlanificationCC = {
+  module: string;
+  filiere: string;
+  groupe: string;
+  /** Les dates prévues, une par colonne CC. */
+  prevues: (string | null)[];
+  /** Les dates d'administration, une par colonne CC. */
+  realisees: (string | null)[];
+};
+
+/** Une ligne du tableau de planification des examens de fin de module. */
+export type PlanificationEFM = {
+  module: string;
+  filiere: string;
+  groupe: string;
+  /** La date d'envoi des propositions à la commission. */
+  dateValidation: string | null;
+  datePrevue: string | null;
+  dateEffective: string | null;
+  /** Le jour où les notes ont été publiées aux stagiaires. */
+  dateRestitution: string | null;
+};
+
+/** Une ligne du tableau des notes : un stagiaire, dans un module. */
+export type NoteStagiaire = {
+  /** Numéro d'inscription — le CEF, à défaut le CNE. */
+  numeroInscription: string;
+  nom: string;
+  /** Les notes de contrôle continu, ramenées sur vingt, une par colonne. */
+  cc: (number | null)[];
+  moyenneCC: number | null;
+  /** La note d'EFM, ramenée sur vingt : elle se barème sur quarante. */
+  efm: number | null;
+};
+
+/** Un module, ses heures et les notes de son groupe. */
+export type NotesModule = {
+  module: string;
+  filiere: string;
+  groupe: string;
+  annee: number | null;
+  masseHorairePrevue: number | null;
+  masseHoraireRealisee: number | null;
+  effectif: number;
+  /** Combien de colonnes de contrôle continu dessiner. */
+  colonnesCC: number;
+  stagiaires: NoteStagiaire[];
+};
+
+export type CahierPartieII = {
+  controlesContinus: PlanificationCC[];
+  examens: PlanificationEFM[];
+  notes: NotesModule[];
+};
+
+
+// ── Les formes que rendent les requêtes ──────────────────────────────────
+
+export type LigneControle = {
+  id: string;
+  groupe_id: string;
+  module_id: string;
+  type: string;
+  date_prevue: string | null;
+  date_administration: string | null;
+  date_envoi_propositions: string | null;
+  bareme_total: number | null;
+};
+
+export type LignePassation = {
+  controle_id: string;
+  stagiaire_id: string | null;
+  note: number | null;
+  publie_le: string | null;
+};
+
+export type LigneStagiaire = {
+  id: string;
+  groupe_id: string | null;
+  cef: string | null;
+  cne: string | null;
+  nom: string;
+  prenom: string;
+};
+
+/*
+  Le cahier officiel réserve cinq colonnes de contrôle continu. On n'en dessine
+  jamais moins, pour garder sa forme, et davantage si un module en a eu plus :
+  mieux vaut un tableau plus large qu'un contrôle qui disparaît du dossier.
+*/
+const COLONNES_CC_OFFICIELLES = 5;
+
+/** Une note ramenée sur vingt et arrondie au centième, ou rien. */
+function sur20(note: number | null, type: string, bareme: number | null): number | null {
+  if (note === null) return null;
+  const n = Number(note);
+  if (!Number.isFinite(n)) return null;
+  const total = baremeAttendu(
+    type === "EFM" ? "EFM" : type === "TEST" ? "TEST" : "CC",
+    bareme,
+  );
+  return Math.round(noteSur20(n, total) * 100) / 100;
+}
+
+/** La moyenne d'une série de notes, ou rien si aucune n'est connue. */
+function moyenne(notes: (number | null)[]): number | null {
+  const connues = notes.filter((n): n is number => n !== null);
+  if (connues.length === 0) return null;
+  const somme = connues.reduce((t, n) => t + n, 0);
+  return Math.round((somme / connues.length) * 100) / 100;
+}
+
+/**
+ * Dresse la partie II d'après les contrôles, les passations et les stagiaires.
+ *
+ * Les contrôles de test sont écartés : ils servent à essayer la plateforme, et
+ * n'ont rien à faire dans un document remis à la Direction.
+ */
+export function evaluations(
+  groupes: LigneGroupe[],
+  affectations: LigneAffectation[],
+  controles: LigneControle[],
+  passations: LignePassation[],
+  stagiaires: LigneStagiaire[],
+  seances: LigneSeance[],
+): CahierPartieII {
+  const groupeParId = new Map(groupes.map((g) => [g.id, g]));
+  const retenus = controles.filter(
+    (c) => c.type === "CC" || c.type === "EFM",
+  );
+
+  /** Le libellé d'un module, pris sur n'importe laquelle de ses affectations. */
+  const nomDuModule = (moduleId: string): string => {
+    const a = affectations.find((x) => x.module_id === moduleId);
+    return libelleModule(
+      a?.modules?.competences?.code_operationnel,
+      a?.modules?.nom,
+    );
+  };
+
+  /*
+    Les contrôles d'un même module et d'un même groupe tiennent une ligne du
+    tableau. La clé réunit les deux, et l'ordre des colonnes est celui des
+    dates : CC1 est le premier passé, comme sur le document officiel.
+  */
+  const parCouple = new Map<string, LigneControle[]>();
+  for (const c of retenus) {
+    const cle = `${c.module_id}|${c.groupe_id}`;
+    const deja = parCouple.get(cle);
+    if (deja) deja.push(c);
+    else parCouple.set(cle, [c]);
+  }
+  for (const liste of parCouple.values()) {
+    liste.sort((x, y) =>
+      (x.date_prevue ?? x.date_administration ?? "9999").localeCompare(
+        y.date_prevue ?? y.date_administration ?? "9999",
+      ),
+    );
+  }
+
+  const couples = [...parCouple.entries()]
+    .map(([cle, liste]) => {
+      const [moduleId, groupeId] = cle.split("|") as [string, string];
+      const g = groupeParId.get(groupeId);
+      return {
+        moduleId,
+        groupeId,
+        module: nomDuModule(moduleId),
+        filiere: g?.specialites?.nom ?? "—",
+        groupe: g?.nom ?? "—",
+        annee: g?.annee ?? null,
+        cc: liste.filter((c) => c.type === "CC"),
+        efm: liste.find((c) => c.type === "EFM") ?? null,
+      };
+    })
+    .sort(
+      (x, y) =>
+        x.module.localeCompare(y.module, "fr") ||
+        x.groupe.localeCompare(y.groupe, "fr"),
+    );
+
+  // ── Planification des contrôles continus ────────────────────────────────
+
+  const controlesContinus: PlanificationCC[] = couples
+    .filter((c) => c.cc.length > 0)
+    .map((c) => ({
+      module: c.module,
+      filiere: c.filiere,
+      groupe: c.groupe,
+      prevues: c.cc.map((x) => x.date_prevue),
+      realisees: c.cc.map((x) => x.date_administration),
+    }));
+
+  // ── Planification des examens de fin de module ──────────────────────────
+
+  /** Le jour où les notes d'un contrôle ont été publiées, s'il y en a un. */
+  const publieLe = (controleId: string): string | null => {
+    const jours = passations
+      .filter((p) => p.controle_id === controleId && p.publie_le)
+      .map((p) => p.publie_le!);
+    if (jours.length === 0) return null;
+    // La dernière publication fait foi : c'est le jour où le groupe entier a
+    // reçu sa note.
+    return jours.sort().at(-1) ?? null;
+  };
+
+  const examens: PlanificationEFM[] = couples
+    .filter((c) => c.efm !== null)
+    .map((c) => ({
+      module: c.module,
+      filiere: c.filiere,
+      groupe: c.groupe,
+      dateValidation: c.efm!.date_envoi_propositions,
+      datePrevue: c.efm!.date_prevue,
+      dateEffective: c.efm!.date_administration,
+      dateRestitution: publieLe(c.efm!.id)?.slice(0, 10) ?? null,
+    }));
+
+  // ── Les notes ───────────────────────────────────────────────────────────
+
+  /** Les heures réellement faites dans un module, pour un groupe. */
+  const realisees = (moduleId: string, groupeId: string): number | null => {
+    let total = 0;
+    let vu = false;
+    for (const s of seances) {
+      if (s.module_id !== moduleId) continue;
+      if (!s.seance_groupes.some((l) => l.groupe_id === groupeId)) continue;
+      const h = heures(s.duree_realisee);
+      if (h === null) continue;
+      total += h;
+      vu = true;
+    }
+    return vu ? total : null;
+  };
+
+  const notePar = new Map<string, LignePassation>();
+  for (const p of passations) {
+    if (p.stagiaire_id) notePar.set(`${p.controle_id}|${p.stagiaire_id}`, p);
+  }
+
+  const notes: NotesModule[] = couples.map((c) => {
+    const colonnesCC = Math.max(COLONNES_CC_OFFICIELLES, c.cc.length);
+    const duGroupe = stagiaires
+      .filter((e) => e.groupe_id === c.groupeId)
+      .sort((x, y) =>
+        `${x.nom} ${x.prenom}`.localeCompare(`${y.nom} ${y.prenom}`, "fr"),
+      );
+
+    const affectation = affectations.find(
+      (a) => a.module_id === c.moduleId && a.groupe_id === c.groupeId,
+    );
+
+    return {
+      module: c.module,
+      filiere: c.filiere,
+      groupe: c.groupe,
+      annee: c.annee,
+      masseHorairePrevue: heures(affectation?.masse_horaire_allouee ?? null),
+      masseHoraireRealisee: realisees(c.moduleId, c.groupeId),
+      effectif: duGroupe.length,
+      colonnesCC,
+      stagiaires: duGroupe.map((e) => {
+        const cc = c.cc.map((x) => {
+          const p = notePar.get(`${x.id}|${e.id}`);
+          return sur20(p?.note ?? null, x.type, x.bareme_total);
+        });
+        const pEfm = c.efm ? notePar.get(`${c.efm.id}|${e.id}`) : undefined;
+        return {
+          numeroInscription: e.cef?.trim() || e.cne?.trim() || "",
+          nom: `${e.nom} ${e.prenom}`.trim(),
+          cc,
+          moyenneCC: moyenne(cc),
+          efm: c.efm
+            ? sur20(pEfm?.note ?? null, c.efm.type, c.efm.bareme_total)
+            : null,
+        };
+      }),
+    };
+  });
+
+  return { controlesContinus, examens, notes };
+}
