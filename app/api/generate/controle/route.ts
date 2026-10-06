@@ -356,6 +356,18 @@ export async function POST(request: Request) {
     '- "ouverte" : réponse rédigée courte. Fournis `corrige`.',
     '- "exercice" : mise en application, réponse longue. Fournis `corrige` et `donnees`.',
     "",
+    "LE CORRIGÉ SE MET EN FORME, comme les données.",
+    "Il est lu sur la copie rendue au stagiaire et sur le dossier déposé à",
+    "l'administration : un bloc de prose où les éléments attendus s'enchaînent",
+    "en « (1) … (2) … (3) … » ne s'y relit pas. Écris-le en Markdown :",
+    "- une liste numérotée quand plusieurs éléments sont attendus, un par ligne ;",
+    "- un tableau quand la question demande un livrable tabulaire — fiche",
+    "  persona, empathy map, user journey map, roadmap priorisée — avec les",
+    "  mêmes colonnes que celles demandées dans l'énoncé ;",
+    "- du gras pour nommer une rubrique en tête de ligne.",
+    "Un corrigé d'une seule phrase reste une seule phrase : la mise en forme",
+    "sert la lecture, elle ne la décore pas.",
+    "",
     ...consigneBudget(duree, format),
     "",
     "PLAN DU SUJET — à suivre.",
@@ -433,7 +445,7 @@ export async function POST(request: Request) {
       "bareme": 3,
       "difficulte": "accessible",
       "justification_bareme": "Définition plus une mise en contexte : deux éléments attendus, 3 points.",
-      "corrige": "corrigé détaillé"
+      "corrige": "Éléments attendus :\n1. La définition : …\n2. Un exemple : …"
     },
     {
       "type": "exercice",
@@ -442,7 +454,7 @@ export async function POST(request: Request) {
       "bareme": 6,
       "difficulte": "discriminant",
       "justification_bareme": "Analyse de données, regroupement et justification : plusieurs étapes, 6 points.",
-      "corrige": "corrigé détaillé"
+      "corrige": "| Rubrique | Contenu attendu |\n| --- | --- |\n| Profil | … |\n| Objectifs | … |"
     }
   ]
 }`,

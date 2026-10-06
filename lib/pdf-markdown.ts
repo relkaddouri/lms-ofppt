@@ -113,6 +113,15 @@ export function dessinerMarkdown(
     // Le retour à la ligne se calcule sur le texte nu, puis chaque ligne est
     // repeinte segment par segment : mesurer en gras ce qui sera écrit en
     // maigre décalerait tout.
+    //
+    // La police se pose AVANT la découpe, et c'est essentiel : `splitTextToSize`
+    // mesure avec la police courante du document, quelle qu'elle soit. Sans
+    // cette ligne, la découpe héritait de ce que l'appelant avait laissé — une
+    // police de titre à la mesure, une petite capitale au tracé — et les deux
+    // passes ne coupaient pas au même endroit. Le texte gagnait une ligne au
+    // tracé, et sortait du fond calculé à la mesure : exactement 0,60 mm,
+    // relevé sur vingt-deux pages d'un dossier réel.
+    police(doc, "corps", taille);
     const nu = segments.map((s) => s.texte).join("");
     const lignes: string[] = doc.splitTextToSize(nu, cadre.largeur - indent);
 

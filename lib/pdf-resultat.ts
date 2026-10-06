@@ -276,7 +276,11 @@ export function dessinerResultat(
                       ╰───────────────────  bas du fond
       */
       const MARGE_HAUT = 2.6;
-      const ECART = 6;
+      // L'écart ne se lit pas seul : le moteur Markdown descend encore d'un
+      // interligne avant d'écrire sa première ligne. Avec 6 mm ici, l'étiquette
+      // se retrouvait à 9,6 mm de son texte — un trou que rien ne justifie sur
+      // une pièce qu'on veut dense. 2,5 mm donnent 7,1 mm au total.
+      const ECART = 2.5;
       const MARGE_BAS = 3;
 
       const contenu = mesurerMarkdown(
@@ -452,7 +456,21 @@ export function dessinerResultat(
   // ordinaire. On l'agrandit plutôt que de laisser le code devenir illisible.
   const modules = tailleQr(sceau);
   const COTE = Math.max(24, Math.min(34, modules * 0.62));
-  const yQr = basLignes + 12;
+
+  // Le pied de page s'écrit à 289 mm sur chaque feuille. Le code de
+  // vérification était posé douze millimètres sous les signatures sans qu'on
+  // regarde s'il restait de la place : sur une copie longue, il descendait
+  // jusque sur la ligne du pied, qui le traversait.
+  //
+  // On resserre d'abord, et on ne change de page qu'en dernier recours : une
+  // feuille de plus par copie coûterait plus que ces quelques millimètres.
+  const BAS_UTILE = 283;
+  let yQr = basLignes + 12;
+  if (yQr + COTE > BAS_UTILE) yQr = BAS_UTILE - COTE;
+  if (yQr < basLignes + 4) {
+    doc.addPage();
+    yQr = HAUT;
+  }
 
   dessinerQr(doc, sceau, X, yQr, COTE);
 
