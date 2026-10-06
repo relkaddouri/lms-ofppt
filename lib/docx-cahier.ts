@@ -362,7 +362,7 @@ export async function cahierDuFormateur(
     footers: { default: pied },
     children: [
       titre1("I- Planification et suivi de la formation"),
-      ...partieI(data, aujourdhui),
+      ...partieI(data, e.anneeScolaire, aujourdhui),
     ],
   };
 

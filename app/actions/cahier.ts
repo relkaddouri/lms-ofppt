@@ -3,6 +3,14 @@
 import { createClient } from "@/lib/supabase/server";
 import { libelleModule } from "@/lib/modules";
 import { getPortee } from "@/app/actions/annees";
+import {
+  heures,
+  logigrammes,
+  type LigneAffectation,
+  type LigneGroupe,
+  type LigneSeance,
+  type Logigramme,
+} from "@/lib/logigramme";
 
 /**
  * Ce que la plateforme sait remplir dans le cahier du formateur.
@@ -68,10 +76,17 @@ export type SuiviModule = {
   seances: SeanceSuivi[];
 };
 
+export type {
+  Logigramme,
+  LogigrammeModule,
+  LogigrammeSemaine,
+} from "@/lib/logigramme";
+
 export type CahierPartieI = {
   groupes: GroupePrisEnCharge[];
   modules: ModulePrisEnCharge[];
   suivis: SuiviModule[];
+  logigrammes: Logigramme[];
 };
 
 /*
@@ -83,17 +98,12 @@ const MAX_SEANCES = 2000;
 const MAX_ABSENCES = 4000;
 const MAX_STAGIAIRES = 1000;
 
-/** Durée en heures telle que la base la stocke : un nombre, ou rien. */
-function heures(v: number | string | null): number | null {
-  if (v === null) return null;
-  const n = Number(v);
-  return Number.isFinite(n) ? n : null;
-}
-
 export async function getCahierPartieI(): Promise<CahierPartieI> {
   const supabase = await createClient();
   const { groupeIds } = await getPortee();
-  if (groupeIds.length === 0) return { groupes: [], modules: [], suivis: [] };
+  if (groupeIds.length === 0) {
+    return { groupes: [], modules: [], suivis: [], logigrammes: [] };
+  }
 
   const [groupes, affectations, stagiaires, seances] = await Promise.all([
     supabase
@@ -104,7 +114,7 @@ export async function getCahierPartieI(): Promise<CahierPartieI> {
     supabase
       .from("groupe_modules")
       .select(
-        "groupe_id, module_id, masse_horaire_allouee, modules(nom, competences(code_operationnel, enonce_competence))",
+        "groupe_id, module_id, masse_horaire_allouee, modules(nom, competences(code_operationnel, enonce_competence, cycle, rang_cycle))",
       )
       .in("groupe_id", groupeIds),
     /*
@@ -133,12 +143,6 @@ export async function getCahierPartieI(): Promise<CahierPartieI> {
     if (r.error) throw new Error(r.error.message);
   }
 
-  type LigneGroupe = {
-    id: string;
-    nom: string;
-    annee: number | null;
-    specialites: { nom: string } | null;
-  };
   const lignesGroupes = (groupes.data ?? []) as unknown as LigneGroupe[];
   const nomDuGroupe = new Map(lignesGroupes.map((g) => [g.id, g.nom]));
 
@@ -148,32 +152,8 @@ export async function getCahierPartieI(): Promise<CahierPartieI> {
     effectifs.set(s.groupe_id, (effectifs.get(s.groupe_id) ?? 0) + 1);
   }
 
-  type LigneAffectation = {
-    groupe_id: string;
-    module_id: string;
-    masse_horaire_allouee: number | null;
-    modules: {
-      nom: string;
-      competences: {
-        code_operationnel: string | null;
-        enonce_competence: string | null;
-      } | null;
-    } | null;
-  };
   const lignesAffectations = (affectations.data ?? []) as unknown as LigneAffectation[];
 
-  type LigneSeance = {
-    id: string;
-    contenu_source_id: string | null;
-    module_id: string;
-    date: string | null;
-    duree_prevue: number | null;
-    duree_realisee: number | null;
-    objectif_operationnel: string | null;
-    contenu_realise: string | null;
-    a_prevoir_prochaine_seance: string | null;
-    seance_groupes: { groupe_id: string }[];
-  };
   const lignesSeances = (seances.data ?? []) as unknown as LigneSeance[];
 
   // ── Les absents, séance par séance ──────────────────────────────────────
@@ -374,5 +354,10 @@ export async function getCahierPartieI(): Promise<CahierPartieI> {
     .filter((m) => m.seances.length > 0)
     .sort((x, y) => x.module.localeCompare(y.module, "fr"));
 
-  return { groupes: prisEnCharge, modules: modulesPrisEnCharge, suivis };
+  return {
+    groupes: prisEnCharge,
+    modules: modulesPrisEnCharge,
+    suivis,
+    logigrammes: logigrammes(lignesGroupes, lignesAffectations, lignesSeances),
+  };
 }

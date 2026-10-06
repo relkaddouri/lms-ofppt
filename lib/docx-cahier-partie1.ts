@@ -28,7 +28,7 @@ import {
   titre2,
   titre3,
 } from "@/lib/docx-charte";
-import type { CahierPartieI, SuiviModule } from "@/app/actions/cahier";
+import type { CahierPartieI, Logigramme, SuiviModule } from "@/app/actions/cahier";
 
 /** Une pièce du document : un titre, un paragraphe ou un tableau. */
 type Bloc = Paragraph | Table;
@@ -221,6 +221,125 @@ function cadreAColler(consigne: string, hauteurMm: number): Table {
   });
 }
 
+// ── C : Le logigramme de la filière ──────────────────────────────────────
+
+/**
+ * Le logigramme d'un groupe : les modules en colonnes, les semaines en lignes.
+ *
+ * Le document officiel réserve une page où coller le logigramme de la filière
+ * quand elle en a un, et demande au formateur de l'élaborer sinon. La
+ * plateforme connaît les séances programmées — c'est-à-dire la prévision que la
+ * Direction valide — et peut donc le dessiner.
+ *
+ * Les colonnes portent le rang du module dans le programme, de 1 à seize, et
+ * une ligne de codes juste en dessous : « N° Modules » seul ne se lit pas.
+ */
+function unLogigramme(l: Logigramme, anneeScolaire: string | null): Bloc[] {
+  const n = l.modules.length;
+
+  const identite = new Table({
+    width: PLEINE_LARGEUR,
+    borders: BORDURES_TABLEAU,
+    columnWidths: colonnes(UTILE_COUCHEE, [2, 1, 1]),
+    rows: [
+      ligne([
+        cellule(`Filière : ${l.filiere}`, { gras: true }),
+        cellule(`Année : ${anneeScolaire ?? ""}`, { gras: true }),
+        cellule(`Groupe : ${l.groupe}`, { gras: true }),
+      ]),
+    ],
+  });
+
+  if (l.semaines.length === 0) {
+    return [
+      titre3(`Logigramme — ${l.groupe}`),
+      identite,
+      paragraphe(
+        "Aucune séance programmée pour ce groupe : le logigramme se dessinera dès que l'emploi du temps sera saisi.",
+        { italique: true },
+      ),
+    ];
+  }
+
+  const entete = new TableRow({
+    tableHeader: true,
+    children: [
+      celluleEntete("N° Modules"),
+      ...l.modules.map((m) => celluleEntete(String(m.numero))),
+      celluleEntete("Total"),
+    ],
+  });
+
+  const codes = new TableRow({
+    tableHeader: true,
+    children: [
+      cellule("Code", { gras: true, fond: COULEURS.lavis }),
+      ...l.modules.map((m) =>
+        cellule(m.code, { centre: true, fond: COULEURS.lavis }),
+      ),
+      cellule("", { fond: COULEURS.lavis }),
+    ],
+  });
+
+  const totalMasse = l.modules.reduce((t, m) => t + (m.masseHoraire ?? 0), 0);
+  const masses = ligne([
+    cellule("Masse horaire", { gras: true, fond: COULEURS.papier }),
+    ...l.modules.map((m) =>
+      cellule(nbHeures(m.masseHoraire), { centre: true, fond: COULEURS.papier }),
+    ),
+    cellule(nbHeures(totalMasse || null), {
+      centre: true,
+      gras: true,
+      fond: COULEURS.papier,
+    }),
+  ]);
+
+  const semaines = ligne([
+    cellule("Semaines", { gras: true, fond: COULEURS.papier }),
+    ...l.modules.map((m) =>
+      cellule(m.semaines ? String(m.semaines) : "", {
+        centre: true,
+        fond: COULEURS.papier,
+      }),
+    ),
+    // Le total n'est pas la somme des colonnes : deux modules peuvent occuper
+    // la même semaine. C'est le nombre de semaines de formation.
+    cellule(String(l.semaines.length), {
+      centre: true,
+      gras: true,
+      fond: COULEURS.papier,
+    }),
+  ]);
+
+  const lignesSemaines = l.semaines.map((sem, i) =>
+    ligne([
+      cellule(sem.libelle, { gras: true, alterne: i % 2 === 1 }),
+      ...sem.heures.map((h) =>
+        cellule(nbHeures(h), { centre: true, alterne: i % 2 === 1 }),
+      ),
+      cellule(nbHeures(sem.total || null), {
+        centre: true,
+        gras: true,
+        alterne: i % 2 === 1,
+      }),
+    ]),
+  );
+
+  return [
+    titre3(`Logigramme — ${l.groupe}`),
+    identite,
+    new Table({
+      width: PLEINE_LARGEUR,
+      borders: BORDURES_TABLEAU,
+      // La colonne des semaines plus large que les modules, qui ne portent
+      // qu'un nombre d'heures.
+      columnWidths: colonnes(UTILE_COUCHEE, [2, ...Array(n).fill(1), 1.2]),
+      rows: [entete, codes, masses, semaines, ...lignesSemaines],
+    }),
+    emargement(),
+  ];
+}
+
 // ── E : Planification et suivi par module ────────────────────────────────
 
 /** L'en-tête d'un module : ce que le formateur recopiait en tête de tableau. */
@@ -340,8 +459,15 @@ function suiviSeances(m: SuiviModule): Table {
  * `aujourdhui` est passé plutôt que lu : c'est ce qui décide dans quelle
  * colonne de mois tombe l'effectif, et une fonction qui lit l'horloge ne se
  * teste pas deux fois de la même façon.
+ *
+ * `anneeScolaire` vient de la fiche d'établissement : elle figure en tête de
+ * chaque logigramme, et la base des séances ne la connaît pas.
  */
-export function partieI(data: CahierPartieI, aujourdhui = new Date()): Bloc[] {
+export function partieI(
+  data: CahierPartieI,
+  anneeScolaire: string | null,
+  aujourdhui = new Date(),
+): Bloc[] {
   const blocs: Bloc[] = [
     titre2("A- Filières, groupes et modules pris en charge"),
     ...filieresEtGroupes(data, aujourdhui),
@@ -355,8 +481,10 @@ export function partieI(data: CahierPartieI, aujourdhui = new Date()): Bloc[] {
     emargement(),
 
     titre2("C- Logigramme de la filière"),
-    cadreAColler("Coller ici le logigramme de la filière", 150),
-    emargement(),
+    paragraphe(
+      "Établi d'après les séances programmées : les modules en colonnes, à leur rang dans le programme, et les semaines en lignes. Si la filière dispose déjà d'un logigramme validé, il remplace celui-ci.",
+    ),
+    ...data.logigrammes.flatMap((l) => unLogigramme(l, anneeScolaire)),
 
     titre2("D- Planification et suivi de la réalisation des modules de formation"),
   ];

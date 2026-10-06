@@ -15,6 +15,13 @@ import { readFileSync } from "node:fs";
 import JSZip from "jszip";
 import type { Etablissement } from "@/app/actions/etablissement";
 import type { CahierPartieI } from "@/app/actions/cahier";
+import {
+  logigrammes,
+  semaineIso,
+  type LigneAffectation,
+  type LigneGroupe,
+  type LigneSeance,
+} from "@/lib/logigramme";
 import { PROCEDURES } from "@/lib/docx-cahier-textes";
 
 /*
@@ -164,10 +171,38 @@ const partie1: CahierPartieI = {
       ],
     },
   ],
+  logigrammes: [
+    {
+      filiere: "Digital Design",
+      groupe: "DES101",
+      /*
+        Les deux modules se chevauchent sur deux semaines, et une semaine est
+        creuse : il faut cela pour que le total des semaines — quatre lignes —
+        diffère de la somme des colonnes — trois plus deux. Sans ce décalage, un
+        total calculé de travers passerait inaperçu.
+      */
+      modules: [
+        { numero: 2, code: "M202", masseHoraire: 100, semaines: 3 },
+        { numero: 4, code: "M204", masseHoraire: 80, semaines: 2 },
+      ],
+      semaines: [
+        { libelle: "S42", heures: [5, null], total: 5 },
+        // Une semaine sans cours — vacances — gardée entre les autres.
+        { libelle: "S43", heures: [null, null], total: 0 },
+        { libelle: "S44", heures: [5, 5], total: 10 },
+        { libelle: "S45", heures: [2.5, 5], total: 7.5 },
+      ],
+    },
+  ],
 };
 
 /** Un cahier de compte neuf : aucune donnée de partie I. */
-const partie1Vide: CahierPartieI = { groupes: [], modules: [], suivis: [] };
+const partie1Vide: CahierPartieI = {
+  groupes: [],
+  modules: [],
+  suivis: [],
+  logigrammes: [],
+};
 
 // ── Outils de lecture du paquet ───────────────────────────────────────────
 
@@ -318,7 +353,7 @@ verifie("Les émargements sont là",
 
 // Filières et groupes : les dix mois, et l'effectif dans la seule colonne du
 // mois d'édition. Le document est édité un 20 octobre : deuxième colonne.
-const groupesTbl = grille(tableaux[1] ?? "");
+const groupesTbl = tableaux.map(grille).find((g) => g[0]?.[0] === "Filières") ?? [];
 verifie("Les dix mois de l'année de formation",
   ["Sept.", "Oct.", "Nov.", "Déc.", "Jan.", "Fév.", "Mars", "Avr.", "Mai", "Juin"]
     .every((m) => (groupesTbl[1] ?? []).includes(m)),
@@ -335,7 +370,8 @@ verifie("Les autres mois restent vides",
   ligneDes101.slice(4).join("|"));
 
 // Modules pris en charge : les lignes, et le total.
-const modulesTbl = grille(tableaux[2] ?? "");
+const modulesTbl =
+  tableaux.map(grille).find((g) => g[0]?.[1] === "Intitulé du module") ?? [];
 verifie("Une ligne par module affecté", modulesTbl.length === 1 + partie1.modules.length + 1,
   `${modulesTbl.length} lignes`);
 verifie("Les dates sortent en JJ/MM/AAAA",
@@ -349,7 +385,6 @@ verifie("Le total annuel affecté est la somme des masses horaires",
 // Les deux cadres à coller existent et portent leur consigne.
 verifie("Cadre de l'emploi du temps",
   p.texte.includes("Coller ici votre emploi du temps émargé par le Directeur pédagogique"));
-verifie("Cadre du logigramme", p.texte.includes("Coller ici le logigramme de la filière"));
 
 // Le suivi du module : l'en-tête, puis une ligne par séance.
 verifie("En-tête du module : masse horaire et nombre de séances",
@@ -362,7 +397,8 @@ verifie("En-tête du module : l'année cochée",
 verifie("En-tête du module : l'objectif",
   p.texte.includes("Organiser les données utilisateurs recueillies en enquête."));
 
-const suiviTbl = grille(tableaux[tableaux.length - 1] ?? "");
+const suiviTbl =
+  tableaux.map(grille).find((g) => g[0]?.[0] === "Prévision par séance") ?? [];
 // Trois lignes d'en-tête, deux séances, et la ligne « à prévoir » de la première.
 verifie("Le suivi compte trois en-têtes, deux séances et un « à prévoir »",
   suiviTbl.length === 6, `${suiviTbl.length} lignes`);
@@ -381,6 +417,138 @@ verifie("Une séance à venir n'ajoute pas de ligne « à prévoir »",
 verifie("Les demi-heures s'écrivent à la française",
   p.texte.includes("2,5 heures") && !p.texte.includes("2.5"));
 
+// ── Le logigramme, d'abord sans base de données ──────────────────────────
+
+/*
+  La numérotation des semaines décide de tout le tableau. Les trois premières
+  valeurs attendues sont relevées sur le cahier officiel de 2022/2023 : sa ligne
+  S5 porte le 1er février 2023, premier jour du module M106, et sa dernière
+  ligne utile tombe sur le 8 juin, fin de M108.
+*/
+for (const [jour, attendu] of [
+  ["2023-02-01", 5],
+  ["2023-06-08", 23],
+  ["2022-10-11", 41],
+  // Les deux bords que la règle ISO déplace d'une année sur l'autre.
+  ["2021-01-01", 53],
+  ["2024-12-30", 1],
+] as [string, number][]) {
+  const r = semaineIso(jour);
+  verifie(`Semaine ISO du ${jour} : S${attendu}`, r?.semaine === attendu,
+    r ? `S${r.semaine} (${r.annee})` : "illisible");
+}
+verifie("Une date illisible ne rend pas de semaine", semaineIso("13/09/2021") === null);
+
+const groupeEssai: LigneGroupe[] = [
+  { id: "g1", nom: "DES101", annee: 2, specialites: { nom: "Digital Design" } },
+];
+
+const affecte = (
+  moduleId: string,
+  code: string,
+  cycle: string | null,
+  rang: number,
+  masse: number,
+): LigneAffectation => ({
+  groupe_id: "g1",
+  module_id: moduleId,
+  masse_horaire_allouee: masse,
+  modules: {
+    nom: code,
+    competences: {
+      code_operationnel: code,
+      enonce_competence: null,
+      cycle,
+      rang_cycle: rang,
+    },
+  },
+});
+
+const programme = (jour: string, moduleId: string, duree: number): LigneSeance => ({
+  id: `${moduleId}-${jour}`,
+  contenu_source_id: null,
+  module_id: moduleId,
+  date: jour,
+  duree_prevue: duree,
+  duree_realisee: null,
+  objectif_operationnel: null,
+  contenu_realise: null,
+  a_prevoir_prochaine_seance: null,
+  seance_groupes: [{ groupe_id: "g1" }],
+});
+
+/*
+  Exprès à contre-sens de l'ordre du programme : la spécialisation est déclarée
+  avant le tronc commun, pour voir si le rang remet les colonnes en place.
+*/
+const dessine = logigrammes(
+  groupeEssai,
+  [
+    affecte("m204", "M204", "specialisation", 4, 80),
+    affecte("m102", "M102", "tronc_commun", 2, 55),
+  ],
+  [
+    programme("2025-10-13", "m102", 5),
+    programme("2025-10-15", "m102", 2.5),
+    // Rien la semaine du 20 : elle doit tout de même paraître.
+    programme("2025-10-27", "m204", 5),
+  ],
+)[0];
+
+verifie("Un logigramme par groupe", dessine !== undefined);
+verifie("Les colonnes suivent le rang du programme, pas l'ordre des affectations",
+  dessine?.modules.map((m) => m.code).join(",") === "M102,M204",
+  dessine?.modules.map((m) => m.code).join(","));
+verifie("Le tronc commun garde son rang, la spécialisation décale de huit",
+  dessine?.modules.map((m) => m.numero).join(",") === "2,12",
+  dessine?.modules.map((m) => m.numero).join(","));
+verifie("Les semaines creuses sont conservées entre la première et la dernière",
+  dessine?.semaines.map((w) => w.libelle).join(",") === "S42,S43,S44",
+  dessine?.semaines.map((w) => w.libelle).join(","));
+verifie("Les heures d'une semaine se somment dans la colonne du module",
+  dessine?.semaines[0]?.heures[0] === 7.5 && dessine?.semaines[0]?.heures[1] === null,
+  JSON.stringify(dessine?.semaines[0]?.heures));
+verifie("Une semaine sans cours ne porte aucun chiffre",
+  dessine?.semaines[1]?.heures.every((h) => h === null) === true &&
+    dessine?.semaines[1]?.total === 0,
+  JSON.stringify(dessine?.semaines[1]));
+verifie("Le nombre de semaines d'un module compte ses semaines distinctes",
+  dessine?.modules[0]?.semaines === 1 && dessine?.modules[1]?.semaines === 1,
+  dessine?.modules.map((m) => `${m.code}:${m.semaines}`).join(" "));
+verifie("Un groupe sans séance n'a pas de colonnes vides mais pas de lignes",
+  logigrammes(groupeEssai, [affecte("m102", "M102", "tronc_commun", 2, 55)], [])[0]
+    ?.semaines.length === 0);
+verifie("Un groupe sans module n'a pas de logigramme",
+  logigrammes(groupeEssai, [], []).length === 0);
+
+// ── Le logigramme, tel qu'il est dessiné ────────────────────────────────
+
+// Repéré par son en-tête et non par son rang : l'ordre des tableaux changera
+// au prochain ajout, et un index faux fait échouer un contrôle juste.
+const logiTbl = tableaux.map(grille).find((g) => g[0]?.[0] === "N° Modules") ?? [];
+verifie("Le logigramme porte filière, année et groupe",
+  p.texte.includes("Filière : Digital Design") &&
+    p.texte.includes("Année : 2025/2026") &&
+    p.texte.includes("Groupe : DES101"));
+verifie("Les colonnes sont numérotées puis codées",
+  (logiTbl[0] ?? []).join("|") === "N° Modules|2|4|Total" &&
+    (logiTbl[1] ?? []).join("|") === "Code|M202|M204|",
+  `${(logiTbl[0] ?? []).join("|")} / ${(logiTbl[1] ?? []).join("|")}`);
+verifie("La masse horaire et son total",
+  (logiTbl[2] ?? []).join("|") === "Masse horaire|100|80|180",
+  (logiTbl[2] ?? []).join("|"));
+verifie("Le nombre de semaines, dont le total compte les lignes et non les colonnes",
+  (logiTbl[3] ?? []).join("|") === "Semaines|3|2|4",
+  (logiTbl[3] ?? []).join("|"));
+verifie("Une semaine creuse paraît, sans chiffre",
+  (logiTbl[5] ?? []).join("|") === "S43|||",
+  (logiTbl[5] ?? []).join("|"));
+verifie("Les demi-heures du logigramme s'écrivent à la française",
+  (logiTbl[7] ?? []).join("|") === "S45|2,5|5|7,5",
+  (logiTbl[7] ?? []).join("|"));
+verifie("Le cadre vide du logigramme a disparu",
+  !p.texte.includes("Coller ici le logigramme"));
+
 // Le compte vide : le cahier sort, et ses cases portent un tiret.
 const q = await ouvrir(vide, partie1Vide);
 verifie("Un compte vide produit tout de même un cahier", q.xml.length > 2000);
@@ -389,6 +557,8 @@ verifie("Un compte vide n'écrit pas « null »", !q.texte.includes("null"));
 const lignesVide = ((/<w:tbl>[\s\S]*?<\/w:tbl>/.exec(q.xml)?.[0] ?? "").match(/<w:tr[\s>]/g) ?? []).length;
 
 verifie("Fiche d'identité : dix lignes même à vide", lignesVide === 10, `${lignesVide} lignes`);
+verifie("Sans groupe, le logigramme ne laisse pas de tableau vide",
+  !q.texte.includes("N° Modules"));
 verifie("Sans séance, le suivi le dit au lieu de laisser un vide",
   q.texte.includes("Aucune séance datée sur cette année de formation"));
 
