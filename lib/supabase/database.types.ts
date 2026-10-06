@@ -1294,8 +1294,14 @@ export type Database = {
           commentaires_cours_ouverts: boolean
           commentaires_cours_valides: boolean
           created_at: string
+          date_affectation: string | null
+          date_dernier_bilan: string | null
+          date_recrutement: string | null
+          diplome: string | null
+          echelon: string | null
           etablissement: string | null
           formateur_id: string
+          grade: string | null
           heures_annuelles: number
           heures_hebdomadaires: number
           heures_sup_actives: boolean
@@ -1306,6 +1312,8 @@ export type Database = {
           nom_formateur: string | null
           plafond_sup_annuel: number
           plafond_sup_mensuel: number
+          specialite_affectation: string | null
+          specialite_origine: string | null
           updated_at: string
         }
         Insert: {
@@ -1315,8 +1323,14 @@ export type Database = {
           commentaires_cours_ouverts?: boolean
           commentaires_cours_valides?: boolean
           created_at?: string
+          date_affectation?: string | null
+          date_dernier_bilan?: string | null
+          date_recrutement?: string | null
+          diplome?: string | null
+          echelon?: string | null
           etablissement?: string | null
           formateur_id?: string
+          grade?: string | null
           heures_annuelles?: number
           heures_hebdomadaires?: number
           heures_sup_actives?: boolean
@@ -1327,6 +1341,8 @@ export type Database = {
           nom_formateur?: string | null
           plafond_sup_annuel?: number
           plafond_sup_mensuel?: number
+          specialite_affectation?: string | null
+          specialite_origine?: string | null
           updated_at?: string
         }
         Update: {
@@ -1336,8 +1352,14 @@ export type Database = {
           commentaires_cours_ouverts?: boolean
           commentaires_cours_valides?: boolean
           created_at?: string
+          date_affectation?: string | null
+          date_dernier_bilan?: string | null
+          date_recrutement?: string | null
+          diplome?: string | null
+          echelon?: string | null
           etablissement?: string | null
           formateur_id?: string
+          grade?: string | null
           heures_annuelles?: number
           heures_hebdomadaires?: number
           heures_sup_actives?: boolean
@@ -1348,6 +1370,8 @@ export type Database = {
           nom_formateur?: string | null
           plafond_sup_annuel?: number
           plafond_sup_mensuel?: number
+          specialite_affectation?: string | null
+          specialite_origine?: string | null
           updated_at?: string
         }
         Relationships: [
