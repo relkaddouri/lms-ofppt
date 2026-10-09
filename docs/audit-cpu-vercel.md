@@ -885,3 +885,50 @@ ouverte. À faire en trois minutes avant de fusionner :
 machine** — la clé SSH demande une phrase secrète. La branche part de `main`
 local, à `0f84bba` (PR #74). Si votre `git pull` a fait descendre autre chose,
 `perf-cpu-4` est à rebaser.
+
+### 9.8 Le repli serveur : hypothèse écartée, et une erreur d'audit
+
+**La ligne `[llm] repli serveur indisponible` n'est pas dans les journaux.**
+L'option bêta est donc acceptée : **aucune génération ne part deux fois.**
+L'hypothèse de la §9.3 est écartée, et le point 2 du plan ne rapporte rien.
+
+Et en vérifiant cela, je trouve que **la correction 5 du plan était une
+erreur.** Je la retire.
+
+J'avais écrit que `.stream(...).finalMessage()` faisait payer l'analyse d'un
+flux sans en tirer le bénéfice, puisque rien n'est montré au navigateur. Deux
+choses m'avaient échappé.
+
+D'abord, le code dit déjà pourquoi, à l'endroit même que j'ai lu :
+
+> Diffusion systématique : le formateur peut régler `max_tokens` très haut,
+> et une requête non diffusée finirait en délai dépassé.
+
+C'est aussi la recommandation d'Anthropic : diffuser dès que la sortie peut
+être longue, et appeler `finalMessage()` quand on n'a pas besoin des
+évènements. Le code fait exactement cela.
+
+Ensuite, j'ai surestimé le coût. Analyser quelques milliers de fragments
+représente des dizaines de millisecondes, pas des secondes. Ce n'était pas un
+poste de dépense.
+
+**Ce qui reste vrai de la §9.3 :** une génération qui échoue a quand même
+coûté son travail. C'est inévitable, et ce n'est pas ce qui remplit le quota.
+
+### 9.9 Le plan, révisé
+
+| # | Quoi | Gain | Risque | Temps | État |
+| --- | --- | --- | --- | --- | --- |
+| 1 | Crochet JWT Supabase | moyen | nul | 10 min | **fait** |
+| 2 | Vérifier le repli serveur | — | nul | 5 min | **fait — rien à corriger** |
+| 3 | Borner le fil | fort | faible | 1 à 2 h | **fait** |
+| 6 | Pause de la cloche sans activité | moyen | faible | 30 min | **fait** |
+| 4 | Alléger la cloche du formateur : une requête au lieu de neuf | **fort** | moyen | 2 à 3 h | à faire |
+| 7 | Mettre en cache années scolaires et profil | moyen | faible | 1 h | à faire |
+| 5 | ~~Ne plus streamer les appels au modèle~~ | — | — | — | **retirée, c'était une erreur** |
+
+**La mesure avant de continuer.** Quatre des sept points sont faits, et deux
+d'entre eux touchent ce qui tourne le plus souvent. Avant d'attaquer le point
+4, qui demande de réécrire la cloche, il vaut mieux laisser passer quelques
+jours de cours et regarder la courbe : si elle descend assez, le point 4 peut
+attendre — et une cloche réécrite est une cloche qui peut se casser.
