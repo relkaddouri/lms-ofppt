@@ -783,3 +783,105 @@ Je n'ai pas mesuré : pas d'accès au détail par fonction, et aucun instrument
 posé — c'était un audit en lecture seule. Tout ce qui est écrit ici est une
 déduction depuis le code, et chaque point porte le moyen de le vérifier
 soi-même dans Vercel. À confirmer avant de corriger quoi que ce soit.
+
+### 9.7 Corrections appliquées — branche `perf-cpu-4`
+
+Deux corrections sur les sept du plan. Pas poussées.
+
+#### Points 1 et 2 du plan : ce qui a été vérifié
+
+**Le crochet JWT.** Vous l'avez activé dans Supabase. **Aucun code n'était à
+changer** : `getCurrentUserRole` lit déjà `role_pedago` dans le jeton et ne
+descend vers la table `profils` que si la revendication manque.
+
+Une précision qui compte : **une session ouverte avant l'activation garde son
+ancien jeton.** La revendication n'y entre qu'au renouvellement. Pour le
+vérifier vous-même, dans la console du navigateur, connecté :
+
+```js
+JSON.parse(atob(
+  JSON.parse(localStorage.getItem(
+    Object.keys(localStorage).find((k) => k.endsWith("-auth-token"))
+  )).access_token.split(".")[1]
+)).role_pedago
+```
+
+`"formateur"` : le crochet marche, la lecture de `profils` a disparu.
+`undefined` : déconnectez-vous et reconnectez-vous, puis refaites le test.
+
+**Le repli serveur de l'IA.** Vous n'avez pas rempli la réponse dans votre
+message — la case `[OUI / NON]` est restée vide. **Je ne l'ai donc pas
+traitée.** Si la ligne `[llm] repli serveur indisponible` apparaît dans vos
+journaux, chaque génération coûte deux appels complets depuis le début, et la
+correction tient en une condition.
+
+#### Correction 3 — le fil est borné
+
+Vingt annonces, un lien « Voir les annonces plus anciennes » qui en ajoute
+vingt. Les réactions, commentaires et réactions aux commentaires ne portent
+plus que sur ces vingt-là.
+
+La fenêtre vit **dans l'adresse** (`?annonces=40`) et non dans un état du
+navigateur. Première version essayée puis abandonnée : une liste tenue côté
+client, qui s'allongeait sans recharger. Elle cassait les commentaires — ils se
+rafraîchissent par un nouveau rendu du serveur, et l'état client aurait figé la
+liste : **un commentaire posté ne serait jamais apparu.** Dans l'adresse, la
+fenêtre survit au rafraîchissement et se partage.
+
+La fenêtre est bornée des deux côtés, entre 20 et 200 : un paramètre d'adresse
+se trafique.
+
+| Demandé dans l'adresse | Annonces lues |
+| --- | --- |
+| rien, `abc`, `0`, `-5` | 20 |
+| `40` | 40 |
+| `99999` | 200 |
+
+**Les épinglées : sans objet.** Le cahier des charges demandait qu'elles
+restent visibles. La migration 110 a supprimé la colonne `epinglee` et la
+fonctionnalité a été abandonnée : il n'y en a plus.
+
+**Ce que le stagiaire perd :** rien, sauf un clic pour descendre plus bas que
+son écran. Le compte d'annonces disparaît de l'en-tête — la page ne les lit
+plus toutes, et annoncer un nombre qu'on n'a pas compté serait inventer.
+
+#### Correction 6 — la cloche se tait
+
+Dix minutes sans geste — pointeur, clavier, molette, toucher, défilement — et
+elle cesse d'interroger le serveur. Au premier geste suivant elle relit tout de
+suite, sans attendre son tour.
+
+Simulé sur vingt-quatre heures, onglet **visible** :
+
+| Situation | Appels par jour |
+| --- | --- |
+| Avant | **287** |
+| Onglet ouvert, personne devant | **2** |
+| Huit heures de cours, puis la page reste ouverte | **97** |
+| Un coup d'œil toutes les heures | **94** |
+
+Chaque appel vaut neuf lectures en base côté formateur, six côté stagiaire.
+
+#### Ce qui a été vérifié, et ce qui ne l'a pas été
+
+Vérifié : `npm run verifie` et `npm run build` passent ; une build de
+production lancée en local (`npx next start -p 3002`) démarre sans erreur ;
+`/espace-stagiaire/fil` répond sur les quatre valeurs de fenêtre, y compris
+`abc` et `99999` ; le bornage et le rythme de la cloche simulés hors
+navigateur.
+
+**Pas vérifié :** ni le fil ni la cloche n'ont été vus fonctionner. Les deux
+vivent derrière l'authentification, et cette session n'a pas de session
+ouverte. À faire en trois minutes avant de fusionner :
+
+1. Ouvrir le fil : compter les cartes, il doit y en avoir vingt au plus.
+2. Cliquer « Voir les annonces plus anciennes » : l'adresse passe à
+   `?annonces=40`, la page ne remonte pas en haut.
+3. Poster un commentaire sur une annonce : il doit apparaître.
+4. Laisser l'onglet ouvert sans y toucher un quart d'heure, puis bouger la
+   souris : la pastille doit se mettre à jour immédiatement.
+
+**Et ceci : `git fetch` ne peut toujours pas joindre le dépôt depuis cette
+machine** — la clé SSH demande une phrase secrète. La branche part de `main`
+local, à `0f84bba` (PR #74). Si votre `git pull` a fait descendre autre chose,
+`perf-cpu-4` est à rebaser.
