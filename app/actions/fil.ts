@@ -98,18 +98,74 @@ export type Camarade = {
   photo: string | null;
 };
 
-export async function getFil(groupeId: string): Promise<AnnonceFil[]> {
+/**
+ * Combien d'annonces le fil charge d'un coup.
+ *
+ * Vingt tiennent plusieurs écrans de défilement : personne ne descend plus bas
+ * sans chercher quelque chose de précis, et celui qui cherche clique.
+ *
+ * Pas exportée : un module « use server » ne peut exporter que des fonctions
+ * async, et une constante y rend l'application entière en 500 avec un `tsc`
+ * vert (`conventions.md`, et `scripts/verifie-actions.mjs` qui le vérifie).
+ */
+const TAILLE_FIL = 20;
+
+/**
+ * Le plafond, quoi qu'on demande dans l'adresse.
+ *
+ * Deux cents annonces, c'est plus qu'une année entière : au-delà, ce n'est plus
+ * un fil qu'on déroule, c'est une requête qu'on force.
+ */
+const MAX_FIL = 200;
+
+/** Une tranche du fil, et de quoi savoir s'il en reste dessous. */
+export type PageFil = {
+  annonces: AnnonceFil[];
+  /** Vrai s'il existe des annonces plus anciennes que la dernière rendue. */
+  encore: boolean;
+};
+
+/**
+ * Le fil d'un groupe, par tranches.
+ *
+ * Il lisait **toutes** les annonces du groupe, avec leur texte entier, puis
+ * toutes leurs réactions, tous leurs commentaires et toutes les réactions à
+ * ces commentaires. En septembre cela faisait dix annonces ; en juin, deux
+ * cents — relues en entier à chaque ouverture, par chaque stagiaire, plusieurs
+ * fois par jour. C'était le seul écran du projet dont le coût grandissait tout
+ * seul avec l'année scolaire (audit CPU du 09/10/2026, §9.1).
+ *
+ * `taille` élargit la fenêtre depuis le haut, et ne la déplace pas : « voir
+ * plus » veut dire « montre-m'en davantage », pas « montre-m'en d'autres ».
+ * La fenêtre vit dans l'adresse de la page, pas dans un état du navigateur —
+ * une page rafraîchie après un commentaire garde ainsi ce que le stagiaire
+ * avait déplié, et le commentaire apparaît.
+ */
+export async function getFil(
+  groupeId: string,
+  taille: number = TAILLE_FIL,
+): Promise<PageFil> {
   const supabase = await createClient();
   const user = await getUser();
 
-  const { data: annonces, error } = await supabase
+  // Bornée des deux côtés : un paramètre d'adresse se trafique, et personne ne
+  // lit mille annonces d'un coup.
+  const fenetre = Math.min(Math.max(Math.trunc(taille), TAILLE_FIL), MAX_FIL);
+
+  // Une de plus que demandé : elle ne sert qu'à savoir s'il en reste, et
+  // répond à la question sans une seconde requête de comptage.
+  const { data: lues, error } = await supabase
     .from("annonces")
     .select("id, titre, contenu, date, created_at")
     .eq("groupe_id", groupeId)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(fenetre + 1);
 
   if (error) throw new Error(error.message);
-  if (!annonces || annonces.length === 0) return [];
+  if (!lues || lues.length === 0) return { annonces: [], encore: false };
+
+  const encore = lues.length > fenetre;
+  const annonces = lues.slice(0, fenetre);
 
   const ids = annonces.map((a) => a.id);
 
@@ -255,7 +311,7 @@ export async function getFil(groupeId: string): Promise<AnnonceFil[]> {
     };
   }
 
-  return annonces.map((a) => {
+  const rendues: AnnonceFil[] = annonces.map((a) => {
     const reactions = (reactionsRes.data ?? []).filter(
       (r) => r.annonce_id === a.id,
     );
@@ -295,6 +351,8 @@ export async function getFil(groupeId: string): Promise<AnnonceFil[]> {
       classement: classements.get(a.id) ?? null,
     };
   });
+
+  return { annonces: rendues, encore };
 }
 
 export async function getCamarades(groupeId: string): Promise<Camarade[]> {

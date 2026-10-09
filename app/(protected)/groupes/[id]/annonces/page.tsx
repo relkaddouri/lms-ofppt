@@ -12,6 +12,9 @@ export default async function AnnoncesPage({
   // la gère (publier, supprimer), la seconde ce qu'on lui a répondu.
   const [annonces, fil, camarades] = await Promise.all([
     getAnnoncesByGroupe(id),
+    // Les vingt dernières seulement : le formateur gère ses annonces depuis la
+    // première liste, et n'a besoin des réponses que sur les récentes. Les
+    // anciennes restent lisibles dans le fil du groupe (audit du 09/10/2026).
     getFil(id),
     getCamarades(id),
   ]);
@@ -20,7 +23,7 @@ export default async function AnnoncesPage({
     <AnnoncesManager
       groupeId={id}
       annonces={annonces}
-      fil={fil}
+      fil={fil.annonces}
       camarades={camarades}
     />
   );

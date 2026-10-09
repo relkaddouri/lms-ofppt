@@ -1,4 +1,5 @@
-import { Newspaper } from "lucide-react";
+import Link from "next/link";
+import { ChevronDown, Newspaper } from "lucide-react";
 import { getIdentiteStagiaire } from "@/app/actions/stagiaire";
 import { getFil, getCamarades } from "@/app/actions/fil";
 import { getIdentiteFormateur } from "@/app/actions/profil";
@@ -8,19 +9,35 @@ import EnTete from "../EnTete";
 
 export const metadata = { title: "Fil" };
 
-export default async function FilPage() {
+/**
+ * Combien d'annonces la page montre, d'après l'adresse.
+ *
+ * La fenêtre vit là et non dans un état du navigateur : les commentaires se
+ * rafraîchissent par un nouveau rendu du serveur, et un état client aurait figé
+ * la liste — un commentaire posté ne serait jamais apparu.
+ */
+function fenetreDemandee(valeur: string | string[] | undefined): number {
+  const n = Number(Array.isArray(valeur) ? valeur[0] : valeur);
+  return Number.isFinite(n) && n > 0 ? n : 20;
+}
+
+export default async function FilPage({
+  searchParams,
+}: PageProps<"/espace-stagiaire/fil">) {
   const identite = await getIdentiteStagiaire();
   // Le layout a déjà écarté les non-stagiaires ; ceci n'est qu'une garde.
   if (!identite) return null;
 
-  const [annonces, camarades, formateur] = await Promise.all([
-    getFil(identite.groupeId),
+  const fenetre = fenetreDemandee((await searchParams).annonces);
+
+  const [page, camarades, formateur] = await Promise.all([
+    getFil(identite.groupeId, fenetre),
     getCamarades(identite.groupeId),
     // Mémorisée pour le rendu : `getFil` vient déjà de la demander.
     getIdentiteFormateur(),
   ]);
 
-  if (annonces.length === 0) {
+  if (page.annonces.length === 0) {
     return (
       <EnConstruction
         titre="Aucune annonce"
@@ -42,14 +59,15 @@ export default async function FilPage() {
         dansCarte={false}
         resume={
           <>
-            <span className="font-mono text-body">{annonces.length}</span>{" "}
-            annonce{annonces.length > 1 ? "s" : ""} de{" "}
-            {formateur.nom ?? "votre formateur"}
+            {/* Les plus récentes, et non le total : le fil ne les lit plus
+                toutes d'un coup, et annoncer un nombre qu'on n'a pas compté
+                serait inventer. */}
+            Les annonces de {formateur.nom ?? "votre formateur"}
           </>
         }
       />
 
-      {annonces.map((a) => (
+      {page.annonces.map((a) => (
         <CarteAnnonce
           key={a.id}
           annonce={a}
@@ -65,9 +83,24 @@ export default async function FilPage() {
       ))}
 
       <div className="flex justify-center px-5 pb-2 pt-2">
-        <span className="font-mono text-xs text-border-strong">
-          Fin du fil · {annonces.length} annonce{annonces.length > 1 ? "s" : ""}
-        </span>
+        {page.encore ? (
+          /* Un lien et non un bouton : la fenêtre est dans l'adresse, donc
+             elle survit à un rafraîchissement et se partage. `scroll={false}`
+             garde la lecture où elle en était. */
+          <Link
+            href={`/espace-stagiaire/fil?annonces=${fenetre + 20}`}
+            scroll={false}
+            className="inline-flex items-center gap-2 rounded-[10px] border border-border-strong bg-surface px-4 py-2 text-sm font-semibold text-body transition hover:bg-paper"
+          >
+            <ChevronDown className="size-4" aria-hidden />
+            Voir les annonces plus anciennes
+          </Link>
+        ) : (
+          <span className="font-mono text-xs text-border-strong">
+            Fin du fil · {page.annonces.length} annonce
+            {page.annonces.length > 1 ? "s" : ""}
+          </span>
+        )}
       </div>
     </div>
   );
