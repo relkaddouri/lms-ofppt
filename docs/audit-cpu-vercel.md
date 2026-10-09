@@ -613,3 +613,173 @@ performance.getEntriesByType('resource').filter((r) => r.name.includes('_rsc='))
 ```
 
 Rien de tout cela ne passe par Vercel : le quota n'est pas touché.
+
+---
+
+## 9. Troisième audit — 09/10/2026
+
+Après `perf-cpu-3`. Le proxy est passé de 35 % à 15 % : la correction des
+préchargements a fait son travail. Mais la part « function » n'a presque pas
+bougé, et c'est elle qui tient les 84 % du quota.
+
+**Lecture seule : aucun fichier de code n'a été modifié pendant cet audit.**
+
+### 9.0 Le compte à tenir
+
+| | |
+| --- | --- |
+| Quota | 4 h sur 30 jours glissants, soit **240 minutes** |
+| Consommé | 3 h 22, soit **202 minutes** — 84 % |
+| Moyenne actuelle | **6,7 minutes par jour** |
+| Objectif annoncé | sous 6 minutes, soit 180 minutes sur 30 jours |
+
+Il faut donc retirer **une vingtaine de minutes par mois** pour seulement
+revenir à l'objectif, et davantage pour avoir de la marge. Un jour de cours
+coûte aujourd'hui 5 à 14 minutes ; un jour sans cours, 2 à 5.
+
+### 9.1 Les cinq postes les plus chers
+
+Une précision d'abord, parce qu'elle change la façon de lire ce qui suit :
+**je ne vois pas les chiffres par fonction depuis le dépôt.** Le classement
+ci-dessous n'est pas une mesure, c'est un raisonnement : combien de fois une
+chose tourne, multiplié par le travail qu'elle fait. Pour le confirmer :
+Vercel → Observability → Functions, trier par CPU time.
+
+#### 1. Le fil du stagiaire — `getFil` (`app/actions/fil.ts`)
+
+C'est l'écran d'arrivée de soixante personnes, et le seul endroit du projet
+dont le coût **grandit tout seul avec l'année scolaire**.
+
+La première requête lit **toutes les annonces du groupe**, sans limite et sans
+fenêtre de dates, avec leur texte entier. Puis, pour toutes ces annonces à la
+fois : les réactions, les commentaires, les camarades, les distinctions, les
+classements — et enfin les réactions aux commentaires. Sept lectures, puis
+tout est recousu en mémoire.
+
+En septembre, dix annonces. En juin, deux cents — avec leurs réactions et
+leurs commentaires, relues en entier à chaque ouverture du fil, par chaque
+stagiaire, plusieurs fois par jour.
+
+La règle du `CLAUDE.md` — « toute requête a une limite » — n'est pas respectée
+ici, et c'est la requête où cela coûte le plus cher.
+
+#### 2. Le gabarit formateur — `app/(protected)/layout.tsx`
+
+**Treize à quatorze lectures avant même d'afficher la page**, et il tourne à
+chaque navigation : la session, le rôle, les années, l'année courante, le
+profil, et **neuf requêtes pour la seule cloche**.
+
+Le deuxième audit l'avait déjà noté. Rien n'a changé depuis : `getNotifications`
+construit les textes, les extraits, les noms et les photos de chaque
+notification, et le gabarit **jette tout sauf l'identifiant et la date**.
+
+#### 3. Le gabarit stagiaire — `app/espace-stagiaire/layout.tsx`
+
+Même forme, plus léger : huit lectures environ par navigation, dont six pour
+la cloche. Mais il tourne pour soixante personnes au lieu d'une.
+
+#### 4. Les routes de génération — `lib/llm.ts`
+
+Celui-là ne se devine pas. Les appels au modèle passent par
+`.stream(...).finalMessage()` : la fonction **lit la réponse morceau par
+morceau**, des milliers de fragments à analyser, puis attend la fin et ne
+garde que le texte complet.
+
+Or rien n'est montré au navigateur pendant ce temps. On paie donc le coût du
+flux sans en tirer le bénéfice. Une génération de 8 000 jetons, c'est quelques
+milliers de fragments analysés dans la fonction facturée.
+
+#### 5. Le rôle relu en base — `getCurrentUserRole` (`lib/supabase/server.ts`)
+
+La fonction cherche `role_pedago` dans le jeton. S'il n'y est pas, elle le lit
+dans la table `profils`. **Le crochet JWT de Supabase n'ayant jamais été
+activé, c'est le chemin de repli qui sert — une lecture de plus sur chaque
+page, des deux côtés.**
+
+### 9.2 Le dimanche : qu'est-ce qui tourne sans cours ?
+
+Le dimanche 4 octobre a coûté environ 5 minutes. Voici ce qui peut tourner, du
+plus probable au moins probable.
+
+**a) Un onglet resté ouvert — le plus probable.** La cloche interroge le
+serveur **toutes les 5 minutes** (`components/Cloche.tsx`). Elle s'arrête bien
+quand l'onglet passe en arrière-plan, mais **pas quand l'onglet reste visible
+sans que personne ne le regarde** : un portable ouvert sur la page, un second
+écran, un téléphone posé.
+
+Un seul onglet visible toute la journée :
+
+| | |
+| --- | --- |
+| Appels | 12 par heure, soit **≈ 290 par jour** |
+| Lectures en base | 9 par appel (formateur), 6 (stagiaire) |
+
+Soixante stagiaires n'ont pas besoin de laisser l'onglet ouvert pour que cela
+compte : deux ou trois suffisent.
+
+**b) Les visites réelles.** Un dimanche, un stagiaire ouvre l'application pour
+voir ses notes, un cours, un devoir à rendre. Chaque visite, c'est le gabarit
+(8 lectures) plus la page.
+
+**c) Ce qui ne tourne pas, vérifié.** Il n'y a **aucune tâche planifiée** : pas
+de `vercel.json`, donc pas de cron. Le temps réel passe directement à Supabase
+et ne touche pas le quota Vercel. Les robots sont écartés par `robots.ts`.
+
+**Pour trancher** : Vercel → Observability → Functions, filtrer sur le
+dimanche, trier par nombre d'invocations. Si une action de notifications
+domine, ce sont les onglets ouverts. Si ce sont des pages, ce sont des visites.
+
+### 9.3 Les erreurs de production ajoutent-elles du CPU ?
+
+**L'identifiant vide (`uuid ""`) : oui, mais peu.** Quand la requête échoue, le
+travail a déjà été fait ; l'erreur remonte, et Next rend **une seconde page**,
+celle d'erreur. Une page demandée, deux rendus facturés. Cela n'arrive que
+lorsqu'aucune année scolaire n'est lisible, donc rarement — mais c'est du
+gaspillage pur.
+
+**L'IA : oui, et beaucoup plus.** Deux raisons.
+
+D'abord, une génération qui échoue a quand même coûté son analyse de flux : on
+paie tout le travail, et on n'a rien.
+
+Ensuite, et c'est le point à vérifier : dans `lib/llm.ts`, l'appel demande une
+option bêta (`server-side-fallback`). Si l'organisation ne l'a pas ouverte,
+l'API répond `400`, et le code **refait l'appel en entier**. Chaque génération
+coûterait alors **deux appels complets** au lieu d'un.
+
+**Le test** : chercher `[llm] repli serveur indisponible` dans les journaux
+Vercel. Si la ligne apparaît, la condition est réunie — et c'est une
+correction d'une ligne.
+
+### 9.4 Le plan, par gain décroissant
+
+| # | Quoi | Gain | Risque | Temps |
+| --- | --- | --- | --- | --- |
+| 1 | Activer le crochet JWT Supabase | moyen | **nul** | 10 min |
+| 2 | Vérifier le `[llm] repli serveur indisponible` | moyen | **nul** | 5 min |
+| 3 | Borner le fil : fenêtre de dates, limite, et ne plus lire le texte entier des annonces anciennes | **fort** | faible | 1 à 2 h |
+| 4 | Alléger la cloche du formateur : une requête de comptage au lieu de neuf | fort | moyen | 2 à 3 h |
+| 5 | Ne plus streamer les appels au modèle | moyen | faible | 30 min |
+| 6 | Mettre la cloche en pause après quelques minutes sans geste, onglet visible ou non | moyen | faible | 30 min |
+| 7 | Mettre en cache ce qui ne dépend ni de l'utilisateur ni de la minute : années scolaires, profil | moyen | faible | 1 h |
+
+### 9.5 Ce que je ferais en premier
+
+**Les numéros 1 et 2, ce soir.** Quinze minutes à eux deux, aucun risque,
+aucun code à écrire — un réglage dans Supabase et une recherche dans les
+journaux. Le premier retire une lecture de **chaque page** des deux espaces.
+Le second dira si vos générations coûtent le double depuis le début.
+
+**Puis le numéro 3.** C'est là qu'est l'argent, et c'est le seul poste dont le
+coût augmente tout seul : ne rien faire aujourd'hui, c'est payer plus cher en
+juin qu'en octobre.
+
+Le numéro 4 vient après parce qu'il demande de réécrire la cloche, et qu'une
+cloche cassée se voit tout de suite.
+
+### 9.6 Ce que cet audit n'a pas pu faire
+
+Je n'ai pas mesuré : pas d'accès au détail par fonction, et aucun instrument
+posé — c'était un audit en lecture seule. Tout ce qui est écrit ici est une
+déduction depuis le code, et chaque point porte le moyen de le vérifier
+soi-même dans Vercel. À confirmer avant de corriger quoi que ce soit.
