@@ -96,6 +96,13 @@ export default function Cloche({
   const connues = useRef<Set<string> | null>(null);
   const sonActif = useRef(true);
   const finSecousse = useRef(0);
+  /*
+    Le dernier signe de vie, et l'état de veille qui en découle. Des refs et
+    non des états : un geste ne doit rien redessiner, et il en arrive des
+    centaines par minute.
+  */
+  const dernierGeste = useRef(Date.now());
+  const enPause = useRef(false);
 
   const cleVues = `pedago:${cle}-vues`;
   const cleSon = `pedago:${cle}-son`;
@@ -117,6 +124,13 @@ export default function Cloche({
       // Onglet en arrière-plan : personne ne regarde, et un carillon sans
       // écran allumé est une sonnerie de téléphone, pas une notification.
       if (document.visibilityState !== "visible") return;
+      // Onglet visible mais personne devant : même conclusion, et c'est le cas
+      // qui coûtait le plus cher — il dure des heures sans que rien ne le
+      // signale.
+      if (Date.now() - dernierGeste.current > INACTIVITE) {
+        enPause.current = true;
+        return;
+      }
       try {
         const liste = await charger();
         if (annule) return;
@@ -164,11 +178,30 @@ export default function Cloche({
     // Au retour sur l'onglet, on vérifie tout de suite : attendre le prochain
     // tour ferait rater ce qui est arrivé pendant l'absence.
     document.addEventListener("visibilitychange", verifier);
+
+    /*
+      Le geste ne fait que poser l'heure — il arrive des centaines de fois par
+      minute et doit rester gratuit. C'est seulement s'il réveille la cloche
+      qu'on relit, et tout de suite : attendre le tour suivant ferait découvrir
+      cinq minutes plus tard ce qui était déjà là.
+    */
+    function geste() {
+      dernierGeste.current = Date.now();
+      if (enPause.current) {
+        enPause.current = false;
+        void verifier();
+      }
+    }
+    for (const nom of GESTES) {
+      document.addEventListener(nom, geste, { passive: true });
+    }
+
     return () => {
       annule = true;
       window.clearInterval(minuterie);
       window.clearTimeout(finSecousse.current);
       document.removeEventListener("visibilitychange", verifier);
+      for (const nom of GESTES) document.removeEventListener(nom, geste);
     };
   }, [charger, sonnePour]);
 
@@ -278,6 +311,30 @@ export default function Cloche({
  * publication Postgres et des policies de diffusion.
  */
 const RYTHME = 300_000;
+
+/**
+ * Au bout de combien de temps sans geste la cloche se tait.
+ *
+ * Elle s'arrêtait déjà quand l'onglet passait en arrière-plan. Mais un
+ * portable laissé ouvert sur la page, un second écran, un téléphone posé :
+ * l'onglet reste *visible* et personne ne regarde. La cloche interrogeait
+ * alors le serveur douze fois par heure, toute la journée, pour rien — environ
+ * deux cent quatre-vingt-dix appels, dimanche compris (audit du 09/10/2026,
+ * §9.2).
+ *
+ * Dix minutes : plus court réveillerait la cloche en traversant la pièce avec
+ * la souris, plus long laisserait tourner une heure de rien.
+ */
+const INACTIVITE = 600_000;
+
+/** Les gestes qui disent que quelqu'un est là. */
+const GESTES = [
+  "pointerdown",
+  "keydown",
+  "wheel",
+  "touchstart",
+  "scroll",
+] as const;
 
 /**
  * Les réglages tiennent dans le navigateur, et c'est assumé.

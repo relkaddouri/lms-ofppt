@@ -613,3 +613,336 @@ performance.getEntriesByType('resource').filter((r) => r.name.includes('_rsc='))
 ```
 
 Rien de tout cela ne passe par Vercel : le quota n'est pas touché.
+
+---
+
+## 9. Troisième audit — 09/10/2026
+
+Après `perf-cpu-3`. Le proxy est passé de 35 % à 15 % : la correction des
+préchargements a fait son travail. Mais la part « function » n'a presque pas
+bougé, et c'est elle qui tient les 84 % du quota.
+
+**Lecture seule : aucun fichier de code n'a été modifié pendant cet audit.**
+
+### 9.0 Le compte à tenir
+
+| | |
+| --- | --- |
+| Quota | 4 h sur 30 jours glissants, soit **240 minutes** |
+| Consommé | 3 h 22, soit **202 minutes** — 84 % |
+| Moyenne actuelle | **6,7 minutes par jour** |
+| Objectif annoncé | sous 6 minutes, soit 180 minutes sur 30 jours |
+
+Il faut donc retirer **une vingtaine de minutes par mois** pour seulement
+revenir à l'objectif, et davantage pour avoir de la marge. Un jour de cours
+coûte aujourd'hui 5 à 14 minutes ; un jour sans cours, 2 à 5.
+
+### 9.1 Les cinq postes les plus chers
+
+Une précision d'abord, parce qu'elle change la façon de lire ce qui suit :
+**je ne vois pas les chiffres par fonction depuis le dépôt.** Le classement
+ci-dessous n'est pas une mesure, c'est un raisonnement : combien de fois une
+chose tourne, multiplié par le travail qu'elle fait. Pour le confirmer :
+Vercel → Observability → Functions, trier par CPU time.
+
+#### 1. Le fil du stagiaire — `getFil` (`app/actions/fil.ts`)
+
+C'est l'écran d'arrivée de soixante personnes, et le seul endroit du projet
+dont le coût **grandit tout seul avec l'année scolaire**.
+
+La première requête lit **toutes les annonces du groupe**, sans limite et sans
+fenêtre de dates, avec leur texte entier. Puis, pour toutes ces annonces à la
+fois : les réactions, les commentaires, les camarades, les distinctions, les
+classements — et enfin les réactions aux commentaires. Sept lectures, puis
+tout est recousu en mémoire.
+
+En septembre, dix annonces. En juin, deux cents — avec leurs réactions et
+leurs commentaires, relues en entier à chaque ouverture du fil, par chaque
+stagiaire, plusieurs fois par jour.
+
+La règle du `CLAUDE.md` — « toute requête a une limite » — n'est pas respectée
+ici, et c'est la requête où cela coûte le plus cher.
+
+#### 2. Le gabarit formateur — `app/(protected)/layout.tsx`
+
+**Treize à quatorze lectures avant même d'afficher la page**, et il tourne à
+chaque navigation : la session, le rôle, les années, l'année courante, le
+profil, et **neuf requêtes pour la seule cloche**.
+
+Le deuxième audit l'avait déjà noté. Rien n'a changé depuis : `getNotifications`
+construit les textes, les extraits, les noms et les photos de chaque
+notification, et le gabarit **jette tout sauf l'identifiant et la date**.
+
+#### 3. Le gabarit stagiaire — `app/espace-stagiaire/layout.tsx`
+
+Même forme, plus léger : huit lectures environ par navigation, dont six pour
+la cloche. Mais il tourne pour soixante personnes au lieu d'une.
+
+#### 4. Les routes de génération — `lib/llm.ts`
+
+Celui-là ne se devine pas. Les appels au modèle passent par
+`.stream(...).finalMessage()` : la fonction **lit la réponse morceau par
+morceau**, des milliers de fragments à analyser, puis attend la fin et ne
+garde que le texte complet.
+
+Or rien n'est montré au navigateur pendant ce temps. On paie donc le coût du
+flux sans en tirer le bénéfice. Une génération de 8 000 jetons, c'est quelques
+milliers de fragments analysés dans la fonction facturée.
+
+#### 5. Le rôle relu en base — `getCurrentUserRole` (`lib/supabase/server.ts`)
+
+La fonction cherche `role_pedago` dans le jeton. S'il n'y est pas, elle le lit
+dans la table `profils`. **Le crochet JWT de Supabase n'ayant jamais été
+activé, c'est le chemin de repli qui sert — une lecture de plus sur chaque
+page, des deux côtés.**
+
+### 9.2 Le dimanche : qu'est-ce qui tourne sans cours ?
+
+Le dimanche 4 octobre a coûté environ 5 minutes. Voici ce qui peut tourner, du
+plus probable au moins probable.
+
+**a) Un onglet resté ouvert — le plus probable.** La cloche interroge le
+serveur **toutes les 5 minutes** (`components/Cloche.tsx`). Elle s'arrête bien
+quand l'onglet passe en arrière-plan, mais **pas quand l'onglet reste visible
+sans que personne ne le regarde** : un portable ouvert sur la page, un second
+écran, un téléphone posé.
+
+Un seul onglet visible toute la journée :
+
+| | |
+| --- | --- |
+| Appels | 12 par heure, soit **≈ 290 par jour** |
+| Lectures en base | 9 par appel (formateur), 6 (stagiaire) |
+
+Soixante stagiaires n'ont pas besoin de laisser l'onglet ouvert pour que cela
+compte : deux ou trois suffisent.
+
+**b) Les visites réelles.** Un dimanche, un stagiaire ouvre l'application pour
+voir ses notes, un cours, un devoir à rendre. Chaque visite, c'est le gabarit
+(8 lectures) plus la page.
+
+**c) Ce qui ne tourne pas, vérifié.** Il n'y a **aucune tâche planifiée** : pas
+de `vercel.json`, donc pas de cron. Le temps réel passe directement à Supabase
+et ne touche pas le quota Vercel. Les robots sont écartés par `robots.ts`.
+
+**Pour trancher** : Vercel → Observability → Functions, filtrer sur le
+dimanche, trier par nombre d'invocations. Si une action de notifications
+domine, ce sont les onglets ouverts. Si ce sont des pages, ce sont des visites.
+
+### 9.3 Les erreurs de production ajoutent-elles du CPU ?
+
+**L'identifiant vide (`uuid ""`) : oui, mais peu.** Quand la requête échoue, le
+travail a déjà été fait ; l'erreur remonte, et Next rend **une seconde page**,
+celle d'erreur. Une page demandée, deux rendus facturés. Cela n'arrive que
+lorsqu'aucune année scolaire n'est lisible, donc rarement — mais c'est du
+gaspillage pur.
+
+**L'IA : oui, et beaucoup plus.** Deux raisons.
+
+D'abord, une génération qui échoue a quand même coûté son analyse de flux : on
+paie tout le travail, et on n'a rien.
+
+Ensuite, et c'est le point à vérifier : dans `lib/llm.ts`, l'appel demande une
+option bêta (`server-side-fallback`). Si l'organisation ne l'a pas ouverte,
+l'API répond `400`, et le code **refait l'appel en entier**. Chaque génération
+coûterait alors **deux appels complets** au lieu d'un.
+
+**Le test** : chercher `[llm] repli serveur indisponible` dans les journaux
+Vercel. Si la ligne apparaît, la condition est réunie — et c'est une
+correction d'une ligne.
+
+### 9.4 Le plan, par gain décroissant
+
+| # | Quoi | Gain | Risque | Temps |
+| --- | --- | --- | --- | --- |
+| 1 | Activer le crochet JWT Supabase | moyen | **nul** | 10 min |
+| 2 | Vérifier le `[llm] repli serveur indisponible` | moyen | **nul** | 5 min |
+| 3 | Borner le fil : fenêtre de dates, limite, et ne plus lire le texte entier des annonces anciennes | **fort** | faible | 1 à 2 h |
+| 4 | Alléger la cloche du formateur : une requête de comptage au lieu de neuf | fort | moyen | 2 à 3 h |
+| 5 | Ne plus streamer les appels au modèle | moyen | faible | 30 min |
+| 6 | Mettre la cloche en pause après quelques minutes sans geste, onglet visible ou non | moyen | faible | 30 min |
+| 7 | Mettre en cache ce qui ne dépend ni de l'utilisateur ni de la minute : années scolaires, profil | moyen | faible | 1 h |
+
+### 9.5 Ce que je ferais en premier
+
+**Les numéros 1 et 2, ce soir.** Quinze minutes à eux deux, aucun risque,
+aucun code à écrire — un réglage dans Supabase et une recherche dans les
+journaux. Le premier retire une lecture de **chaque page** des deux espaces.
+Le second dira si vos générations coûtent le double depuis le début.
+
+**Puis le numéro 3.** C'est là qu'est l'argent, et c'est le seul poste dont le
+coût augmente tout seul : ne rien faire aujourd'hui, c'est payer plus cher en
+juin qu'en octobre.
+
+Le numéro 4 vient après parce qu'il demande de réécrire la cloche, et qu'une
+cloche cassée se voit tout de suite.
+
+### 9.6 Ce que cet audit n'a pas pu faire
+
+Je n'ai pas mesuré : pas d'accès au détail par fonction, et aucun instrument
+posé — c'était un audit en lecture seule. Tout ce qui est écrit ici est une
+déduction depuis le code, et chaque point porte le moyen de le vérifier
+soi-même dans Vercel. À confirmer avant de corriger quoi que ce soit.
+
+### 9.7 Corrections appliquées — branche `perf-cpu-4`
+
+Deux corrections sur les sept du plan. Pas poussées.
+
+#### Points 1 et 2 du plan : ce qui a été vérifié
+
+**Le crochet JWT.** Vous l'avez activé dans Supabase. **Aucun code n'était à
+changer** : `getCurrentUserRole` lit déjà `role_pedago` dans le jeton et ne
+descend vers la table `profils` que si la revendication manque.
+
+Une précision qui compte : **une session ouverte avant l'activation garde son
+ancien jeton.** La revendication n'y entre qu'au renouvellement. Pour le
+vérifier vous-même, dans la console du navigateur, connecté :
+
+```js
+JSON.parse(atob(
+  JSON.parse(localStorage.getItem(
+    Object.keys(localStorage).find((k) => k.endsWith("-auth-token"))
+  )).access_token.split(".")[1]
+)).role_pedago
+```
+
+`"formateur"` : le crochet marche, la lecture de `profils` a disparu.
+`undefined` : déconnectez-vous et reconnectez-vous, puis refaites le test.
+
+**Le repli serveur de l'IA.** Vous n'avez pas rempli la réponse dans votre
+message — la case `[OUI / NON]` est restée vide. **Je ne l'ai donc pas
+traitée.** Si la ligne `[llm] repli serveur indisponible` apparaît dans vos
+journaux, chaque génération coûte deux appels complets depuis le début, et la
+correction tient en une condition.
+
+#### Correction 3 — le fil est borné
+
+**Quatre** annonces à l'ouverture — ce qu'on voit sans défiler, et ce qu'un
+stagiaire vient réellement lire en arrivant. Un lien « Afficher plus
+d'annonces » en ajoute vingt à chaque clic. Les réactions, commentaires et
+réactions aux commentaires ne portent que sur les annonces chargées.
+
+Le pas est de vingt et non de quatre : remonter à octobre demanderait sinon
+vingt-cinq clics, et chaque clic est un rendu de page facturé. Le coût est dans
+la première ouverture, qui arrive des dizaines de fois par jour ; celui qui
+cherche une vieille annonce le fait une fois.
+
+| Clic | 0 | 1 | 2 | 3 | 4 | 5 |
+| --- | --- | --- | --- | --- | --- | --- |
+| Annonces lues | 4 | 24 | 44 | 64 | 84 | 104 |
+
+**L'écran du formateur en garde vingt.** Il gère ses annonces depuis une autre
+liste, mais c'est là qu'il lit ce qu'on lui a répondu, et quatre
+l'aveugleraient. Cet écran s'ouvre quelques fois par jour, pas des dizaines.
+
+La fenêtre vit **dans l'adresse** (`?annonces=40`) et non dans un état du
+navigateur. Première version essayée puis abandonnée : une liste tenue côté
+client, qui s'allongeait sans recharger. Elle cassait les commentaires — ils se
+rafraîchissent par un nouveau rendu du serveur, et l'état client aurait figé la
+liste : **un commentaire posté ne serait jamais apparu.** Dans l'adresse, la
+fenêtre survit au rafraîchissement et se partage.
+
+La fenêtre est bornée des deux côtés, entre 4 et 200 : un paramètre d'adresse
+se trafique.
+
+| Demandé dans l'adresse | Annonces lues |
+| --- | --- |
+| rien, `abc`, `0`, `-5` | 4 |
+| `24` | 24 |
+| `99999` | 200 |
+
+**Les épinglées : sans objet.** Le cahier des charges demandait qu'elles
+restent visibles. La migration 110 a supprimé la colonne `epinglee` et la
+fonctionnalité a été abandonnée : il n'y en a plus.
+
+**Ce que le stagiaire perd :** rien, sauf un clic pour descendre plus bas que
+son écran. Le compte d'annonces disparaît de l'en-tête — la page ne les lit
+plus toutes, et annoncer un nombre qu'on n'a pas compté serait inventer.
+
+#### Correction 6 — la cloche se tait
+
+Dix minutes sans geste — pointeur, clavier, molette, toucher, défilement — et
+elle cesse d'interroger le serveur. Au premier geste suivant elle relit tout de
+suite, sans attendre son tour.
+
+Simulé sur vingt-quatre heures, onglet **visible** :
+
+| Situation | Appels par jour |
+| --- | --- |
+| Avant | **287** |
+| Onglet ouvert, personne devant | **2** |
+| Huit heures de cours, puis la page reste ouverte | **97** |
+| Un coup d'œil toutes les heures | **94** |
+
+Chaque appel vaut neuf lectures en base côté formateur, six côté stagiaire.
+
+#### Ce qui a été vérifié, et ce qui ne l'a pas été
+
+Vérifié : `npm run verifie` et `npm run build` passent ; une build de
+production lancée en local (`npx next start -p 3002`) démarre sans erreur ;
+`/espace-stagiaire/fil` répond sur les quatre valeurs de fenêtre, y compris
+`abc` et `99999` ; le bornage et le rythme de la cloche simulés hors
+navigateur.
+
+**Pas vérifié :** ni le fil ni la cloche n'ont été vus fonctionner. Les deux
+vivent derrière l'authentification, et cette session n'a pas de session
+ouverte. À faire en trois minutes avant de fusionner :
+
+1. Ouvrir le fil : compter les cartes, il doit y en avoir quatre au plus.
+2. Cliquer « Afficher plus d'annonces » : l'adresse passe à `?annonces=24`, la
+   page ne remonte pas en haut.
+3. Poster un commentaire sur une annonce : il doit apparaître.
+4. Laisser l'onglet ouvert sans y toucher un quart d'heure, puis bouger la
+   souris : la pastille doit se mettre à jour immédiatement.
+
+**Et ceci : `git fetch` ne peut toujours pas joindre le dépôt depuis cette
+machine** — la clé SSH demande une phrase secrète. La branche part de `main`
+local, à `0f84bba` (PR #74). Si votre `git pull` a fait descendre autre chose,
+`perf-cpu-4` est à rebaser.
+
+### 9.8 Le repli serveur : hypothèse écartée, et une erreur d'audit
+
+**La ligne `[llm] repli serveur indisponible` n'est pas dans les journaux.**
+L'option bêta est donc acceptée : **aucune génération ne part deux fois.**
+L'hypothèse de la §9.3 est écartée, et le point 2 du plan ne rapporte rien.
+
+Et en vérifiant cela, je trouve que **la correction 5 du plan était une
+erreur.** Je la retire.
+
+J'avais écrit que `.stream(...).finalMessage()` faisait payer l'analyse d'un
+flux sans en tirer le bénéfice, puisque rien n'est montré au navigateur. Deux
+choses m'avaient échappé.
+
+D'abord, le code dit déjà pourquoi, à l'endroit même que j'ai lu :
+
+> Diffusion systématique : le formateur peut régler `max_tokens` très haut,
+> et une requête non diffusée finirait en délai dépassé.
+
+C'est aussi la recommandation d'Anthropic : diffuser dès que la sortie peut
+être longue, et appeler `finalMessage()` quand on n'a pas besoin des
+évènements. Le code fait exactement cela.
+
+Ensuite, j'ai surestimé le coût. Analyser quelques milliers de fragments
+représente des dizaines de millisecondes, pas des secondes. Ce n'était pas un
+poste de dépense.
+
+**Ce qui reste vrai de la §9.3 :** une génération qui échoue a quand même
+coûté son travail. C'est inévitable, et ce n'est pas ce qui remplit le quota.
+
+### 9.9 Le plan, révisé
+
+| # | Quoi | Gain | Risque | Temps | État |
+| --- | --- | --- | --- | --- | --- |
+| 1 | Crochet JWT Supabase | moyen | nul | 10 min | **fait** |
+| 2 | Vérifier le repli serveur | — | nul | 5 min | **fait — rien à corriger** |
+| 3 | Borner le fil | fort | faible | 1 à 2 h | **fait** |
+| 6 | Pause de la cloche sans activité | moyen | faible | 30 min | **fait** |
+| 4 | Alléger la cloche du formateur : une requête au lieu de neuf | **fort** | moyen | 2 à 3 h | à faire |
+| 7 | Mettre en cache années scolaires et profil | moyen | faible | 1 h | à faire |
+| 5 | ~~Ne plus streamer les appels au modèle~~ | — | — | — | **retirée, c'était une erreur** |
+
+**La mesure avant de continuer.** Quatre des sept points sont faits, et deux
+d'entre eux touchent ce qui tourne le plus souvent. Avant d'attaquer le point
+4, qui demande de réécrire la cloche, il vaut mieux laisser passer quelques
+jours de cours et regarder la courbe : si elle descend assez, le point 4 peut
+attendre — et une cloche réécrite est une cloche qui peut se casser.
