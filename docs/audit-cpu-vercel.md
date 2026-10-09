@@ -817,9 +817,23 @@ correction tient en une condition.
 
 #### Correction 3 — le fil est borné
 
-Vingt annonces, un lien « Voir les annonces plus anciennes » qui en ajoute
-vingt. Les réactions, commentaires et réactions aux commentaires ne portent
-plus que sur ces vingt-là.
+**Quatre** annonces à l'ouverture — ce qu'on voit sans défiler, et ce qu'un
+stagiaire vient réellement lire en arrivant. Un lien « Afficher plus
+d'annonces » en ajoute vingt à chaque clic. Les réactions, commentaires et
+réactions aux commentaires ne portent que sur les annonces chargées.
+
+Le pas est de vingt et non de quatre : remonter à octobre demanderait sinon
+vingt-cinq clics, et chaque clic est un rendu de page facturé. Le coût est dans
+la première ouverture, qui arrive des dizaines de fois par jour ; celui qui
+cherche une vieille annonce le fait une fois.
+
+| Clic | 0 | 1 | 2 | 3 | 4 | 5 |
+| --- | --- | --- | --- | --- | --- | --- |
+| Annonces lues | 4 | 24 | 44 | 64 | 84 | 104 |
+
+**L'écran du formateur en garde vingt.** Il gère ses annonces depuis une autre
+liste, mais c'est là qu'il lit ce qu'on lui a répondu, et quatre
+l'aveugleraient. Cet écran s'ouvre quelques fois par jour, pas des dizaines.
 
 La fenêtre vit **dans l'adresse** (`?annonces=40`) et non dans un état du
 navigateur. Première version essayée puis abandonnée : une liste tenue côté
@@ -828,13 +842,13 @@ rafraîchissent par un nouveau rendu du serveur, et l'état client aurait figé 
 liste : **un commentaire posté ne serait jamais apparu.** Dans l'adresse, la
 fenêtre survit au rafraîchissement et se partage.
 
-La fenêtre est bornée des deux côtés, entre 20 et 200 : un paramètre d'adresse
+La fenêtre est bornée des deux côtés, entre 4 et 200 : un paramètre d'adresse
 se trafique.
 
 | Demandé dans l'adresse | Annonces lues |
 | --- | --- |
-| rien, `abc`, `0`, `-5` | 20 |
-| `40` | 40 |
+| rien, `abc`, `0`, `-5` | 4 |
+| `24` | 24 |
 | `99999` | 200 |
 
 **Les épinglées : sans objet.** Le cahier des charges demandait qu'elles
@@ -874,9 +888,9 @@ navigateur.
 vivent derrière l'authentification, et cette session n'a pas de session
 ouverte. À faire en trois minutes avant de fusionner :
 
-1. Ouvrir le fil : compter les cartes, il doit y en avoir vingt au plus.
-2. Cliquer « Voir les annonces plus anciennes » : l'adresse passe à
-   `?annonces=40`, la page ne remonte pas en haut.
+1. Ouvrir le fil : compter les cartes, il doit y en avoir quatre au plus.
+2. Cliquer « Afficher plus d'annonces » : l'adresse passe à `?annonces=24`, la
+   page ne remonte pas en haut.
 3. Poster un commentaire sur une annonce : il doit apparaître.
 4. Laisser l'onglet ouvert sans y toucher un quart d'heure, puis bouger la
    souris : la pastille doit se mettre à jour immédiatement.

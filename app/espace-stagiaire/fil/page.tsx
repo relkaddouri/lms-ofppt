@@ -18,8 +18,21 @@ export const metadata = { title: "Fil" };
  */
 function fenetreDemandee(valeur: string | string[] | undefined): number {
   const n = Number(Array.isArray(valeur) ? valeur[0] : valeur);
-  return Number.isFinite(n) && n > 0 ? n : 20;
+  return Number.isFinite(n) && n > 0 ? n : OUVERTURE;
 }
+
+/** Ce que la page montre en arrivant : les quatre dernières annonces. */
+const OUVERTURE = 4;
+
+/**
+ * Ce qu'un clic ajoute.
+ *
+ * Vingt et non quatre : remonter à octobre demanderait sinon vingt-cinq clics,
+ * et chaque clic est un rendu de page facturé. Le coût est dans la première
+ * ouverture, qui arrive des dizaines de fois par jour ; celui qui cherche une
+ * vieille annonce le fait une fois.
+ */
+const PAS = 20;
 
 export default async function FilPage({
   searchParams,
@@ -88,12 +101,12 @@ export default async function FilPage({
              elle survit à un rafraîchissement et se partage. `scroll={false}`
              garde la lecture où elle en était. */
           <Link
-            href={`/espace-stagiaire/fil?annonces=${fenetre + 20}`}
+            href={`/espace-stagiaire/fil?annonces=${fenetre + PAS}`}
             scroll={false}
             className="inline-flex items-center gap-2 rounded-[10px] border border-border-strong bg-surface px-4 py-2 text-sm font-semibold text-body transition hover:bg-paper"
           >
             <ChevronDown className="size-4" aria-hidden />
-            Voir les annonces plus anciennes
+            Afficher plus d&apos;annonces
           </Link>
         ) : (
           <span className="font-mono text-xs text-border-strong">

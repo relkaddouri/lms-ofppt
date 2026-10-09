@@ -99,16 +99,16 @@ export type Camarade = {
 };
 
 /**
- * Combien d'annonces le fil charge d'un coup.
+ * Combien d'annonces le fil charge à l'ouverture.
  *
- * Vingt tiennent plusieurs écrans de défilement : personne ne descend plus bas
- * sans chercher quelque chose de précis, et celui qui cherche clique.
+ * Quatre : ce qu'on voit sans défiler, et ce qu'un stagiaire vient réellement
+ * lire en arrivant. Les plus anciennes se demandent d'un clic.
  *
  * Pas exportée : un module « use server » ne peut exporter que des fonctions
  * async, et une constante y rend l'application entière en 500 avec un `tsc`
  * vert (`conventions.md`, et `scripts/verifie-actions.mjs` qui le vérifie).
  */
-const TAILLE_FIL = 20;
+const TAILLE_FIL = 4;
 
 /**
  * Le plafond, quoi qu'on demande dans l'adresse.
