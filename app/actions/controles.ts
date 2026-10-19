@@ -921,7 +921,10 @@ export async function corrigerPassation(
   });
 
   if (error) throw new Error(error.message);
-  revalidatePath("/modules");
+  // Pas de `revalidatePath` : dans une Server Action, il fait refaire tout le
+  // rendu de la page courante dans la réponse, quel que soit le chemin passé
+  // — mesuré en local le 19/10/2026. L'écran a déjà tout ce qu'il affiche, et
+  // la liste des copies (`CopiesManager`) relit les siennes à l'ouverture.
   return { ok: true, note: Math.max(0, note) };
 }
 
