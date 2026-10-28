@@ -3,6 +3,7 @@
 import { createClient, getUser } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { getPortee } from "@/app/actions/annees";
+import { anneeDuCycle, type CycleModule } from "@/lib/modules";
 
 export type Groupe = {
   id: string;
@@ -250,33 +251,146 @@ export async function assignModulesToGroupe(
     if (error) throw new Error(error.message);
   }
 
-  if (aAjouter.length) {
-    const { data: modules, error: errModules } = await supabase
-      .from("modules")
-      .select("id, duree_reference")
-      .in("id", aAjouter);
-
-    if (errModules) throw new Error(errModules.message);
-
-    const dureeParModule = new Map(
-      (modules ?? []).map((m) => [m.id, Number(m.duree_reference) || 0]),
-    );
-
-    const { error } = await supabase.from("groupe_modules").insert(
-      aAjouter.map((module_id) => ({
-        groupe_id: groupeId,
-        module_id,
-        // `masse_horaire_allouee` est calculée depuis les quatre valeurs
-        // semestrielles : elle ne s'écrit plus. La durée de référence part
-        // en présentiel du premier semestre, à répartir ensuite.
-        presentiel_s1: dureeParModule.get(module_id) ?? 0,
-      })),
-    );
-    if (error) throw new Error(error.message);
-  }
+  await insererAssignations(supabase, groupeId, aAjouter);
 
   revalidatePath("/groupes");
   revalidatePath(`/groupes/${groupeId}`);
+}
+
+/**
+ * Crée les assignations groupe+module, chacune sur la durée de référence de
+ * son module. Partagée par la création d'un groupe et par l'ajout d'un module
+ * à un groupe existant : les deux doivent démarrer un module de la même façon.
+ */
+async function insererAssignations(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  groupeId: string,
+  moduleIds: string[],
+) {
+  if (!moduleIds.length) return;
+
+  const { data: modules, error: errModules } = await supabase
+    .from("modules")
+    .select("id, duree_reference")
+    .in("id", moduleIds);
+
+  if (errModules) throw new Error(errModules.message);
+
+  const dureeParModule = new Map(
+    (modules ?? []).map((m) => [m.id, Number(m.duree_reference) || 0]),
+  );
+
+  const { error } = await supabase.from("groupe_modules").insert(
+    moduleIds.map((module_id) => ({
+      groupe_id: groupeId,
+      module_id,
+      // `masse_horaire_allouee` est calculée depuis les quatre valeurs
+      // semestrielles : elle ne s'écrit plus. La durée de référence part
+      // en présentiel du premier semestre, à répartir ensuite.
+      presentiel_s1: dureeParModule.get(module_id) ?? 0,
+    })),
+  );
+  if (error) throw new Error(error.message);
+}
+
+/** Un module du référentiel qu'on peut encore ajouter à un groupe. */
+export type ModuleAAjouter = {
+  id: string;
+  nom: string;
+  code: string | null;
+  duree_reference: number;
+};
+
+/**
+ * Les modules du référentiel que ce groupe ne suit pas encore.
+ *
+ * Même règle qu'à la création du groupe : une 2ᵉ année ne se voit pas proposer
+ * les compétences du tronc commun, et les modules hors référentiel — sans
+ * cycle, comme les transversaux — restent proposés à tous.
+ */
+export async function getModulesAAjouter(
+  groupeId: string,
+): Promise<ModuleAAjouter[]> {
+  const supabase = await createClient();
+
+  const [groupeRes, modulesRes, assignesRes] = await Promise.all([
+    supabase.from("groupes").select("annee").eq("id", groupeId).maybeSingle(),
+    supabase
+      .from("modules")
+      .select("id, nom, duree_reference, competences(code_operationnel, cycle)")
+      .order("nom")
+      .limit(500),
+    supabase
+      .from("groupe_modules")
+      .select("module_id")
+      .eq("groupe_id", groupeId)
+      .limit(500),
+  ]);
+
+  if (groupeRes.error) throw new Error(groupeRes.error.message);
+  if (modulesRes.error) throw new Error(modulesRes.error.message);
+  if (assignesRes.error) throw new Error(assignesRes.error.message);
+
+  const dejaLa = new Set((assignesRes.data ?? []).map((r) => r.module_id));
+  // Un groupe sans année est traité en 1ʳᵉ année, comme à sa création.
+  const anneeGroupe = Number(groupeRes.data?.annee) || 1;
+
+  return (modulesRes.data ?? [])
+    .map((m) => {
+      const r = m as unknown as {
+        id: string;
+        nom: string;
+        duree_reference: number;
+        competences: {
+          code_operationnel: string | null;
+          cycle: CycleModule;
+        } | null;
+      };
+      return { ...r, cycle: r.competences?.cycle ?? null };
+    })
+    .filter((m) => {
+      if (dejaLa.has(m.id)) return false;
+      const a = anneeDuCycle(m.cycle);
+      return a === null || a === anneeGroupe;
+    })
+    .map((m) => ({
+      id: m.id,
+      nom: m.nom,
+      code: m.competences?.code_operationnel ?? null,
+      duree_reference: Number(m.duree_reference) || 0,
+    }));
+}
+
+/**
+ * Ajoute des modules à un groupe déjà créé, sans toucher à ceux qu'il suit :
+ * leurs heures réparties et leur type d'EFM restent tels quels.
+ */
+export async function ajouterModulesAuGroupe(
+  groupeId: string,
+  moduleIds: string[],
+) {
+  const supabase = await createClient();
+
+  const { data: existantes, error: errLect } = await supabase
+    .from("groupe_modules")
+    .select("module_id")
+    .eq("groupe_id", groupeId);
+
+  if (errLect) throw new Error(errLect.message);
+
+  // Un double clic, ou deux onglets : un module déjà là n'est pas une erreur,
+  // il est simplement ignoré.
+  const dejaLa = new Set((existantes ?? []).map((r) => r.module_id));
+  const aAjouter = [...new Set(moduleIds)].filter((id) => !dejaLa.has(id));
+
+  await insererAssignations(supabase, groupeId, aAjouter);
+
+  // Dans une Server Action, revalidatePath renvoie la page courante à jour
+  // dans la réponse même (audit CPU, §10.7) : l'écran n'a pas à la redemander
+  // par un router.refresh(), qui en referait un second rendu.
+  revalidatePath(`/groupes/${groupeId}/modules`);
+  revalidatePath("/groupes");
+  return aAjouter.length;
 }
 
 /**
