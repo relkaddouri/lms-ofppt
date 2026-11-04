@@ -118,9 +118,10 @@ export default async function ProgressionPage({
     modules.find((m) => m.module_id === moduleId)?.code_operationnel ??
     "un autre module";
 
-  // Un contrôle passé sur le créneau d'un autre module se signale des deux
-  // côtés : dans son module, avec ses heures, et sur la séance qui a cédé
-  // son créneau, pour qu'on ne cherche pas où sont passées ces heures.
+  // Un contrôle se signale aussi sur la séance faite dont il a pris les
+  // heures — d'un autre module comme du sien : ces heures de cours sont à
+  // refaire, et la séance le dit pour qu'on ne cherche pas où elles sont
+  // passées.
   const cessions = new Map<
     string,
     { libelle: string; module: string; heures: number }[]
@@ -128,14 +129,14 @@ export default async function ProgressionPage({
 
   const affiches: ControleAffiche[] = controles.map((c) => {
     const compte = comptes.parControle.get(c.id);
-    if (compte?.creneau) {
-      const dejala = cessions.get(compte.creneau.seanceId) ?? [];
+    if (compte?.seance && comptes.cedees.has(compte.seance)) {
+      const dejala = cessions.get(compte.seance) ?? [];
       dejala.push({
         libelle: `${c.type} ${codeModule(c.module_id)}`,
         module: codeModule(c.module_id),
         heures: compte.heures + compte.correction,
       });
-      cessions.set(compte.creneau.seanceId, dejala);
+      cessions.set(compte.seance, dejala);
     }
     return {
       ...c,

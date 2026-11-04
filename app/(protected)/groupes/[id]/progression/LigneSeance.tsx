@@ -124,12 +124,13 @@ export default function LigneSeance({
             {" · "}
           </span>
         ) : null}
-        {/* Le créneau a servi au contrôle d'un autre module : ses heures
-            sont comptées là-bas, pas ici. */}
+        {/* Le créneau a servi à un contrôle : ses heures comptent pour le
+            module du contrôle, et le cours qu'elles remplaçaient est à
+            refaire. */}
         {cessions?.map((c) => (
           <span key={c.libelle} className="font-mono text-xs text-coral-dark">
             {c.libelle} sur ce créneau · {formatHeures(c.heures)} comptées
-            en {c.module}{" · "}
+            en {c.module}, cours à refaire{" · "}
           </span>
         ))}
         {seance.contenu_realise?.trim() ? (
