@@ -46,7 +46,7 @@ export async function getEcheances(): Promise<Echeance[]> {
     // autre année ne trouveront simplement pas leur échéance plus bas.
     supabase
       .from("echeances_faites")
-      .select("controle_id, type_echeance")
+      .select("controle_id, type_echeance, fait_le")
       .limit(5000),
   ]);
 
@@ -54,10 +54,11 @@ export async function getEcheances(): Promise<Echeance[]> {
   if (seancesRes.error) throw new Error(seancesRes.error.message);
   // Tant que la migration 117 n'est pas passée, la table manque : les
   // échéances restent lisibles, simplement aucune n'est cochée.
-  const faites = new Set(
-    (faitesRes.error ? [] : (faitesRes.data ?? [])).map(
-      (f) => `${f.controle_id}|${f.type_echeance}`,
-    ),
+  const faites = new Map(
+    (faitesRes.error ? [] : (faitesRes.data ?? [])).map((f) => [
+      `${f.controle_id}|${f.type_echeance}`,
+      f.fait_le,
+    ]),
   );
 
   const parCouple = new Map<string, string[]>();
@@ -108,7 +109,11 @@ export async function getEcheances(): Promise<Echeance[]> {
       aujourdhui,
     ).map((e) =>
       e.type && faites.has(`${e.controleId}|${e.type}`)
-        ? { ...e, faite: true }
+        ? {
+            ...e,
+            faite: true,
+            faiteLe: faites.get(`${e.controleId}|${e.type}`) ?? null,
+          }
         : e,
     );
   });

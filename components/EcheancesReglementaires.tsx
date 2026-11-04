@@ -2,27 +2,30 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { formatDateJour } from "@/lib/format";
+import { formatDate, formatDateJour } from "@/lib/format";
 import type { Echeance } from "@/lib/echeances";
 import { marquerEcheance } from "@/app/actions/echeances";
 import { useToast } from "@/components/ui/Toast";
-import {
-  AlertTriangle,
-  CalendarClock,
-  Check,
-  ChevronRight,
-  Clock,
-} from "lucide-react";
+import Segments from "@/components/ui/Segments";
+import { ArrowUpRight, CalendarClock, Check, PartyPopper } from "lucide-react";
 
 const cleDe = (e: Echeance) => `${e.controleId}|${e.type}`;
 
+/** Les rubriques de la liste, dans l'ordre où elles pressent. */
+const RUBRIQUES = [
+  { etat: "depasse", titre: "En retard", ton: "text-coral-dark" },
+  { etat: "imminent", titre: "Dans les 3 jours", ton: "text-teal-dark" },
+  { etat: "a_venir", titre: "Dans le mois", ton: "text-slate" },
+  { etat: "inconnu", titre: "À dater", ton: "text-slate" },
+] as const;
+
 /**
- * Rappels d'échéances réglementaires.
+ * Échéances réglementaires, tenues comme une liste de tâches.
  *
- * Ils informent : aucune génération, aucun envoi, aucun blocage. Ces délais
- * existent dans le règlement, l'application se contente de les rendre visibles
- * au moment où ils comptent. Le formateur coche ce qu'il a accompli : la case
- * change aussitôt, l'écriture suit en arrière-plan.
+ * Elles informent : aucune génération, aucun envoi, aucun blocage. Le
+ * formateur coche ce qu'il a accompli : la case change aussitôt, l'écriture
+ * suit en arrière-plan. Une échéance cochée reste barrée à sa place jusqu'au
+ * prochain chargement, le temps de se raviser, puis rejoint « Faites ».
  */
 export default function EcheancesReglementaires({
   echeances,
@@ -32,6 +35,7 @@ export default function EcheancesReglementaires({
   controleHref: (id: string) => string;
 }) {
   const toast = useToast();
+  const [vue, setVue] = useState<"a_faire" | "faites">("a_faire");
   // Ce que le formateur vient de cocher ou décocher : la page n'est pas
   // rechargée après l'écriture, c'est cet état qui fait foi à l'écran.
   const [surcharges, setSurcharges] = useState<Map<string, boolean>>(
@@ -40,16 +44,23 @@ export default function EcheancesReglementaires({
 
   const toutes = echeances.map((e) => {
     const s = surcharges.get(cleDe(e));
-    return s === undefined ? e : { ...e, faite: s };
+    return s === undefined ? e : { ...e, faite: s, faiteLe: s ? e.faiteLe : null };
   });
 
-  // Ce qui est déjà loin n'a pas besoin d'être rappelé chaque jour.
+  // Ce qui est déjà loin n'a pas besoin d'être rappelé chaque jour. Ce qui
+  // vient d'être coché reste dans la liste, barré, pour pouvoir se décocher.
+  const cocheeIci = (e: Echeance) =>
+    surcharges.get(cleDe(e)) === true &&
+    !echeances.find((x) => cleDe(x) === cleDe(e))?.faite;
   const aFaire = toutes.filter(
-    (e) => !e.faite && (e.etat !== "a_venir" || (e.jours ?? 0) <= 30),
+    (e) =>
+      (!e.faite || cocheeIci(e)) &&
+      (e.etat !== "a_venir" || (e.jours ?? 0) <= 30),
   );
+  const restantes = aFaire.filter((e) => !e.faite).length;
   const faites = toutes
     .filter((e) => e.faite)
-    .sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""));
+    .sort((a, b) => (b.faiteLe ?? "").localeCompare(a.faiteLe ?? ""));
 
   if (aFaire.length === 0 && faites.length === 0) return null;
 
@@ -69,75 +80,125 @@ export default function EcheancesReglementaires({
     }
   };
 
-  const enRetard = aFaire.filter((e) => e.etat === "depasse").length;
+  const total = restantes + faites.length;
+  const enRetard = aFaire.filter((e) => !e.faite && e.etat === "depasse").length;
 
   return (
-    <section className="rounded-[14px] border border-border bg-surface p-4">
-      <h2 className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm font-medium text-ink">
-        <CalendarClock className="h-4 w-4 text-slate" aria-hidden />
-        Échéances réglementaires
-        {enRetard > 0 ? (
-          <span className="rounded-md bg-alert-wash px-1.5 py-px text-[11px] font-medium text-coral-dark">
-            {enRetard} en retard
+    <section className="flex flex-col gap-4 rounded-[14px] border border-border bg-surface p-5">
+      <div className="flex flex-col gap-3">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex min-w-0 flex-col gap-0.5">
+            <h2 className="flex items-center gap-1.5 text-[15px] font-semibold text-ink">
+              <CalendarClock className="h-4 w-4 text-slate" aria-hidden />
+              Échéances réglementaires
+            </h2>
+            <p className="text-xs text-slate">
+              {enRetard > 0
+                ? `${enRetard} en retard — cochez dès que c'est fait.`
+                : "Cochez une échéance dès qu'elle est faite."}
+            </p>
+          </div>
+          <span className="shrink-0 font-mono text-sm text-ink">
+            {faites.length}
+            <span className="text-slate"> / {total}</span>
           </span>
-        ) : null}
-      </h2>
-      <p className="mt-1 text-[11px] text-slate">
-        Cochez une échéance dès qu&apos;elle est faite.
-      </p>
+        </div>
+        <div
+          className="h-1.5 overflow-hidden rounded-full bg-wash"
+          role="progressbar"
+          aria-valuenow={faites.length}
+          aria-valuemin={0}
+          aria-valuemax={total}
+          aria-label="Échéances faites"
+        >
+          <div
+            className="h-full rounded-full bg-teal transition-[width] duration-300"
+            style={{ width: `${total > 0 ? (faites.length / total) * 100 : 0}%` }}
+          />
+        </div>
+      </div>
 
-      {aFaire.length > 0 ? (
-        <ul className="mt-3 grid grid-cols-1 gap-1.5 md:grid-cols-2">
-          {aFaire.map((e) => (
-            <Ligne
-              key={`${e.controleId}-${e.type ?? e.libelle}`}
+      <Segments
+        valeur={vue}
+        onChange={setVue}
+        ariaLabel="Échéances à faire ou faites"
+        options={[
+          { valeur: "a_faire", libelle: `À faire · ${restantes}` },
+          { valeur: "faites", libelle: `Faites · ${faites.length}` },
+        ]}
+      />
+
+      {vue === "a_faire" ? (
+        aFaire.length === 0 ? (
+          <Vide
+            icone={<PartyPopper className="h-5 w-5" aria-hidden />}
+            texte="Tout est à jour : aucune échéance en attente."
+          />
+        ) : (
+          <div className="flex flex-col gap-4">
+            {RUBRIQUES.map((r) => {
+              const liste = aFaire.filter((e) => e.etat === r.etat);
+              if (liste.length === 0) return null;
+              return (
+                <div key={r.etat} className="flex flex-col gap-1">
+                  <h3
+                    className={`font-mono text-[11px] uppercase tracking-[0.1em] ${r.ton}`}
+                  >
+                    {r.titre} · {liste.length}
+                  </h3>
+                  <ul className="flex flex-col divide-y divide-separator">
+                    {liste.map((e) => (
+                      <Tache
+                        key={`${e.controleId}-${e.type ?? e.libelle}`}
+                        e={e}
+                        href={controleHref(e.controleId)}
+                        onBasculer={() => basculer(e)}
+                      />
+                    ))}
+                  </ul>
+                  {r.etat === "inconnu" ? (
+                    <p className="text-[11px] text-slate">
+                      Les notes se rendent à la deuxième séance suivant le
+                      contrôle : la date viendra quand ces séances seront
+                      posées.
+                    </p>
+                  ) : null}
+                </div>
+              );
+            })}
+          </div>
+        )
+      ) : faites.length === 0 ? (
+        <Vide
+          icone={<Check className="h-5 w-5" aria-hidden />}
+          texte="Rien de coché pour l'instant."
+        />
+      ) : (
+        <ul className="flex flex-col divide-y divide-separator">
+          {faites.map((e) => (
+            <Tache
+              key={`${e.controleId}-${e.type}`}
               e={e}
               href={controleHref(e.controleId)}
               onBasculer={() => basculer(e)}
             />
           ))}
         </ul>
-      ) : (
-        <p className="mt-3 flex items-center gap-1.5 rounded-lg bg-tint-teal px-2.5 py-2 text-xs text-teal-dark">
-          <Check className="h-3.5 w-3.5" aria-hidden />
-          Tout est à jour : aucune échéance en attente.
-        </p>
       )}
-
-      {aFaire.some((e) => e.etat === "inconnu") ? (
-        <p className="mt-2 text-[11px] text-slate">
-          Une échéance « à dater » attend que les séances suivant le contrôle
-          soient posées : les notes se rendent à la deuxième d&apos;entre elles.
-        </p>
-      ) : null}
-
-      {faites.length > 0 ? (
-        <details className="group mt-3 border-t border-separator pt-2">
-          <summary className="flex cursor-pointer list-none items-center gap-1 text-xs text-slate hover:text-ink">
-            <ChevronRight
-              className="h-3.5 w-3.5 transition-transform group-open:rotate-90"
-              aria-hidden
-            />
-            {faites.length} échéance{faites.length > 1 ? "s" : ""} faite
-            {faites.length > 1 ? "s" : ""}
-          </summary>
-          <ul className="mt-2 grid grid-cols-1 gap-1.5 md:grid-cols-2">
-            {faites.map((e) => (
-              <Ligne
-                key={`${e.controleId}-${e.type}`}
-                e={e}
-                href={controleHref(e.controleId)}
-                onBasculer={() => basculer(e)}
-              />
-            ))}
-          </ul>
-        </details>
-      ) : null}
     </section>
   );
 }
 
-function Ligne({
+function Vide({ icone, texte }: { icone: React.ReactNode; texte: string }) {
+  return (
+    <p className="flex flex-col items-center gap-2 rounded-lg bg-wash px-4 py-6 text-center text-sm text-slate">
+      <span className="text-teal-dark">{icone}</span>
+      {texte}
+    </p>
+  );
+}
+
+function Tache({
   e,
   href,
   onBasculer,
@@ -149,74 +210,90 @@ function Ligne({
   const retard = !e.faite && e.etat === "depasse";
   const presse = !e.faite && e.etat === "imminent";
 
+  const statut = e.faite
+    ? e.faiteLe
+      ? `faite le ${formatDate(e.faiteLe)}`
+      : "faite"
+    : e.jours === null
+      ? "à dater"
+      : e.jours < 0
+        ? `${-e.jours} j de retard`
+        : e.jours === 0
+          ? "aujourd'hui"
+          : `dans ${e.jours} j`;
+
   return (
-    <li
-      className={`flex items-start gap-2 rounded-lg px-2.5 py-2 transition-colors ${
-        e.faite
-          ? "border border-border opacity-60"
-          : retard
-            ? "bg-alert-wash"
-            : presse
-              ? "bg-tint-teal"
-              : "border border-border"
-      }`}
-    >
+    <li className="group flex items-center gap-1.5 py-2">
       {e.type ? (
-        <input
-          type="checkbox"
-          checked={e.faite}
-          onChange={onBasculer}
+        <button
+          type="button"
+          role="checkbox"
+          aria-checked={e.faite}
           aria-label={`${e.libelle} — ${e.groupeNom} · ${e.controleLibelle}`}
-          className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-teal"
-        />
+          onClick={onBasculer}
+          // Une cible de 44 px au doigt, une case de 20 px à l'œil.
+          className="-my-1 -ml-3 flex h-11 w-11 shrink-0 items-center justify-center rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal/40"
+        >
+          <span
+            className={`flex h-5 w-5 items-center justify-center rounded-md border-[1.5px] transition-colors duration-150 ${
+              e.faite
+                ? "border-teal bg-teal text-surface"
+                : retard
+                  ? "border-coral/70 group-hover:border-coral"
+                  : "border-slate-light group-hover:border-ink"
+            }`}
+          >
+            {e.faite ? <Check className="h-3.5 w-3.5" strokeWidth={3} /> : null}
+          </span>
+        </button>
       ) : (
-        <span className="h-4 w-4 shrink-0" aria-hidden />
+        <span className="-ml-3 h-11 w-11 shrink-0" aria-hidden />
       )}
 
-      <Link href={href} className="group/lien min-w-0 flex-1">
-        <span className="flex items-baseline justify-between gap-2">
-          <span
-            className={`text-xs font-medium group-hover/lien:underline ${
-              e.faite
-                ? "text-slate line-through"
-                : retard
-                  ? "text-coral-dark"
-                  : presse
-                    ? "text-teal-dark"
-                    : "text-ink"
-            }`}
-          >
-            {retard ? (
-              <AlertTriangle className="mr-1 inline h-3 w-3" aria-hidden />
-            ) : presse ? (
-              <Clock className="mr-1 inline h-3 w-3" aria-hidden />
-            ) : null}
-            {e.libelle}
-          </span>
-          <span className="shrink-0 whitespace-nowrap text-[11px] text-slate">
-            {e.date ? formatDateJour(e.date) : "à dater"}
-          </span>
+      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <span
+          className={`text-[13.5px] leading-snug font-medium transition-colors ${
+            e.faite ? "text-slate line-through" : "text-ink"
+          }`}
+        >
+          {e.libelle}
         </span>
-
-        <span className="mt-0.5 block truncate text-[11px] text-slate">
+        <span
+          className="truncate text-xs text-slate"
+          title={`${e.groupeNom} · ${e.controleLibelle}`}
+        >
           {e.groupeNom} · {e.controleLibelle}
         </span>
+      </div>
 
-        {e.faite ? (
-          <span className="mt-0.5 block text-[11px] text-teal-dark">faite</span>
-        ) : e.jours !== null ? (
-          <span
-            className={`mt-0.5 block text-[11px] ${
-              retard ? "text-coral-dark" : "text-slate"
-            }`}
-          >
-            {e.jours < 0
-              ? `en retard de ${-e.jours} jour${-e.jours > 1 ? "s" : ""}`
-              : e.jours === 0
-                ? "aujourd'hui"
-                : `dans ${e.jours} jour${e.jours > 1 ? "s" : ""}`}
+      <div className="flex shrink-0 flex-col items-end gap-0.5">
+        <span
+          className={`whitespace-nowrap rounded-md px-1.5 py-px text-[11.5px] font-medium ${
+            e.faite
+              ? "bg-tint-teal text-teal-dark"
+              : retard
+                ? "bg-alert-wash text-coral-dark"
+                : presse
+                  ? "bg-tint-teal text-teal-dark"
+                  : "bg-wash text-slate"
+          }`}
+        >
+          {statut}
+        </span>
+        {e.date ? (
+          <span className="whitespace-nowrap text-[11px] text-slate">
+            {formatDateJour(e.date, { court: true })}
           </span>
         ) : null}
+      </div>
+
+      <Link
+        href={href}
+        aria-label={`Ouvrir le contrôle ${e.controleLibelle}`}
+        title="Ouvrir le contrôle"
+        className="-mr-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate transition-colors hover:bg-wash hover:text-ink"
+      >
+        <ArrowUpRight className="h-4 w-4" aria-hidden />
       </Link>
     </li>
   );

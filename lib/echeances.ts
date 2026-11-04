@@ -44,6 +44,8 @@ export type Echeance = {
   detail: string | null;
   /** Cochée par le formateur : elle n'est plus ni en retard ni à venir. */
   faite: boolean;
+  /** Moment où elle a été cochée. */
+  faiteLe: string | null;
 };
 
 export type ControleEcheance = {
@@ -93,6 +95,7 @@ export function echeancesDe(
     controleLibelle: controle.libelle,
     groupeNom: controle.groupeNom,
     faite: false,
+    faiteLe: null,
   };
 
   if (!controle.date) {
