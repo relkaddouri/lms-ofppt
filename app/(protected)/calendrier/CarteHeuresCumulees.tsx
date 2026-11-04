@@ -1,6 +1,17 @@
-import { formatHeures } from "@/lib/format";
+import { dateLocale, formatHeures } from "@/lib/format";
 import type { BilanHeures } from "@/lib/heures-formateur";
 import { AlertTriangle, BellRing } from "lucide-react";
+
+/** Nombre de semaines montrées dans l'historique de la carte. */
+const SEMAINES_HISTORIQUE = 8;
+
+function lundisAvant(lundi: string, n: number): string[] {
+  return Array.from({ length: n }, (_, i) => {
+    const d = new Date(`${lundi}T12:00:00`);
+    d.setDate(d.getDate() - 7 * (n - 1 - i));
+    return dateLocale(d);
+  });
+}
 
 /**
  * Carte « Heures cumulées » de l'emploi du temps.
@@ -47,6 +58,17 @@ export default function CarteHeuresCumulees({
     allure > 0 ? Math.ceil(restant / allure) : null;
   const aLaCible = semainesRestantes(bilan.cibleHebdomadaire);
   const aLaMoyenne = semainesRestantes(moyenne);
+
+  // Les semaines sans séance faite n'existent pas dans le bilan : elles
+  // valent zéro, et c'est justement ce qu'il faut voir.
+  const historique = lundisAvant(lundi, SEMAINES_HISTORIQUE).map((l) => {
+    const s = bilan.semaines.find((x) => x.lundi === l);
+    return { lundi: l, heures: s?.heures ?? 0, cible: s?.cible ?? bilan.cibleHebdomadaire };
+  });
+  const echelle = Math.max(
+    1,
+    ...historique.map((h) => Math.max(h.heures, h.cible)),
+  );
 
   const couleurBarre =
     annuel?.niveau === "depasse"
@@ -140,6 +162,14 @@ export default function CarteHeuresCumulees({
           <span className="font-mono text-[19px] font-medium text-ink">
             {formatHeures(faitesSemaine)}
           </span>
+          <span className="mt-0.5 h-1 overflow-hidden rounded-full bg-wash">
+            <span
+              className="block h-full rounded-full bg-teal"
+              style={{
+                width: `${cibleSemaine > 0 ? Math.min(100, (faitesSemaine / cibleSemaine) * 100) : 0}%`,
+              }}
+            />
+          </span>
           <span className="text-[12px] text-slate-light">
             faites · cible {formatHeures(cibleSemaine)}
           </span>
@@ -162,17 +192,74 @@ export default function CarteHeuresCumulees({
           <span className="text-[13px] text-slate-light">Rythme moyen</span>
           <span className="font-mono text-[19px] font-medium text-ink">
             {formatHeures(moyenne)}
-            <span className="text-[13px] text-slate-light"> / sem.</span>
           </span>
           <span className="text-[12px] text-slate-light">
-            sur {semainesTravaillees} semaine{semainesTravaillees > 1 ? "s" : ""}{" "}
+            par semaine, sur {semainesTravaillees} semaine{semainesTravaillees > 1 ? "s" : ""}{" "}
             de cours
           </span>
         </div>
       </div>
 
+      <figure className="flex flex-col gap-2">
+        <figcaption className="flex items-baseline justify-between gap-3 text-[13px]">
+          <span className="text-slate-2">
+            {SEMAINES_HISTORIQUE} dernières semaines
+          </span>
+          <span className="flex items-center gap-1.5 text-[12px] text-slate-light">
+            <span
+              aria-hidden
+              className="inline-block w-3 border-t border-dashed border-ink/40"
+            />
+            cible
+          </span>
+        </figcaption>
+        <ol className="flex h-20 items-end gap-1.5">
+          {historique.map((h) => {
+            const atteinte = h.heures >= h.cible;
+            const affichee = h.lundi === lundi;
+            const jour = new Date(`${h.lundi}T12:00:00`);
+            return (
+              <li
+                key={h.lundi}
+                className="relative flex h-full flex-1 flex-col justify-end"
+                title={`Semaine du ${jour.toLocaleDateString("fr-FR")} : ${formatHeures(h.heures)} faites, cible ${formatHeures(h.cible)}`}
+              >
+                <span
+                  aria-hidden
+                  className="absolute -inset-x-[3px] z-10 border-t border-dashed border-ink/40"
+                  style={{ bottom: `${(h.cible / echelle) * 100}%` }}
+                />
+                <span
+                  className={`block rounded-t-[4px] ${
+                    h.heures === 0
+                      ? "bg-wash"
+                      : atteinte
+                        ? "bg-teal"
+                        : "bg-teal/45"
+                  } ${affichee ? "ring-2 ring-ink/30 ring-offset-1 ring-offset-surface" : ""}`}
+                  style={{
+                    height: h.heures > 0 ? `${Math.max(4, (h.heures / echelle) * 100)}%` : "3px",
+                  }}
+                />
+                <span className="sr-only">
+                  Semaine du {jour.toLocaleDateString("fr-FR")} :{" "}
+                  {formatHeures(h.heures)} sur {formatHeures(h.cible)}
+                </span>
+              </li>
+            );
+          })}
+        </ol>
+        <div className="flex gap-1.5 font-mono text-[10.5px] text-slate-light" aria-hidden>
+          {historique.map((h) => (
+            <span key={h.lundi} className="flex-1 text-center">
+              {h.lundi.slice(8, 10)}/{h.lundi.slice(5, 7)}
+            </span>
+          ))}
+        </div>
+      </figure>
+
       {annuel && restant > 0 && (aLaCible || aLaMoyenne) ? (
-        <p className="text-[13px] leading-relaxed text-slate-2">
+        <p className="rounded-lg bg-wash px-3 py-2.5 text-[13px] leading-relaxed text-slate-2">
           {aLaCible ? (
             <>
               À votre cible de {formatHeures(bilan.cibleHebdomadaire)} par
