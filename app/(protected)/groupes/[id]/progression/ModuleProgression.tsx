@@ -25,8 +25,7 @@ export type ObjectifBloc = {
 };
 
 /** Heures d'une liste de séances, par nature. */
-function parNature(seances: Seance[]) {
-  const h = (s: Seance) => Number(s.duree_realisee ?? s.duree_prevue ?? 0);
+function parNature(seances: Seance[], h: (s: Seance) => number) {
   const pratique = seances
     .filter((s) => s.nature === "pratique")
     .reduce((t, s) => t + h(s), 0);
@@ -34,7 +33,6 @@ function parNature(seances: Seance[]) {
   return { total, theorique: total - pratique, pratique };
 }
 
-const egal = (a: number, b: number) => Math.abs(a - b) < 0.01;
 
 /**
  * Un module dans la progression, replié par défaut.
@@ -88,6 +86,16 @@ export default function ModuleProgression({
   const [enCours, startTransition] = useTransition();
   const toast = useToast();
 
+  // Les heures d'une séance, moins ce qu'un contrôle d'un autre module lui a
+  // pris : l'EFM de M202 passé sur la séance M203 du 14/10 laisse 5 h de M203
+  // à refaire.
+  const heuresDe = (s: Seance) =>
+    Math.max(
+      0,
+      Number(s.duree_realisee ?? s.duree_prevue ?? 0) -
+        (cessions[s.id] ?? []).reduce((t, c) => t + c.heures, 0),
+    );
+
   // Ce qui manque au module pour rejoindre sa répartition, objectif par
   // objectif — le même calcul que l'action qui créera ces séances.
   const manque = heuresManquantes(
@@ -102,7 +110,7 @@ export default function ModuleProgression({
       o.seances.map((s) => ({
         objectif: o.code,
         nature: s.nature,
-        heures: Number(s.duree_realisee ?? s.duree_prevue ?? 0),
+        heures: heuresDe(s),
         fait: s.statut === "fait",
       })),
     ),
@@ -307,14 +315,21 @@ export default function ModuleProgression({
             // Ce que le plan de séances donne à l'objectif, ce qui en est fait,
             // et ce que la répartition lui accordait : les trois doivent
             // finir par se rejoindre, module terminé compris.
-            const plan = parNature(o.seances);
-            const fait = parNature(o.seances.filter((s) => s.statut === "fait"));
+            const plan = parNature(o.seances, heuresDe);
+            const fait = parNature(
+              o.seances.filter((s) => s.statut === "fait"),
+              heuresDe,
+            );
             const rep = o.repartition;
             const heuresRep = rep ? rep.theorique + rep.pratique : null;
-            const ecart =
-              rep !== null &&
-              (!egal(plan.theorique, rep.theorique) ||
-                !egal(plan.pratique, rep.pratique));
+            // Seul ce qui manque et peut se générer s'affiche : une fois les
+            // séances créées, plus rien. Un objectif qui a trop d'heures, ou
+            // dont la théorie et la pratique ne tombent pas juste, ne
+            // demande rien au formateur (demande du 04/11/2026).
+            const aGenerer = manque.find((m) => m.id === o.code);
+            const heuresAGenerer = aGenerer
+              ? aGenerer.manque_theorique + aGenerer.manque_pratique
+              : 0;
             const toutFait =
               o.seances.length > 0 &&
               o.seances.every((s) => s.statut === "fait") &&
@@ -336,11 +351,9 @@ export default function ModuleProgression({
                     {formatHeures(heuresRep ?? plan.total)}
                   </span>
                   {toutFait ? <Badge tone="success">terminé</Badge> : null}
-                  {ecart && rep ? (
+                  {heuresAGenerer > 0 ? (
                     <span className="basis-full font-mono text-xs text-coral-dark">
-                      {o.seances.length === 0
-                        ? `Aucune séance : les ${formatHeures(heuresRep)} de la répartition ne sont pas planifiées`
-                        : `Écart avec la répartition : séances ${formatHeures(plan.total)} (T ${formatHeures(plan.theorique)} · P ${formatHeures(plan.pratique)}) pour ${formatHeures(heuresRep)} (T ${formatHeures(rep.theorique)} · P ${formatHeures(rep.pratique)})`}
+                      {`Il manque ${formatHeures(heuresAGenerer)} de séances à cet objectif — à générer en haut du module`}
                     </span>
                   ) : null}
                 </div>
