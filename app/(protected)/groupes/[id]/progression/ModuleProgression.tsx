@@ -73,11 +73,16 @@ export default function ModuleProgression({
     (t, s) => t + Number(s.duree_prevue ?? s.duree_realisee ?? 0),
     0,
   );
+  // L'avancement se mesure à la masse horaire du module, pas aux séances du
+  // plan : le plan laisse de côté les 10 h d'évaluation, et un module dont
+  // toutes les séances étaient faites s'affichait « terminé » alors qu'il
+  // lui restait ses contrôles (M202 : 80 h de séances sur 90 h allouées).
+  const base = masseHoraire || heuresTotales;
   const pct =
-    heuresTotales > 0 ? Math.round((heuresFaites / heuresTotales) * 100) : 0;
+    base > 0 ? Math.min(100, Math.round((heuresFaites / base) * 100)) : 0;
   const prochaine = seances.find((s) => s.statut !== "fait");
   const rappel = calculerRappel(
-    masseHoraire ?? heuresTotales,
+    base,
     heuresFaites,
     controlesCouverts,
   );
@@ -135,8 +140,10 @@ export default function ModuleProgression({
               />
             </span>
             <span className="text-xs text-slate">
-              {formatHeures(heuresFaites)} sur {formatHeures(heuresTotales)}
-              {masseHoraire ? ` · alloué ${formatHeures(masseHoraire)}` : ""}
+              {formatHeures(heuresFaites)} sur {formatHeures(base)}
+              {masseHoraire && heuresTotales !== masseHoraire
+                ? ` · séances du plan ${formatHeures(heuresTotales)}`
+                : ""}
               {" · "}
               {faites.length}/{seances.length} séances
             </span>
