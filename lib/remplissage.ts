@@ -118,6 +118,11 @@ function plage(a: number, b: number) {
   return { debut: hhmm(a), fin: hhmm(b), duree: net((b - a) / 60) };
 }
 
+/** La clé d'un objectif dans un module. */
+export function cleObjectif(moduleId: string, suggestionId: string): string {
+  return `${moduleId}|${suggestionId}`;
+}
+
 /**
  * Ramène le contenu de chaque module à ce que sa répartition lui accorde.
  *
@@ -125,29 +130,48 @@ function plage(a: number, b: number) {
  * dix heures d'évaluation. Ce qui est déjà daté (fait, ou passé et resté en
  * place) en consomme une part ; le contenu à placer ne peut dépasser le reste.
  * Sans ce plafond, des recalculs successifs avaient porté M202 à 82 h 30 pour
- * 80 h de répartition : l'excédent est retiré en fin de séquence, là où le
- * module s'achève.
+ * 80 h de répartition.
+ *
+ * L'excédent se retire d'abord dans l'objectif qui dépasse sa propre part.
+ * Retiré en fin de module, il emportait le dernier objectif, qui n'y était
+ * pour rien : le recalcul du 04/11/2026 a supprimé les 10 h de C.2 de M204
+ * alors que c'était A.1 qui débordait. La fin du module ne cède plus que pour
+ * un contenu sans objectif.
  *
  * Rend les blocs plafonnés, et pour chaque ligne touchée la durée retirée.
  */
 export function plafonnerParModule(
   blocs: BlocContenu[],
   disponible: ReadonlyMap<string, number>,
+  /** Par `cleObjectif(module, objectif)` : la part restante de chaque objectif. */
+  disponibleObjectif: ReadonlyMap<string, number> = new Map(),
 ): { blocs: BlocContenu[]; retraits: { seanceId: string; retire: number; entier: boolean }[] } {
   const restant = new Map(disponible);
+  const restantObjectif = new Map(disponibleObjectif);
   const retraits: { seanceId: string; retire: number; entier: boolean }[] = [];
   const garde: BlocContenu[] = [];
 
-  // Dans l'ordre : le début de la séquence garde sa place, c'est la fin du
-  // module qui cède.
+  // Dans l'ordre : le début de chaque objectif garde sa place, c'est sa fin
+  // qui cède.
   for (const b of blocs) {
     const plafond = restant.get(b.moduleId);
     if (plafond === undefined) {
       garde.push(b);
       continue;
     }
-    const pris = net(Math.min(b.duree, Math.max(0, plafond)));
+    const cle = b.suggestionId ? cleObjectif(b.moduleId, b.suggestionId) : null;
+    const plafondObjectif = cle ? restantObjectif.get(cle) : undefined;
+    const pris = net(
+      Math.min(
+        b.duree,
+        Math.max(0, plafond),
+        plafondObjectif === undefined ? Infinity : Math.max(0, plafondObjectif),
+      ),
+    );
     restant.set(b.moduleId, net(plafond - pris));
+    if (cle && plafondObjectif !== undefined) {
+      restantObjectif.set(cle, net(plafondObjectif - pris));
+    }
     if (pris < b.duree) {
       retraits.push({ seanceId: b.seanceId, retire: net(b.duree - pris), entier: pris <= 0 });
     }
