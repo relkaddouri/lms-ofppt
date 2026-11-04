@@ -457,8 +457,9 @@ export type ResultatGeneration = {
  * seule dans un créneau de 5 h — et 2 h 30 qui n'existaient nulle part, ni
  * ici ni dans la déclaration E-note que le formateur doit produire. Le
  * remplissage consomme donc la séquence pédagogique créneau par créneau :
- * une séance peut porter deux objectifs, un objectif peut se scinder sur deux
- * séances.
+ * un objectif peut se scinder sur deux séances, et deux objectifs partagent
+ * un créneau en y faisant chacun sa séance — jamais une séance pour deux,
+ * qui donnait toutes ses heures au premier (lib/remplissage.ts).
  */
 export async function genererSeances(
   groupeId: string,
@@ -492,7 +493,7 @@ export async function genererSeances(
     supabase
       .from("seances")
       .select(
-        "id, module_id, created_at, duree_prevue, nature, suggestion_pedagogique_id, contenu_prevu, objectif_operationnel, est_fad, lien_teams, seance_groupes!inner(groupe_id), seance_elements_contenu(element_contenu_id), suggestions_pedagogiques(ordre, elements_competence(lettre, ordre))",
+        "id, module_id, created_at, duree_prevue, nature, suggestion_pedagogique_id, contenu_prevu, objectif_operationnel, est_fad, lien_teams, seance_groupes!inner(groupe_id), seance_elements_contenu(element_contenu_id), suggestions_pedagogiques(code, apprentissage_base, ordre, elements_competence(lettre, ordre))",
       )
       .eq("seance_groupes.groupe_id", groupeId)
       .is("date", null)
@@ -738,11 +739,24 @@ export async function genererSeances(
   });
 
   // ── Le remplissage lui-même, pur et testable à part ────────────────────
+  // L'intitulé se relit du référentiel quand la séance en vient : celui de la
+  // ligne pouvait encore nommer l'objectif voisin d'une ancienne fusion
+  // (« A.1 … · B.1 … » sur une séance de B.1).
+  const intituleDe = (s: (typeof aPlacer)[number]) => {
+    const sp = s.suggestions_pedagogiques as unknown as {
+      code: string | null;
+      apprentissage_base: string | null;
+    } | null;
+    return sp?.code && sp.apprentissage_base
+      ? `${sp.code} — ${sp.apprentissage_base}`
+      : (s.objectif_operationnel ?? "");
+  };
+
   const tousLesBlocs: BlocContenu[] = ordonnees.map((s) => ({
     seanceId: s.id,
     moduleId: s.module_id,
     suggestionId: s.suggestion_pedagogique_id ?? null,
-    code: s.objectif_operationnel ?? "",
+    code: intituleDe(s),
     nature: (s.nature as "theorique" | "pratique" | null) ?? null,
     duree: Number(s.duree_prevue) || 0,
   }));
@@ -829,10 +843,9 @@ export async function genererSeances(
 
   for (const r of remplies) {
     const duree = r.morceaux.reduce((t, m) => t + m.duree, 0);
-    // L'objectif affiché nomme tout ce que la séance couvre : une séance qui
-    // porte deux objectifs doit les montrer tous les deux (PRD §4.9). Composé
-    // sans répéter ce que l'intitulé précédent disait déjà — chaque recalcul
-    // y ajoutait une nature de plus.
+    // L'objectif affiché nomme ce que la séance couvre. Composé sans répéter
+    // ce que l'intitulé précédent disait déjà — chaque recalcul y ajoutait
+    // une nature de plus.
     const objectif = composerIntitule(
       r.morceaux.map((m) => ({ code: m.bloc.code, nature: m.bloc.nature })),
     );
