@@ -25,8 +25,11 @@ const LABEL = new Map(TYPES_INDISPONIBILITE.map((t) => [t.valeur, t.label]));
 export default function IndisponibilitesPanel({
   indisponibilites,
   semaine,
+  integre = false,
 }: {
   indisponibilites: Indisponibilite[];
+  /** Dans un onglet : ni cadre ni titre, l'onglet les porte déjà. */
+  integre?: boolean;
   /** Bornes de la semaine affichée : celles qui la touchent sont mises en avant. */
   semaine: { debut: string; fin: string };
 }) {
@@ -105,9 +108,19 @@ export default function IndisponibilitesPanel({
   }
 
   return (
-    <section className="rounded-[14px] border border-border bg-surface p-4">
+    <section
+      className={
+        integre ? "" : "rounded-[14px] border border-border bg-surface p-4"
+      }
+    >
       <BandeauRecalcul actif={enCours} />
       <div className="flex flex-wrap items-center justify-between gap-2">
+        {integre ? (
+          <p className="text-xs text-slate">
+            Fériés, vacances, absences : la grille les grise et les séances
+            se replanifient autour.
+          </p>
+        ) : (
         <h2 className="flex items-center gap-1.5 text-sm font-medium text-ink">
           <CalendarOff className="h-4 w-4 text-slate" aria-hidden />
           Jours non travaillés
@@ -117,6 +130,7 @@ export default function IndisponibilitesPanel({
             </span>
           ) : null}
         </h2>
+        )}
         <Button
           variant="secondary"
           size="sm"

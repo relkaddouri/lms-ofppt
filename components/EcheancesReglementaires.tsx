@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { formatDate, formatDateJour } from "@/lib/format";
 import type { Echeance } from "@/lib/echeances";
@@ -30,9 +30,15 @@ const RUBRIQUES = [
 export default function EcheancesReglementaires({
   echeances,
   controleHref,
+  integre = false,
+  onRestantes,
 }: {
   echeances: Echeance[];
   controleHref: (id: string) => string;
+  /** Dans un onglet : ni cadre ni titre, l'onglet les porte déjà. */
+  integre?: boolean;
+  /** Prévient l'onglet quand le nombre d'échéances en retard change. */
+  onRestantes?: (enRetard: number) => void;
 }) {
   const toast = useToast();
   const [vue, setVue] = useState<"a_faire" | "faites">("a_faire");
@@ -62,7 +68,19 @@ export default function EcheancesReglementaires({
     .filter((e) => e.faite)
     .sort((a, b) => (b.faiteLe ?? "").localeCompare(a.faiteLe ?? ""));
 
-  if (aFaire.length === 0 && faites.length === 0) return null;
+  const enRetard = aFaire.filter((e) => !e.faite && e.etat === "depasse").length;
+  useEffect(() => {
+    onRestantes?.(enRetard);
+  }, [enRetard, onRestantes]);
+
+  if (aFaire.length === 0 && faites.length === 0) {
+    return integre ? (
+      <Vide
+        icone={<Check className="h-5 w-5" aria-hidden />}
+        texte="Aucune échéance réglementaire pour l'instant."
+      />
+    ) : null;
+  }
 
   const basculer = async (e: Echeance) => {
     if (!e.type) return;
@@ -81,17 +99,22 @@ export default function EcheancesReglementaires({
   };
 
   const total = restantes + faites.length;
-  const enRetard = aFaire.filter((e) => !e.faite && e.etat === "depasse").length;
 
   return (
-    <section className="flex flex-col gap-4 rounded-[14px] border border-border bg-surface p-5">
+    <section
+      className={`flex flex-col gap-4 ${
+        integre ? "" : "rounded-[14px] border border-border bg-surface p-5"
+      }`}
+    >
       <div className="flex flex-col gap-3">
         <div className="flex items-start justify-between gap-3">
           <div className="flex min-w-0 flex-col gap-0.5">
-            <h2 className="flex items-center gap-1.5 text-[15px] font-semibold text-ink">
-              <CalendarClock className="h-4 w-4 text-slate" aria-hidden />
-              Échéances réglementaires
-            </h2>
+            {integre ? null : (
+              <h2 className="flex items-center gap-1.5 text-[15px] font-semibold text-ink">
+                <CalendarClock className="h-4 w-4 text-slate" aria-hidden />
+                Échéances réglementaires
+              </h2>
+            )}
             <p className="text-xs text-slate">
               {enRetard > 0
                 ? `${enRetard} en retard — cochez dès que c'est fait.`
@@ -118,6 +141,7 @@ export default function EcheancesReglementaires({
         </div>
       </div>
 
+      <div className={integre ? "max-w-sm" : ""}>
       <Segments
         valeur={vue}
         onChange={setVue}
@@ -127,6 +151,7 @@ export default function EcheancesReglementaires({
           { valeur: "faites", libelle: `Faites · ${faites.length}` },
         ]}
       />
+      </div>
 
       {vue === "a_faire" ? (
         aFaire.length === 0 ? (
