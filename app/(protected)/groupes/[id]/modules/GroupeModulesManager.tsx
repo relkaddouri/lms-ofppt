@@ -7,10 +7,12 @@ import {
   setMasseHoraire,
   setTypeEfm,
   type GroupeModuleInfo,
+  type ModuleAAjouter,
   type TypeEfmModule,
 } from "@/app/actions/groupes";
+import AjouterModules from "./AjouterModules";
 import Card from "@/components/ui/Card";
-import Button, { buttonStyles } from "@/components/ui/Button";
+import Button from "@/components/ui/Button";
 import Input, { inputStyles } from "@/components/ui/Input";
 import { useToast } from "@/components/ui/Toast";
 import Interrupteur from "@/components/ui/Interrupteur";
@@ -40,9 +42,11 @@ const SAISIE_VIDE: Record<CleHeures, string> = {
 export default function GroupeModulesManager({
   groupeId,
   modules,
+  aAjouter,
 }: {
   groupeId: string;
   modules: GroupeModuleInfo[];
+  aAjouter: ModuleAAjouter[];
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -141,10 +145,9 @@ export default function GroupeModulesManager({
           Assignez des modules au groupe pour pouvoir répartir leur masse
           horaire.
         </p>
-        <Link href="/groupes" className={buttonStyles("primary", "md", "mt-5")}>
-          <BookOpen size={16} aria-hidden />
-          Gérer les groupes
-        </Link>
+        <div className="mt-5 flex justify-center">
+          <AjouterModules groupeId={groupeId} candidats={aAjouter} variante="primary" />
+        </div>
       </Card>
     );
   }
@@ -155,10 +158,13 @@ export default function GroupeModulesManager({
         <h2 className="font-display text-xl font-bold text-ink">
           Modules du groupe
         </h2>
-        <p className="text-sm text-slate">
-          Masse horaire totale allouée :{" "}
-          <span className="font-mono font-medium text-ink">{total} h</span>
-        </p>
+        <div className="flex flex-wrap items-center gap-4">
+          <p className="text-sm text-slate">
+            Masse horaire totale allouée :{" "}
+            <span className="font-mono font-medium text-ink">{total} h</span>
+          </p>
+          <AjouterModules groupeId={groupeId} candidats={aAjouter} />
+        </div>
       </div>
 
       <p className="mt-1 max-w-[640px] text-sm text-slate">
