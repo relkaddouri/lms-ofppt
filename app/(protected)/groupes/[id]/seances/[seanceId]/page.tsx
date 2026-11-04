@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getSeanceDetail } from "@/app/actions/seances";
+import { getSeanceDetail, getSeancesVoisines } from "@/app/actions/seances";
 import SeanceDetailView from "./SeanceDetailView";
 
 export default async function SeancePage({
@@ -13,5 +13,7 @@ export default async function SeancePage({
   const seance = await getSeanceDetail(seanceId, id);
   if (!seance) notFound();
 
-  return <SeanceDetailView seance={seance} />;
+  const voisines = await getSeancesVoisines(id, seance.date, seance.heure_debut);
+
+  return <SeanceDetailView seance={seance} voisines={voisines} />;
 }

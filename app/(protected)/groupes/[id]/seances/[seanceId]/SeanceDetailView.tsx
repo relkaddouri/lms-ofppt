@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import RetourListe from "@/components/RetourListe";
+import NavigationSeances from "@/components/NavigationSeances";
 import Button, { buttonStyles } from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
 import Avatar from "@/components/ui/Avatar";
@@ -33,6 +34,7 @@ import {
   supprimerRemarque,
   majSeance,
   type SeanceDetail,
+  type SeanceVoisine,
   type RemarqueSeance,
 } from "@/app/actions/seances";
 import {
@@ -45,7 +47,13 @@ import {
   Trash2,
 } from "lucide-react";
 
-export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
+export default function SeanceDetailView({
+  seance,
+  voisines,
+}: {
+  seance: SeanceDetail;
+  voisines: { precedente: SeanceVoisine | null; suivante: SeanceVoisine | null };
+}) {
   const router = useRouter();
   const toast = useToast();
   const [enCours, startTransition] = useTransition();
@@ -254,10 +262,17 @@ export default function SeanceDetailView({ seance }: { seance: SeanceDetail }) {
 
   return (
     <div>
-      <RetourListe
-        href={`/groupes/${seance.groupe_id}/progression`}
-        libelle="la progression"
-      />
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <RetourListe
+          href={`/groupes/${seance.groupe_id}/progression`}
+          libelle="la progression"
+        />
+        <NavigationSeances
+          groupeId={seance.groupe_id}
+          precedente={voisines.precedente}
+          suivante={voisines.suivante}
+        />
+      </div>
 
       <header className="mt-4 flex flex-wrap items-start justify-between gap-6">
         <div className="flex min-w-0 items-start gap-4">
