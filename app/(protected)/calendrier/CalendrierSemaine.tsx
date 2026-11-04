@@ -23,7 +23,13 @@ import {
   TYPES_INDISPONIBILITE,
   type Indisponibilite,
 } from "@/lib/indisponibilites";
-import { CalendarPlus, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  CalendarClock,
+  CalendarOff,
+  CalendarPlus,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import { libelleModule } from "@/lib/modules";
 
 const JOURS = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
@@ -171,6 +177,48 @@ export default function CalendrierSemaine({
     };
     return (min(s.heure_fin) - min(s.heure_debut)) / 60;
   };
+
+  // « Sans date » est une seule idée : séances et contrôles la partagent,
+  // ils tiennent dans le même onglet.
+  const aPoser = seancesSansDate + controlesSansDate.length;
+  const [onglet, setOnglet] = useState<"echeances" | "jours" | "a-poser">(
+    "echeances",
+  );
+  // L'onglet « À poser » disparaît quand tout est daté : on retombe alors
+  // sur les échéances.
+  const ongletActif = onglet === "a-poser" && aPoser === 0 ? "echeances" : onglet;
+  // Le compte suit les cases cochées sans attendre un rechargement.
+  const [echeancesEnRetard, setEcheancesEnRetard] = useState(
+    () =>
+      echeances.filter((e) => !e.faite && e.etat === "depasse").length,
+  );
+  const ongletsSuivi = [
+    {
+      valeur: "echeances" as const,
+      libelle: "Échéances",
+      icone: CalendarClock,
+      compte: echeancesEnRetard,
+      alerte: true,
+    },
+    {
+      valeur: "jours" as const,
+      libelle: "Jours non travaillés",
+      icone: CalendarOff,
+      compte: indisponibilitesAVenir.length,
+      alerte: false,
+    },
+    ...(aPoser > 0
+      ? [
+          {
+            valeur: "a-poser" as const,
+            libelle: "À poser",
+            icone: CalendarPlus,
+            compte: aPoser,
+            alerte: false,
+          },
+        ]
+      : []),
+  ];
 
   const heuresParGroupe = [
     ...seances
@@ -714,28 +762,89 @@ export default function CalendrierSemaine({
           </section>
         </div>
 
-        <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <IndisponibilitesPanel
-            indisponibilites={indisponibilitesAVenir}
-            semaine={{ debut: lundi, fin: decale(lundi, 6) }}
-          />
+        {/* Trois suivis qui ne se consultent pas en même temps : un bloc à
+            onglets plutôt que trois cartes de hauteurs inégales. */}
+        <section className="mt-6 rounded-[14px] border border-border bg-surface shadow-repos">
+          <div
+            role="tablist"
+            aria-label="Suivi du calendrier"
+            className="flex gap-1 overflow-x-auto border-b border-separator px-3 [scrollbar-width:none]"
+          >
+            {ongletsSuivi.map((o) => {
+              const actif = o.valeur === ongletActif;
+              const Icone = o.icone;
+              return (
+                <button
+                  key={o.valeur}
+                  type="button"
+                  role="tab"
+                  id={`onglet-${o.valeur}`}
+                  aria-selected={actif}
+                  aria-controls={`panneau-${o.valeur}`}
+                  onClick={() => setOnglet(o.valeur)}
+                  className={`-mb-px flex shrink-0 items-center gap-2 whitespace-nowrap border-b-2 px-3 py-3.5 text-[14px] font-medium transition-colors max-md:min-h-11 ${
+                    actif
+                      ? "border-ink text-ink"
+                      : "border-transparent text-slate hover:text-ink"
+                  }`}
+                >
+                  <Icone className="h-4 w-4" aria-hidden />
+                  {o.libelle}
+                  {o.compte > 0 ? (
+                    <span
+                      className={`rounded-md px-1.5 py-px font-mono text-[11.5px] ${
+                        o.alerte
+                          ? "bg-alert-wash text-coral-dark"
+                          : "bg-wash text-slate"
+                      }`}
+                    >
+                      {o.compte}
+                    </span>
+                  ) : null}
+                </button>
+              );
+            })}
+          </div>
 
-          <EcheancesReglementaires
-            echeances={echeances}
-            controleHref={(id) =>
-              `/modules/${controles.find((c) => c.id === id)?.module_id ?? ""}/controle`
-            }
-          />
+          <div
+            role="tabpanel"
+            id="panneau-echeances"
+            aria-labelledby="onglet-echeances"
+            hidden={ongletActif !== "echeances"}
+            className="p-5"
+          >
+            <EcheancesReglementaires
+              integre
+              echeances={echeances}
+              onRestantes={setEcheancesEnRetard}
+              controleHref={(id) =>
+                `/modules/${controles.find((c) => c.id === id)?.module_id ?? ""}/controle`
+              }
+            />
+          </div>
 
-          {/* « Sans date » est une seule idée : séances et contrôles la
-              partagent, ils tiennent dans le même bloc. */}
-          {seancesSansDate > 0 || controlesSansDate.length > 0 ? (
-            <section className="rounded-[14px] border border-border bg-surface p-4">
-              <h2 className="flex items-center gap-1.5 text-sm font-medium text-ink">
-                <CalendarPlus className="h-4 w-4 text-slate" aria-hidden />
-                Reste à poser dans le calendrier
-              </h2>
+          <div
+            role="tabpanel"
+            id="panneau-jours"
+            aria-labelledby="onglet-jours"
+            hidden={ongletActif !== "jours"}
+            className="p-5"
+          >
+            <IndisponibilitesPanel
+              integre
+              indisponibilites={indisponibilitesAVenir}
+              semaine={{ debut: lundi, fin: decale(lundi, 6) }}
+            />
+          </div>
 
+          {aPoser > 0 ? (
+            <div
+              role="tabpanel"
+              id="panneau-a-poser"
+              aria-labelledby="onglet-a-poser"
+              hidden={ongletActif !== "a-poser"}
+              className="p-5"
+            >
               {seancesSansDate > 0 ? (
                 <>
                   <p className="mt-2 text-xs text-slate">
@@ -769,7 +878,7 @@ export default function CalendrierSemaine({
 
               {controlesSansDate.length > 0 ? (
                 <>
-                  <p className="mt-3 text-xs text-slate">
+                  <p className="mt-4 text-xs text-slate">
                     {controlesSansDate.length} contrôle
                     {controlesSansDate.length > 1 ? "s" : ""} sans date
                   </p>
@@ -793,9 +902,9 @@ export default function CalendrierSemaine({
                   </ul>
                 </>
               ) : null}
-            </section>
+            </div>
           ) : null}
-        </div>
+        </section>
 
         {regionales.length > 0 ? (
           <section className="mt-4">
