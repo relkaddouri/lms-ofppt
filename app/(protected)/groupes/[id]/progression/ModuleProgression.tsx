@@ -32,6 +32,8 @@ export default function ModuleProgression({
   code,
   masseHoraire,
   controlesCouverts,
+  heuresControles,
+  heuresCedees,
   objectifs,
   seances,
   controlesApres,
@@ -45,6 +47,10 @@ export default function ModuleProgression({
   masseHoraire: number | null;
   /** Contrôles déjà validés sur ce couple : un brouillon ne couvre rien. */
   controlesCouverts: number;
+  /** Heures de contrôles de ce module passés hors de ses propres séances. */
+  heuresControles: number;
+  /** Heures de ses séances prises par les contrôles d'autres modules. */
+  heuresCedees: number;
   objectifs: ObjectifBloc[];
   seances: Seance[];
   /** Les contrôles à poser sous la séance qui les précède, par identifiant. */
@@ -56,10 +62,13 @@ export default function ModuleProgression({
   const [ouvert, setOuvert] = useState(ouvertParDefaut);
 
   const faites = seances.filter((s) => s.statut === "fait");
-  const heuresFaites = faites.reduce(
-    (t, s) => t + Number(s.duree_realisee ?? s.duree_prevue ?? 0),
-    0,
-  );
+  const heuresFaites =
+    faites.reduce(
+      (t, s) => t + Number(s.duree_realisee ?? s.duree_prevue ?? 0),
+      0,
+    ) +
+    heuresControles -
+    heuresCedees;
   const heuresTotales = seances.reduce(
     (t, s) => t + Number(s.duree_prevue ?? s.duree_realisee ?? 0),
     0,

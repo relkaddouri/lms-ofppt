@@ -9,6 +9,8 @@ import ModuleProgression, { type ObjectifBloc } from "./ModuleProgression";
 import PlanifierSeance from "./PlanifierSeance";
 import SuiviSeances from "./SuiviSeances";
 import Card from "@/components/ui/Card";
+import { compterControles } from "@/lib/progression";
+import { instantEtablissement } from "@/lib/format";
 import { CalendarDays } from "lucide-react";
 
 export default async function ProgressionPage({
@@ -21,6 +23,14 @@ export default async function ProgressionPage({
     getRappelsControle(id),
     getControlesDuGroupe(id),
   ]);
+
+  // Les heures des contrôles, rangées dans leur module : un EFM de M202
+  // passé sur un créneau de M203 compte pour M202, pas pour M203.
+  const comptes = compterControles(
+    seances,
+    controles,
+    instantEtablissement().date,
+  );
 
   // Le rappel a besoin du nombre de contrôles réellement posés, que la liste
   // des séances ne connaît pas.
@@ -159,6 +169,8 @@ export default async function ProgressionPage({
               code={m.code}
               masseHoraire={m.masseHoraire}
               controlesCouverts={couverts.get(moduleId) ?? 0}
+              heuresControles={comptes.ajout.get(moduleId) ?? 0}
+              heuresCedees={comptes.retrait.get(moduleId) ?? 0}
               objectifs={[...m.objectifs.values()]}
               seances={m.seances}
               controlesApres={Object.fromEntries(
