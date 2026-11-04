@@ -10,6 +10,8 @@ import {
   FolderClosed,
   LayoutDashboard,
   LogOut,
+  PanelLeftClose,
+  PanelLeftOpen,
   Settings,
   Users,
   type LucideIcon,
@@ -60,6 +62,8 @@ export default function Sidebar({
   role,
   open,
   onClose,
+  repliee = false,
+  onBasculer,
 }: {
   email: string | null;
   /** Le nom que le formateur s'est donné dans ses paramètres, s'il l'a fait. */
@@ -68,8 +72,16 @@ export default function Sidebar({
   role: string | null;
   open: boolean;
   onClose: () => void;
+  /**
+   * Réduite à ses icônes, sur écran large seulement : sur téléphone, la barre
+   * est un tiroir qui se ferme déjà de lui-même.
+   */
+  repliee?: boolean;
+  onBasculer?: () => void;
 }) {
   const pathname = usePathname();
+  // Ce qui disparaît quand la barre est repliée : les libellés, pas les icônes.
+  const masque = repliee ? "md:hidden" : "";
 
   const estActif = (href: string) =>
     href === "/dashboard" ? pathname === href : pathname.startsWith(href);
@@ -81,25 +93,54 @@ export default function Sidebar({
        de trois écrans. `sticky` la laisse dans le flux — la grille à deux
        colonnes tient donc toujours — tout en la fixant au bord haut. */
     <aside
-      className={`fixed inset-y-0 left-0 z-40 flex w-[264px] shrink-0 flex-col justify-between border-r border-border bg-surface py-[22px] transition-transform duration-200 ease-out md:sticky md:top-0 md:h-screen md:self-start md:translate-x-0 ${
+      className={`fixed inset-y-0 left-0 z-40 flex w-[264px] shrink-0 flex-col justify-between border-r border-border bg-surface py-[22px] transition-[transform,width] duration-200 ease-out md:sticky md:top-0 md:h-screen md:self-start md:translate-x-0 ${
         open ? "translate-x-0" : "-translate-x-full"
-      }`}
+      } ${repliee ? "md:w-[72px]" : ""}`}
     >
       <div className="flex min-h-0 flex-col gap-8 overflow-y-auto">
-        <div className="flex items-center gap-[11px] px-6">
-          <MarquePedago taille={12} ecart={3} />
-          <span className="flex flex-col gap-px">
+        <div
+          className={`flex items-center gap-[11px] px-6 ${
+            repliee ? "md:justify-center md:px-0" : ""
+          }`}
+        >
+          <span className={masque}>
+            <MarquePedago taille={12} ecart={3} />
+          </span>
+          <span className={`flex flex-col gap-px ${masque}`}>
             <span className="font-display text-base font-bold tracking-[-0.01em] text-ink">
               Pédago
             </span>
             <span className="text-xs text-slate-light">Espace formateur</span>
           </span>
+          {/* Replier pour laisser la place au contenu (demande du
+              04/11/2026), à l'endroit où les applications le mettent : en
+              tête de la barre. */}
+          {onBasculer ? (
+            <button
+              type="button"
+              onClick={onBasculer}
+              aria-label={repliee ? "Déplier la barre latérale" : "Replier la barre latérale"}
+              title={repliee ? "Déplier la barre latérale" : "Replier la barre latérale"}
+              aria-expanded={!repliee}
+              className={`hidden h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-light transition-colors duration-150 ease-out hover:bg-paper hover:text-ink focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_rgba(46,125,158,0.15)] md:flex ${
+                repliee ? "" : "ml-auto"
+              }`}
+            >
+              {repliee ? (
+                <PanelLeftOpen size={18} aria-hidden />
+              ) : (
+                <PanelLeftClose size={18} aria-hidden />
+              )}
+            </button>
+          ) : null}
         </div>
 
         <nav className="flex flex-col gap-[26px]">
           {GROUPES_NAV.map((groupe) => (
             <div key={groupe.label} className="flex flex-col gap-1">
-              <span className="px-6 pb-1.5 font-mono text-[10.5px] tracking-[0.14em] text-muted">
+              <span
+                className={`px-6 pb-1.5 font-mono text-[10.5px] tracking-[0.14em] text-muted ${masque}`}
+              >
                 {groupe.label}
               </span>
               {groupe.items.map((item) => {
@@ -110,11 +151,15 @@ export default function Sidebar({
                     href={item.href}
                     onClick={onClose}
                     aria-current={actif ? "page" : undefined}
+                    // Repliée, l'entrée n'a plus que son icône : son nom passe
+                    // dans l'infobulle et pour les lecteurs d'écran.
+                    title={repliee ? item.label : undefined}
+                    aria-label={repliee ? item.label : undefined}
                     className={`mx-3 flex items-center gap-3 rounded-[9px] px-3 py-2.5 text-[15px] transition-colors duration-150 ease-out focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_rgba(46,125,158,0.15)] ${
                       actif
                         ? "bg-wash font-semibold text-ink"
                         : "text-slate-2 hover:bg-paper hover:text-ink"
-                    }`}
+                    } ${repliee ? "md:justify-center md:px-0" : ""}`}
                   >
                     <item.Icone
                       size={18}
@@ -122,7 +167,7 @@ export default function Sidebar({
                       aria-hidden
                       className={`shrink-0 ${actif ? "text-ink" : "text-slate-light"}`}
                     />
-                    {item.label}
+                    <span className={masque}>{item.label}</span>
                   </Link>
                 );
               })}
@@ -131,14 +176,21 @@ export default function Sidebar({
         </nav>
       </div>
 
-      <div className="mx-3 border-t border-separator px-3 pt-3.5">
+      <div
+        className={`mx-3 border-t border-separator px-3 pt-3.5 ${
+          repliee ? "md:px-0" : ""
+        }`}
+      >
         {/* Le seul endroit où l'application dit à qui appartient la session :
             le nom et le visage tels que les stagiaires les voient, et
             l'adresse du compte dessous — celle par laquelle on se reconnecte,
             donc celle qu'on cherche ici et nulle part ailleurs. */}
-        <div className="flex items-center gap-3">
+        <div
+          className={`flex items-center gap-3 ${repliee ? "md:justify-center" : ""}`}
+          title={repliee ? (nom || email || undefined) : undefined}
+        >
           <Avatar prenom={nom || email || "F"} photoUrl={photoUrl} taille="sm" />
-          <span className="flex min-w-0 flex-col gap-px">
+          <span className={`flex min-w-0 flex-col gap-px ${masque}`}>
             <span className="truncate text-[14.5px] font-semibold text-ink">
               {nom || email || "Formateur"}
             </span>
@@ -149,17 +201,21 @@ export default function Sidebar({
         </div>
         {/* L'apparence se règle là où se trouve déjà le compte : c'est le
             seul coin de l'écran qui parle de la personne et non du travail. */}
-        <div className="mt-3 flex items-center justify-between gap-2">
+        <div className={`mt-3 flex items-center justify-between gap-2 ${masque}`}>
           <BasculeTheme />
         </div>
 
         <form action={signOutAction} className="mt-2">
           <button
             type="submit"
-            className="flex w-full items-center gap-2 rounded-[9px] px-3 py-2 text-sm font-semibold text-slate-2 transition-colors duration-150 ease-out hover:bg-paper hover:text-ink focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_rgba(46,125,158,0.15)]"
+            title={repliee ? "Déconnexion" : undefined}
+            aria-label={repliee ? "Déconnexion" : undefined}
+            className={`flex w-full items-center gap-2 rounded-[9px] px-3 py-2 text-sm font-semibold text-slate-2 transition-colors duration-150 ease-out hover:bg-paper hover:text-ink focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_rgba(46,125,158,0.15)] ${
+              repliee ? "md:justify-center md:px-0" : ""
+            }`}
           >
             <LogOut size={16} aria-hidden />
-            Déconnexion
+            <span className={masque}>Déconnexion</span>
           </button>
         </form>
       </div>
