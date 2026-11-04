@@ -20,7 +20,7 @@ import {
 import { instantEtablissement } from "@/lib/format";
 import { creneauALieu, type Recurrence } from "@/lib/recurrence";
 import type { Replanification } from "@/lib/motifs";
-import { creerSeancesDuPlan } from "@/lib/plan-seances";
+import { creerSeancesDuPlan, heuresCedeesDuGroupe } from "@/lib/plan-seances";
 import { getPlanification } from "@/app/actions/repartition";
 import { heuresManquantes } from "@/lib/repartition";
 
@@ -318,22 +318,30 @@ export async function genererSeancesManquantes(
     );
   }
 
-  const { data: seances, error } = await supabase
-    .from("seances")
-    .select(
-      "suggestion_pedagogique_id, nature, statut, duree_prevue, duree_realisee, created_at, seance_groupes!inner(groupe_id)",
-    )
-    .eq("seance_groupes.groupe_id", groupeId)
-    .eq("module_id", moduleId)
-    .limit(500);
+  const [{ data: seances, error }, cedees] = await Promise.all([
+    supabase
+      .from("seances")
+      .select(
+        "id, suggestion_pedagogique_id, nature, statut, duree_prevue, duree_realisee, created_at, seance_groupes!inner(groupe_id)",
+      )
+      .eq("seance_groupes.groupe_id", groupeId)
+      .eq("module_id", moduleId)
+      .limit(500),
+    heuresCedeesDuGroupe(supabase, groupeId),
+  ]);
   if (error) throw new Error(error.message);
 
+  // Une séance dont le créneau a servi au contrôle d'un autre module ne
+  // compte que ce qui lui reste : le reste est à refaire.
   const manquantes = heuresManquantes(
     plan.lignes,
     (seances ?? []).map((s) => ({
       objectif: s.suggestion_pedagogique_id,
       nature: s.nature,
-      heures: Number(s.duree_realisee ?? s.duree_prevue ?? 0),
+      heures: Math.max(
+        0,
+        Number(s.duree_realisee ?? s.duree_prevue ?? 0) - (cedees.get(s.id) ?? 0),
+      ),
       fait: s.statut === "fait",
     })),
   );
@@ -1075,7 +1083,7 @@ async function alignerSurRepartition(
     return { disponible, disponibleObjectif, reconstruits: 0 };
   }
 
-  const [repRes, dateesRes] = await Promise.all([
+  const [repRes, dateesRes, cedees] = await Promise.all([
     supabase
       .from("repartition_horaire")
       .select("module_id, suggestion_pedagogique_id, heures_theoriques, heures_pratiques")
@@ -1084,11 +1092,12 @@ async function alignerSurRepartition(
       .limit(1000),
     supabase
       .from("seances")
-      .select("module_id, suggestion_pedagogique_id, nature, duree_prevue, seance_groupes!inner(groupe_id)")
+      .select("id, module_id, suggestion_pedagogique_id, nature, duree_prevue, seance_groupes!inner(groupe_id)")
       .eq("seance_groupes.groupe_id", groupeId)
       .in("module_id", modules)
       .not("date", "is", null)
       .limit(2000),
+    heuresCedeesDuGroupe(supabase, groupeId),
   ]);
   if (repRes.error) throw new Error(repRes.error.message);
   if (dateesRes.error) throw new Error(dateesRes.error.message);
@@ -1115,7 +1124,9 @@ async function alignerSurRepartition(
   const datees = new Map<string, number>();
   const dateesObjectif = new Map<string, number>();
   for (const s of dateesRes.data ?? []) {
-    const h = Number(s.duree_prevue) || 0;
+    // Ce qu'un contrôle d'un autre module a pris à la séance est à refaire :
+    // ces heures ne sont pas consommées.
+    const h = Math.max(0, (Number(s.duree_prevue) || 0) - (cedees.get(s.id) ?? 0));
     ajoute(datees, s.module_id, h);
     if (s.suggestion_pedagogique_id) {
       const cle = cleObjectif(s.module_id, s.suggestion_pedagogique_id);

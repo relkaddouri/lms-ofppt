@@ -71,6 +71,9 @@ export function compterControles(
   const parControle = new Map<string, ControleCompte>();
   const ajout = new Map<string, number>();
   const retrait = new Map<string, number>();
+  // Par séance faite d'un autre module : les heures que le contrôle lui a
+  // prises. Ce sont des heures de cours à refaire (demande du 04/11/2026).
+  const cedees = new Map<string, number>();
   const ajoute = (m: Map<string, number>, cle: string, h: number) =>
     m.set(cle, (m.get(cle) ?? 0) + h);
 
@@ -109,8 +112,9 @@ export function compterControles(
     // Une séance encore à faire ne compte rien : il n'y a rien à lui retirer.
     if (hote.statut === "fait") {
       ajoute(retrait, hote.module_id, epreuve + correction);
+      ajoute(cedees, hote.id, epreuve + correction);
     }
   }
 
-  return { parControle, ajout, retrait };
+  return { parControle, ajout, retrait, cedees };
 }

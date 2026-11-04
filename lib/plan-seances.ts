@@ -1,5 +1,7 @@
 import type { createClient } from "@/lib/supabase/server";
 import { construirePlan } from "@/lib/planification";
+import { compterControles } from "@/lib/progression";
+import { instantEtablissement } from "@/lib/format";
 
 /**
  * Les séances d'un module, créées à partir de sa répartition horaire.
@@ -126,4 +128,55 @@ export async function creerSeancesDuPlan(
 
   await repartirElementsContenu(supabase, creees ?? []);
   return seances.length;
+}
+
+/**
+ * Par séance du groupe, les heures que le contrôle d'un autre module lui a
+ * prises : la séance M203 du 14/10, marquée faite, a servi à l'EFM de M202.
+ *
+ * Ces heures ne sont pas des heures de M203 : elles manquent à M203 et
+ * doivent être refaites. La génération des séances manquantes et le
+ * recalcul les retirent donc des heures de la séance, avec la même règle que
+ * la progression (`compterControles`).
+ */
+export async function heuresCedeesDuGroupe(
+  supabase: Client,
+  groupeId: string,
+): Promise<Map<string, number>> {
+  const aujourdhui = instantEtablissement().date;
+  const { data: controles, error } = await supabase
+    .from("controles")
+    .select("id, module_id, type, statut, date_prevue, duree_heures")
+    .eq("groupe_id", groupeId)
+    .in("type", ["CC", "EFM"])
+    .eq("statut", "valide")
+    .lte("date_prevue", aujourdhui)
+    .limit(200);
+  if (error) throw new Error(error.message);
+
+  const jours = [
+    ...new Set((controles ?? []).map((c) => c.date_prevue).filter(Boolean)),
+  ] as string[];
+  if (jours.length === 0) return new Map();
+
+  // Les séances de ces jours-là seulement, dans l'ordre où la progression
+  // cherche la séance qui a cédé son créneau.
+  const { data: seances, error: errS } = await supabase
+    .from("seances")
+    .select(
+      "id, module_id, date, statut, duree_prevue, duree_realisee, seance_groupes!inner(groupe_id)",
+    )
+    .eq("seance_groupes.groupe_id", groupeId)
+    .in("date", jours)
+    .order("date")
+    .order("heure_debut", { nullsFirst: false })
+    .order("created_at")
+    .limit(500);
+  if (errS) throw new Error(errS.message);
+
+  return compterControles(
+    (seances ?? []) as unknown as Parameters<typeof compterControles>[0],
+    (controles ?? []) as unknown as Parameters<typeof compterControles>[1],
+    aujourdhui,
+  ).cedees;
 }
