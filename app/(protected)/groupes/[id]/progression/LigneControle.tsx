@@ -1,7 +1,20 @@
 import Link from "next/link";
 import { ChevronRight, FileCheck2 } from "lucide-react";
-import { formatDateJour } from "@/lib/format";
+import { formatDateJour, formatHeures } from "@/lib/format";
 import type { ControleProgression } from "@/app/actions/controles";
+
+/**
+ * Un contrôle tel que la progression le compte (lib/progression.ts) : ses
+ * heures, la correction d'un EFM, et le module dont il a pris le créneau.
+ * `compte` est nul quand il ne compte pas : brouillon, TEST, ou à venir.
+ */
+export type ControleAffiche = ControleProgression & {
+  compte: {
+    heures: number;
+    correction: number;
+    creneauModule: string | null;
+  } | null;
+};
 
 /**
  * Un contrôle dans la progression, à sa place dans le déroulement.
@@ -18,7 +31,7 @@ import type { ControleProgression } from "@/app/actions/controles";
  */
 
 /** Ce que le contrôle en est : prévu, ouvert, passé. */
-function etat(c: ControleProgression): string {
+function etat(c: ControleAffiche): string {
   if (c.statut === "brouillon") return "brouillon";
   const maintenant = Date.now();
   const ouvert = c.ouvert_le ? new Date(c.ouvert_le).getTime() : null;
@@ -34,7 +47,7 @@ export default function LigneControle({
   controle,
   groupeId,
 }: {
-  controle: ControleProgression;
+  controle: ControleAffiche;
   groupeId: string;
 }) {
   const test = controle.type === "TEST";
@@ -79,6 +92,18 @@ export default function LigneControle({
           {controle.date_prevue ? (
             <span className="font-mono text-xs text-slate">
               {formatDateJour(controle.date_prevue, { court: true })}
+              {" · "}
+            </span>
+          ) : null}
+          {controle.compte ? (
+            <span className="font-mono text-xs text-slate">
+              {formatHeures(controle.compte.heures)}
+              {controle.compte.correction > 0
+                ? ` + ${formatHeures(controle.compte.correction)} correction`
+                : ""}
+              {controle.compte.creneauModule
+                ? ` · sur le créneau de ${controle.compte.creneauModule}`
+                : ""}
               {" · "}
             </span>
           ) : null}

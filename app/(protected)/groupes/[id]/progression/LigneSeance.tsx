@@ -23,6 +23,7 @@ export default function LigneSeance({
   groupeId,
   numero,
   prochaine = false,
+  cessions,
 }: {
   seance: Seance;
   /** Le groupe vient de la page : une séance FAD peut en réunir plusieurs. */
@@ -30,6 +31,8 @@ export default function LigneSeance({
   numero: number;
   /** Première séance à faire du module : le point où reprendre. */
   prochaine?: boolean;
+  /** Contrôles d'autres modules passés sur ce créneau, et leurs heures. */
+  cessions?: { libelle: string; module: string; heures: number }[];
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -121,6 +124,14 @@ export default function LigneSeance({
             {" · "}
           </span>
         ) : null}
+        {/* Le créneau a servi au contrôle d'un autre module : ses heures
+            sont comptées là-bas, pas ici. */}
+        {cessions?.map((c) => (
+          <span key={c.libelle} className="font-mono text-xs text-coral-dark">
+            {c.libelle} sur ce créneau · {formatHeures(c.heures)} comptées
+            en {c.module}{" · "}
+          </span>
+        ))}
         {seance.contenu_realise?.trim() ? (
           <span className="text-slate">{seance.contenu_realise}</span>
         ) : (

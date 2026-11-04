@@ -3,13 +3,12 @@
 import { Fragment, useState } from "react";
 import Link from "next/link";
 import LigneSeance from "./LigneSeance";
-import LigneControle from "./LigneControle";
+import LigneControle, { type ControleAffiche } from "./LigneControle";
 import Badge from "@/components/ui/Badge";
 import RappelControle from "@/components/RappelControle";
 import { calculerRappel } from "@/lib/rappels";
 import { formatHeures } from "@/lib/format";
 import type { Seance } from "@/app/actions/seances";
-import type { ControleProgression } from "@/app/actions/controles";
 import { ChevronDown, ChevronRight } from "lucide-react";
 
 export type ObjectifBloc = {
@@ -38,6 +37,7 @@ export default function ModuleProgression({
   seances,
   controlesApres,
   controlesSansAncrage,
+  cessions,
   ouvertParDefaut = false,
 }: {
   groupeId: string;
@@ -54,9 +54,14 @@ export default function ModuleProgression({
   objectifs: ObjectifBloc[];
   seances: Seance[];
   /** Les contrôles à poser sous la séance qui les précède, par identifiant. */
-  controlesApres: Record<string, ControleProgression[]>;
+  controlesApres: Record<string, ControleAffiche[]>;
   /** Ceux qu'aucune séance ne précède : sans date, ou avant la première. */
-  controlesSansAncrage: ControleProgression[];
+  controlesSansAncrage: ControleAffiche[];
+  /** Séances dont le créneau a servi au contrôle d'un autre module. */
+  cessions: Record<
+    string,
+    { libelle: string; module: string; heures: number }[]
+  >;
   ouvertParDefaut?: boolean;
 }) {
   const [ouvert, setOuvert] = useState(ouvertParDefaut);
@@ -144,6 +149,12 @@ export default function ModuleProgression({
               {masseHoraire && heuresTotales !== masseHoraire
                 ? ` · séances du plan ${formatHeures(heuresTotales)}`
                 : ""}
+              {heuresControles > 0
+                ? ` · contrôles passés ailleurs +${formatHeures(heuresControles)}`
+                : ""}
+              {heuresCedees > 0
+                ? ` · créneaux cédés −${formatHeures(heuresCedees)}`
+                : ""}
               {" · "}
               {faites.length}/{seances.length} séances
             </span>
@@ -216,6 +227,7 @@ export default function ModuleProgression({
                           groupeId={groupeId}
                           numero={numero}
                           prochaine={s.id === prochaine?.id}
+                          cessions={cessions[s.id]}
                         />
                         {/* Le contrôle se pose sous la dernière séance qui
                             l'a précédé : c'est là qu'il a eu lieu. */}

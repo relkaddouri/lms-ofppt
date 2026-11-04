@@ -1,11 +1,9 @@
 import { getSeancesByGroupe, type Seance } from "@/app/actions/seances";
 import { getGroupeModules } from "@/app/actions/groupes";
 import { getRappelsControle } from "@/app/actions/rappels";
-import {
-  getControlesDuGroupe,
-  type ControleProgression,
-} from "@/app/actions/controles";
+import { getControlesDuGroupe } from "@/app/actions/controles";
 import ModuleProgression, { type ObjectifBloc } from "./ModuleProgression";
+import type { ControleAffiche } from "./LigneControle";
 import PlanifierSeance from "./PlanifierSeance";
 import SuiviSeances from "./SuiviSeances";
 import Card from "@/components/ui/Card";
@@ -83,10 +81,47 @@ export default async function ProgressionPage({
   // là qu'il a eu lieu dans le déroulement, et c'est ce que le formateur
   // cherche en regardant sa progression (demande du 28/09/2026). Le calcul se
   // fait ici, une fois, plutôt que dans chaque bloc de module.
-  const controlesApres = new Map<string, ControleProgression[]>();
-  const sansAncrage = new Map<string, ControleProgression[]>();
+  const controlesApres = new Map<string, ControleAffiche[]>();
+  const sansAncrage = new Map<string, ControleAffiche[]>();
 
-  for (const c of controles) {
+  const codeModule = (moduleId: string) =>
+    modules.find((m) => m.module_id === moduleId)?.code_operationnel ??
+    "un autre module";
+
+  // Un contrôle passé sur le créneau d'un autre module se signale des deux
+  // côtés : dans son module, avec ses heures, et sur la séance qui a cédé
+  // son créneau, pour qu'on ne cherche pas où sont passées ces heures.
+  const cessions = new Map<
+    string,
+    { libelle: string; module: string; heures: number }[]
+  >();
+
+  const affiches: ControleAffiche[] = controles.map((c) => {
+    const compte = comptes.parControle.get(c.id);
+    if (compte?.creneau) {
+      const dejala = cessions.get(compte.creneau.seanceId) ?? [];
+      dejala.push({
+        libelle: `${c.type} ${codeModule(c.module_id)}`,
+        module: codeModule(c.module_id),
+        heures: compte.heures + compte.correction,
+      });
+      cessions.set(compte.creneau.seanceId, dejala);
+    }
+    return {
+      ...c,
+      compte: compte
+        ? {
+            heures: compte.heures,
+            correction: compte.correction,
+            creneauModule: compte.creneau
+              ? codeModule(compte.creneau.moduleId)
+              : null,
+          }
+        : null,
+    };
+  });
+
+  for (const c of affiches) {
     const liste = parModule.get(c.module_id);
     const jour = c.date_prevue;
     // Les séances arrivent triées par date : la dernière qui précède le
@@ -179,6 +214,11 @@ export default async function ProgressionPage({
                   .map((s) => [s.id, controlesApres.get(s.id)!]),
               )}
               controlesSansAncrage={sansAncrage.get(moduleId) ?? []}
+              cessions={Object.fromEntries(
+                m.seances
+                  .filter((s) => cessions.has(s.id))
+                  .map((s) => [s.id, cessions.get(s.id)!]),
+              )}
                   ouvertParDefaut={moduleId === premierEnCours}
                 />
               ))}
