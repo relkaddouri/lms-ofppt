@@ -41,6 +41,8 @@ export type ControleCompte = {
   correction: number;
   /** La séance d'un autre module sur le créneau de laquelle il a été passé. */
   creneau: { seanceId: string; moduleId: string } | null;
+  /** La séance, de son module ou d'un autre, dont il a pris les heures. */
+  seance: string | null;
 };
 
 /**
@@ -58,7 +60,9 @@ export type ControleCompte = {
  *   créneau, consacré à la correction (4 h d'épreuve sur un créneau de 5 h
  *   donnent 4 h + 1 h) ;
  * - passé sur une séance de son propre module, il est déjà dans ses heures :
- *   rien ne bouge ;
+ *   le total du module ne bouge pas, mais ces heures étaient du cours, et le
+ *   cours qu'elles remplaçaient est à refaire (M202 : le CC du 24/09 a pris
+ *   2 h 30 de sa séance, et M202 restait à 87 h 30 sur 90 h) ;
  * - passé sur la séance faite d'un autre module, ses heures quittent ce
  *   module pour le sien ;
  * - un jour sans séance, ses heures s'ajoutent simplement à son module.
@@ -71,8 +75,8 @@ export function compterControles(
   const parControle = new Map<string, ControleCompte>();
   const ajout = new Map<string, number>();
   const retrait = new Map<string, number>();
-  // Par séance faite d'un autre module : les heures que le contrôle lui a
-  // prises. Ce sont des heures de cours à refaire (demande du 04/11/2026).
+  // Par séance faite : les heures que le contrôle lui a prises. Ce sont des
+  // heures de cours à refaire (demande du 04/11/2026).
   const cedees = new Map<string, number>();
   const ajoute = (m: Map<string, number>, cle: string, h: number) =>
     m.set(cle, (m.get(cle) ?? 0) + h);
@@ -85,8 +89,27 @@ export function compterControles(
     const heures = Number(c.duree_heures) || 0;
     const duJour = seances.filter((s) => s.date === jour);
 
-    if (duJour.some((s) => s.module_id === c.module_id)) {
-      parControle.set(c.id, { heures, correction: 0, creneau: null });
+    // Mêmes règles d'heures que sur le créneau d'un autre module : l'épreuve
+    // tient dans la séance, un EFM en prend le reste pour la correction.
+    const prise = (hote: SeanceSituee) => {
+      const duree = Number(hote.duree_realisee ?? hote.duree_prevue ?? 0);
+      const epreuve = duree > 0 ? Math.min(heures, duree) : heures;
+      const correction = c.type === "EFM" ? Math.max(0, duree - epreuve) : 0;
+      return { epreuve, correction };
+    };
+
+    const sienne = duJour.find((s) => s.module_id === c.module_id);
+    if (sienne) {
+      const { epreuve, correction } = prise(sienne);
+      parControle.set(c.id, {
+        heures: epreuve,
+        correction,
+        creneau: null,
+        seance: sienne.id,
+      });
+      if (sienne.statut === "fait") {
+        ajoute(cedees, sienne.id, epreuve + correction);
+      }
       continue;
     }
 
@@ -94,19 +117,17 @@ export function compterControles(
     // module est celle qui a cédé son créneau.
     const hote = duJour[0];
     if (!hote) {
-      parControle.set(c.id, { heures, correction: 0, creneau: null });
+      parControle.set(c.id, { heures, correction: 0, creneau: null, seance: null });
       ajoute(ajout, c.module_id, heures);
       continue;
     }
 
-    const dureeCreneau = Number(hote.duree_realisee ?? hote.duree_prevue ?? 0);
-    const epreuve = dureeCreneau > 0 ? Math.min(heures, dureeCreneau) : heures;
-    const correction =
-      c.type === "EFM" ? Math.max(0, dureeCreneau - epreuve) : 0;
+    const { epreuve, correction } = prise(hote);
     parControle.set(c.id, {
       heures: epreuve,
       correction,
       creneau: { seanceId: hote.id, moduleId: hote.module_id },
+      seance: hote.id,
     });
     ajoute(ajout, c.module_id, epreuve + correction);
     // Une séance encore à faire ne compte rien : il n'y a rien à lui retirer.
