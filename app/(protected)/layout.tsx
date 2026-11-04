@@ -3,7 +3,8 @@ import { getNotifications } from "@/app/actions/notifications";
 import { getAnneeCourante, getAnneesScolaires } from "@/app/actions/annees";
 import { getMonProfil } from "@/app/actions/profil";
 import { redirect } from "next/navigation";
-import AppShell from "@/components/AppShell";
+import { cookies } from "next/headers";
+import AppShell, { COOKIE_BARRE_REPLIEE } from "@/components/AppShell";
 
 export default async function ProtectedLayout({
   children,
@@ -36,6 +37,12 @@ export default async function ProtectedLayout({
   // Le profil part dans le même lot que le reste : une ligne de deux colonnes
   // lue par clé primaire, sans aller-retour supplémentaire puisqu'elle voyage
   // avec les trois autres lectures du layout.
+  // La barre latérale repliée se lit du cookie, pas du navigateur après
+  // coup : elle s'affiche d'emblée à la bonne largeur, sans sauter. Aucune
+  // lecture en base.
+  const repliee =
+    (await cookies()).get(COOKIE_BARRE_REPLIEE)?.value === "1";
+
   const [notifications, annees, courante, profil] = await Promise.all([
     getNotifications().then((liste) =>
       liste.map((n) => ({ id: n.id, date: n.date })),
@@ -54,6 +61,7 @@ export default async function ProtectedLayout({
       notifications={notifications}
       annees={annees}
       anneeCouranteId={courante?.id ?? null}
+      barreRepliee={repliee}
     >
       {children}
     </AppShell>
