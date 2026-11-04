@@ -2,6 +2,7 @@ import { getSeancesByGroupe, type Seance } from "@/app/actions/seances";
 import { getGroupeModules } from "@/app/actions/groupes";
 import { getRappelsControle } from "@/app/actions/rappels";
 import { getControlesDuGroupe } from "@/app/actions/controles";
+import { getRepartitionDuGroupe } from "@/app/actions/repartition";
 import ModuleProgression, { type ObjectifBloc } from "./ModuleProgression";
 import type { ControleAffiche } from "./LigneControle";
 import PlanifierSeance from "./PlanifierSeance";
@@ -15,11 +16,12 @@ export default async function ProgressionPage({
   params,
 }: PageProps<"/groupes/[id]/progression">) {
   const { id } = await params;
-  const [seances, modules, rappels, controles] = await Promise.all([
+  const [seances, modules, rappels, controles, repartition] = await Promise.all([
     getSeancesByGroupe(id),
     getGroupeModules(id),
     getRappelsControle(id),
     getControlesDuGroupe(id),
+    getRepartitionDuGroupe(id),
   ]);
 
   // Les heures des contrôles, rangées dans leur module : un EFM de M202
@@ -72,9 +74,37 @@ export default async function ProgressionPage({
           s.objectif_operationnel ??
           "Séances hors plan",
         seances: [],
+        repartition: null,
       });
     }
     m.objectifs.get(cle)!.seances.push(s);
+  }
+
+  // Chaque objectif face à sa part de la répartition — y compris celui qui
+  // n'a plus aucune séance : C.2 de M204, effacé par un recalcul, ne doit pas
+  // disparaître de la progression avec ses séances (signalé le 04/11/2026).
+  for (const r of repartition) {
+    const m = parModule.get(r.module_id);
+    if (!m) continue;
+    const bloc = m.objectifs.get(r.code) ?? {
+      code: r.code,
+      intitule: r.intitule,
+      seances: [],
+      repartition: null,
+    };
+    bloc.repartition = {
+      theorique: r.heures_theoriques,
+      pratique: r.heures_pratiques,
+    };
+    m.objectifs.set(r.code, bloc);
+  }
+  // Dans l'ordre du référentiel, les séances hors plan à la fin.
+  const ordreCode = (a: string, b: string) =>
+    a === "—" ? 1 : b === "—" ? -1 : a.localeCompare(b, "fr", { numeric: true });
+  for (const m of parModule.values()) {
+    m.objectifs = new Map(
+      [...m.objectifs.entries()].sort(([a], [b]) => ordreCode(a, b)),
+    );
   }
 
   // Chaque contrôle se range sous la dernière séance qui l'a précédé : c'est

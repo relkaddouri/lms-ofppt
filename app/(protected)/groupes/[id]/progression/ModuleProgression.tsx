@@ -15,7 +15,21 @@ export type ObjectifBloc = {
   code: string;
   intitule: string;
   seances: Seance[];
+  /** Sa part dans la répartition du module ; nulle pour des séances hors plan. */
+  repartition: { theorique: number; pratique: number } | null;
 };
+
+/** Heures d'une liste de séances, par nature. */
+function parNature(seances: Seance[]) {
+  const h = (s: Seance) => Number(s.duree_realisee ?? s.duree_prevue ?? 0);
+  const pratique = seances
+    .filter((s) => s.nature === "pratique")
+    .reduce((t, s) => t + h(s), 0);
+  const total = seances.reduce((t, s) => t + h(s), 0);
+  return { total, theorique: total - pratique, pratique };
+}
+
+const egal = (a: number, b: number) => Math.abs(a - b) < 0.01;
 
 /**
  * Un module dans la progression, replié par défaut.
@@ -193,11 +207,21 @@ export default function ModuleProgression({
             </ul>
           ) : null}
           {objectifs.map((o) => {
-            const heuresObjectif = o.seances.reduce(
-              (t, s) => t + Number(s.duree_prevue ?? 0),
-              0,
-            );
-            const toutFait = o.seances.every((s) => s.statut === "fait");
+            // Ce que le plan de séances donne à l'objectif, ce qui en est fait,
+            // et ce que la répartition lui accordait : les trois doivent
+            // finir par se rejoindre, module terminé compris.
+            const plan = parNature(o.seances);
+            const fait = parNature(o.seances.filter((s) => s.statut === "fait"));
+            const rep = o.repartition;
+            const heuresRep = rep ? rep.theorique + rep.pratique : null;
+            const ecart =
+              rep !== null &&
+              (!egal(plan.theorique, rep.theorique) ||
+                !egal(plan.pratique, rep.pratique));
+            const toutFait =
+              o.seances.length > 0 &&
+              o.seances.every((s) => s.statut === "fait") &&
+              (heuresRep === null || fait.total >= heuresRep - 0.01);
             return (
               <div
                 key={o.code}
@@ -210,12 +234,18 @@ export default function ModuleProgression({
                   <span className="min-w-0 flex-1 truncate text-sm font-medium text-ink">
                     {o.intitule}
                   </span>
-                  {heuresObjectif > 0 ? (
-                    <span className="font-mono text-xs text-slate">
-                      {formatHeures(heuresObjectif)}
+                  <span className="font-mono text-xs text-slate">
+                    {formatHeures(fait.total)} faites sur{" "}
+                    {formatHeures(heuresRep ?? plan.total)}
+                  </span>
+                  {toutFait ? <Badge tone="success">terminé</Badge> : null}
+                  {ecart && rep ? (
+                    <span className="basis-full font-mono text-xs text-coral-dark">
+                      {o.seances.length === 0
+                        ? `Aucune séance : les ${formatHeures(heuresRep)} de la répartition ne sont pas planifiées`
+                        : `Écart avec la répartition : séances ${formatHeures(plan.total)} (T ${formatHeures(plan.theorique)} · P ${formatHeures(plan.pratique)}) pour ${formatHeures(heuresRep)} (T ${formatHeures(rep.theorique)} · P ${formatHeures(rep.pratique)})`}
                     </span>
                   ) : null}
-                  {toutFait ? <Badge tone="success">terminé</Badge> : null}
                 </div>
                 <ul>
                   {o.seances.map((s) => {
