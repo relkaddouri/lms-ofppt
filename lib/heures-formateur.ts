@@ -138,6 +138,8 @@ function evaluer(
 export type BilanHeures = {
   /** Recopié du paramétrage : le suivi masque les heures sup si elles sont inactives. */
   heuresSupActives: boolean;
+  /** Cible hebdomadaire hors période de rythme : elle sert d'allure de référence. */
+  cibleHebdomadaire: number;
   semaines: Semaine[];
   semaineCourante: Semaine | null;
   /** Heures supplémentaires du mois en cours. */
@@ -199,6 +201,7 @@ export function construireBilan(
 
   return {
     heuresSupActives: plafonds.heuresSupActives,
+    cibleHebdomadaire: plafonds.heuresHebdomadaires,
     semaines,
     semaineCourante,
     supMois: arrondi(supMois),
