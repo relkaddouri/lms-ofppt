@@ -18,16 +18,32 @@ const JOURS_IMMINENT = 3;
 
 export type EtatEcheance = "a_venir" | "imminent" | "depasse" | "inconnu";
 
+/**
+ * Nature d'une échéance : c'est, avec le contrôle, la clé sous laquelle le
+ * formateur la coche (table `echeances_faites`).
+ */
+export const TYPES_ECHEANCE = [
+  "preparation",
+  "restitution_copies",
+  "resultats",
+  "restitution_notes",
+] as const;
+export type TypeEcheance = (typeof TYPES_ECHEANCE)[number];
+
 export type Echeance = {
   controleId: string;
   controleLibelle: string;
   groupeNom: string;
+  /** Nul pour « à dater » : il n'y a rien à cocher, seulement une date à poser. */
+  type: TypeEcheance | null;
   libelle: string;
   date: string | null;
   /** Jours restants ; négatif si la date est passée. */
   jours: number | null;
   etat: EtatEcheance;
   detail: string | null;
+  /** Cochée par le formateur : elle n'est plus ni en retard ni à venir. */
+  faite: boolean;
 };
 
 export type ControleEcheance = {
@@ -76,17 +92,21 @@ export function echeancesDe(
     controleId: controle.id,
     controleLibelle: controle.libelle,
     groupeNom: controle.groupeNom,
+    faite: false,
   };
 
   if (!controle.date) {
     return [
       {
         ...base,
-        libelle: controle.type === "EFM" ? "Épreuve à dater" : "Contrôle à dater",
+        type: null,
+        libelle:
+          controle.type === "EFM" ? "Épreuve à dater" : "Contrôle à dater",
         date: null,
         jours: null,
         etat: "inconnu",
-        detail: "Aucune date n'est posée : les échéances ne peuvent pas être calculées.",
+        detail:
+          "Aucune date n'est posée : les échéances ne peuvent pas être calculées.",
       },
     ];
   }
@@ -97,6 +117,7 @@ export function echeancesDe(
       return [
         {
           ...base,
+          type: "restitution_notes",
           libelle: "Restitution des notes",
           date: null,
           jours: null,
@@ -109,6 +130,7 @@ export function echeancesDe(
     return [
       {
         ...base,
+        type: "restitution_notes",
         libelle: "Restitution des notes",
         date: cible,
         jours,
@@ -118,29 +140,37 @@ export function echeancesDe(
     ];
   }
 
-  return [
-    {
-      libelle: "Préparation de l'épreuve",
-      date: ajoute(controle.date, -DELAI_PREPARATION_EFM),
-      detail: `${DELAI_PREPARATION_EFM} jours avant l'épreuve, pour validation en commission.`,
-    },
-    {
-      libelle: "Restitution des copies",
-      date: ajoute(controle.date, DELAI_RESTITUTION_EFM),
-      detail: `${DELAI_RESTITUTION_EFM} jours après l'épreuve.`,
-    },
-    {
-      libelle: "Affichage des résultats",
-      date: ajoute(controle.date, DELAI_RESULTATS_EFM),
-      detail: `${DELAI_RESULTATS_EFM} jours après l'épreuve.`,
-    },
-  ].map((e) => {
+  return (
+    [
+      {
+        type: "preparation",
+        libelle: "Préparation de l'épreuve",
+        date: ajoute(controle.date, -DELAI_PREPARATION_EFM),
+        detail: `${DELAI_PREPARATION_EFM} jours avant l'épreuve, pour validation en commission.`,
+      },
+      {
+        type: "restitution_copies",
+        libelle: "Restitution des copies",
+        date: ajoute(controle.date, DELAI_RESTITUTION_EFM),
+        detail: `${DELAI_RESTITUTION_EFM} jours après l'épreuve.`,
+      },
+      {
+        type: "resultats",
+        libelle: "Affichage des résultats",
+        date: ajoute(controle.date, DELAI_RESULTATS_EFM),
+        detail: `${DELAI_RESULTATS_EFM} jours après l'épreuve.`,
+      },
+    ] as const
+  ).map((e) => {
     const jours = ecart(e.date, aujourdhui);
     return { ...base, ...e, jours, etat: etatDe(jours) };
   });
 }
 
-/** Les échéances dépassées et imminentes d'abord : ce sont elles qui pressent. */
+/**
+ * Les échéances dépassées et imminentes d'abord : ce sont elles qui pressent.
+ * Celles déjà faites passent après toutes les autres.
+ */
 export function trierEcheances(liste: Echeance[]): Echeance[] {
   const rang: Record<EtatEcheance, number> = {
     depasse: 0,
@@ -149,6 +179,9 @@ export function trierEcheances(liste: Echeance[]): Echeance[] {
     inconnu: 3,
   };
   return [...liste].sort(
-    (a, b) => rang[a.etat] - rang[b.etat] || (a.jours ?? 0) - (b.jours ?? 0),
+    (a, b) =>
+      Number(a.faite) - Number(b.faite) ||
+      rang[a.etat] - rang[b.etat] ||
+      (a.jours ?? 0) - (b.jours ?? 0),
   );
 }

@@ -805,6 +805,35 @@ export type Database = {
           },
         ]
       }
+      echeances_faites: {
+        Row: {
+          controle_id: string
+          fait_le: string
+          fait_par: string | null
+          type_echeance: string
+        }
+        Insert: {
+          controle_id: string
+          fait_le?: string
+          fait_par?: string | null
+          type_echeance: string
+        }
+        Update: {
+          controle_id?: string
+          fait_le?: string
+          fait_par?: string | null
+          type_echeance?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "echeances_faites_controle_id_fkey"
+            columns: ["controle_id"]
+            isOneToOne: false
+            referencedRelation: "controles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       elements_competence: {
         Row: {
           created_at: string
