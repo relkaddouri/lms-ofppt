@@ -1,10 +1,15 @@
 "use client";
 
-import { Fragment, useState } from "react";
+import { Fragment, useState, useTransition } from "react";
 import Link from "next/link";
 import LigneSeance from "./LigneSeance";
 import LigneControle, { type ControleAffiche } from "./LigneControle";
 import Badge from "@/components/ui/Badge";
+import Button from "@/components/ui/Button";
+import { useToast } from "@/components/ui/Toast";
+import { genererSeancesManquantes } from "@/app/actions/motifs";
+import { totalPlacees } from "@/lib/motifs";
+import { heuresManquantes } from "@/lib/repartition";
 import RappelControle from "@/components/RappelControle";
 import { calculerRappel } from "@/lib/rappels";
 import { formatHeures } from "@/lib/format";
@@ -79,6 +84,56 @@ export default function ModuleProgression({
   ouvertParDefaut?: boolean;
 }) {
   const [ouvert, setOuvert] = useState(ouvertParDefaut);
+  const [confirmer, setConfirmer] = useState(false);
+  const [enCours, startTransition] = useTransition();
+  const toast = useToast();
+
+  // Ce qui manque au module pour rejoindre sa répartition, objectif par
+  // objectif — le même calcul que l'action qui créera ces séances.
+  const manque = heuresManquantes(
+    objectifs
+      .filter((o) => o.repartition)
+      .map((o) => ({
+        id: o.code,
+        heures_theoriques: o.repartition!.theorique,
+        heures_pratiques: o.repartition!.pratique,
+      })),
+    objectifs.flatMap((o) =>
+      o.seances.map((s) => ({
+        objectif: o.code,
+        nature: s.nature,
+        heures: Number(s.duree_realisee ?? s.duree_prevue ?? 0),
+        fait: s.statut === "fait",
+      })),
+    ),
+  );
+  const heuresManque = manque.reduce(
+    (t, m) => t + m.manque_theorique + m.manque_pratique,
+    0,
+  );
+
+  function generer() {
+    startTransition(async () => {
+      try {
+        const r = await genererSeancesManquantes(groupeId, moduleId);
+        setConfirmer(false);
+        if (r.heures <= 0) {
+          toast("Aucune séance ne manque à ce module.");
+          return;
+        }
+        const placees = r.replanification
+          ? totalPlacees(r.replanification)
+          : 0;
+        toast(
+          `${formatHeures(r.heures)} de séances créées${
+            placees > 0 ? `, ${placees} séances replacées dans l'emploi du temps` : " — à placer depuis l'emploi du temps"
+          }.`,
+        );
+      } catch (e) {
+        toast(e instanceof Error ? e.message : "Génération impossible.", "error");
+      }
+    });
+  }
 
   const faites = seances.filter((s) => s.statut === "fait");
   const heuresFaites =
@@ -169,6 +224,11 @@ export default function ModuleProgression({
               {heuresCedees > 0
                 ? ` · créneaux cédés −${formatHeures(heuresCedees)}`
                 : ""}
+              {heuresManque > 0 ? (
+                <span className="text-coral-dark">
+                  {` · ${formatHeures(heuresManque)} de séances manquantes`}
+                </span>
+              ) : null}
               {" · "}
               {faites.length}/{seances.length} séances
             </span>
@@ -196,6 +256,43 @@ export default function ModuleProgression({
 
       {ouvert ? (
         <div className="space-y-3 border-t border-border bg-paper p-3">
+          {/* Ce qui manque se génère d'ici : voir l'écart ne suffisait pas
+              (demande du 04/11/2026). */}
+          {heuresManque > 0 ? (
+            <div className="flex flex-wrap items-center gap-3 rounded-lg border border-tint-alert-strong bg-coral-wash px-3 py-2">
+              <span className="min-w-0 flex-1 text-sm text-coral-dark">
+                {confirmer
+                  ? `Créer ${formatHeures(heuresManque)} de séances (${manque
+                      .map((m) => `${m.id} ${formatHeures(m.manque_theorique + m.manque_pratique)}`)
+                      .join(", ")}) puis recalculer l'emploi du temps du groupe ?`
+                  : `Il manque ${formatHeures(heuresManque)} de séances pour rejoindre la répartition.`}
+              </span>
+              {confirmer ? (
+                <>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => setConfirmer(false)}
+                    disabled={enCours}
+                  >
+                    Annuler
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={generer}
+                    loading={enCours}
+                    loadingLabel="Génération…"
+                  >
+                    Confirmer
+                  </Button>
+                </>
+              ) : (
+                <Button size="sm" onClick={() => setConfirmer(true)}>
+                  Générer les séances manquantes
+                </Button>
+              )}
+            </div>
+          ) : null}
           {/* Un contrôle qu'aucune séance ne précède — sans date, ou posé
               avant la première séance — ouvre le module plutôt que de
               disparaître. */}

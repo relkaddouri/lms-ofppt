@@ -22,6 +22,7 @@ import { creneauALieu, type Recurrence } from "@/lib/recurrence";
 import type { Replanification } from "@/lib/motifs";
 import { creerSeancesDuPlan } from "@/lib/plan-seances";
 import { getPlanification } from "@/app/actions/repartition";
+import { heuresManquantes } from "@/lib/repartition";
 
 export type CreneauMotif = {
   id: string;
@@ -287,6 +288,86 @@ export async function recalculerGroupe(
   groupeId: string,
 ): Promise<Replanification> {
   return replanifier([groupeId]);
+}
+
+/**
+ * Crée les séances qui manquent à un module pour rejoindre sa répartition,
+ * puis replace le groupe dans l'emploi du temps.
+ *
+ * Demande du formateur (04/11/2026) : voir l'écart ne suffit pas, les
+ * séances manquantes doivent exister — C.2 de M204, effacé par un recalcul,
+ * ou les 5 h que M203 n'a jamais eues. Chaque objectif reçoit ce qui lui
+ * manque, théorie et pratique à part, sans que le module dépasse sa
+ * répartition (`heuresManquantes`). Rien n'est retiré ici ; le recalcul qui
+ * suit ramène à sa part un objectif encore à venir qui déborde, et une
+ * séance faite ou préparée reste où elle est.
+ */
+export async function genererSeancesManquantes(
+  groupeId: string,
+  moduleId: string,
+): Promise<{ heures: number; replanification: Replanification | null }> {
+  const supabase = await createClient();
+  const user = await getUser();
+  if (!user) throw new Error("Authentification requise.");
+
+  const plan = await getPlanification(groupeId, moduleId);
+  if (!plan) throw new Error("Module introuvable pour ce groupe.");
+  if (plan.proposition) {
+    throw new Error(
+      "Enregistrez d'abord la répartition de ce module : sans elle, rien ne dit ce qui manque.",
+    );
+  }
+
+  const { data: seances, error } = await supabase
+    .from("seances")
+    .select(
+      "suggestion_pedagogique_id, nature, statut, duree_prevue, duree_realisee, created_at, seance_groupes!inner(groupe_id)",
+    )
+    .eq("seance_groupes.groupe_id", groupeId)
+    .eq("module_id", moduleId)
+    .limit(500);
+  if (error) throw new Error(error.message);
+
+  const manquantes = heuresManquantes(
+    plan.lignes,
+    (seances ?? []).map((s) => ({
+      objectif: s.suggestion_pedagogique_id,
+      nature: s.nature,
+      heures: Number(s.duree_realisee ?? s.duree_prevue ?? 0),
+      fait: s.statut === "fait",
+    })),
+  );
+  const heures = manquantes.reduce(
+    (t, m) => t + m.manque_theorique + m.manque_pratique,
+    0,
+  );
+  if (heures <= 0) return { heures: 0, replanification: null };
+
+  // Le lot du module est gardé : ses nouvelles séances se rangent avec lui,
+  // pas derrière le dernier module du groupe.
+  const lot = (seances ?? [])
+    .map((s) => String(s.created_at ?? ""))
+    .filter(Boolean)
+    .sort()[0];
+
+  await creerSeancesDuPlan(
+    supabase,
+    groupeId,
+    moduleId,
+    manquantes.map((m) => ({
+      id: m.id,
+      code: m.code,
+      intitule: m.intitule,
+      heures_theoriques: m.manque_theorique,
+      heures_pratiques: m.manque_pratique,
+    })),
+    lot,
+  );
+
+  // Placées tout de suite : des séances sans date n'apparaîtraient qu'au
+  // prochain recalcul. Le recalcul revalide lui-même la progression.
+  const replanification = await replanifier([groupeId]);
+  return { heures, replanification };
 }
 
 export async function replanifier(

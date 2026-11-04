@@ -180,3 +180,72 @@ export function totalReparti(parts: PartHoraire[]): number {
     parts.reduce((s, p) => s + p.heures_theoriques + p.heures_pratiques, 0),
   );
 }
+
+/**
+ * Les heures qui manquent à chaque objectif d'un module pour rejoindre sa
+ * répartition.
+ *
+ * L'écart se mesure par objectif, toutes natures confondues : A.1 de M204,
+ * fait en entier mais saisi tout en théorie, n'a rien à recevoir. Ce qui
+ * manque se partage ensuite entre théorie et pratique selon ce qui fait
+ * défaut à chacune.
+ *
+ * Le module ne dépasse jamais sa répartition. Un objectif qui a trop
+ * d'heures garde ses séances faites — le surplus fait ne se défait pas — mais
+ * son surplus encore à faire ne prend la place de personne : le recalcul le
+ * ramènera à sa part. M204 (B.1 à 20 h à faire pour 17 h 30) reçoit donc
+ * C.1 2 h 30 et C.2 10 h ; M203, terminé, n'a que 5 h de place pour 10 h de
+ * retard, rendues dans l'ordre du référentiel.
+ */
+export function heuresManquantes<T extends {
+  id: string;
+  heures_theoriques: number;
+  heures_pratiques: number;
+}>(
+  parts: T[],
+  seances: {
+    objectif: string | null;
+    nature: string | null;
+    heures: number;
+    fait: boolean;
+  }[],
+): (T & { manque_theorique: number; manque_pratique: number })[] {
+  const somme = (filtre: (s: (typeof seances)[number]) => boolean) =>
+    seances.filter(filtre).reduce((t, s) => t + s.heures, 0);
+
+  const budget = parts.reduce(
+    (t, p) => t + p.heures_theoriques + p.heures_pratiques,
+    0,
+  );
+  const ids = new Set(parts.map((p) => p.id));
+  // Ce que le module garde : par objectif, ses heures faites au moins, et ses
+  // séances prévues dans la limite de sa part.
+  const garde =
+    parts.reduce((t, p) => {
+      const part = p.heures_theoriques + p.heures_pratiques;
+      const fait = somme((s) => s.objectif === p.id && s.fait);
+      const prevu = somme((s) => s.objectif === p.id);
+      return t + Math.max(fait, Math.min(part, prevu));
+    }, 0) + somme((s) => !s.objectif || !ids.has(s.objectif));
+  let place = arrondi(budget - garde);
+
+  const rendus: (T & { manque_theorique: number; manque_pratique: number })[] = [];
+  for (const p of parts) {
+    if (place <= 0) break;
+    const prevu = somme((s) => s.objectif === p.id);
+    const manque = arrondi(p.heures_theoriques + p.heures_pratiques - prevu);
+    const pris = Math.min(manque, place);
+    if (pris <= 0) continue;
+    const theorie = somme(
+      (s) => s.objectif === p.id && s.nature !== "pratique",
+    );
+    const t = Math.min(pris, Math.max(0, arrondi(p.heures_theoriques - theorie)));
+    rendus.push({
+      ...p,
+      manque_theorique: t,
+      manque_pratique: arrondi(pris - t),
+    });
+    place = arrondi(place - pris);
+  }
+  return rendus;
+}
