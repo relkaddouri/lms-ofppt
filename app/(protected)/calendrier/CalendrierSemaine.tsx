@@ -15,6 +15,7 @@ import type {
 } from "@/app/actions/calendrier";
 import EfmRegionalForm from "./EfmRegionalForm";
 import IndisponibilitesPanel from "./IndisponibilitesPanel";
+import CarteHeuresCumulees from "./CarteHeuresCumulees";
 import EcheancesReglementaires from "@/components/EcheancesReglementaires";
 import type { Echeance } from "@/lib/echeances";
 import type { BilanHeures } from "@/lib/heures-formateur";
@@ -170,17 +171,6 @@ export default function CalendrierSemaine({
     };
     return (min(s.heure_fin) - min(s.heure_debut)) / 60;
   };
-
-  // Une semaine appartient au mois de son lundi, même règle que le bilan.
-  const moisCourant = lundi.slice(0, 7);
-  const heuresDuMois = bilan.semaines
-    .filter((s) => s.lundi.slice(0, 7) === moisCourant)
-    .reduce((t, s) => t + s.heures, 0);
-
-  const plafondAnnuel = bilan.plafonds[0] ?? null;
-  // `taux` est une fraction (220 / 920 = 0,24), pas un pourcentage : lu tel
-  // quel, il donnait une barre de 0,24 % et « 0 % du plafond ».
-  const pctAnnuel = plafondAnnuel ? plafondAnnuel.taux * 100 : 0;
 
   const heuresParGroupe = [
     ...seances
@@ -679,62 +669,12 @@ export default function CalendrierSemaine({
         {/* Deux cartes de synthèse, comme dans la maquette : le volume dispensé
             et sa répartition par groupe sur la semaine affichée. */}
         <div className="mt-6 grid grid-cols-1 gap-5 lg:grid-cols-[1.2fr_1fr]">
-          <section className="flex flex-col gap-5 rounded-[14px] border border-border bg-surface p-6 shadow-repos">
-            <div className="flex flex-col gap-1">
-              <h2 className="font-display text-[17px] font-semibold text-ink">
-                Heures cumulées
-              </h2>
-              <span className="text-[13.5px] text-slate-light">
-                Volume de formation dispensé
-              </span>
-            </div>
-
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-              {[
-                ["Cette semaine", bilan.semaineCourante?.heures ?? 0],
-                ["Ce mois", heuresDuMois],
-                ["Depuis septembre", bilan.totalAnnuel],
-              ].map(([libelle, valeur]) => (
-                <div key={String(libelle)} className="flex flex-col gap-1">
-                  <span className="text-[13px] text-slate-light">{libelle}</span>
-                  <span className="font-mono text-[19px] font-medium text-ink">
-                    {formatHeures(Number(valeur))}
-                  </span>
-                </div>
-              ))}
-            </div>
-
-            {plafondAnnuel ? (
-              <div className="flex flex-col gap-2 border-t border-separator pt-[18px]">
-                <div className="flex items-baseline justify-between gap-3">
-                  <span className="text-[13.5px] text-slate-2">
-                    {plafondAnnuel.libelle}
-                  </span>
-                  <span className="font-mono text-sm font-medium text-ink">
-                    {formatHeures(plafondAnnuel.valeur)} /{" "}
-                    {formatHeures(plafondAnnuel.plafond)}
-                  </span>
-                </div>
-                <span className="h-2 overflow-hidden rounded-full bg-wash">
-                  <span
-                    className={`block h-full rounded-full ${
-                      pctAnnuel >= 100 ? "bg-coral" : "bg-teal"
-                    }`}
-                    style={{ width: `${Math.min(100, pctAnnuel)}%` }}
-                  />
-                </span>
-                <div className="flex items-baseline justify-between gap-3 text-[13px] text-slate-light">
-                  <span>{Math.round(pctAnnuel)} % du plafond</span>
-                  <span className="font-mono">
-                    {formatHeures(
-                      Math.max(0, plafondAnnuel.plafond - plafondAnnuel.valeur),
-                    )}{" "}
-                    restantes
-                  </span>
-                </div>
-              </div>
-            ) : null}
-          </section>
+          <CarteHeuresCumulees
+            bilan={bilan}
+            lundi={lundi}
+            estSemaineCourante={lundi <= aujourdhui && aujourdhui <= decale(lundi, 6)}
+            heuresPlanifiees={heuresSemaine}
+          />
 
           <section className="flex flex-col gap-4 rounded-[14px] border border-border bg-surface p-6 shadow-repos">
             <h2 className="font-display text-[17px] font-semibold text-ink">
