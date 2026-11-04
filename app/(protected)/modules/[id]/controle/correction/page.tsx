@@ -24,7 +24,10 @@ export default async function CorrectionPage({
   const copies = controleId ? await getPassations(controleId) : [];
 
   return (
+    // La clé repart de zéro quand le contrôle change : l'écran tient lui-même
+    // ses copies, et celles d'un autre contrôle n'ont rien à y faire.
     <CorrectionManager
+      key={controleId ?? "aucun"}
       moduleId={id}
       moduleNom={module.nom}
       moduleCode={module.code}

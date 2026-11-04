@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
 import {
   corrigerPassation,
   publierResultat,
@@ -50,7 +49,7 @@ export default function CorrectionManager({
   groupeId,
   controles,
   controleId,
-  copies,
+  copies: copiesServeur,
   copieInitiale,
 }: {
   moduleId: string;
@@ -62,9 +61,15 @@ export default function CorrectionManager({
   copies: Passation[];
   copieInitiale: string | null;
 }) {
-  const router = useRouter();
   const toast = useToast();
   const [enCours, startTransition] = useTransition();
+
+  // La dernière version enregistrée de chaque copie, tenue ici. L'écran ne
+  // relit plus la page après chaque question : chaque relecture refaisait le
+  // gabarit et renvoyait toutes les copies entières, pour n'en afficher
+  // qu'une (audit CPU, §10). C'est donc cette liste qui fait foi à l'écran,
+  // et elle n'avance que sur un enregistrement confirmé par la base.
+  const [copies, setCopies] = useState<Passation[]>(copiesServeur);
 
   const [copieId, setCopieId] = useState<string | null>(
     copieInitiale ?? copies[0]?.id ?? null,
@@ -205,15 +210,31 @@ export default function CorrectionManager({
 
   function enregistrer(puisSuivante: boolean) {
     if (!copie) return;
+    // Figés au clic : la copie ouverte peut changer pendant l'enregistrement,
+    // et c'est bien celle-ci, dans cet état-ci, qui part en base.
+    const id = copie.id;
+    const envoyees = reponses;
     startTransition(async () => {
       try {
-        await corrigerPassation(copie.id, reponses);
-        toast(`Copie de ${copie.nom_complet} enregistrée — ${note} / ${totalAttendu}`);
+        // `copie.responses` est la version que l'écran croit être en base : le
+        // serveur refuse si elle ne l'est plus, plutôt que de l'écraser.
+        const resultat = await corrigerPassation(id, envoyees, copie.responses);
+        if (!resultat.ok) {
+          toast(resultat.message, "error");
+          return;
+        }
+        setCopies((prev) =>
+          prev.map((c) =>
+            c.id === id ? { ...c, responses: envoyees, note: resultat.note } : c,
+          ),
+        );
+        toast(
+          `Copie de ${copie.nom_complet} enregistrée — ${resultat.note} / ${totalAttendu}`,
+        );
         if (puisSuivante && index < reponses.length - 1) {
           setIndex(index + 1);
           setSuggestion(null);
         }
-        router.refresh();
       } catch (e) {
         toast(e instanceof Error ? e.message : "Enregistrement impossible", "error");
       }

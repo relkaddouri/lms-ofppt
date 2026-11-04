@@ -7,6 +7,7 @@ import { formatDate, formatDateJour } from "@/lib/format";
 import { dureeEnTexte, finEpreuve, formatHeure } from "@/lib/creneaux";
 import type { Identification, ResultatControle } from "@/lib/resultat";
 import { revalidatePath } from "next/cache";
+import { memeVersion } from "@/lib/version-copie";
 import type { Json } from "@/lib/supabase/database.types";
 import type {
   LectureAnalyse,
@@ -873,12 +874,38 @@ export async function getPassations(controleId: string): Promise<Passation[]> {
  * La note n'est pas passée à part par confort : elle est recalculée ici depuis
  * les points, pour qu'aucun appel ne puisse afficher une note qui ne
  * corresponde pas au détail.
+ *
+ * `base` est la version que l'écran croit être en base. L'écran ne relit plus
+ * la page après chaque question (audit CPU, §10) : si la copie a changé
+ * depuis — un autre onglet, une page restaurée par « précédent » —, on refuse
+ * plutôt que d'écraser une version plus récente par une plus ancienne.
  */
 export async function corrigerPassation(
   passationId: string,
   responses: PassationDetail[],
-) {
+  base: PassationDetail[],
+): Promise<
+  { ok: true; note: number } | { ok: false; message: string }
+> {
   const supabase = await createClient();
+
+  const { data: actuelle, error: errLecture } = await supabase
+    .from("passations_controle")
+    .select("responses")
+    .eq("id", passationId)
+    .maybeSingle();
+
+  if (errLecture) throw new Error(errLecture.message);
+  if (!actuelle) throw new Error("Copie introuvable.");
+  // Un retour plutôt qu'une exception : en production, Next masque le message
+  // d'une erreur levée dans une Server Action, et celui-ci doit être lu.
+  if (!memeVersion(actuelle.responses, base)) {
+    return {
+      ok: false,
+      message:
+        "Cette copie a été modifiée ailleurs depuis que vous l'avez ouverte. Rechargez la page pour reprendre la dernière version : rien n'a été enregistré.",
+    };
+  }
 
   const note = responses.reduce(
     (somme, r) => somme + (Number(r.points) || 0),
@@ -894,8 +921,11 @@ export async function corrigerPassation(
   });
 
   if (error) throw new Error(error.message);
-  revalidatePath("/modules");
-  return note;
+  // Pas de `revalidatePath` : dans une Server Action, il fait refaire tout le
+  // rendu de la page courante dans la réponse, quel que soit le chemin passé
+  // — mesuré en local le 19/10/2026. L'écran a déjà tout ce qu'il affiche, et
+  // la liste des copies (`CopiesManager`) relit les siennes à l'ouverture.
+  return { ok: true, note: Math.max(0, note) };
 }
 
 export type AuditEntry = {

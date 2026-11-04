@@ -946,3 +946,530 @@ d'entre eux touchent ce qui tourne le plus souvent. Avant d'attaquer le point
 4, qui demande de réécrire la cloche, il vaut mieux laisser passer quelques
 jours de cours et regarder la courbe : si elle descend assez, le point 4 peut
 attendre — et une cloche réécrite est une cloche qui peut se casser.
+
+## 10. Le pic du 15 octobre : la correction IA
+
+Le jeudi 15 octobre 2026 : environ **12 minutes** de CPU actif, contre 4 à 5
+pour un jour de cours normal. Ce jour-là, vous avez corrigé des contrôles avec
+le correcteur IA.
+
+**Lecture seule : aucun fichier de code ni aucune donnée n'a été modifié.**
+
+### 10.0 Sur quoi repose cette section
+
+**La base n'a pas été lue depuis cette machine** : ni fichier `.env`, ni
+`psql`, ni CLI Supabase, ni connecteur. Trois sources à la place :
+
+- **le code**, lu en entier sur le chemin de la correction ;
+- **le graphique Vercel** « Fluid Active CPU », découpé par type (function /
+  middleware), jour par jour. Le plan Hobby ne donne pas le détail par
+  fonction : on ne voit pas *quelle* page a coûté, seulement *combien* ;
+- **le dossier d'épreuve** édité par la plateforme le 19/10 (EFM Local M202,
+  groupe DDOUX201), qui porte chaque copie, chaque question, chaque note,
+  chaque commentaire et la date de publication.
+
+Les requêtes de la §10.6 restent utiles pour un chiffre précis : le nombre
+exact de clics « Valider et continuer ». Elles ne sont plus nécessaires pour
+confirmer la cause.
+
+### 10.1 Confirmer la cause
+
+**Ce qui s'est passé, d'après le dossier d'épreuve :**
+
+| | |
+| --- | --- |
+| L'épreuve | EFM Local M202, mercredi **14/10**, de 13 h 30 à 17 h 30 |
+| Les copies | **15**, une par stagiaire du groupe |
+| Les questions par copie | **24** : 10 QCM et 14 questions à rédiger (cas pratiques, persona, journey map, roadmap…) |
+| Au total | **360** questions, dont **210** à juger |
+| Les commentaires | une justification rédigée sur **chacune** des 360 questions |
+| La publication | les 15 résultats, **tous publiés le 15/10** |
+
+Un seul contrôle, quinze stagiaires, et la correction entière — relecture,
+suggestions IA, validation et publication — faite le jeudi 15.
+
+**Ce que dit le graphique Vercel** (lecture des barres, à quelques secondes
+près ; le 15 est donné exactement par l'infobulle) :
+
+| Jour | Function | Middleware | Total | Ce qui s'est passé |
+| --- | --- | --- | --- | --- |
+| Mardi 13 | ≈ 3 min 40 | ≈ 55 s | ≈ 4 min 35 | jour de cours |
+| Mercredi 14 | ≈ 4 min 45 | ≈ 50 s | ≈ 5 min 35 | **l'épreuve** : 4 h de composition, 15 remises notées par l'IA |
+| **Jeudi 15** | **11 min 11** | **1 min 43** | **12 min 54** | **la correction** |
+| Vendredi 16 | ≈ 3 min 35 | ≈ 40 s | ≈ 4 min 15 | jour de cours |
+
+Trois choses à en tirer.
+
+**1. La cause est confirmée.** Le 13 et le 16 encadrent le 15 au même niveau,
+autour de 4 minutes. Le 15 en fait trois fois plus, et c'est le jour où les
+quinze copies ont été corrigées et publiées.
+
+**2. L'épreuve elle-même n'a presque rien coûté.** Le 14, quatre heures de
+composition pour quinze stagiaires, **plus quinze corrections automatiques
+complètes par l'IA** à la remise : à peine **une minute** de plus qu'un jour
+de cours. Le brouillon et la surveillance écrivent directement dans Supabase
+sans passer par Vercel, et chaque remise ne fait **qu'un appel à l'IA** pour
+toute la copie.
+
+**3. Le middleware a doublé le 15** — 1 min 43 au lieu d'environ 50 s. Le
+proxy ne tourne que sur les vraies requêtes de pages et les Server Actions,
+jamais sur `/api/` (§8). Ce doublement dit donc que **le nombre de pages
+rendues** a explosé ce jour-là, pas le nombre d'appels à l'IA. C'est
+exactement la signature du rechargement complet à chaque « Valider et
+continuer » (§10.2).
+
+**Autre chose d'inhabituel le 15 ?** Rien dans ce qu'on peut voir : le 13 et
+le 16 sont des jours de cours ordinaires, et le seul évènement de la semaine
+— l'épreuve — tombe le 14 et coûte peu. La requête A de la §10.6 permettrait
+de l'exclure tout à fait (générations de supports, quiz, annonces).
+
+### 10.2 Le chemin d'une correction, du clic à l'enregistrement
+
+Il y a **deux correcteurs IA différents** dans le projet, et il faut les
+distinguer.
+
+**a) La correction automatique, à la remise.** Quand un stagiaire rend sa
+copie (`app/api/controle/passer/route.ts`), le serveur la note tout de suite
+(`lib/notation.ts`) :
+
+- les QCM sont notés **sans IA**, par comparaison exacte ;
+- toutes les autres questions partent **dans un seul appel** à l'IA, pour
+  toute la copie ;
+- lu en base avant l'appel : la fiche du stagiaire, le contrôle, la copie
+  déjà rendue (pour refuser un doublon), **toutes les questions avec leur
+  corrigé et leurs données**, le formateur du groupe, puis votre clé et vos
+  réglages (`lire_cle_llm`, déchiffrée dans Vault) ;
+- après l'appel : analyse du JSON, bornage des points, puis enregistrement
+  par `enregistrer_passation`, qui recalcule la note en base.
+
+Ça, c'est **un appel par copie**, et c'est le stagiaire qui le déclenche — pas
+vous.
+
+**b) Le correcteur de l'écran de correction — ce que vous avez utilisé le
+15.** Écran `/modules/[id]/controle/correction`, bouton « Proposer une
+correction avec l'IA » (`CorrectionManager.tsx` → `app/api/corrige/route.ts`) :
+
+| Étape | Ce qui se passe | Où |
+| --- | --- | --- |
+| Clic « Proposer » | **un appel par question**, pas par copie | navigateur → `/api/corrige` |
+| Avant l'appel | 1 lecture de la question (énoncé, barème, corrigé), la session, puis votre clé déchiffrée — **relue à chaque question** | serveur |
+| Préparation | le texte du prompt ; un schéma dessiné est converti en description (`pourCorrection`) | serveur, quelques millisecondes |
+| L'appel | Claude en flux, avec réflexion adaptative ; le serveur **attend** | serveur, attente |
+| Après | analyse du JSON, bornage des points. **Rien n'est enregistré** : la suggestion revient à l'écran | serveur, négligeable |
+| « Appliquer la suggestion » | ne touche que l'écran | navigateur, **gratuit** |
+| « Valider et continuer » | enregistre **la copie entière**, recalcule la note, puis **recharge toute la page** | serveur |
+| Passer à la copie suivante | change seulement ce qui est affiché | navigateur, **gratuit** |
+
+Le support de cours n'est **pas** lu : ni ici, ni à la remise. Le prompt
+contient l'énoncé, le barème, le corrigé et la réponse — rien d'autre.
+
+**Le point important est la ligne « Valider et continuer ».** Elle se clique
+**à chaque question**, et à chaque fois :
+
+1. la Server Action `corrigerPassation` enregistre toute la copie, puis
+   appelle `revalidatePath("/modules")` ;
+2. le navigateur appelle `router.refresh()`, qui fait **refaire tout le rendu
+   de la page côté serveur** :
+   - le gabarit formateur — ses 13 à 14 lectures, dont 9 pour la cloche
+     (§9.1, point 2) ;
+   - `getModules()` : **tous** les modules, plus l'année et ses groupes, pour
+     n'en garder qu'un ;
+   - `getControles()` : tous les contrôles du groupe pour ce module, avec les
+     barèmes de leurs questions ;
+   - `getPassations()` : **toutes les copies du contrôle, avec leurs réponses
+     entières** — et chaque réponse transporte aussi l'énoncé et le corrigé de
+     sa question. Pour vingt copies, l'énoncé et le corrigé de chaque question
+     sont relus et renvoyés **vingt fois**.
+
+Le code dit lui-même que ce n'était pas l'intention : « la correction se
+travaille en local, puis s'enregistre d'un bloc ». En pratique, le bouton
+enregistre **et recharge tout** à chaque question.
+
+Il est probable que `revalidatePath` dans l'action déclenche déjà un nouveau
+rendu, et que `router.refresh()` en refasse un second. À vérifier dans
+Vercel : si chaque clic « Valider et continuer » montre deux exécutions de la
+page, c'est le cas.
+
+**Corriger plusieurs copies d'un coup : il n'y a pas de correction en lot.**
+L'écran passe d'une copie à l'autre sans appeler le serveur ; chaque question
+demande son propre clic. Ce qui est **refait pour chaque question** alors
+qu'une seule fois suffirait :
+
+| Refait à chaque question | Utile une fois par |
+| --- | --- |
+| Votre clé déchiffrée et vos réglages (`lire_cle_llm`) | séance de correction |
+| La vérification de session | requête — normal |
+| Toutes les copies du contrôle, réponses entières | ouverture de l'écran |
+| Tous les modules, l'année, les contrôles | ouverture de l'écran |
+| Le gabarit et ses 9 lectures pour la cloche | navigation |
+
+Côté remise automatique, même remarque à plus petite échelle : chaque copie
+relit les questions et la clé. Mais chaque copie arrive à un moment différent,
+dans une exécution différente : il n'y a rien à mettre en commun.
+
+### 10.3 Ce que coûte une correction
+
+**D'abord, ce qui ne coûte presque rien : l'attente de l'IA.** Vercel facture
+le CPU **actif**. Pendant les 5 à 30 secondes où la fonction attend la réponse
+de Claude, elle ne calcule pas, et le compteur ne tourne pas. Ce qui compte,
+c'est le travail fait avant et après — et le rechargement de page.
+
+**Estimation par opération**, à partir du code et des ordres de grandeur
+habituels de Next.js sur Vercel (non mesurés ici) :
+
+| Opération | CPU actif estimé |
+| --- | --- |
+| Une suggestion IA (`/api/corrige`) : flux analysé, JSON, trois lectures | 0,05 à 0,15 s |
+| « Valider et continuer » : l'action d'enregistrement | 0,03 à 0,05 s |
+| … puis le rechargement complet de la page (un ou deux rendus) | 0,15 à 0,8 s |
+| Démarrage à froid d'une fonction (quand elle dormait) | 0,2 à 0,5 s, de temps en temps |
+| **Une question corrigée avec l'IA** | **≈ 0,3 à 1 s** |
+
+**Le rechargement pèse trois à huit fois plus que l'appel à l'IA.**
+
+| Échelle | Calcul | CPU actif |
+| --- | --- | --- |
+| Une copie, 5 questions ouvertes | 5 × 0,3 à 1 s | **≈ 1,5 à 5 s** |
+| Un contrôle, groupe de 20 | 20 × 1,5 à 5 s | **≈ 0,5 à 1,7 min** |
+| Le même contrôle, rendu le jour même | + 20 remises notées automatiquement, ≈ 0,1 à 0,3 s chacune | + quelques secondes |
+
+Et le coût du rechargement **grandit avec le nombre de copies** : la page
+relit toutes les copies à chaque clic. Corriger la vingtième copie coûte plus
+cher que la première.
+
+**Recaler sur le 15 octobre.** Le surplus « function » du jour, par rapport
+à la moyenne du 13 et du 16, est d'environ **7 min 30, soit 450 s**.
+
+| Si vous avez validé… | Clics | CPU par question validée |
+| --- | --- | --- |
+| les 24 questions de chaque copie | 360 | **≈ 1,25 s** |
+| seulement les 14 questions à rédiger | 210 | **≈ 2,1 s** |
+
+**C'est plus que mon estimation de départ (0,3 à 1 s).** L'écart s'explique
+par le poids de cet EFM : 24 questions, dont des cas pratiques avec données
+fournies et réponses longues. Chaque rechargement renvoyait **les 15 copies
+entières**, et dans chacune l'énoncé, les données et le corrigé des 24
+questions — soit 360 énoncés et 360 corrigés relus et sérialisés **à chaque
+clic**, pour n'en afficher qu'un.
+
+**Ce qu'a coûté ce contrôle :**
+
+| | CPU actif |
+| --- | --- |
+| Une copie corrigée (24 questions) | **≈ 30 s** |
+| Le contrôle entier, 15 copies | **≈ 7 min 30** |
+| Le même, notation automatique à la remise | ≈ 1 min, et c'était tout l'examen du 14 compris |
+
+**Pour un groupe de 20.** Il y a plus de clics *et* chaque clic relit plus de
+copies : le coût croît plus vite que le nombre de stagiaires. Pour un EFM du
+même format : **≈ 10 à 13 minutes**. Pour un contrôle continu plus court,
+une dizaine de questions : **≈ 2 à 4 minutes**.
+
+**En période d'examens.** Hypothèse : quatre groupes d'une vingtaine de
+stagiaires, un EFM chacun dans la même semaine, corrigés comme le 15 :
+
+| | Calcul | CPU actif |
+| --- | --- | --- |
+| La semaine de correction | 4 × 10 à 13 min | **≈ 40 à 50 min** |
+| Rapporté au quota de 240 min sur 30 jours | | **≈ 17 à 22 %** |
+| Avec deux EFM par groupe | | **≈ 35 à 45 %** |
+
+Avec un quota déjà à 84 % (§9.0), **une seule semaine d'examens comme
+celle-ci suffit à le dépasser.**
+
+### 10.4 Ce qu'on peut alléger sans toucher à la correction
+
+Rien ci-dessous ne change le prompt, le modèle, la réflexion, ni la note
+produite. Seul le chemin autour change.
+
+| # | Quoi | Gain | Risque | Temps |
+| --- | --- | --- | --- | --- |
+| 1 | **Ne plus recharger la page à chaque question.** Garder l'enregistrement, retirer le `router.refresh()`, et mettre à jour la copie dans la liste de l'écran | **fort** — la plus grosse part du coût | faible à moyen | 1 h |
+| 2 | Retirer le `revalidatePath("/modules")` de `corrigerPassation`, ou le viser juste | moyen — **seulement si** le double rendu est confirmé | faible | 15 min |
+| 3 | La page de correction ne lit que **la liste** des copies (nom, note, photo) ; les réponses de la copie ouverte se lisent à l'ouverture | moyen, et grandit avec la taille des groupes | moyen | 2 h |
+| 4 | Alléger la cloche du gabarit formateur (point 4 du §9.9, déjà prévu) | moyen ici, fort partout | moyen | 2 à 3 h |
+| 5 | Lire **un** module au lieu de tous dans `correction/page.tsx` | faible | nul | 15 min |
+| 6 | Ne pas relire la clé déchiffrée à chaque question | **très faible** : c'est de l'attente réseau, pas du calcul | faible | 30 min |
+
+**Le risque du numéro 1, précisément.** Aujourd'hui, la liste des copies de
+l'écran vient du serveur et ne se rafraîchit qu'au rechargement. Si on retire
+le rechargement sans rien d'autre, revenir sur une copie déjà corrigée
+**afficherait l'ancienne version** — et un nouvel enregistrement écraserait la
+bonne. Il faut donc que l'écran garde lui-même la dernière version de chaque
+copie enregistrée. C'est ce qui fait passer le risque de « nul » à « faible à
+moyen », et c'est le point à tester avant de fusionner.
+
+**Ce qui n'est pas à alléger :** l'appel à l'IA lui-même. Le flux est
+nécessaire (§9.8), la réflexion adaptative sert la qualité, et l'attente n'est
+pas facturée en CPU.
+
+### 10.5 Faut-il changer quelque chose ?
+
+**L'appel à l'IA : non. Son coût est normal, et petit.** La preuve est le 14 :
+quinze copies entières notées par l'IA, pour une minute de plus qu'un jour de
+cours. L'attente de la réponse n'est pas facturée en CPU.
+
+**Le rechargement à chaque question : oui. Ce coût n'est pas acceptable.**
+Il ne sert à rien — l'écran a déjà tout ce qu'il affiche — et il fait payer
+une correction **sept fois plus cher que l'examen lui-même**. Un seul
+contrôle a coûté le 15 l'équivalent de deux jours de cours. En juin, avec
+plusieurs groupes, il fera sauter le quota.
+
+**Mon avis :** faire le **numéro 1** de la §10.4 avant la prochaine
+correction d'EFM. Une heure de travail. L'action d'enregistrement reste (une
+fraction de seconde par clic), le rechargement disparaît : la correction
+d'un contrôle comme celui du 15 devrait passer de **≈ 7 min 30 à moins d'une
+minute**. Puis le **numéro 3**, qui empêche le coût de grandir avec la taille
+du groupe. Le reste peut attendre.
+
+Ne rien changer n'est pas une option raisonnable ici : le chiffre du 15 n'est
+pas un accident, c'est ce que coûtera **chaque** correction d'EFM.
+
+### 10.6 Les requêtes à lancer
+
+Toutes en lecture seule. Heure du Maroc (`Africa/Casablanca`), pour
+correspondre au tableau de bord Vercel. À coller dans Supabase → SQL Editor.
+
+**A. Les trois jours côte à côte**
+
+```sql
+with jours(j) as (
+  values (date '2026-10-13'), (date '2026-10-15'), (date '2026-10-16')
+),
+corr as (
+  select (a.date at time zone 'Africa/Casablanca')::date as j,
+         a.ligne_id, p.controle_id, p.stagiaire_id
+  from audit_log a
+  join passations_controle p on p.id = a.ligne_id
+  where a.table_name = 'passations_controle'
+    and a.date >= '2026-10-12' and a.date < '2026-10-18'
+)
+select
+  jours.j as jour,
+  (select count(*)                     from corr where corr.j = jours.j) as enregistrements_correction,
+  (select count(distinct ligne_id)     from corr where corr.j = jours.j) as copies_corrigees,
+  (select count(distinct controle_id)  from corr where corr.j = jours.j) as controles_corriges,
+  (select count(distinct stagiaire_id) from corr where corr.j = jours.j) as stagiaires_corriges,
+  (select count(*) from passations_controle p
+     where (p.submitted_at at time zone 'Africa/Casablanca')::date = jours.j) as copies_rendues,
+  (select count(*) from surveillance_evenements s
+     where (s.cree_le at time zone 'Africa/Casablanca')::date = jours.j) as evenements_surveillance,
+  (select count(*) from analyses_controle x
+     where (x.created_at at time zone 'Africa/Casablanca')::date = jours.j) as analyses_ia,
+  (select count(*) from supports_seance x
+     where (x.created_at at time zone 'Africa/Casablanca')::date = jours.j) as supports_generes,
+  (select count(*) from fiches_preparation x
+     where (x.created_at at time zone 'Africa/Casablanca')::date = jours.j) as fiches,
+  (select count(*) from controles x
+     where (x.created_at at time zone 'Africa/Casablanca')::date = jours.j) as controles_crees,
+  (select count(*) from quiz_chapitre x
+     where (x.genere_le at time zone 'Africa/Casablanca')::date = jours.j) as quiz_generes,
+  (select count(*) from annonces x
+     where (x.created_at at time zone 'Africa/Casablanca')::date = jours.j) as annonces,
+  (select count(*) from commentaires_annonce x
+     where (x.created_at at time zone 'Africa/Casablanca')::date = jours.j) as commentaires
+from jours
+order by jours.j;
+```
+
+**B. Le détail du 15 : copie par copie**
+
+```sql
+select c.titre as controle,
+       p.nom_complet,
+       count(a.id) as enregistrements,
+       to_char(min(a.date) at time zone 'Africa/Casablanca', 'HH24:MI') as debut,
+       to_char(max(a.date) at time zone 'Africa/Casablanca', 'HH24:MI') as fin,
+       jsonb_array_length(p.responses) as questions,
+       pg_size_pretty(length(p.responses::text)::bigint) as taille_copie
+from audit_log a
+join passations_controle p on p.id = a.ligne_id
+join controles c on c.id = p.controle_id
+where a.table_name = 'passations_controle'
+  and (a.date at time zone 'Africa/Casablanca')::date = '2026-10-15'
+group by c.titre, p.id, p.nom_complet, p.responses
+order by min(a.date);
+```
+
+**C. Ce que chaque clic faisait relire, et combien de commentaires ont changé**
+
+```sql
+-- Le poids de « toutes les copies » relues à chaque rechargement.
+select c.titre,
+       count(*) as copies,
+       pg_size_pretty(sum(length(p.responses::text))::bigint) as poids_relu_par_clic
+from passations_controle p
+join controles c on c.id = p.controle_id
+where p.controle_id in (
+  select p2.controle_id
+  from audit_log a
+  join passations_controle p2 on p2.id = a.ligne_id
+  where a.table_name = 'passations_controle'
+    and (a.date at time zone 'Africa/Casablanca')::date = '2026-10-15'
+)
+group by c.titre;
+
+-- Questions dont le commentaire ou les points ont changé le 15 :
+-- à peu près le nombre de suggestions IA appliquées (plus les retouches à la main).
+select count(*) filter (where n.e->>'commentaire' is distinct from o.e->>'commentaire') as commentaires_changes,
+       count(*) filter (where n.e->>'points'      is distinct from o.e->>'points')      as points_changes
+from audit_log a
+cross join lateral jsonb_array_elements(a.nouvelle_valeur->'responses') with ordinality as n(e, i)
+join lateral jsonb_array_elements(a.ancienne_valeur->'responses') with ordinality as o(e, i)
+  on o.i = n.i
+where a.table_name = 'passations_controle'
+  and (a.date at time zone 'Africa/Casablanca')::date = '2026-10-15';
+```
+
+**Et dans Vercel**, sur le plan Hobby, le détail par fonction n'existe pas.
+Ce qu'on peut faire : Usage → Fluid Active CPU → onglet **Type**, et comparer
+les jours. Après la correction 1, une journée de correction d'EFM doit
+ressembler à un jour de cours ordinaire, avec un middleware qui ne double plus.
+
+### 10.7 Corrections appliquées — branche `perf-correction`
+
+Les corrections 1 et 2 de la §10.4. Deux commits, pas poussés. **Rien n'a
+changé dans l'appel à l'IA** : ni le prompt, ni le modèle, ni la réflexion,
+ni le calcul de la note.
+
+#### La correction 2 : le double rendu, mesuré
+
+Vous l'aviez demandée seulement si le double rendu se confirmait en local.
+Il se confirme, et il change le plan : **la correction 1 seule n'aurait
+retiré que la moitié du coût.**
+
+Mesuré sur une build de production lancée en local, avec une page d'essai
+temporaire (retirée depuis) qui écrit une ligne à chaque rendu côté serveur :
+
+| Ce que fait le clic | Rendus de la page |
+| --- | --- |
+| `revalidatePath` + `router.refresh()` — **le code d'avant** | **2** |
+| `revalidatePath` seul, même sur un chemin sans rapport avec la page | 1 |
+| `router.refresh()` seul | 1 |
+| ni l'un ni l'autre — **le code d'après** | **0** |
+
+La documentation de Next 16 le dit aussi : une Server Action qui appelle
+`revalidatePath` refait le rendu de la page courante **dans sa propre
+réponse**. `router.refresh()` en refaisait ensuite un second. Chaque « Valider
+et continuer » coûtait donc **deux** rendus complets — gabarit, cloche, toutes
+les copies.
+
+#### Ce qui a changé
+
+**Commit 1 — l'écran ne relit plus la page.** `router.refresh()` est retiré.
+L'écran tient lui-même la dernière version enregistrée de chaque copie, et ne
+l'avance **que lorsque la base a confirmé l'enregistrement**. Passer d'une
+copie à l'autre puis revenir montre donc ce qui a été enregistré, pas ce que
+la page avait chargé à l'ouverture.
+
+**Commit 2 — l'enregistrement ne refait plus le rendu.** `revalidatePath`
+est retiré de `corrigerPassation`. Rien n'en dépendait : la page `/modules`
+n'affiche aucune note, et la liste des copies relit les siennes à
+l'ouverture.
+
+#### Une version périmée ne peut plus en écraser une plus récente
+
+C'était le point le plus important de la demande, et le risque que la §10.4
+signalait.
+
+Sans rechargement, l'écran peut tenir une version en retard dans deux cas : un
+**second onglet** ouvert sur la même copie, ou une page **restaurée par le
+bouton « précédent »** du navigateur — Next réutilise alors la page gardée en
+mémoire, avec les copies telles qu'elles étaient.
+
+À chaque enregistrement, l'écran envoie donc **la version qu'il croit être en
+base**. Le serveur relit la copie et compare. Si elles diffèrent, il
+**refuse**, n'enregistre rien, et l'écran l'affiche :
+
+> Cette copie a été modifiée ailleurs depuis que vous l'avez ouverte.
+> Rechargez la page pour reprendre la dernière version : rien n'a été
+> enregistré.
+
+La comparaison ignore l'ordre des champs, que la base réordonne à
+l'écriture. Elle a été vérifiée hors navigateur sur sept cas : même version
+avec champs dans un autre ordre (acceptée) ; points changés, commentaire
+changé, question en plus, `null` contre `0`, copie vide (refusés).
+
+**Ce que coûte la garde :** une lecture d'une seule copie par
+enregistrement. C'est de l'attente réseau, pas du calcul, et c'est beaucoup
+moins que les deux rendus complets qu'elle remplace.
+
+**Sa limite, honnêtement :** la relecture et l'écriture sont deux requêtes.
+Deux onglets qui enregistreraient la même copie **dans la même fraction de
+seconde** pourraient passer tous les deux. Pour un formateur seul, ce cas ne
+se produit pas. Le fermer tout à fait demanderait que la fonction
+`corriger_passation` fasse elle-même la comparaison, donc une migration à
+appliquer en production — je ne l'ai pas faite sans votre accord.
+
+**Ce qui ne change pas :** une question modifiée puis abandonnée sans
+« Valider et continuer » est perdue quand on change de copie. C'était déjà le
+cas avant.
+
+#### Ce que ça devrait donner
+
+| | Avant | Après |
+| --- | --- | --- |
+| Rendus de page par « Valider et continuer » | 2 | **0** |
+| Ce que fait le serveur à chaque clic | enregistrer + 2 rendus complets | relire une copie + enregistrer |
+| Un EFM comme celui du 15 (15 copies, 24 questions) | ≈ 7 min 30 | **moins d'une minute**, estimé |
+
+L'estimation se vérifiera à la prochaine correction d'EFM : Usage → Fluid
+Active CPU → onglet Type. Le jour de correction doit ressembler à un jour de
+cours, avec un middleware qui ne double plus.
+
+#### Ce qui a été vérifié, et ce qui ne l'a pas été
+
+Vérifié : `git pull` sur `main` (déjà à jour) ; le double rendu, mesuré
+(ci-dessus) ; la comparaison de versions, sept cas ; `tsc --noEmit`,
+`verifie-actions` et `verifie-stage` passent ; `npm run build` passe ; la
+build de production démarre, et l'écran de correction renvoie bien vers la
+connexion sans session.
+
+**Pas vérifié : l'écran de correction lui-même.** Cette machine n'a pas les
+clés Supabase (aucun fichier `.env`) : la build a tourné avec une adresse
+factice, donc sans base et sans connexion possible. Et `verifie:markdown` et
+`verifie:cahier` n'ont pas tourné : ils demandent Node 22, cette machine a
+Node 20. Ils ne touchent à rien de ce qui a changé ici.
+
+#### À vérifier vous-même avant de fusionner
+
+En local, avec votre `.env.local`, sur une build de production :
+
+```bash
+npm run build && npx next start -p 3002
+```
+
+Sur un contrôle de test, avec la copie de votre compte de test — pas sur un
+vrai EFM : chaque enregistrement écrit dans la base de production.
+
+1. **Les corrections survivent au changement de copie.** Corriger deux
+   questions de la copie A (« Valider et continuer » à chaque fois), passer à
+   la copie B, revenir à A : les deux corrections sont là, notes et
+   commentaires.
+2. **Rien ne se perd au second passage.** Sur la copie A, modifier encore une
+   des deux questions, valider : les trois états sont bons — la question
+   retouchée a sa nouvelle note, l'autre garde la sienne.
+3. **La base a tout.** Recharger la page (F5) : la copie A montre exactement
+   ce qu'on voyait avant le rechargement.
+4. **La note totale est juste.** La « note provisoire » en haut et le nombre
+   dans la liste déroulante des copies valent la somme des points des
+   questions, avant comme après F5.
+5. **La publication marche.** Toutes les questions corrigées : « Publier le
+   résultat » ; le stagiaire de test voit sa note dans son espace. Puis
+   « Retirer la publication ».
+6. **Une version périmée est refusée.** Ouvrir la même copie dans **deux
+   onglets**. Dans le premier, corriger une question et valider. Dans le
+   second, sans recharger, corriger une autre question et valider : le
+   message « Cette copie a été modifiée ailleurs… » doit apparaître, et après
+   F5 la correction du premier onglet doit être intacte.
+7. **Le bouton « précédent ».** Corriger une question, aller sur la liste des
+   copies par le fil d'Ariane, revenir avec « précédent » du navigateur, puis
+   valider une autre question : soit tout est à jour, soit le même message de
+   refus apparaît. **Jamais** la correction d'avant ne doit disparaître.
+8. **Plus de rechargement.** Outils de développement → Réseau, puis
+   « Valider et continuer » : une seule requête part (le POST de l'action),
+   sans requête `?_rsc=` derrière, et la réponse est petite — quelques
+   centaines d'octets, pas des centaines de kilo-octets.
+9. **La suggestion IA est intacte.** « Proposer une correction avec l'IA »,
+   puis « Appliquer la suggestion », puis valider : la note et le commentaire
+   proposés s'enregistrent comme avant.
