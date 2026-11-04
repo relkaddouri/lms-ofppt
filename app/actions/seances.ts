@@ -406,6 +406,72 @@ export async function viderSupport(
  * en réunit plusieurs, et c'est l'URL — `/groupes/[id]/seances/[seanceId]` —
  * qui dit lequel on regarde.
  */
+/** Une séance voisine, de quoi la nommer sur la flèche qui y mène. */
+export type SeanceVoisine = {
+  id: string;
+  date: string;
+  module: string | null;
+  objectif: string | null;
+};
+
+/**
+ * La séance d'avant et celle d'après dans le groupe, par date et heure.
+ *
+ * Le formateur passait par la progression pour aller d'une séance à la
+ * suivante (demande du 04/11/2026). Deux lectures d'une ligne chacune ; une
+ * séance sans date n'a pas de place dans cette suite.
+ */
+export async function getSeancesVoisines(
+  groupeId: string,
+  date: string | null,
+  heure: string | null,
+): Promise<{ precedente: SeanceVoisine | null; suivante: SeanceVoisine | null }> {
+  if (!date) return { precedente: null, suivante: null };
+  const supabase = await createClient();
+  const h = heure ?? "00:00:00";
+
+  const lire = (sens: "avant" | "apres") =>
+    supabase
+      .from("seances")
+      .select(
+        "id, date, modules(competences(code_operationnel)), suggestions_pedagogiques(code), seance_groupes!inner(groupe_id)",
+      )
+      .eq("seance_groupes.groupe_id", groupeId)
+      .or(
+        sens === "avant"
+          ? `date.lt.${date},and(date.eq.${date},heure_debut.lt.${h})`
+          : `date.gt.${date},and(date.eq.${date},heure_debut.gt.${h})`,
+      )
+      .order("date", { ascending: sens === "apres" })
+      .order("heure_debut", { ascending: sens === "apres" })
+      .limit(1);
+
+  const [avant, apres] = await Promise.all([lire("avant"), lire("apres")]);
+  if (avant.error) throw new Error(avant.error.message);
+  if (apres.error) throw new Error(apres.error.message);
+
+  const voisine = (rows: unknown[] | null): SeanceVoisine | null => {
+    const r = (rows ?? [])[0] as
+      | {
+          id: string;
+          date: string;
+          modules: { competences: { code_operationnel: string | null } | null } | null;
+          suggestions_pedagogiques: { code: string | null } | null;
+        }
+      | undefined;
+    return r
+      ? {
+          id: r.id,
+          date: r.date,
+          module: r.modules?.competences?.code_operationnel ?? null,
+          objectif: r.suggestions_pedagogiques?.code ?? null,
+        }
+      : null;
+  };
+
+  return { precedente: voisine(avant.data), suivante: voisine(apres.data) };
+}
+
 export async function getSeanceDetail(
   seanceId: string,
   groupeId: string,
