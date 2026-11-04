@@ -178,6 +178,9 @@ export default function CalendrierSemaine({
     .reduce((t, s) => t + s.heures, 0);
 
   const plafondAnnuel = bilan.plafonds[0] ?? null;
+  // `taux` est une fraction (220 / 920 = 0,24), pas un pourcentage : lu tel
+  // quel, il donnait une barre de 0,24 % et « 0 % du plafond ».
+  const pctAnnuel = plafondAnnuel ? plafondAnnuel.taux * 100 : 0;
 
   const heuresParGroupe = [
     ...seances
@@ -715,13 +718,13 @@ export default function CalendrierSemaine({
                 <span className="h-2 overflow-hidden rounded-full bg-wash">
                   <span
                     className={`block h-full rounded-full ${
-                      plafondAnnuel.taux >= 100 ? "bg-coral" : "bg-teal"
+                      pctAnnuel >= 100 ? "bg-coral" : "bg-teal"
                     }`}
-                    style={{ width: `${Math.min(100, plafondAnnuel.taux)}%` }}
+                    style={{ width: `${Math.min(100, pctAnnuel)}%` }}
                   />
                 </span>
                 <div className="flex items-baseline justify-between gap-3 text-[13px] text-slate-light">
-                  <span>{Math.round(plafondAnnuel.taux)} % du plafond</span>
+                  <span>{Math.round(pctAnnuel)} % du plafond</span>
                   <span className="font-mono">
                     {formatHeures(
                       Math.max(0, plafondAnnuel.plafond - plafondAnnuel.valeur),
