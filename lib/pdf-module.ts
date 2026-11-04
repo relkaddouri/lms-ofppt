@@ -4,15 +4,9 @@ import {
   nomEtablissement,
   type Marque,
 } from "@/lib/pdf-marque";
-import {
-  dessinerSupport,
-  numeroterPages,
-  BAS,
-  HAUT,
-  LARGEUR,
-  X,
-} from "@/lib/pdf-support";
+import { dessinerSupport, BAS, HAUT, LARGEUR, X } from "@/lib/pdf-support";
 import { COULEURS, installerPolices, police } from "@/lib/pdf-theme";
+import { formatDate, formatDateJour } from "@/lib/format";
 import type { Support } from "@/lib/support";
 
 /**
@@ -57,15 +51,18 @@ export async function construireCompilationPdf(
   const doc = new JsPDF({ unit: "mm", format: "a4" });
   await installerPolices(doc);
 
-  couverture(doc, c, marque);
+  // La page de garde se dessine en dernier, sur la page 1 laissée blanche :
+  // son sommaire donne la page de chaque séance, qu'on ne connaît qu'une fois
+  // le cours posé.
+  const debuts: number[] = [];
 
   // Chaque séance ouvre sa page : un document qu'on imprime pour le distribuer
   // se feuillette par séance, et un chapitre qui commence au milieu d'une page
   // se retrouve agrafé au précédent.
   for (const piece of c.pieces) {
     doc.addPage();
-    let y = HAUT;
-    y = chapitre(doc, piece, y);
+    debuts.push(doc.getNumberOfPages());
+    const y = ouverture(doc, piece, HAUT);
     dessinerSupport(
       doc,
       piece.support,
@@ -77,10 +74,13 @@ export async function construireCompilationPdf(
         objectif: piece.objectif,
       },
       y,
+      { entete: false },
     );
   }
 
-  numeroterPages(doc, `${titreCompilation(c)} — ${c.groupeNom}`);
+  doc.setPage(1);
+  couverture(doc, c, debuts, marque);
+  habiller(doc, c, debuts);
   return doc;
 }
 
@@ -90,20 +90,41 @@ export function titreCompilation(c: CompilationModule): string {
     : `Support du cours — ${c.moduleNom}`;
 }
 
+const numero = (rang: number) => String(rang).padStart(2, "0");
+
+/** Le texte tronqué à une largeur, avec une ellipse s'il le faut. */
+function tronquer(doc: jsPDF, texte: string, largeur: number): string {
+  if (doc.getTextWidth(texte) <= largeur) return texte;
+  let t = texte;
+  while (t.length > 1 && doc.getTextWidth(`${t}…`) > largeur)
+    t = t.slice(0, -1);
+  return `${t.trimEnd()}…`;
+}
+
 /**
  * La page de garde.
  *
  * Elle porte l'identité de l'établissement comme les autres documents
  * officiels, et surtout le sommaire : c'est ce qui distingue une compilation
- * d'une pile de supports agrafés.
+ * d'une pile de supports agrafés. Le sommaire donne la page de chaque séance
+ * et y renvoie d'un clic : sans numéro, un sommaire de 109 pages ne guide pas.
  */
-function couverture(doc: jsPDF, c: CompilationModule, marque?: Marque) {
+function couverture(
+  doc: jsPDF,
+  c: CompilationModule,
+  debuts: number[],
+  marque?: Marque,
+) {
   let y = dessinerEntete(doc, marque, X, HAUT, LARGEUR);
   y += 16;
 
   // Un bandeau plein encre : c'est ce qui distingue au premier regard une
   // compilation d'un support de séance isolé.
-  const hBandeau = 34;
+  police(doc, "titre", 17);
+  const lignesTitre = (
+    doc.splitTextToSize(c.moduleNom, LARGEUR - 16) as string[]
+  ).slice(0, 3);
+  const hBandeau = 24 + lignesTitre.length * 7.5;
   doc.setFillColor(...COULEURS.encre);
   doc.rect(X, y, LARGEUR, hBandeau, "F");
 
@@ -112,15 +133,11 @@ function couverture(doc: jsPDF, c: CompilationModule, marque?: Marque) {
   doc.text(
     c.genre === "pratique" ? "TRAVAUX PRATIQUES" : "SUPPORT DE COURS",
     X + 8,
-    y + 10,
+    y + 11,
+    { charSpace: 0.4 },
   );
-
-  police(doc, "titre", 16);
-  doc.setTextColor(...COULEURS.blanc);
-  const lignesTitre = doc.splitTextToSize(titreCompilation(c), LARGEUR - 16);
-  lignesTitre.slice(0, 2).forEach((l: string, i: number) => {
-    doc.text(l, X + 8, y + 20 + i * 7);
-  });
+  police(doc, "titre", 17);
+  lignesTitre.forEach((l, i) => doc.text(l, X + 8, y + 21 + i * 7.5));
 
   y += hBandeau + 12;
 
@@ -145,8 +162,9 @@ function couverture(doc: jsPDF, c: CompilationModule, marque?: Marque) {
     doc.text(libelle, X, y);
     police(doc, "corpsGras", 9.5);
     doc.setTextColor(...COULEURS.encre);
-    doc.text(valeur, X + 34, y, { maxWidth: LARGEUR - 34 });
-    y += 6;
+    const lignes = doc.splitTextToSize(valeur, LARGEUR - 34) as string[];
+    doc.text(lignes, X + 34, y);
+    y += 6 + (lignes.length - 1) * 4.5;
   }
 
   y += 10;
@@ -172,64 +190,142 @@ function couverture(doc: jsPDF, c: CompilationModule, marque?: Marque) {
     return;
   }
 
-  for (const piece of c.pieces) {
-    if (y > BAS - 8) break;
+  c.pieces.forEach((piece, i) => {
+    if (y > BAS - 4) return;
+    const page = debuts[i]!;
 
     police(doc, "mono", 9);
     doc.setTextColor(...COULEURS.sarcelle);
-    doc.text(String(piece.rang).padStart(2, "0"), X, y);
+    doc.text(numero(piece.rang), X, y);
+
+    police(doc, "mono", 8.5);
+    doc.setTextColor(...COULEURS.encre);
+    doc.text(String(page), X + LARGEUR, y, { align: "right" });
+
+    const date = piece.date ? formatDate(piece.date, "") : "";
+    police(doc, "mono", 8);
+    doc.setTextColor(...COULEURS.ardoiseClaire);
+    if (date) doc.text(date, X + LARGEUR - 12, y, { align: "right" });
 
     police(doc, "corps", 9.5);
     doc.setTextColor(...COULEURS.corps);
-    const largeurTitre = LARGEUR - 12 - 26;
     const intitule = [piece.objectif, piece.titre].filter(Boolean).join(" — ");
-    doc.text(doc.splitTextToSize(intitule, largeurTitre)[0]!, X + 12, y);
+    const largeurTitre = LARGEUR - 12 - 42;
+    doc.text(tronquer(doc, intitule, largeurTitre), X + 12, y);
 
-    if (piece.date) {
-      police(doc, "mono", 8.5);
-      doc.setTextColor(...COULEURS.ardoiseClaire);
-      doc.text(piece.date, X + LARGEUR, y, { align: "right" });
-    }
+    doc.link(X, y - 4, LARGEUR, 6.5, { pageNumber: page });
 
     y += 4.5;
     doc.setDrawColor(...COULEURS.separateur).setLineWidth(0.2);
     doc.line(X, y, X + LARGEUR, y);
     y += 4.5;
-  }
+  });
 }
 
-/** Le bandeau qui ouvre une séance dans la compilation. */
-function chapitre(doc: jsPDF, piece: PieceCompilee, depart: number): number {
+/**
+ * L'ouverture d'une séance, en haut de sa première page.
+ *
+ * Elle remplace trois en-têtes empilés — le bandeau de la compilation, le
+ * titre du support et sa ligne d'identité — qui répétaient le module, le
+ * groupe et la date avant la première ligne du cours.
+ */
+function ouverture(doc: jsPDF, piece: PieceCompilee, depart: number): number {
   let y = depart;
 
-  // Le numéro de séance en sarcelle, gros et à gauche : c'est le repère qu'on
-  // cherche en feuilletant un document de plusieurs dizaines de pages.
-  police(doc, "mono", 15);
+  doc.setFillColor(...COULEURS.sarcelle);
+  doc.rect(X, y, 14, 1.2, "F");
+  y += 7;
+
+  police(doc, "mono", 8);
   doc.setTextColor(...COULEURS.sarcelle);
-  doc.text(String(piece.rang).padStart(2, "0"), X, y + 4);
-
-  police(doc, "corps", 8.5);
-  doc.setTextColor(...COULEURS.ardoise);
   doc.text(
-    [piece.date, piece.objectif].filter(Boolean).join("  ·  "),
-    X + 14,
+    [
+      `SÉANCE ${numero(piece.rang)}`,
+      piece.objectif ? `ÉLÉMENT ${piece.objectif}` : null,
+      piece.date ? formatDateJour(piece.date, {}, "").toUpperCase() : null,
+    ]
+      .filter(Boolean)
+      .join("   ·   "),
+    X,
     y,
+    { charSpace: 0.3 },
   );
-
-  police(doc, "titre", 11);
-  doc.setTextColor(...COULEURS.encre);
-  const lignes = doc.splitTextToSize(piece.titre, LARGEUR - 14);
-  lignes.slice(0, 2).forEach((l: string, i: number) => {
-    doc.text(l, X + 14, y + 5.5 + i * 5.5);
-  });
-
-  y += 5.5 + Math.min(lignes.length, 2) * 5.5;
-
-  doc.setDrawColor(...COULEURS.encre).setLineWidth(0.6);
-  doc.line(X, y, X + LARGEUR, y);
   y += 9;
 
-  return y;
+  police(doc, "titre", 19);
+  doc.setTextColor(...COULEURS.encre);
+  const lignes = (doc.splitTextToSize(piece.titre, LARGEUR) as string[]).slice(
+    0,
+    3,
+  );
+  lignes.forEach((l, i) => doc.text(l, X, y + i * 8.4));
+  y += (lignes.length - 1) * 8.4;
+
+  // Le titre du support, quand il dit autre chose que l'objectif.
+  const sousTitre = piece.support.titre?.trim();
+  const meme = (a: string, b: string) =>
+    a.toLowerCase().replace(/\W+/g, "") === b.toLowerCase().replace(/\W+/g, "");
+  if (sousTitre && !meme(sousTitre, piece.titre)) {
+    y += 7.5;
+    police(doc, "corps", 11.5);
+    doc.setTextColor(...COULEURS.ardoise);
+    const sous = (doc.splitTextToSize(sousTitre, LARGEUR) as string[]).slice(
+      0,
+      2,
+    );
+    sous.forEach((l, i) => doc.text(l, X, y + i * 5.4));
+    y += (sous.length - 1) * 5.4;
+  }
+
+  y += 6;
+  doc.setDrawColor(...COULEURS.encre).setLineWidth(0.7);
+  doc.line(X, y, X + LARGEUR, y);
+  return y + 10;
+}
+
+/**
+ * L'en-tête courant et le pied de page, posés une fois le document complet.
+ *
+ * En haut, le module et la séance en cours — on retrouve où l'on est en
+ * ouvrant le classeur au hasard ; en bas, le groupe et la pagination. Ni la
+ * page de garde ni la page qui ouvre une séance ne portent l'en-tête : elles
+ * disent déjà, en grand, ce qu'il répéterait.
+ */
+function habiller(doc: jsPDF, c: CompilationModule, debuts: number[]) {
+  const pages = doc.getNumberOfPages();
+  for (let p = 1; p <= pages; p++) {
+    doc.setPage(p);
+
+    const rang = debuts.filter((d) => d <= p).length - 1;
+    const piece = c.pieces[rang];
+    if (p > 1 && piece && !debuts.includes(p)) {
+      police(doc, "corps", 7.5);
+      doc.setTextColor(...COULEURS.ardoise);
+      doc.text(tronquer(doc, c.moduleNom, LARGEUR * 0.45), X, 12);
+      const droite = `Séance ${numero(piece.rang)} · ${piece.titre}`;
+      doc.text(tronquer(doc, droite, LARGEUR * 0.5), X + LARGEUR, 12, {
+        align: "right",
+      });
+      doc.setDrawColor(...COULEURS.bordure).setLineWidth(0.25);
+      doc.line(X, 14.2, X + LARGEUR, 14.2);
+    }
+
+    doc.setDrawColor(...COULEURS.bordure).setLineWidth(0.25);
+    doc.line(X, 282.5, X + LARGEUR, 282.5);
+    police(doc, "corps", 7.5);
+    doc.setTextColor(...COULEURS.ardoise);
+    const gauche = [
+      c.genre === "pratique" ? "Travaux pratiques" : "Support de cours",
+      c.groupeNom,
+      c.anneeScolaire,
+    ]
+      .filter(Boolean)
+      .join(" · ");
+    doc.text(tronquer(doc, gauche, LARGEUR - 30), X, 287);
+    police(doc, "mono", 7.5);
+    doc.setTextColor(...COULEURS.encre);
+    doc.text(`${p} / ${pages}`, X + LARGEUR, 287, { align: "right" });
+  }
 }
 
 export async function telechargerCompilationPdf(
