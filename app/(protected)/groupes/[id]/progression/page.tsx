@@ -1,26 +1,36 @@
 import { getSeancesByGroupe, type Seance } from "@/app/actions/seances";
 import { getGroupeModules } from "@/app/actions/groupes";
 import { getRappelsControle } from "@/app/actions/rappels";
-import {
-  getControlesDuGroupe,
-  type ControleProgression,
-} from "@/app/actions/controles";
+import { getControlesDuGroupe } from "@/app/actions/controles";
+import { getRepartitionDuGroupe } from "@/app/actions/repartition";
 import ModuleProgression, { type ObjectifBloc } from "./ModuleProgression";
+import type { ControleAffiche } from "./LigneControle";
 import PlanifierSeance from "./PlanifierSeance";
 import SuiviSeances from "./SuiviSeances";
 import Card from "@/components/ui/Card";
+import { compterControles } from "@/lib/progression";
+import { instantEtablissement } from "@/lib/format";
 import { CalendarDays } from "lucide-react";
 
 export default async function ProgressionPage({
   params,
 }: PageProps<"/groupes/[id]/progression">) {
   const { id } = await params;
-  const [seances, modules, rappels, controles] = await Promise.all([
+  const [seances, modules, rappels, controles, repartition] = await Promise.all([
     getSeancesByGroupe(id),
     getGroupeModules(id),
     getRappelsControle(id),
     getControlesDuGroupe(id),
+    getRepartitionDuGroupe(id),
   ]);
+
+  // Les heures des contrôles, rangées dans leur module : un EFM de M202
+  // passé sur un créneau de M203 compte pour M202, pas pour M203.
+  const comptes = compterControles(
+    seances,
+    controles,
+    instantEtablissement().date,
+  );
 
   // Le rappel a besoin du nombre de contrôles réellement posés, que la liste
   // des séances ne connaît pas.
@@ -64,19 +74,84 @@ export default async function ProgressionPage({
           s.objectif_operationnel ??
           "Séances hors plan",
         seances: [],
+        repartition: null,
       });
     }
     m.objectifs.get(cle)!.seances.push(s);
+  }
+
+  // Chaque objectif face à sa part de la répartition — y compris celui qui
+  // n'a plus aucune séance : C.2 de M204, effacé par un recalcul, ne doit pas
+  // disparaître de la progression avec ses séances (signalé le 04/11/2026).
+  for (const r of repartition) {
+    const m = parModule.get(r.module_id);
+    if (!m) continue;
+    const bloc = m.objectifs.get(r.code) ?? {
+      code: r.code,
+      intitule: r.intitule,
+      seances: [],
+      repartition: null,
+    };
+    bloc.repartition = {
+      theorique: r.heures_theoriques,
+      pratique: r.heures_pratiques,
+    };
+    m.objectifs.set(r.code, bloc);
+  }
+  // Dans l'ordre du référentiel, les séances hors plan à la fin.
+  const ordreCode = (a: string, b: string) =>
+    a === "—" ? 1 : b === "—" ? -1 : a.localeCompare(b, "fr", { numeric: true });
+  for (const m of parModule.values()) {
+    m.objectifs = new Map(
+      [...m.objectifs.entries()].sort(([a], [b]) => ordreCode(a, b)),
+    );
   }
 
   // Chaque contrôle se range sous la dernière séance qui l'a précédé : c'est
   // là qu'il a eu lieu dans le déroulement, et c'est ce que le formateur
   // cherche en regardant sa progression (demande du 28/09/2026). Le calcul se
   // fait ici, une fois, plutôt que dans chaque bloc de module.
-  const controlesApres = new Map<string, ControleProgression[]>();
-  const sansAncrage = new Map<string, ControleProgression[]>();
+  const controlesApres = new Map<string, ControleAffiche[]>();
+  const sansAncrage = new Map<string, ControleAffiche[]>();
 
-  for (const c of controles) {
+  const codeModule = (moduleId: string) =>
+    modules.find((m) => m.module_id === moduleId)?.code_operationnel ??
+    "un autre module";
+
+  // Un contrôle passé sur le créneau d'un autre module se signale des deux
+  // côtés : dans son module, avec ses heures, et sur la séance qui a cédé
+  // son créneau, pour qu'on ne cherche pas où sont passées ces heures.
+  const cessions = new Map<
+    string,
+    { libelle: string; module: string; heures: number }[]
+  >();
+
+  const affiches: ControleAffiche[] = controles.map((c) => {
+    const compte = comptes.parControle.get(c.id);
+    if (compte?.creneau) {
+      const dejala = cessions.get(compte.creneau.seanceId) ?? [];
+      dejala.push({
+        libelle: `${c.type} ${codeModule(c.module_id)}`,
+        module: codeModule(c.module_id),
+        heures: compte.heures + compte.correction,
+      });
+      cessions.set(compte.creneau.seanceId, dejala);
+    }
+    return {
+      ...c,
+      compte: compte
+        ? {
+            heures: compte.heures,
+            correction: compte.correction,
+            creneauModule: compte.creneau
+              ? codeModule(compte.creneau.moduleId)
+              : null,
+          }
+        : null,
+    };
+  });
+
+  for (const c of affiches) {
     const liste = parModule.get(c.module_id);
     const jour = c.date_prevue;
     // Les séances arrivent triées par date : la dernière qui précède le
@@ -159,6 +234,8 @@ export default async function ProgressionPage({
               code={m.code}
               masseHoraire={m.masseHoraire}
               controlesCouverts={couverts.get(moduleId) ?? 0}
+              heuresControles={comptes.ajout.get(moduleId) ?? 0}
+              heuresCedees={comptes.retrait.get(moduleId) ?? 0}
               objectifs={[...m.objectifs.values()]}
               seances={m.seances}
               controlesApres={Object.fromEntries(
@@ -167,6 +244,11 @@ export default async function ProgressionPage({
                   .map((s) => [s.id, controlesApres.get(s.id)!]),
               )}
               controlesSansAncrage={sansAncrage.get(moduleId) ?? []}
+              cessions={Object.fromEntries(
+                m.seances
+                  .filter((s) => cessions.has(s.id))
+                  .map((s) => [s.id, cessions.get(s.id)!]),
+              )}
                   ouvertParDefaut={moduleId === premierEnCours}
                 />
               ))}

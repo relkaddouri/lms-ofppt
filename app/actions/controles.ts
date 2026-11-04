@@ -215,6 +215,8 @@ export type ControleProgression = {
   type_efm: "local" | "regional" | null;
   statut: string;
   date_prevue: string | null;
+  /** Compte dans les heures du module (lib/progression.ts). */
+  duree_heures: number | null;
   ouvert_le: string | null;
   ferme_le: string | null;
 };
@@ -226,7 +228,7 @@ export async function getControlesDuGroupe(
   const { data, error } = await supabase
     .from("controles")
     .select(
-      "id, module_id, titre, type, type_efm, statut, date_prevue, ouvert_le, ferme_le",
+      "id, module_id, titre, type, type_efm, statut, date_prevue, duree_heures, ouvert_le, ferme_le",
     )
     .eq("groupe_id", groupeId)
     .order("date_prevue", { ascending: true, nullsFirst: false })

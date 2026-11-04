@@ -3,20 +3,33 @@
 import { Fragment, useState } from "react";
 import Link from "next/link";
 import LigneSeance from "./LigneSeance";
-import LigneControle from "./LigneControle";
+import LigneControle, { type ControleAffiche } from "./LigneControle";
 import Badge from "@/components/ui/Badge";
 import RappelControle from "@/components/RappelControle";
 import { calculerRappel } from "@/lib/rappels";
 import { formatHeures } from "@/lib/format";
 import type { Seance } from "@/app/actions/seances";
-import type { ControleProgression } from "@/app/actions/controles";
 import { ChevronDown, ChevronRight } from "lucide-react";
 
 export type ObjectifBloc = {
   code: string;
   intitule: string;
   seances: Seance[];
+  /** Sa part dans la répartition du module ; nulle pour des séances hors plan. */
+  repartition: { theorique: number; pratique: number } | null;
 };
+
+/** Heures d'une liste de séances, par nature. */
+function parNature(seances: Seance[]) {
+  const h = (s: Seance) => Number(s.duree_realisee ?? s.duree_prevue ?? 0);
+  const pratique = seances
+    .filter((s) => s.nature === "pratique")
+    .reduce((t, s) => t + h(s), 0);
+  const total = seances.reduce((t, s) => t + h(s), 0);
+  return { total, theorique: total - pratique, pratique };
+}
+
+const egal = (a: number, b: number) => Math.abs(a - b) < 0.01;
 
 /**
  * Un module dans la progression, replié par défaut.
@@ -32,10 +45,13 @@ export default function ModuleProgression({
   code,
   masseHoraire,
   controlesCouverts,
+  heuresControles,
+  heuresCedees,
   objectifs,
   seances,
   controlesApres,
   controlesSansAncrage,
+  cessions,
   ouvertParDefaut = false,
 }: {
   groupeId: string;
@@ -45,30 +61,47 @@ export default function ModuleProgression({
   masseHoraire: number | null;
   /** Contrôles déjà validés sur ce couple : un brouillon ne couvre rien. */
   controlesCouverts: number;
+  /** Heures de contrôles de ce module passés hors de ses propres séances. */
+  heuresControles: number;
+  /** Heures de ses séances prises par les contrôles d'autres modules. */
+  heuresCedees: number;
   objectifs: ObjectifBloc[];
   seances: Seance[];
   /** Les contrôles à poser sous la séance qui les précède, par identifiant. */
-  controlesApres: Record<string, ControleProgression[]>;
+  controlesApres: Record<string, ControleAffiche[]>;
   /** Ceux qu'aucune séance ne précède : sans date, ou avant la première. */
-  controlesSansAncrage: ControleProgression[];
+  controlesSansAncrage: ControleAffiche[];
+  /** Séances dont le créneau a servi au contrôle d'un autre module. */
+  cessions: Record<
+    string,
+    { libelle: string; module: string; heures: number }[]
+  >;
   ouvertParDefaut?: boolean;
 }) {
   const [ouvert, setOuvert] = useState(ouvertParDefaut);
 
   const faites = seances.filter((s) => s.statut === "fait");
-  const heuresFaites = faites.reduce(
-    (t, s) => t + Number(s.duree_realisee ?? s.duree_prevue ?? 0),
-    0,
-  );
+  const heuresFaites =
+    faites.reduce(
+      (t, s) => t + Number(s.duree_realisee ?? s.duree_prevue ?? 0),
+      0,
+    ) +
+    heuresControles -
+    heuresCedees;
   const heuresTotales = seances.reduce(
     (t, s) => t + Number(s.duree_prevue ?? s.duree_realisee ?? 0),
     0,
   );
+  // L'avancement se mesure à la masse horaire du module, pas aux séances du
+  // plan : le plan laisse de côté les 10 h d'évaluation, et un module dont
+  // toutes les séances étaient faites s'affichait « terminé » alors qu'il
+  // lui restait ses contrôles (M202 : 80 h de séances sur 90 h allouées).
+  const base = masseHoraire || heuresTotales;
   const pct =
-    heuresTotales > 0 ? Math.round((heuresFaites / heuresTotales) * 100) : 0;
+    base > 0 ? Math.min(100, Math.round((heuresFaites / base) * 100)) : 0;
   const prochaine = seances.find((s) => s.statut !== "fait");
   const rappel = calculerRappel(
-    masseHoraire ?? heuresTotales,
+    base,
     heuresFaites,
     controlesCouverts,
   );
@@ -126,8 +159,16 @@ export default function ModuleProgression({
               />
             </span>
             <span className="text-xs text-slate">
-              {formatHeures(heuresFaites)} sur {formatHeures(heuresTotales)}
-              {masseHoraire ? ` · alloué ${formatHeures(masseHoraire)}` : ""}
+              {formatHeures(heuresFaites)} sur {formatHeures(base)}
+              {masseHoraire && heuresTotales !== masseHoraire
+                ? ` · séances du plan ${formatHeures(heuresTotales)}`
+                : ""}
+              {heuresControles > 0
+                ? ` · contrôles passés ailleurs +${formatHeures(heuresControles)}`
+                : ""}
+              {heuresCedees > 0
+                ? ` · créneaux cédés −${formatHeures(heuresCedees)}`
+                : ""}
               {" · "}
               {faites.length}/{seances.length} séances
             </span>
@@ -166,11 +207,21 @@ export default function ModuleProgression({
             </ul>
           ) : null}
           {objectifs.map((o) => {
-            const heuresObjectif = o.seances.reduce(
-              (t, s) => t + Number(s.duree_prevue ?? 0),
-              0,
-            );
-            const toutFait = o.seances.every((s) => s.statut === "fait");
+            // Ce que le plan de séances donne à l'objectif, ce qui en est fait,
+            // et ce que la répartition lui accordait : les trois doivent
+            // finir par se rejoindre, module terminé compris.
+            const plan = parNature(o.seances);
+            const fait = parNature(o.seances.filter((s) => s.statut === "fait"));
+            const rep = o.repartition;
+            const heuresRep = rep ? rep.theorique + rep.pratique : null;
+            const ecart =
+              rep !== null &&
+              (!egal(plan.theorique, rep.theorique) ||
+                !egal(plan.pratique, rep.pratique));
+            const toutFait =
+              o.seances.length > 0 &&
+              o.seances.every((s) => s.statut === "fait") &&
+              (heuresRep === null || fait.total >= heuresRep - 0.01);
             return (
               <div
                 key={o.code}
@@ -183,12 +234,18 @@ export default function ModuleProgression({
                   <span className="min-w-0 flex-1 truncate text-sm font-medium text-ink">
                     {o.intitule}
                   </span>
-                  {heuresObjectif > 0 ? (
-                    <span className="font-mono text-xs text-slate">
-                      {formatHeures(heuresObjectif)}
+                  <span className="font-mono text-xs text-slate">
+                    {formatHeures(fait.total)} faites sur{" "}
+                    {formatHeures(heuresRep ?? plan.total)}
+                  </span>
+                  {toutFait ? <Badge tone="success">terminé</Badge> : null}
+                  {ecart && rep ? (
+                    <span className="basis-full font-mono text-xs text-coral-dark">
+                      {o.seances.length === 0
+                        ? `Aucune séance : les ${formatHeures(heuresRep)} de la répartition ne sont pas planifiées`
+                        : `Écart avec la répartition : séances ${formatHeures(plan.total)} (T ${formatHeures(plan.theorique)} · P ${formatHeures(plan.pratique)}) pour ${formatHeures(heuresRep)} (T ${formatHeures(rep.theorique)} · P ${formatHeures(rep.pratique)})`}
                     </span>
                   ) : null}
-                  {toutFait ? <Badge tone="success">terminé</Badge> : null}
                 </div>
                 <ul>
                   {o.seances.map((s) => {
@@ -200,6 +257,7 @@ export default function ModuleProgression({
                           groupeId={groupeId}
                           numero={numero}
                           prochaine={s.id === prochaine?.id}
+                          cessions={cessions[s.id]}
                         />
                         {/* Le contrôle se pose sous la dernière séance qui
                             l'a précédé : c'est là qu'il a eu lieu. */}

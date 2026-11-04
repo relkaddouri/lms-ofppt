@@ -10,8 +10,14 @@
  * L'algorithme ne raisonne donc plus par objectif — « à chaque bloc sa
  * séance », ce qui laissait le créneau se remplir par accident — mais par
  * créneau à remplir : la séquence pédagogique est consommée jusqu'à ce que le
- * créneau soit plein, quitte à ce qu'une séance porte deux objectifs, ou qu'un
- * objectif se scinde sur deux séances.
+ * créneau soit plein, quitte à ce qu'un objectif se scinde sur deux séances.
+ *
+ * Mais une séance ne porte qu'un objectif et qu'une nature. Une séance qui en
+ * mêlait deux ne gardait que l'objectif et la nature du premier : ses heures
+ * changeaient d'objectif, et la progression ne retrouvait plus la répartition
+ * (DDOUX201, M204 : B.1 à 20 h pour 17 h 30, C.1 à 10 h pour 12 h 30 —
+ * signalé le 04/11/2026). Deux objectifs dans un même créneau y font donc
+ * deux séances, comme deux modules : le créneau reste entièrement occupé.
  */
 
 export type BlocContenu = {
@@ -112,6 +118,11 @@ function plage(a: number, b: number) {
   return { debut: hhmm(a), fin: hhmm(b), duree: net((b - a) / 60) };
 }
 
+/** La clé d'un objectif dans un module. */
+export function cleObjectif(moduleId: string, suggestionId: string): string {
+  return `${moduleId}|${suggestionId}`;
+}
+
 /**
  * Ramène le contenu de chaque module à ce que sa répartition lui accorde.
  *
@@ -119,29 +130,48 @@ function plage(a: number, b: number) {
  * dix heures d'évaluation. Ce qui est déjà daté (fait, ou passé et resté en
  * place) en consomme une part ; le contenu à placer ne peut dépasser le reste.
  * Sans ce plafond, des recalculs successifs avaient porté M202 à 82 h 30 pour
- * 80 h de répartition : l'excédent est retiré en fin de séquence, là où le
- * module s'achève.
+ * 80 h de répartition.
+ *
+ * L'excédent se retire d'abord dans l'objectif qui dépasse sa propre part.
+ * Retiré en fin de module, il emportait le dernier objectif, qui n'y était
+ * pour rien : le recalcul du 04/11/2026 a supprimé les 10 h de C.2 de M204
+ * alors que c'était A.1 qui débordait. La fin du module ne cède plus que pour
+ * un contenu sans objectif.
  *
  * Rend les blocs plafonnés, et pour chaque ligne touchée la durée retirée.
  */
 export function plafonnerParModule(
   blocs: BlocContenu[],
   disponible: ReadonlyMap<string, number>,
+  /** Par `cleObjectif(module, objectif)` : la part restante de chaque objectif. */
+  disponibleObjectif: ReadonlyMap<string, number> = new Map(),
 ): { blocs: BlocContenu[]; retraits: { seanceId: string; retire: number; entier: boolean }[] } {
   const restant = new Map(disponible);
+  const restantObjectif = new Map(disponibleObjectif);
   const retraits: { seanceId: string; retire: number; entier: boolean }[] = [];
   const garde: BlocContenu[] = [];
 
-  // Dans l'ordre : le début de la séquence garde sa place, c'est la fin du
-  // module qui cède.
+  // Dans l'ordre : le début de chaque objectif garde sa place, c'est sa fin
+  // qui cède.
   for (const b of blocs) {
     const plafond = restant.get(b.moduleId);
     if (plafond === undefined) {
       garde.push(b);
       continue;
     }
-    const pris = net(Math.min(b.duree, Math.max(0, plafond)));
+    const cle = b.suggestionId ? cleObjectif(b.moduleId, b.suggestionId) : null;
+    const plafondObjectif = cle ? restantObjectif.get(cle) : undefined;
+    const pris = net(
+      Math.min(
+        b.duree,
+        Math.max(0, plafond),
+        plafondObjectif === undefined ? Infinity : Math.max(0, plafondObjectif),
+      ),
+    );
     restant.set(b.moduleId, net(plafond - pris));
+    if (cle && plafondObjectif !== undefined) {
+      restantObjectif.set(cle, net(plafondObjectif - pris));
+    }
     if (pris < b.duree) {
       retraits.push({ seanceId: b.seanceId, retire: net(b.duree - pris), entier: pris <= 0 });
     }
@@ -154,13 +184,23 @@ export function plafonnerParModule(
  * Consomme la séquence de blocs pour remplir les créneaux, dans l'ordre.
  *
  * Un bloc plus court que l'espace restant ne clôt pas le créneau : le suivant
- * vient compléter la même séance, fût-il d'un autre objectif ou d'un autre
- * élément. Un bloc plus long se scinde, son reste ouvrant le créneau suivant.
+ * vient le compléter — dans la même séance s'il a le même objectif et la même
+ * nature, dans une séance à lui sinon. Un bloc plus long se scinde, son reste
+ * ouvrant le créneau suivant.
  *
  * Le dernier créneau peut rester partiel quand le contenu s'épuise avant lui :
  * c'est une fin de module, pas un trou. Il est signalé comme tel plutôt que
  * comblé avec du contenu qui n'existe pas.
  */
+/** Deux blocs peuvent partager une séance : même module, objectif et nature. */
+function memeSeance(a: BlocContenu, b: BlocContenu): boolean {
+  return (
+    a.moduleId === b.moduleId &&
+    a.suggestionId === b.suggestionId &&
+    a.nature === b.nature
+  );
+}
+
 export function remplirCreneaux(
   blocs: BlocContenu[],
   creneaux: CreneauCible[],
@@ -171,20 +211,21 @@ export function remplirCreneaux(
   let i = 0;
 
   for (const entier of creneaux) {
-    // Un créneau peut porter deux séances : la fin d'un module, puis le début
-    // du suivant, chacune avec ses propres heures.
+    // Un créneau peut porter deux séances : la fin d'un objectif, puis le
+    // début du suivant, chacune avec ses propres heures.
     let creneau = entier;
     while (i < file.length) {
       let reste = creneau.duree;
       const morceaux: Morceau[] = [];
-      let module: string | null = null;
+      let premier: BlocContenu | null = null;
 
       while (reste > 0 && i < file.length) {
         const bloc = file[i];
-        // Un autre module ne se glisse pas dans la séance en cours : il
-        // ouvrira la sienne dans ce qui reste du créneau.
-        if (module !== null && bloc.moduleId !== module) break;
-        module = bloc.moduleId;
+        // Un autre module, un autre objectif ou une autre nature ne se glisse
+        // pas dans la séance en cours : il ouvrira la sienne dans ce qui reste
+        // du créneau.
+        if (premier !== null && !memeSeance(premier, bloc)) break;
+        premier ??= bloc;
         const pris = Math.min(bloc.duree, reste);
         morceaux.push({ bloc: { ...bloc }, duree: pris });
         bloc.duree = net(bloc.duree - pris);

@@ -183,6 +183,50 @@ export async function getPlanification(
   };
 }
 
+/** La part d'un objectif dans la répartition d'un module, pour la progression. */
+export type PartObjectif = {
+  module_id: string;
+  code: string;
+  intitule: string;
+  heures_theoriques: number;
+  heures_pratiques: number;
+};
+
+/**
+ * La répartition de tous les modules d'un groupe, objectif par objectif.
+ *
+ * La progression la met en face des séances : le formateur voit, module
+ * terminé ou non, si ce qui a été fait correspond à ce qui était réparti.
+ */
+export async function getRepartitionDuGroupe(
+  groupeId: string,
+): Promise<PartObjectif[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("repartition_horaire")
+    .select(
+      "module_id, heures_theoriques, heures_pratiques, suggestions_pedagogiques(code, apprentissage_base)",
+    )
+    .eq("groupe_id", groupeId)
+    .limit(500);
+  if (error) throw new Error(error.message);
+
+  return (
+    (data ?? []) as unknown as {
+      module_id: string;
+      heures_theoriques: number;
+      heures_pratiques: number;
+      suggestions_pedagogiques: { code: string | null; apprentissage_base: string } | null;
+    }[]
+  ).map((r) => ({
+    module_id: r.module_id,
+    code: r.suggestions_pedagogiques?.code ?? "—",
+    intitule: r.suggestions_pedagogiques?.apprentissage_base ?? "",
+    heures_theoriques: Number(r.heures_theoriques) || 0,
+    heures_pratiques: Number(r.heures_pratiques) || 0,
+  }));
+}
+
 export async function saveRepartition(
   groupeId: string,
   moduleId: string,

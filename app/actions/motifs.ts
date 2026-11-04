@@ -7,6 +7,7 @@ import {
   choisirPorteur,
   composerIntitule,
   creneauOuvert,
+  cleObjectif,
   dureeCreneau,
   plafonnerParModule,
   plagesLibres,
@@ -457,8 +458,9 @@ export type ResultatGeneration = {
  * seule dans un créneau de 5 h — et 2 h 30 qui n'existaient nulle part, ni
  * ici ni dans la déclaration E-note que le formateur doit produire. Le
  * remplissage consomme donc la séquence pédagogique créneau par créneau :
- * une séance peut porter deux objectifs, un objectif peut se scinder sur deux
- * séances.
+ * un objectif peut se scinder sur deux séances, et deux objectifs partagent
+ * un créneau en y faisant chacun sa séance — jamais une séance pour deux,
+ * qui donnait toutes ses heures au premier (lib/remplissage.ts).
  */
 export async function genererSeances(
   groupeId: string,
@@ -492,7 +494,7 @@ export async function genererSeances(
     supabase
       .from("seances")
       .select(
-        "id, module_id, created_at, duree_prevue, nature, suggestion_pedagogique_id, contenu_prevu, objectif_operationnel, est_fad, lien_teams, seance_groupes!inner(groupe_id), seance_elements_contenu(element_contenu_id), suggestions_pedagogiques(ordre, elements_competence(lettre, ordre))",
+        "id, module_id, created_at, duree_prevue, nature, suggestion_pedagogique_id, contenu_prevu, objectif_operationnel, est_fad, lien_teams, seance_groupes!inner(groupe_id), seance_elements_contenu(element_contenu_id), suggestions_pedagogiques(code, apprentissage_base, ordre, elements_competence(lettre, ordre))",
       )
       .eq("seance_groupes.groupe_id", groupeId)
       .is("date", null)
@@ -738,11 +740,24 @@ export async function genererSeances(
   });
 
   // ── Le remplissage lui-même, pur et testable à part ────────────────────
+  // L'intitulé se relit du référentiel quand la séance en vient : celui de la
+  // ligne pouvait encore nommer l'objectif voisin d'une ancienne fusion
+  // (« A.1 … · B.1 … » sur une séance de B.1).
+  const intituleDe = (s: (typeof aPlacer)[number]) => {
+    const sp = s.suggestions_pedagogiques as unknown as {
+      code: string | null;
+      apprentissage_base: string | null;
+    } | null;
+    return sp?.code && sp.apprentissage_base
+      ? `${sp.code} — ${sp.apprentissage_base}`
+      : (s.objectif_operationnel ?? "");
+  };
+
   const tousLesBlocs: BlocContenu[] = ordonnees.map((s) => ({
     seanceId: s.id,
     moduleId: s.module_id,
     suggestionId: s.suggestion_pedagogique_id ?? null,
-    code: s.objectif_operationnel ?? "",
+    code: intituleDe(s),
     nature: (s.nature as "theorique" | "pratique" | null) ?? null,
     duree: Number(s.duree_prevue) || 0,
   }));
@@ -750,7 +765,11 @@ export async function genererSeances(
   // Le plafond : jamais plus que la répartition, déjà fait compris. Ce qui
   // dépasse cède en fin de module — la dernière séance de M202 passe à
   // 2 h 30, et le module suivant commence dans l'autre moitié du créneau.
-  const { blocs, retraits } = plafonnerParModule(tousLesBlocs, aligne.disponible);
+  const { blocs, retraits } = plafonnerParModule(
+    tousLesBlocs,
+    aligne.disponible,
+    aligne.disponibleObjectif,
+  );
 
   const { seances: remplies, heuresRestantes } = remplirCreneaux(blocs, cibles);
 
@@ -829,10 +848,9 @@ export async function genererSeances(
 
   for (const r of remplies) {
     const duree = r.morceaux.reduce((t, m) => t + m.duree, 0);
-    // L'objectif affiché nomme tout ce que la séance couvre : une séance qui
-    // porte deux objectifs doit les montrer tous les deux (PRD §4.9). Composé
-    // sans répéter ce que l'intitulé précédent disait déjà — chaque recalcul
-    // y ajoutait une nature de plus.
+    // L'objectif affiché nomme ce que la séance couvre. Composé sans répéter
+    // ce que l'intitulé précédent disait déjà — chaque recalcul y ajoutait
+    // une nature de plus.
     const objectif = composerIntitule(
       r.morceaux.map((m) => ({ code: m.bloc.code, nature: m.bloc.nature })),
     );
@@ -938,54 +956,100 @@ export async function genererSeances(
 }
 
 /**
- * Rétablit, module par module, le total d'heures que fixe la répartition.
+ * Rétablit, module par module et objectif par objectif, les heures que fixe
+ * la répartition.
  *
  * Deux cas. Un module encore entièrement à venir — rien de daté, rien de
  * préparé — dont les séances ne tombent plus juste est reconstruit depuis sa
  * répartition : c'est ce qui rend à l'ergonomie les heures que des créneaux
  * partagés avaient données à ses voisins. Pour un module commencé, on ne sait
- * plus quel contenu a été vu : on ne reconstruit rien, et c'est le plafond
- * (`plafonnerParModule`) qui retire l'excédent en fin de séquence.
+ * plus quel contenu a été vu : on ne reconstruit rien. Le plafond
+ * (`plafonnerParModule`) retire ce qui dépasse dans l'objectif qui dépasse,
+ * et ce qui manque à un objectif lui est rendu en séances non datées — c'est
+ * ainsi que C.2 de M204, supprimé par le recalcul du 04/11/2026, revient.
  *
- * Rend, par module, les heures encore disponibles : répartition moins ce qui
- * est déjà daté.
+ * Rend, par module et par objectif, les heures encore disponibles :
+ * répartition moins ce qui est déjà daté.
  */
 async function alignerSurRepartition(
   supabase: Awaited<ReturnType<typeof createClient>>,
   groupeId: string,
-  aPlacer: { id: string; module_id: string; created_at: string | null; duree_prevue: number | string | null }[],
-): Promise<{ disponible: Map<string, number>; reconstruits: number }> {
+  aPlacer: {
+    id: string;
+    module_id: string;
+    created_at: string | null;
+    duree_prevue: number | string | null;
+    suggestion_pedagogique_id: string | null;
+    nature: string | null;
+  }[],
+): Promise<{
+  disponible: Map<string, number>;
+  disponibleObjectif: Map<string, number>;
+  reconstruits: number;
+}> {
   const modules = [...new Set(aPlacer.map((s) => s.module_id))];
   const disponible = new Map<string, number>();
-  if (modules.length === 0) return { disponible, reconstruits: 0 };
+  const disponibleObjectif = new Map<string, number>();
+  if (modules.length === 0) {
+    return { disponible, disponibleObjectif, reconstruits: 0 };
+  }
 
   const [repRes, dateesRes] = await Promise.all([
     supabase
       .from("repartition_horaire")
-      .select("module_id, heures_theoriques, heures_pratiques")
+      .select("module_id, suggestion_pedagogique_id, heures_theoriques, heures_pratiques")
       .eq("groupe_id", groupeId)
-      .in("module_id", modules),
+      .in("module_id", modules)
+      .limit(1000),
     supabase
       .from("seances")
-      .select("module_id, duree_prevue, seance_groupes!inner(groupe_id)")
+      .select("module_id, suggestion_pedagogique_id, nature, duree_prevue, seance_groupes!inner(groupe_id)")
       .eq("seance_groupes.groupe_id", groupeId)
       .in("module_id", modules)
-      .not("date", "is", null),
+      .not("date", "is", null)
+      .limit(2000),
   ]);
   if (repRes.error) throw new Error(repRes.error.message);
   if (dateesRes.error) throw new Error(dateesRes.error.message);
 
   const net = (v: number) => Number(v.toFixed(2));
+  const ajoute = (m: Map<string, number>, cle: string, h: number) =>
+    m.set(cle, net((m.get(cle) ?? 0) + h));
+  // Par objectif, la nature à part : `cle|theorique`, `cle|pratique`.
+  const parNature = (cle: string, nature: string | null) =>
+    `${cle}|${nature === "pratique" ? "pratique" : "theorique"}`;
+
   const budget = new Map<string, number>();
+  const budgetObjectif = new Map<string, number>();
   for (const r of repRes.data ?? []) {
-    budget.set(
-      r.module_id,
-      net((budget.get(r.module_id) ?? 0) + Number(r.heures_theoriques) + Number(r.heures_pratiques)),
-    );
+    const t = Number(r.heures_theoriques);
+    const p = Number(r.heures_pratiques);
+    const cle = cleObjectif(r.module_id, r.suggestion_pedagogique_id);
+    ajoute(budget, r.module_id, t + p);
+    ajoute(budgetObjectif, cle, t + p);
+    ajoute(budgetObjectif, parNature(cle, "theorique"), t);
+    ajoute(budgetObjectif, parNature(cle, "pratique"), p);
   }
+
   const datees = new Map<string, number>();
+  const dateesObjectif = new Map<string, number>();
   for (const s of dateesRes.data ?? []) {
-    datees.set(s.module_id, net((datees.get(s.module_id) ?? 0) + (Number(s.duree_prevue) || 0)));
+    const h = Number(s.duree_prevue) || 0;
+    ajoute(datees, s.module_id, h);
+    if (s.suggestion_pedagogique_id) {
+      const cle = cleObjectif(s.module_id, s.suggestion_pedagogique_id);
+      ajoute(dateesObjectif, cle, h);
+      ajoute(dateesObjectif, parNature(cle, s.nature), h);
+    }
+  }
+
+  const aPlacerObjectif = new Map<string, number>();
+  for (const s of aPlacer) {
+    if (!s.suggestion_pedagogique_id) continue;
+    const h = Number(s.duree_prevue) || 0;
+    const cle = cleObjectif(s.module_id, s.suggestion_pedagogique_id);
+    ajoute(aPlacerObjectif, cle, h);
+    ajoute(aPlacerObjectif, parNature(cle, s.nature), h);
   }
 
   // Ce qui est déjà préparé ne se reconstruit pas.
@@ -1010,13 +1074,28 @@ async function alignerSurRepartition(
     disponible.set(m, net(Math.max(0, total - deja)));
 
     const lignes = aPlacer.filter((s) => s.module_id === m);
-    const aPlacerHeures = net(lignes.reduce((t, s) => t + (Number(s.duree_prevue) || 0), 0));
-    const intact =
-      deja === 0 && lignes.every((s) => !preparees.has(s.id));
-    if (!intact || Math.abs(aPlacerHeures - total) < 0.01) continue;
-
     const plan = await getPlanification(groupeId, m);
     if (!plan || plan.proposition) continue;
+
+    // Ce qui reste à chaque objectif, et l'écart avec ce qui est à placer.
+    const ecarts = plan.lignes.map((l) => {
+      const cle = cleObjectif(m, l.id);
+      const reste = net(
+        Math.max(0, (budgetObjectif.get(cle) ?? 0) - (dateesObjectif.get(cle) ?? 0)),
+      );
+      disponibleObjectif.set(cle, reste);
+      const prevu = aPlacerObjectif.get(cle) ?? 0;
+      const resteNature = (n: "theorique" | "pratique") =>
+        net(
+          Math.max(
+            0,
+            (budgetObjectif.get(parNature(cle, n)) ?? 0) -
+              (dateesObjectif.get(parNature(cle, n)) ?? 0) -
+              (aPlacerObjectif.get(parNature(cle, n)) ?? 0),
+          ),
+        );
+      return { ligne: l, reste, prevu, resteNature };
+    });
 
     // Le lot du module — son rang parmi les modules du groupe — est gardé.
     const lot = lignes
@@ -1024,28 +1103,72 @@ async function alignerSurRepartition(
       .filter(Boolean)
       .sort()[0];
 
-    const { error: errSuppr } = await supabase
-      .from("seances")
-      .delete()
-      .in("id", lignes.map((s) => s.id));
-    if (errSuppr) throw new Error(errSuppr.message);
+    const intact = deja === 0 && lignes.every((s) => !preparees.has(s.id));
+    if (intact) {
+      // Un objectif dont les séances ne tombent plus juste suffit : le total
+      // du module peut être bon et ses objectifs faux.
+      if (ecarts.every((e) => Math.abs(e.prevu - e.reste) < 0.01)) continue;
 
-    await creerSeancesDuPlan(
-      supabase,
-      groupeId,
-      m,
-      plan.lignes.map((l) => ({
-        id: l.id,
-        code: l.code,
-        intitule: l.intitule,
-        heures_theoriques: l.heures_theoriques,
-        heures_pratiques: l.heures_pratiques,
-      })),
-      lot,
-    );
+      const { error: errSuppr } = await supabase
+        .from("seances")
+        .delete()
+        .in("id", lignes.map((s) => s.id));
+      if (errSuppr) throw new Error(errSuppr.message);
+
+      await creerSeancesDuPlan(
+        supabase,
+        groupeId,
+        m,
+        plan.lignes.map((l) => ({
+          id: l.id,
+          code: l.code,
+          intitule: l.intitule,
+          heures_theoriques: l.heures_theoriques,
+          heures_pratiques: l.heures_pratiques,
+        })),
+        lot,
+      );
+      reconstruits += 1;
+      continue;
+    }
+
+    // Module commencé : on rend à chaque objectif ce qui lui manque, sans que
+    // le module dépasse sa répartition. Ce que le plafond va laisser d'un
+    // objectif qui déborde est compté tel quel.
+    const garde = ecarts.reduce((t, e) => t + Math.min(e.prevu, e.reste), 0);
+    const horsObjectif = lignes
+      .filter((s) => !s.suggestion_pedagogique_id)
+      .reduce((t, s) => t + (Number(s.duree_prevue) || 0), 0);
+    let manque = net(total - deja - garde - horsObjectif);
+    if (manque <= 0) continue;
+
+    const aRendre: {
+      id: string;
+      code: string;
+      intitule: string;
+      heures_theoriques: number;
+      heures_pratiques: number;
+    }[] = [];
+    for (const e of ecarts) {
+      if (manque <= 0) break;
+      const ecart = net(Math.min(manque, e.reste - e.prevu));
+      if (ecart <= 0) continue;
+      const t = Math.min(ecart, e.resteNature("theorique"));
+      aRendre.push({
+        id: e.ligne.id,
+        code: e.ligne.code,
+        intitule: e.ligne.intitule,
+        heures_theoriques: t,
+        heures_pratiques: net(ecart - t),
+      });
+      manque = net(manque - ecart);
+    }
+    if (aRendre.length === 0) continue;
+
+    await creerSeancesDuPlan(supabase, groupeId, m, aRendre, lot);
     reconstruits += 1;
   }
 
-  return { disponible, reconstruits };
+  return { disponible, disponibleObjectif, reconstruits };
 }
 
