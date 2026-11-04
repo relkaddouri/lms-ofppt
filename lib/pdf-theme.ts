@@ -159,3 +159,59 @@ export function police(doc: jsPDF, role: RolePolice, taille?: number): void {
 export function encre(doc: jsPDF, couleur: Rvb): void {
   doc.setTextColor(...couleur);
 }
+
+// ── Glyphes ───────────────────────────────────────────────────────────────
+
+/**
+ * Ce que Source Sans n'a pas, remplacé par ce qu'elle a.
+ *
+ * Les cours rédigés emploient des émojis et des pictogrammes — ✅ et ❌ dans
+ * les colonnes « à faire / à éviter », ⭐ pour une note. jsPDF n'a pas de
+ * police de repli : un glyphe absent de la fonte s'imprime en blanc, et la
+ * colonne « Correct ? » d'un tableau sortait vide. Relevé sur les quatre
+ * modules rédigés : 99 ✅, 50 ❌, une vingtaine de pictogrammes.
+ */
+const EQUIVALENTS: Record<string, string> = {
+  "✅": "✓",
+  "✔": "✓",
+  "☑": "✓",
+  "❌": "✗",
+  "✖": "✗",
+  "❎": "✗",
+  "⭐": "*",
+  "★": "*",
+  "☆": "*",
+  "▭": "□",
+  "◇": "◆",
+  "⚠": "(!)",
+  "➕": "+",
+  "➖": "−",
+  "➡": "→",
+  "⬅": "←",
+};
+
+/**
+ * Les émojis et pictogrammes sans équivalent : on les retire plutôt que
+ * d'imprimer un blanc. Ceux que Source Sans dessine restent.
+ */
+const PICTOGRAMMES =
+  /[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}\u{200D}]/gu;
+const DESSINES = new Set(["☐", "✓", "✗"]);
+
+export function imprimable(texte: string): string {
+  let t = texte;
+  for (const [de, vers] of Object.entries(EQUIVALENTS))
+    t = t.split(de).join(vers);
+  return t
+    .replace(PICTOGRAMMES, (c) => (DESSINES.has(c) ? c : ""))
+    .replace(/(\S) {2,}/g, "$1 ");
+}
+
+/**
+ * Les caractères que Sora, la police des titres, ne connaît pas.
+ *
+ * Elle couvre le latin et la ponctuation française, pas les flèches ni les
+ * symboles : « Fonctionnalité → valeur » sortait « Fonctionnalité  valeur ».
+ * Ces caractères s'écrivent alors dans la police du texte, en gras.
+ */
+export const HORS_SORA = /[←-⇿∀-⋿⌀-⏿■-◿☀-➿✓✗]/;

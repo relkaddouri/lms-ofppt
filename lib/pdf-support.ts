@@ -62,6 +62,14 @@ export function dessinerSupport(
   support: Support,
   entete: EnteteSupport,
   depart: number,
+  options: {
+    /**
+     * Le titre et la ligne d'identité en tête du support. La compilation d'un
+     * module les retire : son ouverture de séance dit déjà tout cela, et le
+     * répéter empilait trois titres avant la première ligne du cours.
+     */
+    entete?: boolean;
+  } = {},
 ): number {
   let y = depart;
 
@@ -103,6 +111,46 @@ export function dessinerSupport(
     }
   }
 
+  /**
+   * Les ressources d'un cours rédigé, dans la typographie du cours.
+   *
+   * Le cours sortait du moteur markdown et ses ressources d'un autre rendu,
+   * avec un autre corps de titre et d'autres puces : la dernière page ne
+   * ressemblait pas aux autres.
+   */
+  function ressourcesMarkdown() {
+    const vivantes = (support.ressources ?? []).filter(
+      (r) => r.joignable !== false,
+    );
+    if (vivantes.length === 0) return;
+    const echapper = (t: string) => t.replace(/([*_`\\])/g, "\\$1");
+    const md = [
+      "## Pour aller plus loin",
+      "",
+      ...vivantes.map(
+        (r) =>
+          `- **${echapper(r.titre)}**${r.pourquoi ? ` — ${echapper(r.pourquoi)}` : ""}${r.url ? ` — \`${r.url}\`` : ""}`,
+      ),
+    ].join("\n");
+    y += 8;
+    y = dessinerMarkdown(doc, md, {
+      x: X,
+      largeur: LARGEUR,
+      y,
+      place: (h) => {
+        place(h);
+        y += h;
+        return y;
+      },
+      reste: () => BAS - y,
+      saut: () => {
+        doc.addPage();
+        y = HAUT;
+        return y;
+      },
+    });
+  }
+
   function titre(t: string, taille = 12, avant = 7) {
     y += avant;
     place(10);
@@ -128,31 +176,33 @@ export function dessinerSupport(
   }
 
   // ── En-tête commun ──────────────────────────────────────────────────────
-  police(doc, "titre", 15);
-  doc.setTextColor(...ENCRE);
-  const lignesTitre = doc.splitTextToSize(support.titre, LARGEUR);
-  lignesTitre.forEach((l: string, i: number) => doc.text(l, X, y + i * 6.5));
-  y += lignesTitre.length * 6.5 + 2;
+  if (options.entete !== false) {
+    police(doc, "titre", 15);
+    doc.setTextColor(...ENCRE);
+    const lignesTitre = doc.splitTextToSize(support.titre, LARGEUR);
+    lignesTitre.forEach((l: string, i: number) => doc.text(l, X, y + i * 6.5));
+    y += lignesTitre.length * 6.5 + 2;
 
-  police(doc, "corps", 8.5);
-  doc.setTextColor(...GRIS);
-  doc.text(
-    [
-      entete.moduleNom,
-      entete.groupeNom,
-      entete.date,
-      entete.dureeHeures ? `${entete.dureeHeures} h` : null,
-      support.type === "pratique" ? "Travaux pratiques" : "Cours",
-    ]
-      .filter(Boolean)
-      .join("  ·  "),
-    X,
-    y,
-  );
-  y += 4;
-  doc.setDrawColor(...TRAIT).setLineWidth(0.3);
-  doc.line(X, y, X + LARGEUR, y);
-  y += 4;
+    police(doc, "corps", 8.5);
+    doc.setTextColor(...GRIS);
+    doc.text(
+      [
+        entete.moduleNom,
+        entete.groupeNom,
+        entete.date,
+        entete.dureeHeures ? `${entete.dureeHeures} h` : null,
+        support.type === "pratique" ? "Travaux pratiques" : "Cours",
+      ]
+        .filter(Boolean)
+        .join("  ·  "),
+      X,
+      y,
+    );
+    y += 4;
+    doc.setDrawColor(...TRAIT).setLineWidth(0.3);
+    doc.line(X, y, X + LARGEUR, y);
+    y += 4;
+  }
 
   if (support.type === "theorique") {
     // Un cours rédigé à la main est ce texte, rien d'autre. Il passe par le
@@ -168,8 +218,16 @@ export function dessinerSupport(
           y += h;
           return y;
         },
+        // Sans ces deux-là, le moteur ne peut pas garder un titre avec son
+        // texte : il ne sait pas où la page finit.
+        reste: () => BAS - y,
+        saut: () => {
+          doc.addPage();
+          y = HAUT;
+          return y;
+        },
       });
-      ressources();
+      ressourcesMarkdown();
       return y;
     }
 
